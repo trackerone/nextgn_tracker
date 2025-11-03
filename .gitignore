@@ -1,0 +1,11 @@
+/node_modules
+/vendor
+/public/build
+/public/hot
+/public/storage
+/.vite
+/.cache
+/storage/*.key
+/storage/app/public/*
+/resources/**/*.min.js
+/resources/**/*.min.css
