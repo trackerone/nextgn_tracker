@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return 'OK / alive';
-});
+Route::view('/', 'welcome');
+
+Route::get('/health', HealthCheckController::class)->name('health.index');

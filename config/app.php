@@ -2,10 +2,10 @@
 declare(strict_types=1);
 
 return [
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'NextGN Tracker'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
-    'url' => env('APP_URL', 'https://pu239-nextgn.onrender.com'),
+    'url' => env('APP_URL', 'https://nextgn-tracker.local'),
     'asset_url' => env('ASSET_URL'),
     'timezone' => env('APP_TIMEZONE', 'UTC'),
     'locale' => env('APP_LOCALE', 'en'),
