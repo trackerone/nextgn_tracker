@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\ContentSecurityPolicy;
+use App\Http\Middleware\EnsureMinimumRole;
+use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,9 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
         FilesystemServiceProvider::class,
         ViewServiceProvider::class,
+        AuthServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->append(ContentSecurityPolicy::class);
+        $middleware->alias([
+            'role.min' => EnsureMinimumRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // behold gerne din nuværende, men ingen ekstra response()-logik her
