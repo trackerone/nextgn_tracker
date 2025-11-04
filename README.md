@@ -59,3 +59,18 @@ php artisan user:promote user@example.com admin1
 ```
 
 The command validates the email and role slug before updating the user's `role_id`, returning a non-zero exit code when either lookup fails.
+
+## Forum core
+
+The forum feature introduces the following pieces:
+
+- **Models**: `Topic`, `Post`, and `PostRevision` capture discussions, replies, and edit history (including soft deletes for posts).
+- **Services**: `TopicSlugService` ensures unique slugs, while `MarkdownService` renders CommonMark-style input and sanitises the resulting HTML with a strict whitelist.
+- **Routes & policies**:
+  - Browse topics (`GET /topics`) and inspect a thread (`GET /topics/{slug}`) are public.
+  - Authenticated, verified users with role level ≥ `user1` may create topics (`POST /topics`) and replies (`POST /topics/{id}/posts`), both throttled at 60 writes/minute.
+  - Moderators (`role.min:8`) can lock/unlock and pin/unpin (`POST /topics/{id}/lock`, `/pin`), and edit/delete posts.
+  - Admins (`role.min:10`) may delete topics once the discussion is cleared.
+- **Frontend**: React components under `resources/js/components/forum` provide topic lists, thread views, and forms for creating topics or replies with inline moderation controls.
+
+All markdown input is rendered through the `MarkdownService`, which strips scripts/unsafe attributes and preserves formatting such as headings, emphasis, and links.

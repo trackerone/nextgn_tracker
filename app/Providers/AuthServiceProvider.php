@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Post;
+use App\Models\Topic;
 use App\Models\User;
+use App\Policies\PostPolicy;
+use App\Policies\TopicPolicy;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -14,7 +18,10 @@ class AuthServiceProvider extends ServiceProvider
     /**
      * @var array<class-string, class-string>
      */
-    protected $policies = [];
+    protected $policies = [
+        Topic::class => TopicPolicy::class,
+        Post::class => PostPolicy::class,
+    ];
 
     public function boot(): void
     {
