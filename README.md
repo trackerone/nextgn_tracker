@@ -40,3 +40,12 @@ php artisan db:seed --class=RoleSeeder
 ```
 
 Running the database seeder ensures the role ladder exists and backfills any existing users without a role to the default `newbie` record.
+
+## Role middleware examples
+
+Two demo routes illustrate the `role.min:{level}` middleware:
+
+- `GET /admin` &rarr; requires an authenticated, verified user with role level ≥ 10 (admin).
+- `GET /mod` &rarr; requires an authenticated, verified user with role level ≥ 8 (moderator).
+
+Behind the scenes a sysop (level 12) bypasses all checks via a `Gate::before` hook, while named gates like `isAdmin` and `isUploader` are available for policy checks.
