@@ -30,3 +30,13 @@ npm run lint
 ```
 
 > TODO: configure ESLint and integrate ExtendedPDO/FluentPDO when persistence is introduced.
+
+## Roles schema & seed
+
+User permissions are organised in the `roles` table, ranging from `sysop` (level 12) down to `newbie` (level 0). Seed or refresh the hierarchy with:
+
+```bash
+php artisan db:seed --class=RoleSeeder
+```
+
+Running the database seeder ensures the role ladder exists and backfills any existing users without a role to the default `newbie` record.
