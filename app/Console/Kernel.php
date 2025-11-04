@@ -11,7 +11,8 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('pm:digest daily')->dailyAt('07:00');
+        $schedule->command('pm:digest weekly')->weeklyOn(1, '07:30');
     }
 
     protected function commands(): void
