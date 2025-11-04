@@ -1,21 +1,77 @@
 import '../css/app.css';
-import { Activity } from 'lucide-react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import CreateTopicForm from './components/forum/CreateTopicForm';
+import TopicList from './components/forum/TopicList';
+import TopicView from './components/forum/TopicView';
+import { SessionContext } from './components/forum/types';
+import { useForum } from './components/forum/useForum';
+
+declare global {
+  interface Window {
+    __APP__?: SessionContext;
+  }
+}
+
+const defaultSession: SessionContext = {
+  authenticated: false,
+  canWrite: false,
+  canModerate: false,
+  canAdmin: false,
+  user: null,
+};
 
 const App: React.FC = () => {
+  const sessionConfig = window.__APP__ ?? defaultSession;
+  const {
+    session,
+    topicsMeta,
+    selectedTopic,
+    posts,
+    error,
+    isLoading,
+    sortedTopics,
+    handleCreateTopic,
+    handleSelectTopic,
+    handleReply,
+    handleToggleLock,
+    handleTogglePin,
+    handleDeleteTopic,
+    handleDeletePost,
+    handleRestorePost,
+    handleEditPost,
+  } = useForum(sessionConfig);
+
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-24 text-center">
-        <span className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/60 px-4 py-1 text-sm font-medium text-slate-300">
-          <Activity className="h-4 w-4 text-brand" />
-          NextGN Tracker baseline ready
-        </span>
-        <h1 className="text-4xl font-semibold sm:text-5xl">Laravel 11 + Vite + Tailwind + shadcn/ui</h1>
-        <p className="max-w-2xl text-lg text-slate-300">
-          Frontend assets are powered by Vite with Tailwind CSS and shadcn/ui foundations. Start building your product from this secure baseline.
-        </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+      <section id="forum" className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-semibold text-slate-100">Forum</h1>
+          {topicsMeta && (
+            <span className="text-sm text-slate-400">{topicsMeta.total} emner</span>
+          )}
+        </div>
+        {session.canWrite && (
+          <div id="create-topic">
+            <CreateTopicForm onSubmit={handleCreateTopic} disabled={!session.authenticated} />
+          </div>
+        )}
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        {isLoading && <p className="text-sm text-slate-400">Indlæser…</p>}
+        <TopicList topics={sortedTopics} onSelectTopic={handleSelectTopic} />
       </section>
+      <TopicView
+        topic={selectedTopic}
+        posts={posts}
+        session={session}
+        onReply={handleReply}
+        onToggleLock={session.canModerate ? handleToggleLock : undefined}
+        onTogglePin={session.canModerate ? handleTogglePin : undefined}
+        onDeleteTopic={session.canAdmin ? handleDeleteTopic : undefined}
+        onPostDelete={handleDeletePost}
+        onPostRestore={handleRestorePost}
+        onPostEdit={handleEditPost}
+      />
     </main>
   );
 };
