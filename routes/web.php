@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\PrivateMessageController;
+use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\TopicController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,4 +40,15 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function (): voi
     Route::post('/posts/{post}/restore', [PostController::class, 'restore'])
         ->withTrashed()
         ->name('posts.restore');
+});
+
+Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
+    Route::get('/pm', [PrivateMessageController::class, 'index'])->name('pm.index');
+    Route::get('/pm/{conversation}', [PrivateMessageController::class, 'show'])->name('pm.show');
+    Route::post('/pm', [PrivateMessageController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('pm.store');
+    Route::post('/pm/{conversation}/messages', [ConversationMessageController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('pm.messages.store');
 });

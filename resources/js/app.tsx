@@ -6,6 +6,7 @@ import TopicList from './components/forum/TopicList';
 import TopicView from './components/forum/TopicView';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
+import PrivateMessagesPanel from './components/pm/PrivateMessagesPanel';
 
 declare global {
   interface Window {
@@ -72,6 +73,9 @@ const App: React.FC = () => {
         onPostRestore={handleRestorePost}
         onPostEdit={handleEditPost}
       />
+      {session.user && (
+        <PrivateMessagesPanel currentUserId={session.user.id} />
+      )}
     </main>
   );
 };

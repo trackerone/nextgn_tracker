@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\Post;
 use App\Models\Topic;
 use App\Models\User;
+use App\Policies\ConversationPolicy;
+use App\Policies\MessagePolicy;
 use App\Policies\PostPolicy;
 use App\Policies\TopicPolicy;
 use App\Support\Roles\RoleLevel;
@@ -19,6 +23,8 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        Conversation::class => ConversationPolicy::class,
+        Message::class => MessagePolicy::class,
         Topic::class => TopicPolicy::class,
         Post::class => PostPolicy::class,
     ];
