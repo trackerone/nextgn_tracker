@@ -13,7 +13,9 @@ class EloquentTopicRepository implements TopicRepositoryInterface
     public function paginate(int $perPage = 50): LengthAwarePaginator
     {
         return Topic::query()
-            ->latest()
+            ->with(['author.role'])
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('created_at')
             ->paginate($perPage);
     }
 
@@ -24,7 +26,9 @@ class EloquentTopicRepository implements TopicRepositoryInterface
 
     public function create(array $attributes): Topic
     {
-        return Topic::query()->create($attributes);
+        $topic = Topic::query()->create($attributes);
+
+        return $topic->fresh(['author.role']);
     }
 
     public function update(Topic $topic, array $attributes): Topic
@@ -32,6 +36,6 @@ class EloquentTopicRepository implements TopicRepositoryInterface
         $topic->fill($attributes);
         $topic->save();
 
-        return $topic;
+        return $topic->fresh(['author.role']);
     }
 }

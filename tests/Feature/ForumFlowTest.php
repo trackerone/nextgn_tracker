@@ -20,7 +20,7 @@ class ForumFlowTest extends TestCase
 
         $this->actingAs($user);
 
-        $response = $this->get('/forum/topics');
+        $response = $this->get('/topics');
 
         $response->assertStatus(200);
     }

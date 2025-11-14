@@ -7,11 +7,20 @@ namespace App\Repositories;
 use App\Contracts\MessageRepositoryInterface;
 use App\Models\Conversation;
 use App\Models\Message;
+use Illuminate\Support\Facades\DB;
 
 class EloquentMessageRepository implements MessageRepositoryInterface
 {
     public function sendMessage(Conversation $conversation, array $attributes): Message
     {
-        return $conversation->messages()->create($attributes);
+        return DB::transaction(function () use ($conversation, $attributes): Message {
+            $message = $conversation->messages()->create($attributes);
+
+            $conversation->forceFill([
+                'last_message_at' => $message->created_at,
+            ])->save();
+
+            return $message->fresh(['sender:id,name']);
+        });
     }
 }

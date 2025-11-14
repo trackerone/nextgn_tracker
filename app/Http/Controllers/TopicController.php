@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\PostRepositoryInterface;
+use App\Contracts\TopicRepositoryInterface;
 use App\Http\Requests\Forum\StoreTopicRequest;
 use App\Models\Topic;
 use App\Services\MarkdownService;
@@ -17,6 +19,8 @@ use Symfony\Component\HttpFoundation\Response;
 class TopicController extends Controller
 {
     public function __construct(
+        private readonly TopicRepositoryInterface $topics,
+        private readonly PostRepositoryInterface $posts,
         private readonly TopicSlugService $slugService,
         private readonly MarkdownService $markdownService,
     ) {
@@ -24,27 +28,15 @@ class TopicController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $topics = Topic::query()
-            ->with(['author.role'])
-            ->orderByDesc('is_pinned')
-            ->orderByDesc('created_at')
-            ->paginate(perPage: 20);
+        $topics = $this->topics->paginate(perPage: 20);
 
         return response()->json($this->formatTopics($topics));
     }
 
-    public function show(string $slug): JsonResponse
+    public function show(Topic $topic): JsonResponse
     {
-        $topic = Topic::query()
-            ->where('slug', $slug)
-            ->with(['author.role'])
-            ->firstOrFail();
-
-        $posts = $topic->posts()
-            ->with(['author.role'])
-            ->withTrashed()
-            ->orderBy('created_at')
-            ->paginate(perPage: 20);
+        $topic->load(['author.role']);
+        $posts = $this->posts->paginateForTopic($topic, perPage: 20);
 
         return response()->json([
             'topic' => $topic,
@@ -61,7 +53,7 @@ class TopicController extends Controller
         $slug = $this->slugService->generate($data['title']);
 
         $topic = DB::transaction(function () use ($user, $data, $slug) {
-            $topic = Topic::query()->create([
+            $topic = $this->topics->create([
                 'user_id' => $user?->getKey(),
                 'slug' => $slug,
                 'title' => $data['title'],
@@ -69,7 +61,7 @@ class TopicController extends Controller
 
             $html = $this->markdownService->render($data['body_md']);
 
-            $topic->posts()->create([
+            $this->posts->createForTopic($topic, [
                 'user_id' => $user?->getKey(),
                 'body_md' => $data['body_md'],
                 'body_html' => $html,
@@ -91,27 +83,27 @@ class TopicController extends Controller
             'title' => ['required', 'string', 'min:3', 'max:140'],
         ]);
 
-        $topic->update(['title' => $validated['title']]);
+        $updated = $this->topics->update($topic, ['title' => $validated['title']]);
 
-        return response()->json($topic->fresh(['author.role']));
+        return response()->json($updated);
     }
 
     public function toggleLock(Topic $topic): JsonResponse
     {
         $this->authorize('lock', $topic);
 
-        $topic->update(['is_locked' => ! $topic->is_locked]);
+        $updated = $this->topics->update($topic, ['is_locked' => ! $topic->is_locked]);
 
-        return response()->json($topic->fresh(['author.role']));
+        return response()->json($updated);
     }
 
     public function togglePin(Topic $topic): JsonResponse
     {
         $this->authorize('pin', $topic);
 
-        $topic->update(['is_pinned' => ! $topic->is_pinned]);
+        $updated = $this->topics->update($topic, ['is_pinned' => ! $topic->is_pinned]);
 
-        return response()->json($topic->fresh(['author.role']));
+        return response()->json($updated);
     }
 
     public function destroy(Request $request, Topic $topic): JsonResponse

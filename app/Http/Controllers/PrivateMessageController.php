@@ -4,39 +4,33 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\ConversationRepositoryInterface;
+use App\Contracts\MessageRepositoryInterface;
 use App\Http\Requests\PrivateMessages\StartConversationRequest;
 use App\Models\Conversation;
-use App\Models\Message;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
 use App\Services\MarkdownService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class PrivateMessageController extends Controller
 {
-    public function __construct(private readonly MarkdownService $markdownService)
-    {
+    public function __construct(
+        private readonly MarkdownService $markdownService,
+        private readonly ConversationRepositoryInterface $conversations,
+        private readonly MessageRepositoryInterface $messages,
+    ) {
     }
 
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
 
-        $conversations = Conversation::query()
-            ->forUser((int) $user->getKey())
-            ->with([
-                'userA:id,name',
-                'userB:id,name',
-                'lastMessage.sender:id,name',
-            ])
-            ->orderByDesc('last_message_at')
-            ->orderByDesc('updated_at')
-            ->get();
+        $conversations = $this->conversations->paginateForUser($user, perPage: 20);
 
-        return response()->json($conversations);
+        return response()->json($conversations->getCollection());
     }
 
     public function show(Request $request, Conversation $conversation): JsonResponse
@@ -75,41 +69,16 @@ class PrivateMessageController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        [$firstId, $secondId] = $senderId < $recipientId
-            ? [$senderId, $recipientId]
-            : [$recipientId, $senderId];
-
         $html = $this->markdownService->render($data['body_md']);
 
-        $conversation = null;
-        $message = null;
+        $recipient = User::query()->findOrFail($recipientId);
+        $conversation = $this->conversations->startConversation($user, $recipient);
 
-        DB::transaction(function () use (&$conversation, &$message, $firstId, $secondId, $senderId, $data, $html): void {
-            $conversation = Conversation::query()
-                ->where('user_a_id', $firstId)
-                ->where('user_b_id', $secondId)
-                ->lockForUpdate()
-                ->first();
-
-            if ($conversation === null) {
-                $conversation = Conversation::query()->create([
-                    'user_a_id' => $firstId,
-                    'user_b_id' => $secondId,
-                ]);
-            }
-
-            $message = $conversation->messages()->create([
-                'sender_id' => $senderId,
-                'body_md' => $data['body_md'],
-                'body_html' => $html,
-            ]);
-
-            $conversation->forceFill([
-                'last_message_at' => $message->created_at,
-            ])->save();
-        });
-
-        $message->load('sender:id,name');
+        $message = $this->messages->sendMessage($conversation, [
+            'sender_id' => $senderId,
+            'body_md' => $data['body_md'],
+            'body_html' => $html,
+        ]);
 
         $conversation->load([
             'userA:id,name',
