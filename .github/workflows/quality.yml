@@ -1,0 +1,77 @@
+name: Quality
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: laravel
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, pdo_mysql
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-progress --prefer-dist
+          cp .env.example .env
+          php artisan key:generate
+        env:
+          COMPOSER_ALLOW_SUPERUSER: 1
+
+      - name: Wait for database
+        run: |
+          for i in `seq 1 30`; do
+            if mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; then
+              echo "Database is up";
+              break;
+            fi;
+            echo "Waiting for database...";
+            sleep 2;
+          done
+
+      - name: Run migrations
+        run: php artisan migrate --force
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: laravel
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Run Pest tests
+        run: ./vendor/bin/pest
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse --memory-limit=1G
+
+      - name: Run Pint (dry-run)
+        run: ./vendor/bin/pint --test
+
+      - name: Run Rector (dry-run)
+        run: ./vendor/bin/rector process --dry-run
