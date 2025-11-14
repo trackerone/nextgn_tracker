@@ -49,4 +49,9 @@ class Torrent extends Model
     {
         return $this->hasMany(Peer::class);
     }
+
+    public function userTorrents(): HasMany
+    {
+        return $this->hasMany(UserTorrent::class);
+    }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
+use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -64,8 +66,13 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
     Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
+    Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
 });
 
-Route::middleware(['auth', 'verified', 'throttle:120,1'])
-    ->get('/announce', AnnounceController::class)
+Route::middleware(['throttle:120,1'])
+    ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');
+
+Route::middleware(['throttle:120,1'])
+    ->get('/scrape', ScrapeController::class)
+    ->name('scrape');

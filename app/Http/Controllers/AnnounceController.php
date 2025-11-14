@@ -6,7 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
+use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\UserTorrentService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,16 +19,17 @@ class AnnounceController extends Controller
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly TorrentRepositoryInterface $torrents,
+        private readonly UserTorrentService $userTorrents,
     )
     {
     }
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, string $passkey): Response
     {
-        $user = $request->user();
+        $user = User::query()->where('passkey', $passkey)->first();
 
         if ($user === null) {
-            return $this->failure('Authentication required.');
+            return $this->failure('Invalid passkey.');
         }
 
         $validator = Validator::make($request->query(), [
@@ -99,6 +102,15 @@ class AnnounceController extends Controller
         if ($event === 'completed') {
             $torrent->increment('completed');
         }
+
+        $this->userTorrents->updateFromAnnounce(
+            $user,
+            $torrent,
+            (int) $data['uploaded'],
+            (int) $data['downloaded'],
+            $event,
+            $now,
+        );
 
         $this->torrents->refreshPeerStats($torrent);
 
