@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\PostRepositoryInterface;
 use App\Http\Requests\Forum\StorePostRequest;
 use App\Http\Requests\Forum\UpdatePostRequest;
 use App\Models\Post;
@@ -15,8 +16,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PostController extends Controller
 {
-    public function __construct(private readonly MarkdownService $markdownService)
-    {
+    public function __construct(
+        private readonly MarkdownService $markdownService,
+        private readonly PostRepositoryInterface $posts,
+    ) {
     }
 
     public function store(StorePostRequest $request, Topic $topic): JsonResponse
@@ -33,13 +36,11 @@ class PostController extends Controller
         $data = $request->validated();
         $html = $this->markdownService->render($data['body_md']);
 
-        $post = $topic->posts()->create([
+        $post = $this->posts->createForTopic($topic, [
             'user_id' => $user?->getKey(),
             'body_md' => $data['body_md'],
             'body_html' => $html,
         ]);
-
-        $post->load(['author.role']);
 
         return response()->json($post, Response::HTTP_CREATED);
     }

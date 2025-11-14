@@ -18,10 +18,9 @@ class PrivateMessageFlowTest extends TestCase
         $sender = User::factory()->create();
         $recipient = User::factory()->create();
 
-        $conversation = Conversation::query()->create([
-            'sender_id' => $sender->id,
-            'recipient_id' => $recipient->id,
-            'subject' => 'Test conversation',
+        Conversation::query()->create([
+            'user_a_id' => min($sender->getKey(), $recipient->getKey()),
+            'user_b_id' => max($sender->getKey(), $recipient->getKey()),
         ]);
 
         $this->actingAs($sender);
