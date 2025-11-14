@@ -18,6 +18,7 @@ Interfaces findes i `App\Contracts`:
 - `ConversationRepositoryInterface`
 - `MessageRepositoryInterface`
 - `RoleRepositoryInterface`
+- `TorrentRepositoryInterface`
 
 ## Implementeringer
 
@@ -29,6 +30,7 @@ Eloquent-baserede repositories findes i `App\Repositories`:
 - `EloquentConversationRepository`
 - `EloquentMessageRepository`
 - `EloquentRoleRepository`
+- `EloquentTorrentRepository`
 
 ## DI-binding
 
@@ -73,3 +75,10 @@ Workflow-filen `.github/workflows/quality.yml` kører:
 - PHPStan analyse
 - Pint (kode-stil, dry-run)
 - Rector (dry-run)
+
+## Torrent domain (v1)
+
+- **Database** – `torrents`-tabellen rummer `user_id`, `name`, `slug`, `info_hash`, `size`, `files_count`, statistikfelter (`seeders`, `leechers`, `completed`) samt `is_visible` og timestamps.
+- **Model** – `App\Models\Torrent` + `database/factories/TorrentFactory.php` giver realistiske data og casts.
+- **Repository** – `TorrentRepositoryInterface` og `EloquentTorrentRepository` leverer pagination af synlige torrents, slug-opslag, brugeroprettelser og stats-inkrementer. Binding ligger i `RepositoryServiceProvider`.
+- **HTTP** – `TorrentController` håndterer `GET /torrents` og `GET /torrents/{slug}` (auth + verificeret) for liste- og detailvisning.
