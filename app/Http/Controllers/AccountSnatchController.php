@@ -22,6 +22,12 @@ class AccountSnatchController extends Controller
 
         return view('account.snatches', [
             'snatches' => $snatches,
+            'userStats' => [
+                'uploaded' => $user->totalUploaded(),
+                'downloaded' => $user->totalDownloaded(),
+                'ratio' => $user->ratio(),
+                'class' => $user->userClass(),
+            ],
         ]);
     }
 }

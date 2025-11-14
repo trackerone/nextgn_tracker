@@ -31,6 +31,10 @@ class TorrentFactory extends Factory
             'leechers' => $this->faker->numberBetween(0, 5_000),
             'completed' => $this->faker->numberBetween(0, 10_000),
             'is_visible' => true,
+            'is_approved' => true,
+            'is_banned' => false,
+            'ban_reason' => null,
+            'freeleech' => false,
         ];
     }
 }

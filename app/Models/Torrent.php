@@ -24,6 +24,10 @@ class Torrent extends Model
         'leechers',
         'completed',
         'is_visible',
+        'is_approved',
+        'is_banned',
+        'ban_reason',
+        'freeleech',
     ];
 
     protected $casts = [
@@ -33,6 +37,9 @@ class Torrent extends Model
         'leechers' => 'integer',
         'completed' => 'integer',
         'is_visible' => 'boolean',
+        'is_approved' => 'boolean',
+        'is_banned' => 'boolean',
+        'freeleech' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -43,6 +50,16 @@ class Torrent extends Model
     public function isVisible(): bool
     {
         return (bool) $this->is_visible;
+    }
+
+    public function isApproved(): bool
+    {
+        return (bool) $this->is_approved;
+    }
+
+    public function isBanned(): bool
+    {
+        return (bool) $this->is_banned;
     }
 
     public function peers(): HasMany

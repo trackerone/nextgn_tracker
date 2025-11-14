@@ -33,7 +33,7 @@ class TorrentController extends Controller
     {
         $torrent = $this->torrents->findBySlug($slug);
 
-        if ($torrent === null || ! $torrent->isVisible()) {
+        if ($torrent === null || ! $torrent->isVisible() || $torrent->isBanned() || ! $torrent->isApproved()) {
             throw new NotFoundHttpException();
         }
 

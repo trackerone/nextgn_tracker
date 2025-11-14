@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Validator;
 
 class AnnounceController extends Controller
 {
+    private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
+
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly TorrentRepositoryInterface $torrents,
@@ -63,6 +65,16 @@ class AnnounceController extends Controller
             return $this->failure('Invalid info_hash.');
         }
 
+        $isStaff = $user->isStaff();
+
+        if ($torrent->isBanned() && ! $isStaff) {
+            return $this->failure('Torrent is banned.');
+        }
+
+        if (! $torrent->isApproved() && ! $isStaff) {
+            return $this->failure('Torrent is not approved yet.');
+        }
+
         $peerId = (string) $data['peer_id'];
 
         if (strlen($peerId) !== 20) {
@@ -74,6 +86,18 @@ class AnnounceController extends Controller
         $isSeeder = $left === 0;
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
+
+        if (
+            ! $isStaff
+            && $event === 'started'
+            && $left > 0
+        ) {
+            $ratio = $user->ratio();
+
+            if ($ratio !== null && $ratio < self::MIN_RATIO_FOR_NEW_DOWNLOAD) {
+                return $this->failure('Your ratio is too low to start new downloads.');
+            }
+        }
 
         if ($event === 'stopped') {
             Peer::query()
