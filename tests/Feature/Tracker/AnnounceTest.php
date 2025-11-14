@@ -31,7 +31,7 @@ class AnnounceTest extends TestCase
         $expected = app(BencodeService::class)->encode([
             'complete' => 0,
             'incomplete' => 1,
-            'interval' => 900,
+            'interval' => 1800,
             'peers' => [],
         ]);
 
@@ -74,10 +74,9 @@ class AnnounceTest extends TestCase
         $expected = app(BencodeService::class)->encode([
             'complete' => 1,
             'incomplete' => 1,
-            'interval' => 900,
+            'interval' => 1800,
             'peers' => [
                 [
-                    'peer id' => $firstPeer,
                     'ip' => '127.0.0.1',
                     'port' => 6881,
                 ],
@@ -97,6 +96,83 @@ class AnnounceTest extends TestCase
             'peer_id' => $secondPeer,
             'is_seeder' => true,
         ]);
+    }
+
+    public function test_stopped_event_removes_peer_and_updates_stats(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'seeders' => 0,
+            'leechers' => 0,
+        ]);
+
+        $peerId = $this->makePeerId('stopped-peer');
+
+        $this->announce($user, $torrent, $peerId)->assertOk();
+
+        $response = $this->announce($user, $torrent, $peerId, [
+            'event' => 'stopped',
+        ]);
+
+        $response->assertOk();
+
+        $expected = app(BencodeService::class)->encode([
+            'complete' => 0,
+            'incomplete' => 0,
+            'interval' => 1800,
+            'peers' => [],
+        ]);
+
+        $this->assertSame($expected, $response->getContent());
+
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => $peerId,
+        ]);
+
+        $torrent->refresh();
+
+        $this->assertSame(0, $torrent->seeders);
+        $this->assertSame(0, $torrent->leechers);
+    }
+
+    public function test_numwant_limits_peer_list(): void
+    {
+        $torrent = Torrent::factory()->create([
+            'seeders' => 0,
+            'leechers' => 0,
+        ]);
+
+        $firstUser = User::factory()->create();
+        $secondUser = User::factory()->create();
+        $thirdUser = User::factory()->create();
+
+        $firstPeer = $this->makePeerId('peer-one');
+        $secondPeer = $this->makePeerId('peer-two');
+        $thirdPeer = $this->makePeerId('peer-three');
+
+        $this->announce($firstUser, $torrent, $firstPeer)->assertOk();
+        $this->announce($secondUser, $torrent, $secondPeer)->assertOk();
+
+        $response = $this->announce($thirdUser, $torrent, $thirdPeer, [
+            'numwant' => 1,
+        ]);
+
+        $response->assertOk();
+
+        $expected = app(BencodeService::class)->encode([
+            'complete' => 0,
+            'incomplete' => 3,
+            'interval' => 1800,
+            'peers' => [
+                [
+                    'ip' => '127.0.0.1',
+                    'port' => 6881,
+                ],
+            ],
+        ]);
+
+        $this->assertSame($expected, $response->getContent());
     }
 
     private function announce(User $user, Torrent $torrent, string $peerId, array $overrides = [])

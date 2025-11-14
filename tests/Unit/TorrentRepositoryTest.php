@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit;
 
 use App\Contracts\TorrentRepositoryInterface;
+use App\Models\Peer;
 use App\Models\Torrent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -54,5 +55,29 @@ class TorrentRepositoryTest extends TestCase
         $this->assertSame(5, $fresh->seeders);
         $this->assertSame(7, $fresh->leechers);
         $this->assertSame(9, $fresh->completed);
+    }
+
+    public function test_refresh_peer_stats_counts_peers(): void
+    {
+        $repository = $this->app->make(TorrentRepositoryInterface::class);
+        $torrent = Torrent::factory()->create([
+            'seeders' => 0,
+            'leechers' => 0,
+        ]);
+
+        Peer::factory()->count(2)->create([
+            'torrent_id' => $torrent->id,
+            'is_seeder' => true,
+        ]);
+
+        Peer::factory()->create([
+            'torrent_id' => $torrent->id,
+            'is_seeder' => false,
+        ]);
+
+        $repository->refreshPeerStats($torrent);
+
+        $this->assertSame(2, $torrent->seeders);
+        $this->assertSame(1, $torrent->leechers);
     }
 }

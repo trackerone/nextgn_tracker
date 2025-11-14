@@ -4,17 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
-use App\Models\Torrent;
 use App\Services\BencodeService;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class AnnounceController extends Controller
 {
-    public function __construct(private readonly BencodeService $bencode)
+    public function __construct(
+        private readonly BencodeService $bencode,
+        private readonly TorrentRepositoryInterface $torrents,
+    )
     {
     }
 
@@ -35,6 +38,7 @@ class AnnounceController extends Controller
             'left' => 'required|integer|min:0',
             'event' => 'sometimes|string|in:started,stopped,completed',
             'numwant' => 'sometimes|integer|min:1|max:200',
+            'ip' => 'sometimes|ip',
         ]);
 
         if ($validator->fails()) {
@@ -50,9 +54,7 @@ class AnnounceController extends Controller
             return $this->failure('info_hash must be exactly 20 bytes.');
         }
 
-        $torrent = Torrent::query()
-            ->where('info_hash', Str::upper(bin2hex($infoHash)))
-            ->first();
+        $torrent = $this->torrents->findByInfoHash(strtoupper(bin2hex($infoHash)));
 
         if ($torrent === null) {
             return $this->failure('Invalid info_hash.');
@@ -67,7 +69,7 @@ class AnnounceController extends Controller
         $event = isset($data['event']) ? (string) $data['event'] : null;
         $left = (int) $data['left'];
         $isSeeder = $left === 0;
-        $ip = (string) ($request->query('ip') ?? $request->ip() ?? '0.0.0.0');
+        $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
         if ($event === 'stopped') {
@@ -98,43 +100,32 @@ class AnnounceController extends Controller
             $torrent->increment('completed');
         }
 
-        $seeders = Peer::query()
-            ->where('torrent_id', $torrent->id)
-            ->where('is_seeder', true)
-            ->count();
-        $leechers = Peer::query()
-            ->where('torrent_id', $torrent->id)
-            ->where('is_seeder', false)
-            ->count();
-
-        $torrent->forceFill([
-            'seeders' => $seeders,
-            'leechers' => $leechers,
-        ])->save();
+        $this->torrents->refreshPeerStats($torrent);
 
         $numwant = isset($data['numwant']) ? (int) $data['numwant'] : 50;
-        $numwant = max(1, min($numwant, 100));
+        $numwant = max(1, min($numwant, 200));
+        $activeSince = now()->subMinutes(60);
 
         $payload = [
-            'complete' => $seeders,
-            'incomplete' => $leechers,
-            'interval' => 900,
-            'peers' => $this->peersForResponse($torrent->id, $peerId, $numwant),
+            'complete' => $torrent->seeders,
+            'incomplete' => $torrent->leechers,
+            'interval' => 1800,
+            'peers' => $this->peersForResponse($torrent->id, $peerId, $numwant, $activeSince),
         ];
 
         return $this->success($payload);
     }
 
-    private function peersForResponse(int $torrentId, string $excludingPeer, int $limit): array
+    private function peersForResponse(int $torrentId, string $excludingPeer, int $limit, CarbonInterface $activeSince): array
     {
         return Peer::query()
             ->where('torrent_id', $torrentId)
             ->where('peer_id', '!=', $excludingPeer)
+            ->where('last_announce_at', '>=', $activeSince)
             ->orderByDesc('last_announce_at')
             ->limit($limit)
-            ->get(['peer_id', 'ip', 'port'])
+            ->get(['ip', 'port'])
             ->map(static fn (Peer $peer): array => [
-                'peer id' => $peer->peer_id,
                 'ip' => $peer->ip,
                 'port' => (int) $peer->port,
             ])->all();

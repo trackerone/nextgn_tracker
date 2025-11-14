@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Contracts\TorrentRepositoryInterface;
+use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Str;
 
 class EloquentTorrentRepository implements TorrentRepositoryInterface
 {
@@ -23,6 +25,13 @@ class EloquentTorrentRepository implements TorrentRepositoryInterface
     {
         return Torrent::query()
             ->where('slug', $slug)
+            ->first();
+    }
+
+    public function findByInfoHash(string $infoHash): ?Torrent
+    {
+        return Torrent::query()
+            ->where('info_hash', Str::upper($infoHash))
             ->first();
     }
 
@@ -58,5 +67,23 @@ class EloquentTorrentRepository implements TorrentRepositoryInterface
 
         $torrent->forceFill($updates);
         $torrent->save();
+    }
+
+    public function refreshPeerStats(Torrent $torrent): void
+    {
+        $seeders = Peer::query()
+            ->where('torrent_id', $torrent->getKey())
+            ->where('is_seeder', true)
+            ->count();
+
+        $leechers = Peer::query()
+            ->where('torrent_id', $torrent->getKey())
+            ->where('is_seeder', false)
+            ->count();
+
+        $torrent->forceFill([
+            'seeders' => $seeders,
+            'leechers' => $leechers,
+        ])->save();
     }
 }

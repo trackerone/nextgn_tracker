@@ -14,6 +14,8 @@ interface TorrentRepositoryInterface
 
     public function findBySlug(string $slug): ?Torrent;
 
+    public function findByInfoHash(string $infoHash): ?Torrent;
+
     /**
      * @param array<string, mixed> $attributes
      */
@@ -23,4 +25,6 @@ interface TorrentRepositoryInterface
      * @param array<string, int> $stats
      */
     public function incrementStats(Torrent $torrent, array $stats): void;
+
+    public function refreshPeerStats(Torrent $torrent): void;
 }
