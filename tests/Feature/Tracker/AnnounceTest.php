@@ -250,6 +250,27 @@ class AnnounceTest extends TestCase
         $this->assertStringContainsString('ratio is too low', (string) $response->getContent());
     }
 
+    public function test_low_ratio_user_blocked_when_event_is_missing(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+        $peerId = $this->makePeerId('low-ratio-missing-event');
+
+        UserTorrent::factory()->for($user)->for($torrent)->create([
+            'uploaded' => 10,
+            'downloaded' => 200,
+        ]);
+
+        $response = $this->announce($user, $torrent, $peerId);
+
+        $response->assertOk();
+        $this->assertStringContainsString('ratio is too low', (string) $response->getContent());
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => $peerId,
+        ]);
+    }
+
     public function test_normal_ratio_user_is_allowed_to_start(): void
     {
         $user = User::factory()->create();

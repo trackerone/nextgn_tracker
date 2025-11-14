@@ -87,10 +87,15 @@ class AnnounceController extends Controller
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
+        $hasExistingSession = Peer::query()
+            ->where('torrent_id', $torrent->id)
+            ->where('peer_id', $peerId)
+            ->exists();
+
         if (
             ! $isStaff
-            && $event === 'started'
             && $left > 0
+            && ! $hasExistingSession
         ) {
             $ratio = $user->ratio();
 
