@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RoleSeeder::class);
 
+        if (app()->environment(['local', 'development', 'testing'])) {
+            $this->call(DemoContentSeeder::class);
+        }
+
         if (! Schema::hasTable('users') || ! Schema::hasColumn('users', 'role_id')) {
             return;
         }

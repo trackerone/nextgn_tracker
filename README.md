@@ -29,6 +29,12 @@ composer test
 npm run lint
 ```
 
+Focus on the repository coverage only with:
+
+```bash
+composer test -- --filter=Repository
+```
+
 > TODO: configure ESLint and integrate ExtendedPDO/FluentPDO when persistence is introduced.
 
 ## Roles schema & seed
@@ -40,6 +46,14 @@ php artisan db:seed --class=RoleSeeder
 ```
 
 Running the database seeder ensures the role ladder exists and backfills any existing users without a role to the default `newbie` record.
+
+## Demo content seeding
+
+Local, development, and testing environments automatically load `DemoContentSeeder` when running `php artisan db:seed`, ensuring production databases stay untouched. To reseed the demo fixtures explicitly, run:
+
+```bash
+php artisan db:seed --class=DemoContentSeeder
+```
 
 ## Role middleware examples
 
