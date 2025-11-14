@@ -24,9 +24,12 @@ class UserTorrentService
             'torrent_id' => $torrent->getKey(),
         ]);
 
+        $currentUploaded = (int) $userTorrent->uploaded;
+        $currentDownloaded = (int) $userTorrent->downloaded;
+
         $userTorrent->fill([
-            'uploaded' => $uploaded,
-            'downloaded' => $downloaded,
+            'uploaded' => max($currentUploaded, $uploaded),
+            'downloaded' => max($currentDownloaded, $downloaded),
             'last_announce_at' => $announcedAt,
         ]);
 

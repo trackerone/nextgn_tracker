@@ -233,6 +233,18 @@ class AnnounceTest extends TestCase
             'uploaded' => 2048,
             'downloaded' => 4096,
         ]);
+
+        $this->announce($user, $torrent, $peerId, [
+            'uploaded' => 1024,
+            'downloaded' => 2048,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 2048,
+            'downloaded' => 4096,
+        ]);
     }
 
     public function test_completed_event_sets_completed_at_once(): void
