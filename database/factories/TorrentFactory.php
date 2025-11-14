@@ -22,6 +22,7 @@ class TorrentFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'category_id' => null,
             'name' => $name,
             'slug' => Str::slug($name.'-'.$this->faker->unique()->uuid()),
             'info_hash' => Str::upper(bin2hex(random_bytes(20))),
@@ -31,6 +32,13 @@ class TorrentFactory extends Factory
             'leechers' => $this->faker->numberBetween(0, 5_000),
             'completed' => $this->faker->numberBetween(0, 10_000),
             'is_visible' => true,
+            'is_approved' => true,
+            'is_banned' => false,
+            'ban_reason' => null,
+            'freeleech' => false,
+            'description' => $this->faker->paragraph(),
+            'original_filename' => $this->faker->slug.'.torrent',
+            'uploaded_at' => now(),
         ];
     }
 }

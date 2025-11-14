@@ -101,4 +101,56 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return $baseUrl.'/'.$this->ensurePasskey();
     }
+
+    public function totalUploaded(): int
+    {
+        return (int) $this->userTorrents()->sum('uploaded');
+    }
+
+    public function totalDownloaded(): int
+    {
+        return (int) $this->userTorrents()->sum('downloaded');
+    }
+
+    public function ratio(): ?float
+    {
+        $downloaded = $this->totalDownloaded();
+
+        if ($downloaded === 0) {
+            return null;
+        }
+
+        return $this->totalUploaded() / $downloaded;
+    }
+
+    public function userClass(): string
+    {
+        if ($this->isStaff()) {
+            return 'Staff';
+        }
+
+        if ($this->isDisabled()) {
+            return 'Disabled';
+        }
+
+        $ratio = $this->ratio();
+
+        if ($ratio === null) {
+            return 'User';
+        }
+
+        return match (true) {
+            $ratio >= 1.5 => 'Elite',
+            $ratio >= 0.8 => 'Power User',
+            $ratio >= 0.4 => 'User',
+            default => 'Leech',
+        };
+    }
+
+    private function isDisabled(): bool
+    {
+        $disabled = $this->getAttribute('is_disabled');
+
+        return (bool) $disabled;
+    }
 }

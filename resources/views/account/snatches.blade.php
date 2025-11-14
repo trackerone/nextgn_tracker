@@ -17,6 +17,31 @@
 <body>
     <h1 class="text-2xl font-bold">Completed torrents</h1>
 
+    <section style="margin-top: 1rem; background-color: #1e293b; border-radius: 0.5rem; padding: 1rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem;">
+        <div>
+            <p class="muted">Total uploaded</p>
+            <p>{{ number_format($userStats['uploaded']) }} bytes</p>
+        </div>
+        <div>
+            <p class="muted">Total downloaded</p>
+            <p>{{ number_format($userStats['downloaded']) }} bytes</p>
+        </div>
+        <div>
+            <p class="muted">Ratio</p>
+            <p>
+                @if ($userStats['ratio'] === null)
+                    &infin;
+                @else
+                    {{ number_format($userStats['ratio'], 2) }}
+                @endif
+            </p>
+        </div>
+        <div>
+            <p class="muted">Class</p>
+            <p>{{ $userStats['class'] }}</p>
+        </div>
+    </section>
+
     @if ($snatches->isEmpty())
         <div class="empty">
             <p class="muted">You have not completed any torrents yet.</p>

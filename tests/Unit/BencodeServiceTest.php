@@ -30,4 +30,18 @@ class BencodeServiceTest extends TestCase
 
         $this->assertSame('d8:completei1e8:intervali60e5:peerslee', $service->encode($payload));
     }
+
+    public function test_decode_dictionary(): void
+    {
+        $service = new BencodeService();
+        $payload = 'd4:name5:hello6:numberi42e4:listl5:items5:moreee';
+
+        $decoded = $service->decode($payload);
+
+        $this->assertSame([
+            'name' => 'hello',
+            'number' => 42,
+            'list' => ['items', 'more'],
+        ], $decoded);
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tracker;
 
+use App\Models\Role;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -202,6 +203,105 @@ class AnnounceTest extends TestCase
         ]);
 
         $this->assertSame($expected, $response->getContent());
+    }
+
+    public function test_banned_torrent_returns_failure(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'is_banned' => true,
+            'ban_reason' => 'DMCA',
+        ]);
+
+        $response = $this->announce($user, $torrent, $this->makePeerId('banned-torrent'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('Torrent is banned', (string) $response->getContent());
+    }
+
+    public function test_unapproved_torrent_is_rejected_for_regular_users(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'is_approved' => false,
+        ]);
+
+        $response = $this->announce($user, $torrent, $this->makePeerId('unapproved'));
+
+        $response->assertOk();
+        $this->assertStringContainsString('Torrent is not approved yet', (string) $response->getContent());
+    }
+
+    public function test_low_ratio_user_blocked_on_started_event(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+
+        UserTorrent::factory()->for($user)->for($torrent)->create([
+            'uploaded' => 10,
+            'downloaded' => 200,
+        ]);
+
+        $response = $this->announce($user, $torrent, $this->makePeerId('low-ratio'), [
+            'event' => 'started',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('ratio is too low', (string) $response->getContent());
+    }
+
+    public function test_normal_ratio_user_is_allowed_to_start(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'seeders' => 0,
+            'leechers' => 0,
+        ]);
+
+        UserTorrent::factory()->for($user)->for($torrent)->create([
+            'uploaded' => 500,
+            'downloaded' => 200,
+        ]);
+
+        $response = $this->announce($user, $torrent, $this->makePeerId('ok-ratio'), [
+            'event' => 'started',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('ratio is too low', (string) $response->getContent());
+    }
+
+    public function test_staff_can_bypass_ratio_and_approval_checks(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'is_approved' => false,
+            'seeders' => 0,
+            'leechers' => 0,
+        ]);
+
+        $staffRole = Role::query()->create([
+            'slug' => 'moderator',
+            'name' => 'Moderator',
+            'level' => 9,
+            'is_staff' => true,
+        ]);
+
+        $user->role()->associate($staffRole);
+        $user->save();
+
+        UserTorrent::factory()->for($user)->for($torrent)->create([
+            'uploaded' => 10,
+            'downloaded' => 200,
+        ]);
+
+        $response = $this->announce($user, $torrent, $this->makePeerId('staff-ok'), [
+            'event' => 'started',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('ratio is too low', (string) $response->getContent());
+        $this->assertStringNotContainsString('not approved', (string) $response->getContent());
     }
 
     public function test_user_torrent_stats_are_upserted_from_announce(): void

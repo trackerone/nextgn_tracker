@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountSnatchController;
+use App\Http\Controllers\Admin\TorrentModerationController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
+use App\Http\Controllers\TorrentUploadController;
 use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +26,13 @@ Route::middleware(['auth', 'verified', 'role.min:10'])
 Route::middleware(['auth', 'verified', 'role.min:8'])
     ->get('/mod', static fn () => response()->json(['message' => 'Moderator area']))
     ->name('demo.mod');
+
+Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
+    Route::get('/admin/torrents', [TorrentModerationController::class, 'index'])
+        ->name('admin.torrents.index');
+    Route::patch('/admin/torrents/{torrent}', [TorrentModerationController::class, 'update'])
+        ->name('admin.torrents.update');
+});
 
 Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
 Route::get('/topics/{topic:slug}', [TopicController::class, 'show'])->name('topics.show');
@@ -65,6 +74,8 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+    Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
+    Route::post('/torrents/upload', [TorrentUploadController::class, 'store'])->name('torrents.upload.store');
     Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
 });
