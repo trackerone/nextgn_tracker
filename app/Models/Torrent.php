@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Torrent extends Model
 {
@@ -42,5 +43,10 @@ class Torrent extends Model
     public function isVisible(): bool
     {
         return (bool) $this->is_visible;
+    }
+
+    public function peers(): HasMany
+    {
+        return $this->hasMany(Peer::class);
     }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
@@ -64,3 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
     Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
 });
+
+Route::middleware(['auth', 'verified', 'throttle:120,1'])
+    ->get('/announce', AnnounceController::class)
+    ->name('announce');
