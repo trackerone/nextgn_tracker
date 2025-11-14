@@ -15,6 +15,7 @@ class Torrent extends Model
 
     protected $fillable = [
         'user_id',
+        'category_id',
         'name',
         'slug',
         'info_hash',
@@ -28,6 +29,9 @@ class Torrent extends Model
         'is_banned',
         'ban_reason',
         'freeleech',
+        'description',
+        'original_filename',
+        'uploaded_at',
     ];
 
     protected $casts = [
@@ -40,11 +44,23 @@ class Torrent extends Model
         'is_approved' => 'boolean',
         'is_banned' => 'boolean',
         'freeleech' => 'boolean',
+        'category_id' => 'integer',
+        'uploaded_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function uploader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
     }
 
     public function isVisible(): bool

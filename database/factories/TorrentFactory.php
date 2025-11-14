@@ -22,6 +22,7 @@ class TorrentFactory extends Factory
 
         return [
             'user_id' => User::factory(),
+            'category_id' => null,
             'name' => $name,
             'slug' => Str::slug($name.'-'.$this->faker->unique()->uuid()),
             'info_hash' => Str::upper(bin2hex(random_bytes(20))),
@@ -35,6 +36,9 @@ class TorrentFactory extends Factory
             'is_banned' => false,
             'ban_reason' => null,
             'freeleech' => false,
+            'description' => $this->faker->paragraph(),
+            'original_filename' => $this->faker->slug.'.torrent',
+            'uploaded_at' => now(),
         ];
     }
 }

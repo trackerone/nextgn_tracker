@@ -18,6 +18,16 @@
 <body>
     <h1 class="text-2xl font-bold">Torrent moderation</h1>
 
+    <nav style="display: flex; gap: 1rem; margin-top: 1rem;">
+        @php($filters = ['pending' => 'Pending', 'approved' => 'Approved', 'banned' => 'Banned'])
+        @foreach ($filters as $value => $label)
+            <a href="{{ route('admin.torrents.index', ['filter' => $value]) }}"
+                style="padding: 0.5rem 1rem; border-radius: 9999px; text-decoration: none; {{ ($filter ?? 'pending') === $value ? 'background-color: #2563eb; color: white;' : 'background-color: #1e293b; color: #cbd5f5;' }}">
+                {{ $label }}
+            </a>
+        @endforeach
+    </nav>
+
     @if (session('status'))
         <div class="status">{{ session('status') }}</div>
     @endif
@@ -26,6 +36,9 @@
         <thead>
             <tr>
                 <th>Name</th>
+                <th>Category</th>
+                <th>Uploader</th>
+                <th>Uploaded</th>
                 <th>Approved</th>
                 <th>Banned</th>
                 <th>Ban reason</th>
@@ -36,7 +49,13 @@
         <tbody>
             @foreach ($torrents as $torrent)
                 <tr>
-                    <td>{{ $torrent->name }}</td>
+                    <td>
+                        <strong>{{ $torrent->name }}</strong>
+                        <div style="font-size: 0.8rem; color: #94a3b8;">{{ $torrent->original_filename ?? 'Unknown file' }}</div>
+                    </td>
+                    <td>{{ $torrent->category?->name ?? '—' }}</td>
+                    <td>{{ $torrent->uploader?->name ?? 'Unknown' }}</td>
+                    <td>{{ optional($torrent->uploaded_at)->format('Y-m-d H:i') ?? '—' }}</td>
                     <td>{{ $torrent->is_approved ? 'Yes' : 'No' }}</td>
                     <td>{{ $torrent->is_banned ? 'Yes' : 'No' }}</td>
                     <td>{{ $torrent->ban_reason ?? '—' }}</td>
@@ -45,6 +64,7 @@
                         <form method="POST" action="{{ route('admin.torrents.update', $torrent) }}" class="form-inline">
                             @csrf
                             @method('PATCH')
+                            <input type="hidden" name="filter" value="{{ $filter ?? 'pending' }}">
                             <label>
                                 <input type="hidden" name="is_approved" value="0">
                                 <input type="checkbox" name="is_approved" value="1" {{ $torrent->is_approved ? 'checked' : '' }}>
