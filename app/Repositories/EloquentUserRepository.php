@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\Contracts\RoleRepositoryInterface;
 use App\Contracts\UserRepositoryInterface;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -39,7 +40,9 @@ class EloquentUserRepository implements UserRepositoryInterface
     public function allStaff(): Collection
     {
         return User::query()
-            ->where('is_staff', true)
+            ->whereHas('role', function (Builder $query): void {
+                $query->where('is_staff', true);
+            })
             ->orderBy('name')
             ->get();
     }
