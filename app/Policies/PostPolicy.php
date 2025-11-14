@@ -14,13 +14,13 @@ class PostPolicy
     {
         return $user !== null
             && $user->hasVerifiedEmail()
-            && RoleLevel::atLeast($user, RoleLevel::USER_LEVEL);
+            && $user->hasLevelAtLeast(RoleLevel::USER_LEVEL);
     }
 
     public function update(User $user, Post $post): bool
     {
         return $user->getKey() === $post->user_id
-            || RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+            || $user->hasLevelAtLeast(RoleLevel::MODERATOR_LEVEL);
     }
 
     public function delete(User $user, Post $post): bool
@@ -30,6 +30,6 @@ class PostPolicy
 
     public function restore(User $user, Post $post): bool
     {
-        return RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+        return $user->hasLevelAtLeast(RoleLevel::MODERATOR_LEVEL);
     }
 }

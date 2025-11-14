@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -54,5 +55,20 @@ class User extends Authenticatable implements MustVerifyEmail
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function isStaff(): bool
+    {
+        return (bool) ($this->role?->is_staff);
+    }
+
+    public function roleLevel(): int
+    {
+        return RoleLevel::levelForUser($this);
+    }
+
+    public function hasLevelAtLeast(int $minimumLevel): bool
+    {
+        return $this->roleLevel() >= $minimumLevel;
     }
 }

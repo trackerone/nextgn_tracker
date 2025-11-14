@@ -19,28 +19,27 @@ class TopicPolicy
     {
         return $user !== null
             && $user->hasVerifiedEmail()
-            && RoleLevel::atLeast($user, RoleLevel::USER_LEVEL);
+            && $user->hasLevelAtLeast(RoleLevel::USER_LEVEL);
     }
 
     public function update(User $user, Topic $topic): bool
     {
         return $user->getKey() === $topic->user_id
-            || RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+            || $user->hasLevelAtLeast(RoleLevel::MODERATOR_LEVEL);
     }
 
     public function delete(User $user, Topic $topic): bool
     {
-        return $user->getKey() === $topic->user_id
-            || RoleLevel::atLeast($user, RoleLevel::ADMIN_LEVEL);
+        return $user->hasLevelAtLeast(RoleLevel::ADMIN_LEVEL);
     }
 
     public function lock(User $user, Topic $topic): bool
     {
-        return RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+        return $user->hasLevelAtLeast(RoleLevel::MODERATOR_LEVEL);
     }
 
     public function pin(User $user, Topic $topic): bool
     {
-        return RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+        return $user->hasLevelAtLeast(RoleLevel::MODERATOR_LEVEL);
     }
 }

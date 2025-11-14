@@ -31,9 +31,15 @@ Route::middleware(['auth', 'verified', 'role.min:1', 'throttle:60,1'])->group(fu
 
 Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function (): void {
     Route::patch('/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');
-    Route::post('/topics/{topic}/lock', [TopicController::class, 'toggleLock'])->name('topics.lock');
-    Route::post('/topics/{topic}/pin', [TopicController::class, 'togglePin'])->name('topics.pin');
-    Route::delete('/topics/{topic}', [TopicController::class, 'destroy'])->name('topics.destroy');
+    Route::post('/topics/{topic}/lock', [TopicController::class, 'toggleLock'])
+        ->middleware('role.min:8')
+        ->name('topics.lock');
+    Route::post('/topics/{topic}/pin', [TopicController::class, 'togglePin'])
+        ->middleware('role.min:8')
+        ->name('topics.pin');
+    Route::delete('/topics/{topic}', [TopicController::class, 'destroy'])
+        ->middleware('role.min:10')
+        ->name('topics.destroy');
 
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
