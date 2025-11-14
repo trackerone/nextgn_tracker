@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
@@ -64,8 +65,9 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
     Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
+    Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
 });
 
-Route::middleware(['auth', 'verified', 'throttle:120,1'])
-    ->get('/announce', AnnounceController::class)
+Route::middleware(['throttle:120,1'])
+    ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');

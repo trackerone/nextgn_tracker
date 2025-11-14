@@ -9,6 +9,7 @@ use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -23,11 +24,13 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role_id',
+        'passkey',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'passkey',
     ];
 
     protected $casts = [
@@ -57,6 +60,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Role::class);
     }
 
+    public function userTorrents(): HasMany
+    {
+        return $this->hasMany(UserTorrent::class);
+    }
+
+    public function snatches(): HasMany
+    {
+        return $this->userTorrents();
+    }
+
     public function isStaff(): bool
     {
         return (bool) ($this->role?->is_staff);
@@ -70,5 +83,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasLevelAtLeast(int $minimumLevel): bool
     {
         return $this->roleLevel() >= $minimumLevel;
+    }
+
+    public function ensurePasskey(): string
+    {
+        if (! $this->passkey) {
+            $this->passkey = bin2hex(random_bytes(16));
+            $this->save();
+        }
+
+        return (string) $this->passkey;
+    }
+
+    public function getAnnounceUrlAttribute(): string
+    {
+        $baseUrl = rtrim((string) config('tracker.announce_url', '/announce'), '/');
+
+        return $baseUrl.'/'.$this->ensurePasskey();
     }
 }

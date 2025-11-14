@@ -6,6 +6,7 @@ namespace Tests\Feature\Tracker;
 
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\UserTorrent;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -175,6 +176,95 @@ class AnnounceTest extends TestCase
         $this->assertSame($expected, $response->getContent());
     }
 
+    public function test_invalid_passkey_returns_failure(): void
+    {
+        $torrent = Torrent::factory()->create();
+        $infoHashBinary = hex2bin($torrent->info_hash);
+        $this->assertIsString($infoHashBinary);
+
+        $params = [
+            'info_hash' => $infoHashBinary,
+            'peer_id' => $this->makePeerId('invalid-passkey'),
+            'port' => 6881,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 100,
+        ];
+
+        $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+
+        $response = $this->get('/announce/not-a-real-passkey?'.$query);
+
+        $response->assertOk();
+
+        $expected = app(BencodeService::class)->encode([
+            'failure reason' => 'Invalid passkey.',
+        ]);
+
+        $this->assertSame($expected, $response->getContent());
+    }
+
+    public function test_user_torrent_stats_are_upserted_from_announce(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+        $peerId = $this->makePeerId('stats-peer');
+
+        $this->announce($user, $torrent, $peerId, [
+            'uploaded' => 512,
+            'downloaded' => 1024,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 512,
+            'downloaded' => 1024,
+        ]);
+
+        $this->announce($user, $torrent, $peerId, [
+            'uploaded' => 2048,
+            'downloaded' => 4096,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 2048,
+            'downloaded' => 4096,
+        ]);
+    }
+
+    public function test_completed_event_sets_completed_at_once(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+        $peerId = $this->makePeerId('snatch-peer');
+
+        $this->announce($user, $torrent, $peerId, [
+            'left' => 0,
+            'event' => 'completed',
+        ])->assertOk();
+
+        $snatch = UserTorrent::query()->first();
+        $this->assertNotNull($snatch);
+        $this->assertNotNull($snatch->completed_at);
+        $firstCompletedAt = $snatch->completed_at;
+
+        $this->travel(5)->minutes();
+
+        $this->announce($user, $torrent, $peerId, [
+            'left' => 0,
+        ])->assertOk();
+
+        $snatch->refresh();
+        $this->assertNotNull($firstCompletedAt);
+        $this->assertSame(
+            $firstCompletedAt->toDateTimeString(),
+            optional($snatch->completed_at)->toDateTimeString()
+        );
+    }
+
     private function announce(User $user, Torrent $torrent, string $peerId, array $overrides = [])
     {
         $infoHashBinary = hex2bin($torrent->info_hash);
@@ -191,7 +281,7 @@ class AnnounceTest extends TestCase
 
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
-        return $this->actingAs($user)->get('/announce?'.$query);
+        return $this->get('/announce/'.$user->ensurePasskey().'?'.$query);
     }
 
     private function makePeerId(string $prefix): string
