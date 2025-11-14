@@ -10,6 +10,7 @@ use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
+use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
@@ -71,3 +72,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware(['throttle:120,1'])
     ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');
+
+Route::middleware(['throttle:120,1'])
+    ->get('/scrape', ScrapeController::class)
+    ->name('scrape');
