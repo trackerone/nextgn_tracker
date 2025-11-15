@@ -49,7 +49,12 @@ class HtmlSanitizer
             $tag = Str::lower($node->tagName);
 
             if (!in_array($tag, self::ALLOWED_TAGS, true)) {
+                $children = iterator_to_array($node->childNodes);
                 $this->unwrap($node);
+
+                foreach ($children as $child) {
+                    $this->sanitizeNode($child);
+                }
 
                 return;
             }
