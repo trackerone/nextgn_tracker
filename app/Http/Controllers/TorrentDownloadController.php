@@ -58,15 +58,27 @@ class TorrentDownloadController extends Controller
     /**
      * Returns the magnet link as JSON for client-side copy helpers.
      */
-    public function magnet(Torrent $torrent): JsonResponse
+    public function magnet(Request $request, Torrent $torrent): JsonResponse
     {
         $this->authorize('download', $torrent);
+
+        $user = $request->user();
+
+        if ($user === null) {
+            abort(403);
+        }
 
         $infoHash = strtoupper($torrent->info_hash);
         $displayName = $this->sanitizer->sanitizeString($torrent->name ?? '');
         $displayName = $displayName !== '' ? $displayName : 'torrent-'.$torrent->getKey();
 
-        $announce = $this->sanitizer->sanitizeString((string) config('tracker.announce_url', ''));
+        $announceTemplate = (string) config('tracker.announce_url', '');
+        $announce = '';
+
+        if ($announceTemplate !== '') {
+            $announce = $this->downloadService->buildTrackerUrlForUser($announceTemplate, $user);
+            $announce = $this->sanitizer->sanitizeString($announce);
+        }
         $additionalTrackers = array_filter((array) config('tracker.additional_trackers', []));
 
         $magnet = 'magnet:?xt=urn:btih:'.$infoHash;
@@ -77,7 +89,8 @@ class TorrentDownloadController extends Controller
         }
 
         foreach ($additionalTrackers as $tracker) {
-            $sanitized = $this->sanitizer->sanitizeString((string) $tracker);
+            $personalized = $this->downloadService->buildTrackerUrlForUser((string) $tracker, $user);
+            $sanitized = $this->sanitizer->sanitizeString($personalized);
 
             if ($sanitized === '') {
                 continue;

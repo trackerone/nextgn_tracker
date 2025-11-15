@@ -31,21 +31,23 @@ class TorrentDownloadService
             throw new RuntimeException('Invalid torrent payload.');
         }
 
-        $decoded['announce'] = $this->announceUrlForUser($user);
+        $decoded['announce'] = $this->buildTrackerUrlForUser(
+            (string) config('tracker.announce_url', '/announce/%s'),
+            $user,
+        );
         unset($decoded['announce-list']);
 
         return $this->bencode->encode($decoded);
     }
 
-    private function announceUrlForUser(User $user): string
+    public function buildTrackerUrlForUser(string $trackerUrl, User $user): string
     {
-        $config = (string) config('tracker.announce_url', '/announce/%s');
         $passkey = $user->ensurePasskey();
 
-        if (str_contains($config, '%s')) {
-            return sprintf($config, $passkey);
+        if (str_contains($trackerUrl, '%s')) {
+            return sprintf($trackerUrl, $passkey);
         }
 
-        return rtrim($config, '/').'/'.$passkey;
+        return rtrim($trackerUrl, '/').'/'.$passkey;
     }
 }
