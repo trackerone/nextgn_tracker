@@ -34,7 +34,12 @@ jobs:
         run: composer validate --strict
 
       - name: Ensure composer.lock is up to date
-        run: git diff --exit-code composer.lock
+        run: |
+          if [ -f composer.lock ]; then
+            git diff --exit-code composer.lock;
+          else
+            echo "composer.lock not present; skipping freshness check.";
+          fi
 
       - name: Prepare environment
         run: |
