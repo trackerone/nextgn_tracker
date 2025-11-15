@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\LockdownModeMiddleware;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
@@ -26,9 +28,11 @@ class Kernel extends HttpKernel
         PreventRequestsDuringMaintenance::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
+        SecurityHeadersMiddleware::class,
         RequestGuard::class,
         ResponseGuard::class,
         EnsureUserIsActive::class,
+        LockdownModeMiddleware::class,
     ];
 
     /**
@@ -36,6 +40,7 @@ class Kernel extends HttpKernel
      */
     protected $middlewareAliases = [
         'tracker.validate-announce' => ValidateAnnounceRequest::class,
+        'lockdown' => LockdownModeMiddleware::class,
     ];
 
 }
