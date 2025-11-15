@@ -27,7 +27,7 @@ class TorrentDownloadController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        if (! $torrent->isApproved() || $torrent->isBanned() || ! $torrent->hasTorrentFile()) {
+        if (! $torrent->isVisible() || ! $torrent->isApproved() || $torrent->isBanned() || ! $torrent->hasTorrentFile()) {
             throw new NotFoundHttpException();
         }
 

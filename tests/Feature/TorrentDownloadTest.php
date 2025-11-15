@@ -66,6 +66,17 @@ class TorrentDownloadTest extends TestCase
         $response->assertNotFound();
     }
 
+    public function test_invisible_torrent_cannot_be_downloaded(): void
+    {
+        Storage::fake('local');
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create(['is_visible' => false]);
+        Storage::disk('local')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
+
+        $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
+        $response->assertNotFound();
+    }
+
     public function test_missing_file_returns_not_found(): void
     {
         Storage::fake('local');
