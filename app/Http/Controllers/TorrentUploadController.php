@@ -8,6 +8,7 @@ use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Requests\TorrentUploadRequest;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Services\Logging\AuditLogger;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
@@ -24,6 +25,7 @@ class TorrentUploadController extends Controller
         private readonly SanitizationService $sanitizer,
         private readonly TorrentIngestService $ingestService,
         private readonly NfoParser $nfoParser,
+        private readonly AuditLogger $auditLogger,
     ) {}
 
     public function create(): View
@@ -84,6 +86,11 @@ class TorrentUploadController extends Controller
                 'torrent_file' => $exception->getMessage(),
             ]);
         }
+
+        $this->auditLogger->log('torrent.created', $torrent, [
+            'uploader_id' => $user->getKey(),
+            'info_hash' => $torrent->info_hash ?? null,
+        ]);
 
         return redirect()
             ->route('torrents.show', $torrent->slug)

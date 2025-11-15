@@ -6,6 +6,7 @@ namespace App\Http\Middleware\Tracker;
 
 use App\Models\Peer;
 use App\Models\User;
+use App\Services\Logging\SecurityEventLogger;
 use App\Services\Tracker\ClientValidator;
 use App\Services\Tracker\FailureResponder;
 use Closure;
@@ -17,6 +18,7 @@ class ValidateAnnounceRequest
     public function __construct(
         private readonly FailureResponder $failureResponder,
         private readonly ClientValidator $clientValidator,
+        private readonly SecurityEventLogger $securityLogger,
     ) {
     }
 
@@ -24,16 +26,25 @@ class ValidateAnnounceRequest
     {
         $passkey = (string) $request->route('passkey', '');
         if ($passkey === '' || strlen($passkey) !== 64 || ! ctype_xdigit($passkey)) {
+            $this->logInvalidPasskey($request, $passkey);
+
             return $this->failureResponder->fail('invalid_passkey');
         }
         $user = User::query()->where('passkey', $passkey)->first();
         if ($user === null) {
+            $this->logInvalidPasskey($request, $passkey);
+
             return $this->failureResponder->fail('invalid_passkey');
         }
         if ($user->isBanned() || $user->isDisabled()) {
             return $this->failureResponder->fail('unauthorized_client');
         }
         if ($user->announce_rate_limit_exceeded) {
+            $this->securityLogger->log('tracker.rate_limited', 'medium', 'Announce blocked due to persistent rate limit.', [
+                'user_id' => $user->getKey(),
+                'ip' => $request->ip(),
+            ]);
+
             return $this->failureResponder->fail('rate_limit');
         }
         $params = $request->query();
@@ -60,17 +71,33 @@ class ValidateAnnounceRequest
             return $this->failureResponder->fail('invalid_parameters');
         }
         $port = $this->parseIntegerParam($request, 'port', 1, 65535);
-        $uploaded = $this->parseIntegerParam($request, 'uploaded', 0, null);
-        $downloaded = $this->parseIntegerParam($request, 'downloaded', 0, null);
-        $left = $this->parseIntegerParam($request, 'left', 0, null);
+        $uploaded = $this->parseIntegerParam($request, 'uploaded', 0, null, true);
+        $downloaded = $this->parseIntegerParam($request, 'downloaded', 0, null, true);
+        $left = $this->parseIntegerParam($request, 'left', 0, null, true);
         if ($port === null || $uploaded === null || $downloaded === null || $left === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
         $clientInfo = $this->clientValidator->validateClient($peerId);
         if ($clientInfo->isBanned) {
+            $this->securityLogger->log('tracker.client_banned', 'high', 'Banned client attempted announce.', [
+                'peer_id' => $peerId,
+                'info_hash' => bin2hex($infoHash),
+                'client' => $clientInfo->clientName,
+                'version' => $clientInfo->clientVersion,
+                'user_id' => $user->getKey(),
+            ]);
+
             return $this->failureResponder->fail('client_banned');
         }
         if (! $clientInfo->isAllowed) {
+            $this->securityLogger->log('tracker.unauthorized_client', 'medium', 'Client not allowed to announce.', [
+                'peer_id' => $peerId,
+                'info_hash' => bin2hex($infoHash),
+                'client' => $clientInfo->clientName,
+                'version' => $clientInfo->clientVersion,
+                'user_id' => $user->getKey(),
+            ]);
+
             return $this->failureResponder->fail('unauthorized_client');
         }
         $ipAddress = $this->resolveIp($request);
@@ -83,6 +110,13 @@ class ValidateAnnounceRequest
             $diff = $user->last_announce_at->diffInSeconds($now);
             if ($diff < $minInterval) {
                 $user->forceFill(['announce_rate_limit_exceeded' => true])->save();
+
+                $this->securityLogger->log('tracker.rate_limited', 'medium', 'Announce frequency exceeded limit.', [
+                    'user_id' => $user->getKey(),
+                    'seconds_since_last' => $diff,
+                    'ip' => $ipAddress,
+                ]);
+
                 return $this->failureResponder->fail('rate_limit');
             }
         }
@@ -133,7 +167,7 @@ class ValidateAnnounceRequest
         return null;
     }
 
-    private function parseIntegerParam(Request $request, string $key, int $min, ?int $max): ?int
+    private function parseIntegerParam(Request $request, string $key, int $min, ?int $max, bool $logNegative = false): ?int
     {
         $value = $request->query($key);
 
@@ -148,6 +182,13 @@ class ValidateAnnounceRequest
         $intValue = (int) $value;
 
         if ($intValue < $min) {
+            if ($logNegative && $intValue < 0) {
+                $this->securityLogger->log('tracker.invalid_stats', 'medium', 'Negative statistic detected in announce payload.', [
+                    'param' => $key,
+                    'value' => $value,
+                ]);
+            }
+
             return null;
         }
 
@@ -176,5 +217,13 @@ class ValidateAnnounceRequest
         }
 
         return $paramIp;
+    }
+
+    private function logInvalidPasskey(Request $request, string $passkey): void
+    {
+        $this->securityLogger->log('tracker.invalid_passkey', 'medium', 'Invalid passkey used during announce.', [
+            'passkey_suffix' => $passkey !== '' ? substr($passkey, -8) : null,
+            'ip' => $request->ip(),
+        ]);
     }
 }

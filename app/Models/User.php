@@ -121,6 +121,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === self::ROLE_SYSOP;
     }
 
+    public function isLogViewer(): bool
+    {
+        return $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+    }
+
     public function isBanned(): bool
     {
         return (bool) $this->is_banned;

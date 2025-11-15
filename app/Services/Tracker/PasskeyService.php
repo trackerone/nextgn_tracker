@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace App\Services\Tracker;
 
 use App\Models\User;
+use App\Services\Logging\AuditLogger;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class PasskeyService
 {
+    public function __construct(private readonly AuditLogger $auditLogger)
+    {
+    }
+
     public function generate(User $user): string
     {
         $passkey = $this->uniquePasskey();
@@ -26,6 +32,10 @@ class PasskeyService
         Log::info('Tracker passkey rotated.', [
             'user_id' => $user->getKey(),
             'old_passkey_suffix' => $oldPasskey !== '' ? substr($oldPasskey, -6) : null,
+        ]);
+
+        $this->auditLogger->log('user.passkey_rotated', $user, [
+            'rotated_by' => Auth::id() ?? $user->getKey(),
         ]);
 
         return $passkey;
