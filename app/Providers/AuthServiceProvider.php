@@ -22,7 +22,7 @@ class AuthServiceProvider extends ServiceProvider
 
         Gate::before(static function (?User $user): ?bool {
             if ($user === null) {
-                return null;
+                return false;
             }
 
             return RoleLevel::atLeast($user, RoleLevel::SYSOP_LEVEL) ? true : null;
