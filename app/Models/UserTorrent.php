@@ -19,6 +19,8 @@ class UserTorrent extends Model
         'downloaded',
         'completed_at',
         'last_announce_at',
+        'first_grab_at',
+        'last_grab_at',
     ];
 
     protected $casts = [
@@ -26,6 +28,8 @@ class UserTorrent extends Model
         'downloaded' => 'integer',
         'completed_at' => 'datetime',
         'last_announce_at' => 'datetime',
+        'first_grab_at' => 'datetime',
+        'last_grab_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

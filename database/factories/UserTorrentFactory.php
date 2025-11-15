@@ -25,6 +25,8 @@ class UserTorrentFactory extends Factory
             'downloaded' => $this->faker->numberBetween(0, 1_000_000),
             'completed_at' => now(),
             'last_announce_at' => now(),
+            'first_grab_at' => now()->subDay(),
+            'last_grab_at' => now(),
         ];
     }
 }

@@ -46,7 +46,7 @@ class TorrentUploadService
 
         $slug = $this->generateUniqueSlug($name);
 
-        Storage::disk('local')->put('torrents/'.$infoHash.'.torrent', $payload);
+        Storage::disk('local')->put(Torrent::storagePathForHash($infoHash), $payload);
 
         return Torrent::create([
             'user_id' => $user->id,

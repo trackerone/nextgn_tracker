@@ -97,9 +97,16 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getAnnounceUrlAttribute(): string
     {
-        $baseUrl = rtrim((string) config('tracker.announce_url', '/announce'), '/');
+        $announceConfig = (string) config('tracker.announce_url', '/announce/%s');
+        $passkey = $this->ensurePasskey();
 
-        return $baseUrl.'/'.$this->ensurePasskey();
+        if (str_contains($announceConfig, '%s')) {
+            return sprintf($announceConfig, $passkey);
+        }
+
+        $baseUrl = rtrim($announceConfig, '/');
+
+        return $baseUrl.'/'.$passkey;
     }
 
     public function totalUploaded(): int

@@ -33,7 +33,7 @@ class TorrentUploadServiceTest extends TestCase
         $this->assertSame(1, $torrent->files_count);
         $this->assertFalse($torrent->is_approved);
 
-        Storage::disk('local')->assertExists('torrents/'.$torrent->info_hash.'.torrent');
+        Storage::disk('local')->assertExists($torrent->torrentStoragePath());
     }
 
     public function test_handle_rejects_duplicate_info_hash(): void

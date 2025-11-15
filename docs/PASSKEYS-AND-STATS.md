@@ -3,11 +3,11 @@
 ## Passkeys
 - Each user record has a `passkey` column (see `database/migrations/*add_passkey_to_users_table.php`).
 - `App\Models\User::ensurePasskey()` generates a 32-character hex value if it is missing.
-- Announce URLs follow the pattern `${config('tracker.announce_url')}/{passkey}`. Users can fetch it via `$user->announce_url`.
+- Announce URLs come from `config('tracker.announce_url')`. If the value contains a `%s` placeholder the passkey is injected with `sprintf`; otherwise the passkey is appended as `/passkey`. Users can fetch it via `$user->announce_url`.
 - Use `php artisan tracker:generate-passkeys` to assign passkeys to all existing users without one.
 
 ## User torrent stats
-- The `user_torrents` table stores per-user stats for each torrent: uploaded, downloaded, completion timestamp and last announce time.
+- The `user_torrents` table stores per-user stats for each torrent: uploaded, downloaded, completion timestamp, last announce time, plus `first_grab_at`/`last_grab_at` for download history.
 - `App\Services\UserTorrentService` keeps these rows in sync whenever an announce request is processed.
 - Rows are upserted using the announce payload; `completed_at` is filled only once when the `completed` event arrives.
 

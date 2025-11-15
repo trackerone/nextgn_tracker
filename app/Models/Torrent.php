@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Torrent extends Model
 {
@@ -86,5 +87,25 @@ class Torrent extends Model
     public function userTorrents(): HasMany
     {
         return $this->hasMany(UserTorrent::class);
+    }
+
+    public static function storagePathForHash(string $infoHash): string
+    {
+        return 'torrents/'.strtoupper($infoHash).'.torrent';
+    }
+
+    public function torrentStoragePath(): string
+    {
+        return self::storagePathForHash($this->info_hash);
+    }
+
+    public function torrentFilePath(): string
+    {
+        return Storage::disk('local')->path($this->torrentStoragePath());
+    }
+
+    public function hasTorrentFile(): bool
+    {
+        return Storage::disk('local')->exists($this->torrentStoragePath());
     }
 }
