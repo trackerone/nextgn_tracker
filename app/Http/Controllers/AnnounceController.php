@@ -86,10 +86,13 @@ class AnnounceController extends Controller
         $isSeeder = $left === 0;
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
+        $activeSessionCutoff = $now->copy()->subMinutes(60);
 
         $hasExistingSession = Peer::query()
             ->where('torrent_id', $torrent->id)
             ->where('peer_id', $peerId)
+            ->where('user_id', $user->getKey())
+            ->where('last_announce_at', '>=', $activeSessionCutoff)
             ->exists();
 
         if (
@@ -145,7 +148,7 @@ class AnnounceController extends Controller
 
         $numwant = isset($data['numwant']) ? (int) $data['numwant'] : 50;
         $numwant = max(1, min($numwant, 200));
-        $activeSince = now()->subMinutes(60);
+        $activeSince = $activeSessionCutoff;
 
         $payload = [
             'complete' => $torrent->seeders,
