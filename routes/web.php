@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InviteAdminController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
@@ -34,7 +35,7 @@ Route::view('/', 'welcome');
 Route::get('/health', HealthCheckController::class)->name('health.index');
 
 Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])
-    ->get('/admin', static fn () => response()->json(['message' => 'Admin area']))
+    ->get('/admin', DashboardController::class)
     ->name('demo.admin');
 
 Route::middleware(['auth', 'verified', 'role.min:8'])

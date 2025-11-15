@@ -7,8 +7,10 @@ namespace App\Http\Controllers;
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Requests\TorrentUploadRequest;
 use App\Models\Category;
+use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
+use App\Services\PermissionService;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
@@ -45,6 +47,10 @@ class TorrentUploadController extends Controller
     public function store(TorrentUploadRequest $request): RedirectResponse
     {
         $this->authorize('create', Torrent::class);
+
+        if (! PermissionService::allow($request->user(), 'torrent.upload')) {
+            abort(403);
+        }
 
         $data = $request->validated();
         /** @var \App\Models\User $user */
@@ -90,6 +96,10 @@ class TorrentUploadController extends Controller
         $this->auditLogger->log('torrent.created', $torrent, [
             'uploader_id' => $user->getKey(),
             'info_hash' => $torrent->info_hash ?? null,
+        ]);
+
+        SecurityAuditLog::log($user, 'torrent.upload', [
+            'torrent_id' => $torrent->getKey(),
         ]);
 
         return redirect()
