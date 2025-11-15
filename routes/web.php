@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InviteAdminController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
@@ -22,6 +23,8 @@ use App\Http\Controllers\TorrentUploadController;
 use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
+$adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
+
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store']);
@@ -31,8 +34,8 @@ Route::view('/', 'welcome');
 
 Route::get('/health', HealthCheckController::class)->name('health.index');
 
-Route::middleware(['auth', 'verified', 'role.min:10'])
-    ->get('/admin', static fn () => response()->json(['message' => 'Admin area']))
+Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])
+    ->get('/admin', DashboardController::class)
     ->name('demo.admin');
 
 Route::middleware(['auth', 'verified', 'role.min:8'])
@@ -46,7 +49,7 @@ Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
         ->name('admin.invites.store');
 });
 
-Route::middleware(['auth', 'staff', 'can:view-logs'])
+Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
     ->prefix('admin/logs')
     ->name('admin.logs.')
     ->group(function (): void {
@@ -56,7 +59,7 @@ Route::middleware(['auth', 'staff', 'can:view-logs'])
         Route::get('/security/{event}', [SecurityEventController::class, 'show'])->name('security.show');
     });
 
-Route::middleware(['auth', 'staff', 'can:isAdmin'])->group(function (): void {
+Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(function (): void {
     Route::patch('/admin/users/{user}/role', [UserRoleController::class, 'update'])
         ->name('admin.users.role.update');
 });

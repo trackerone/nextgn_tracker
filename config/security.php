@@ -35,4 +35,60 @@ return [
         'formaction',
         'xlink:href',
     ],
+
+    'lockdown' => (bool) env('SECURITY_LOCKDOWN', false),
+
+    'roles' => [
+        'admin',
+        'moderator',
+        'uploader',
+        'user',
+        'guest',
+    ],
+
+    'permissions' => [
+        'admin.access',
+        'admin.manage.users',
+        'torrent.upload',
+        'torrent.edit',
+        'torrent.delete',
+        'comment.post',
+        'comment.delete',
+        'api.access',
+    ],
+
+    'role_permissions' => [
+        'admin' => [
+            'admin.access',
+            'admin.manage.users',
+            'torrent.upload',
+            'torrent.edit',
+            'torrent.delete',
+            'comment.post',
+            'comment.delete',
+            'api.access',
+        ],
+        'moderator' => [
+            'torrent.edit',
+            'torrent.delete',
+            'comment.delete',
+        ],
+        'uploader' => [
+            'torrent.upload',
+            'comment.post',
+        ],
+        'user' => [
+            'comment.post',
+        ],
+        'guest' => [],
+    ],
+
+    'rate_limits' => [
+        'login' => '5,1',
+        'register' => '3,60',
+        'password_reset' => '3,60',
+        'torrent_upload' => '10,60',
+        'api' => '60,1',
+        'admin' => '30,1',
+    ],
 ];

@@ -42,6 +42,7 @@ return [
         Illuminate\View\ViewServiceProvider::class,
 
         App\Providers\AppServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
         // App\Providers\RouteServiceProvider::class, // valgfri i L11 hvis du bruger default routes
     ],

@@ -6,9 +6,14 @@ namespace App\Http;
 
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureUserIsActive;
+<<<<<< codex/apply-zero-trust-security-hardening
+use App\Http\Middleware\LockdownModeMiddleware;
+=======
 use App\Http\Middleware\RedirectIfAuthenticated;
+>>>>>> main
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
@@ -37,9 +42,11 @@ class Kernel extends HttpKernel
         PreventRequestsDuringMaintenance::class,
         TrimStrings::class,
         ConvertEmptyStringsToNull::class,
+        SecurityHeadersMiddleware::class,
         RequestGuard::class,
         ResponseGuard::class,
         EnsureUserIsActive::class,
+        LockdownModeMiddleware::class,
     ];
 
     /**
@@ -58,6 +65,7 @@ class Kernel extends HttpKernel
         'throttle' => ThrottleRequests::class,
         'verified' => EnsureEmailIsVerified::class,
         'tracker.validate-announce' => ValidateAnnounceRequest::class,
+        'lockdown' => LockdownModeMiddleware::class,
     ];
 
 }
