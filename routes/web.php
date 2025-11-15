@@ -85,12 +85,22 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
         ->name('pm.messages.store');
 });
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware('auth')->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+    Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
+        ->whereNumber('torrent')
+        ->name('torrents.show');
+    Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
+        ->whereNumber('torrent')
+        ->name('torrents.download');
+    Route::get('/torrents/{torrent}/magnet', [TorrentDownloadController::class, 'magnet'])
+        ->whereNumber('torrent')
+        ->name('torrents.magnet');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
-    Route::get('/torrents/{torrent:slug}/download', TorrentDownloadController::class)->name('torrents.download');
-    Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });

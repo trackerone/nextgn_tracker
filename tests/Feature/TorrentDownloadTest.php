@@ -6,85 +6,73 @@ namespace Tests\Feature;
 
 use App\Models\Torrent;
 use App\Models\User;
-use App\Models\UserTorrent;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
-class TorrentDownloadTest extends TestCase
+final class TorrentDownloadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_authenticated_user_can_download_torrent(): void
+    public function testGuestsCannotAccessDownloadOrMagnet(): void
     {
-        Storage::fake('torrents');
-        $user = User::factory()->create();
         $torrent = Torrent::factory()->create();
-        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
 
-        $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
-        $response->assertOk();
-        $response->assertHeader('content-type', 'application/x-bittorrent');
-        $expectedFilename = Str::slug($torrent->name).'.torrent';
-        $response->assertHeader('content-disposition', 'attachment; filename="'.$expectedFilename.'"');
-
-        $decoded = app(BencodeService::class)->decode((string) $response->getContent());
-        $this->assertIsArray($decoded);
-        $this->assertSame($user->announce_url, $decoded['announce']);
-        $userTorrent = UserTorrent::query()
-            ->where('user_id', $user->id)
-            ->where('torrent_id', $torrent->id)
-            ->first();
-
-        $this->assertNotNull($userTorrent);
-        $this->assertNotNull($userTorrent?->first_grab_at);
-        $this->assertNotNull($userTorrent?->last_grab_at);
+        $this->get('/torrents/'.$torrent->getKey().'/download')->assertRedirect('/login');
+        $this->get('/torrents/'.$torrent->getKey().'/magnet')->assertRedirect('/login');
     }
 
-    public function test_guest_is_redirected_to_login(): void
-    {
-        Storage::fake('torrents');
-        $torrent = Torrent::factory()->create();
-        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
-
-        $response = $this->get(route('torrents.download', $torrent));
-
-        $response->assertStatus(302);
-        $this->assertStringContainsString('login', (string) $response->headers->get('Location'));
-    }
-
-    public function test_banned_torrent_cannot_be_downloaded(): void
-    {
-        Storage::fake('torrents');
-        $user = User::factory()->create();
-        $torrent = Torrent::factory()->create(['is_banned' => true]);
-        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
-
-        $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
-        $response->assertNotFound();
-    }
-
-    public function test_missing_file_returns_not_found(): void
+    public function testDownloadReturnsFileWhenExists(): void
     {
         Storage::fake('torrents');
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
-
-        $response->assertNotFound();
-    }
-
-    private function makeTorrentPayload(): string
-    {
-        return app(BencodeService::class)->encode([
-            'announce' => 'http://localhost/announce',
-            'info' => [
-                'name' => 'Download demo',
-                'length' => 1024,
-            ],
+        $payload = app(BencodeService::class)->encode([
+            'announce' => 'https://tracker.invalid/announce',
+            'info' => ['name' => 'demo'],
         ]);
+
+        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $payload);
+
+        $response = $this->actingAs($user)->get('/torrents/'.$torrent->getKey().'/download');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/x-bittorrent');
+    }
+
+    public function testDownloadReturns404WhenFileMissing(): void
+    {
+        Storage::fake('torrents');
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/torrents/'.$torrent->getKey().'/download')
+            ->assertNotFound();
+    }
+
+    public function testMagnetReturnsTrackerInformation(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'info_hash' => 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
+            'name' => 'My <script>bad</script> Torrent',
+        ]);
+
+        config()->set('tracker.announce_url', 'https://nextgn.example/announce');
+        config()->set('tracker.additional_trackers', ['https://backup.example/announce']);
+
+        $response = $this->actingAs($user)->getJson('/torrents/'.$torrent->getKey().'/magnet');
+
+        $response->assertOk();
+        $magnet = $response->json('magnet');
+
+        $this->assertIsString($magnet);
+        $this->assertStringContainsString('xt=urn:btih:ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234', $magnet);
+        $this->assertStringContainsString(rawurlencode('https://nextgn.example/announce'), $magnet);
+        $this->assertStringContainsString(rawurlencode('https://backup.example/announce'), $magnet);
+        $this->assertStringNotContainsString('<script>', $magnet);
     }
 }

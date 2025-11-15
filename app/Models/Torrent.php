@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class Torrent extends Model
@@ -89,6 +91,19 @@ class Torrent extends Model
         return (bool) $this->is_banned;
     }
 
+    public function isDisplayable(): bool
+    {
+        return $this->isVisible() && $this->isApproved() && ! $this->isBanned();
+    }
+
+    public function scopeDisplayable(Builder $query): Builder
+    {
+        return $query
+            ->where('is_visible', true)
+            ->where('is_approved', true)
+            ->where('is_banned', false);
+    }
+
     public function peers(): HasMany
     {
         return $this->hasMany(Peer::class);
@@ -117,5 +132,26 @@ class Torrent extends Model
     public function hasTorrentFile(): bool
     {
         return Storage::disk('torrents')->exists($this->torrentStoragePath());
+    }
+
+    public function getFormattedSizeAttribute(): string
+    {
+        $bytes = max(0, (int) ($this->size_bytes ?? 0));
+        $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+        $unitIndex = 0;
+
+        while ($bytes >= 1024 && $unitIndex < count($units) - 1) {
+            $bytes /= 1024;
+            $unitIndex++;
+        }
+
+        $precision = $unitIndex === 0 ? 0 : 2;
+
+        return number_format($bytes, $precision).' '.$units[$unitIndex];
+    }
+
+    public function uploadedAtForDisplay(): ?Carbon
+    {
+        return $this->uploaded_at ?? $this->created_at;
     }
 }
