@@ -5,16 +5,26 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Exceptions\TorrentAlreadyExistsException;
+use App\Http\Requests\TorrentUploadRequest;
 use App\Models\Category;
-use App\Services\TorrentUploadService;
+use App\Services\Security\SanitizationService;
+use App\Services\Torrents\NfoParser;
+use App\Services\Torrents\TorrentIngestService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 
 class TorrentUploadController extends Controller
 {
+    public function __construct(
+        private readonly SanitizationService $sanitizer,
+        private readonly TorrentIngestService $ingestService,
+        private readonly NfoParser $nfoParser,
+    ) {}
+
     public function create(): View
     {
         $categories = Category::query()
@@ -27,26 +37,37 @@ class TorrentUploadController extends Controller
         ]);
     }
 
-    public function store(Request $request, TorrentUploadService $service): RedirectResponse
+    public function store(TorrentUploadRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'torrent' => ['required', 'file', 'mimetypes:application/x-bittorrent,application/octet-stream'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'description' => ['nullable', 'string', 'max:5000'],
-        ]);
+        $data = $request->validated();
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        $torrentFile = $request->file('torrent_file');
 
-        $file = $request->file('torrent');
-
-        if ($file === null) {
+        if (! $torrentFile instanceof UploadedFile) {
             throw ValidationException::withMessages([
-                'torrent' => 'No torrent file was provided.',
+                'torrent_file' => 'A valid .torrent file is required.',
             ]);
         }
 
+        $nfoPayload = $this->resolveNfoText($request, $data);
+        $nfoResult = $nfoPayload !== null
+            ? $this->nfoParser->parse($nfoPayload)
+            : ['sanitized_text' => null, 'imdb_id' => null, 'tmdb_id' => null];
+
         try {
-            $torrent = $service->handle($file, $request->user(), [
-                'category_id' => $validated['category_id'] ?? null,
-                'description' => $validated['description'] ?? null,
+            $torrent = $this->ingestService->ingest($user, $torrentFile, [
+                'name' => $this->sanitizer->sanitizeString($data['name']),
+                'category_id' => $data['category_id'] ?? null,
+                'type' => $data['type'],
+                'description' => $this->sanitizeNullable($data['description'] ?? null),
+                'tags' => $this->normalizeTags($data['tags'] ?? null),
+                'source' => $this->sanitizeNullable($data['source'] ?? null),
+                'resolution' => $this->sanitizeNullable($data['resolution'] ?? null),
+                'codecs' => $this->sanitizeCodecs($data['codecs'] ?? null),
+                'nfo_text' => $nfoResult['sanitized_text'],
+                'imdb_id' => $nfoResult['imdb_id'],
+                'tmdb_id' => $nfoResult['tmdb_id'],
             ]);
         } catch (TorrentAlreadyExistsException $exception) {
             return redirect()
@@ -54,12 +75,85 @@ class TorrentUploadController extends Controller
                 ->with('status', 'Torrent already exists – redirected to the existing entry.');
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
-                'torrent' => $exception->getMessage(),
+                'torrent_file' => $exception->getMessage(),
             ]);
         }
 
         return redirect()
             ->route('torrents.show', $torrent->slug)
             ->with('status', 'Torrent uploaded and awaiting approval.');
+    }
+
+    private function resolveNfoText(TorrentUploadRequest $request, array $data): ?string
+    {
+        $file = $request->file('nfo_file');
+
+        if ($file instanceof UploadedFile) {
+            return (string) $file->get();
+        }
+
+        $text = $data['nfo_text'] ?? null;
+
+        return is_string($text) && trim($text) !== '' ? $text : null;
+    }
+
+    private function sanitizeNullable(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $clean = $this->sanitizer->sanitizeString($value);
+
+        return $clean === '' ? null : $clean;
+    }
+
+    /**
+     * @param  array<int, string>|null  $tags
+     * @return array<int, string>|null
+     */
+    private function normalizeTags(?array $tags): ?array
+    {
+        if ($tags === null) {
+            return null;
+        }
+
+        $collection = Collection::make($tags)
+            ->filter(fn ($tag) => is_string($tag) && trim($tag) !== '')
+            ->map(fn (string $tag) => $this->sanitizer->sanitizeString($tag))
+            ->filter(fn (string $tag) => $tag !== '')
+            ->unique()
+            ->values();
+
+        return $collection->isEmpty() ? null : $collection->all();
+    }
+
+    /**
+     * @param  array<string, string|null>|null  $codecs
+     * @return array<string, string>|null
+     */
+    private function sanitizeCodecs(?array $codecs): ?array
+    {
+        if ($codecs === null) {
+            return null;
+        }
+
+        $clean = [];
+
+        foreach ($codecs as $key => $value) {
+            if (! is_string($key) || ! is_string($value)) {
+                continue;
+            }
+
+            $value = $this->sanitizer->sanitizeString($value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $clean[$key] = $value;
+        }
+
+        return $clean === [] ? null : $clean;
     }
 }

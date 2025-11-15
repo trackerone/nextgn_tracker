@@ -17,7 +17,7 @@ class TorrentDownloadService
 
     public function buildPersonalizedPayload(Torrent $torrent, User $user): string
     {
-        $disk = Storage::disk('local');
+        $disk = Storage::disk('torrents');
         $relativePath = $torrent->torrentStoragePath();
 
         if (! $disk->exists($relativePath)) {
