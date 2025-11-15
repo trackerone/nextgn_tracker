@@ -7,6 +7,7 @@ namespace App\Http;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
+use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance;
@@ -28,6 +29,13 @@ class Kernel extends HttpKernel
         RequestGuard::class,
         ResponseGuard::class,
         EnsureUserIsActive::class,
+    ];
+
+    /**
+     * @var array<string, class-string|string>
+     */
+    protected $middlewareAliases = [
+        'tracker.validate-announce' => ValidateAnnounceRequest::class,
     ];
 
 }

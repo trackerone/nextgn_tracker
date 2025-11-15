@@ -22,6 +22,10 @@ class Peer extends Model
         'downloaded',
         'left',
         'is_seeder',
+        'client',
+        'is_banned_client',
+        'spoof_score',
+        'last_action',
         'last_announce_at',
     ];
 
@@ -31,6 +35,8 @@ class Peer extends Model
         'downloaded' => 'integer',
         'left' => 'integer',
         'is_seeder' => 'boolean',
+        'is_banned_client' => 'boolean',
+        'spoof_score' => 'integer',
         'last_announce_at' => 'datetime',
     ];
 

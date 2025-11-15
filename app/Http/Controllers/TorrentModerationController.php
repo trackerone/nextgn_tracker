@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Torrent;
+use App\Services\Logging\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Illuminate\Support\Carbon;
 
 class TorrentModerationController extends Controller
 {
+    public function __construct(private readonly AuditLogger $auditLogger)
+    {
+    }
+
     public function index(): View
     {
         $pending = Torrent::query()
@@ -44,6 +49,10 @@ class TorrentModerationController extends Controller
             'moderated_reason' => null,
         ])->save();
 
+        $this->auditLogger->log('torrent.approved', $torrent, [
+            'moderated_by' => $request->user()?->id,
+        ]);
+
         return redirect()->route('staff.torrents.moderation.index')->with('status', 'Torrent approved.');
     }
 
@@ -62,6 +71,11 @@ class TorrentModerationController extends Controller
             'moderated_reason' => $data['reason'],
         ])->save();
 
+        $this->auditLogger->log('torrent.rejected', $torrent, [
+            'moderated_by' => $request->user()?->id,
+            'reason' => $data['reason'],
+        ]);
+
         return redirect()->route('staff.torrents.moderation.index')->with('status', 'Torrent rejected.');
     }
 
@@ -74,6 +88,10 @@ class TorrentModerationController extends Controller
             'moderated_by' => $request->user()?->id,
             'moderated_at' => Carbon::now(),
         ])->save();
+
+        $this->auditLogger->log('torrent.soft_deleted', $torrent, [
+            'moderated_by' => $request->user()?->id,
+        ]);
 
         return redirect()->route('staff.torrents.moderation.index')->with('status', 'Torrent soft-deleted.');
     }

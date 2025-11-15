@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
-use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\InviteAdminController;
+use App\Http\Controllers\Admin\SecurityEventController;
+use App\Http\Controllers\Admin\UserRoleController;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
@@ -41,6 +44,21 @@ Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
         ->name('admin.invites.index');
     Route::post('/admin/invites', [InviteAdminController::class, 'store'])
         ->name('admin.invites.store');
+});
+
+Route::middleware(['auth', 'staff', 'can:view-logs'])
+    ->prefix('admin/logs')
+    ->name('admin.logs.')
+    ->group(function (): void {
+        Route::get('/audit', [AuditLogController::class, 'index'])->name('audit.index');
+        Route::get('/audit/{log}', [AuditLogController::class, 'show'])->name('audit.show');
+        Route::get('/security', [SecurityEventController::class, 'index'])->name('security.index');
+        Route::get('/security/{event}', [SecurityEventController::class, 'show'])->name('security.show');
+    });
+
+Route::middleware(['auth', 'staff', 'can:isAdmin'])->group(function (): void {
+    Route::patch('/admin/users/{user}/role', [UserRoleController::class, 'update'])
+        ->name('admin.users.role.update');
 });
 
 Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function (): void {
@@ -112,7 +130,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
 
-Route::middleware(['throttle:120,1'])
+Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
     ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');
 

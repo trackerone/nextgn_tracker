@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\Logging\SecurityEventLogger;
 use Closure;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
@@ -12,6 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserIsActive
 {
+    public function __construct(private readonly SecurityEventLogger $securityLogger)
+    {
+    }
+
     /**
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
@@ -20,6 +25,11 @@ class EnsureUserIsActive
         $user = $request->user();
 
         if ($user !== null && ($user->isBanned() || $user->isDisabled())) {
+            $this->securityLogger->log('auth.blocked_user', 'medium', 'Blocked banned/disabled user from accessing app.', [
+                'user_id' => $user->getKey(),
+                'reason' => $user->isBanned() ? 'banned' : 'disabled',
+            ]);
+
             $this->guard()->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

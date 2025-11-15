@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Tracker\PasskeyService;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -51,6 +52,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'is_banned' => 'boolean',
         'is_disabled' => 'boolean',
+        'last_announce_at' => 'datetime',
+        'announce_rate_limit_exceeded' => 'boolean',
     ];
 
     protected $attributes = [
@@ -118,6 +121,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === self::ROLE_SYSOP;
     }
 
+    public function isLogViewer(): bool
+    {
+        return $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+    }
+
     public function isBanned(): bool
     {
         return (bool) $this->is_banned;
@@ -140,12 +148,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function ensurePasskey(): string
     {
-        if (! $this->passkey) {
-            $this->passkey = bin2hex(random_bytes(16));
-            $this->save();
+        if ($this->passkey) {
+            return (string) $this->passkey;
         }
 
-        return (string) $this->passkey;
+        return app(PasskeyService::class)->generate($this);
     }
 
     public function getAnnounceUrlAttribute(): string

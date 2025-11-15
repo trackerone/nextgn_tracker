@@ -59,5 +59,9 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('isUser', static function (User $user): bool {
             return RoleLevel::atLeast($user, RoleLevel::USER_LEVEL);
         });
+
+        Gate::define('view-logs', static function (User $user): bool {
+            return $user->isLogViewer();
+        });
     }
 }
