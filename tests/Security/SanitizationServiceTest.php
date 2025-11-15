@@ -28,6 +28,15 @@ final class SanitizationServiceTest extends TestCase
         $this->assertSame('<a href="#">payload</a>', $service->sanitizeHtmlDocument($html));
     }
 
+    public function test_it_can_preserve_inline_styles_for_documents(): void
+    {
+        $service = new SanitizationService();
+
+        $html = '<div style="color: red" onclick="evil()">payload</div>';
+
+        $this->assertSame('<div style="color: red">payload</div>', $service->sanitizeHtmlDocument($html, ['style']));
+    }
+
     public function test_it_limits_input_length(): void
     {
         config()->set('security.max_input_length', 5);
