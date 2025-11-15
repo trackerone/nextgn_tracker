@@ -23,7 +23,7 @@
                     <div class="flex items-center gap-2 text-sm text-slate-300">
                         <span>{{ auth()->user()->name }}</span>
                         <span class="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs font-semibold uppercase">
-                            {{ auth()->user()->role?->name ?? 'Member' }}
+                            {{ auth()->user()->role_label }}
                         </span>
                     </div>
                 @endauth

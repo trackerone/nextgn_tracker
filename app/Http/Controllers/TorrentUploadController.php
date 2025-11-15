@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Requests\TorrentUploadRequest;
 use App\Models\Category;
+use App\Models\Torrent;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
@@ -27,6 +28,8 @@ class TorrentUploadController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Torrent::class);
+
         $categories = Category::query()
             ->orderBy('position')
             ->orderBy('name')
@@ -39,6 +42,8 @@ class TorrentUploadController extends Controller
 
     public function store(TorrentUploadRequest $request): RedirectResponse
     {
+        $this->authorize('create', Torrent::class);
+
         $data = $request->validated();
         /** @var \App\Models\User $user */
         $user = $request->user();
@@ -68,6 +73,7 @@ class TorrentUploadController extends Controller
                 'nfo_text' => $nfoResult['sanitized_text'],
                 'imdb_id' => $nfoResult['imdb_id'],
                 'tmdb_id' => $nfoResult['tmdb_id'],
+                'status' => Torrent::STATUS_PENDING,
             ]);
         } catch (TorrentAlreadyExistsException $exception) {
             return redirect()

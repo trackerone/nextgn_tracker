@@ -34,11 +34,43 @@
                     <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
                     <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by {{ $torrent->uploader?->name ?? 'Unknown' }}</p>
                 </div>
-                <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
-                    <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
-                </div>
+                @can('download', $torrent)
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
+                    </div>
+                @endcan
             </div>
+            @can('moderate', $torrent)
+                <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <div class="flex flex-col gap-2 text-sm text-slate-200">
+                        <p><span class="font-semibold">Status:</span> {{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</p>
+                        @if ($torrent->moderator)
+                            <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
+                        @endif
+                        @if ($torrent->moderated_reason)
+                            <p><span class="font-semibold">Reason:</span> {{ $torrent->moderated_reason }}</p>
+                        @endif
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
+                        <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2">
+                            @csrf
+                            <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2">
+                            @csrf
+                            <label class="text-xs uppercase tracking-wide text-slate-400">Reject reason
+                                <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white" placeholder="Short reason" />
+                            </label>
+                            <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white">Reject</button>
+                        </form>
+                        <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2">
+                            @csrf
+                            <button type="submit" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Soft-delete</button>
+                        </form>
+                    </div>
+                </section>
+            @endcan
             <dl class="mt-8 grid gap-6 md:grid-cols-3">
                 @foreach ($meta as $item)
                     <div>

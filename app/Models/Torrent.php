@@ -16,6 +16,11 @@ class Torrent extends Model
 {
     use HasFactory;
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_SOFT_DELETED = 'soft_deleted';
+
     protected $fillable = [
         'user_id',
         'category_id',
@@ -41,8 +46,16 @@ class Torrent extends Model
         'is_banned',
         'ban_reason',
         'freeleech',
+        'status',
+        'moderated_by',
+        'moderated_at',
+        'moderated_reason',
         'original_filename',
         'uploaded_at',
+    ];
+
+    protected $attributes = [
+        'status' => self::STATUS_PENDING,
     ];
 
     protected $casts = [
@@ -59,6 +72,7 @@ class Torrent extends Model
         'codecs' => 'array',
         'tags' => 'array',
         'uploaded_at' => 'datetime',
+        'moderated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -76,32 +90,64 @@ class Torrent extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function isVisible(): bool
+    public function moderator(): BelongsTo
     {
-        return (bool) $this->is_visible;
-    }
-
-    public function isApproved(): bool
-    {
-        return (bool) $this->is_approved;
-    }
-
-    public function isBanned(): bool
-    {
-        return (bool) $this->is_banned;
+        return $this->belongsTo(User::class, 'moderated_by');
     }
 
     public function isDisplayable(): bool
     {
-        return $this->isVisible() && $this->isApproved() && ! $this->isBanned();
+        return $this->isVisible();
+    }
+
+    public function isVisible(): bool
+    {
+        return $this->isApproved();
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    public function isSoftDeleted(): bool
+    {
+        return $this->status === self::STATUS_SOFT_DELETED;
+    }
+
+    public function isBanned(): bool
+    {
+        return (bool) $this->is_banned || $this->isSoftDeleted();
     }
 
     public function scopeDisplayable(Builder $query): Builder
     {
-        return $query
-            ->where('is_visible', true)
-            ->where('is_approved', true)
-            ->where('is_banned', false);
+        return $query->visible();
+    }
+
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeModerated(Builder $query): Builder
+    {
+        return $query->where('status', '!=', self::STATUS_PENDING);
     }
 
     public function peers(): HasMany

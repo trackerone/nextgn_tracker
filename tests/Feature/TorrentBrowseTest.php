@@ -77,4 +77,17 @@ final class TorrentBrowseTest extends TestCase
         $responseDesc->assertOk();
         $responseDesc->assertSeeInOrder([$high->name, $low->name]);
     }
+
+    public function testPendingTorrentsAreHiddenFromIndex(): void
+    {
+        $user = User::factory()->create();
+        $approved = Torrent::factory()->create();
+        $pending = Torrent::factory()->create(['status' => Torrent::STATUS_PENDING]);
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee($approved->name);
+        $response->assertDontSee($pending->name);
+    }
 }

@@ -26,7 +26,7 @@ class TorrentDownloadController extends Controller
 
     public function download(Request $request, Torrent $torrent): Response
     {
-        abort_unless($torrent->isDisplayable(), 404);
+        $this->authorize('download', $torrent);
 
         if (! $torrent->hasTorrentFile()) {
             abort(404);
@@ -60,7 +60,7 @@ class TorrentDownloadController extends Controller
      */
     public function magnet(Torrent $torrent): JsonResponse
     {
-        abort_unless($torrent->isDisplayable(), 404);
+        $this->authorize('download', $torrent);
 
         $infoHash = strtoupper($torrent->info_hash);
         $displayName = $this->sanitizer->sanitizeString($torrent->name ?? '');

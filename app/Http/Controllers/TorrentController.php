@@ -50,7 +50,7 @@ class TorrentController extends Controller
 
         $torrentsQuery = Torrent::query()
             ->with('category')
-            ->displayable();
+            ->visible();
 
         if ($filters['q'] !== null) {
             $escaped = $this->escapeLike($filters['q']);
@@ -93,7 +93,7 @@ class TorrentController extends Controller
 
     public function show(Torrent $torrent): View
     {
-        abort_unless($torrent->isDisplayable(), 404);
+        $this->authorize('view', $torrent);
 
         $descriptionHtml = null;
 
