@@ -6,7 +6,6 @@ namespace Database\Seeders;
 
 use App\Models\Conversation;
 use App\Models\Post;
-use App\Models\Role;
 use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -30,14 +29,7 @@ class DemoContentSeeder extends Seeder
             $user = User::query()->skip(1)->first() ?? $admin;
         }
 
-        $staffRole = Role::query()->first() ?? Role::query()->create([
-            'slug' => 'staff',
-            'name' => 'Staff',
-            'level' => 100,
-        ]);
-
-        $admin->role()->associate($staffRole);
-        $admin->save();
+        $admin->forceFill(['role' => User::ROLE_ADMIN])->save();
 
         if (Topic::query()->count() === 0) {
             $topic = Topic::factory()->create([

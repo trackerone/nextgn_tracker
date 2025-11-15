@@ -8,11 +8,13 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Post;
 use App\Models\Topic;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Policies\ConversationPolicy;
 use App\Policies\MessagePolicy;
 use App\Policies\PostPolicy;
 use App\Policies\TopicPolicy;
+use App\Policies\TorrentPolicy;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
@@ -26,6 +28,7 @@ class AuthServiceProvider extends ServiceProvider
         Conversation::class => ConversationPolicy::class,
         Message::class => MessagePolicy::class,
         Topic::class => TopicPolicy::class,
+        Torrent::class => TorrentPolicy::class,
         Post::class => PostPolicy::class,
     ];
 

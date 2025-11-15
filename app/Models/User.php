@@ -7,11 +7,13 @@ namespace App\Models;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -19,13 +21,23 @@ class User extends Authenticatable implements MustVerifyEmail
     use MustVerifyEmailTrait;
     use Notifiable;
 
+    public const ROLE_USER = 'user';
+    public const ROLE_POWER_USER = 'power_user';
+    public const ROLE_UPLOADER = 'uploader';
+    public const ROLE_MODERATOR = 'moderator';
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_SYSOP = 'sysop';
+
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
         'role_id',
         'invited_by_id',
         'passkey',
+        'is_banned',
+        'is_disabled',
     ];
 
     protected $hidden = [
@@ -37,28 +49,28 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_banned' => 'boolean',
+        'is_disabled' => 'boolean',
+    ];
+
+    protected $attributes = [
+        'role' => self::ROLE_USER,
+        'is_banned' => false,
+        'is_disabled' => false,
     ];
 
     protected static function booted(): void
     {
         static::creating(function (User $user): void {
-            if ($user->role_id !== null) {
-                return;
-            }
-
-            $roleId = Role::query()
-                ->where('slug', Role::DEFAULT_SLUG)
-                ->value('id');
-
-            if ($roleId !== null) {
-                $user->role_id = $roleId;
+            if ($user->role === null) {
+                $user->role = self::ROLE_USER;
             }
         });
     }
 
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     public function invitedBy(): BelongsTo
@@ -81,9 +93,39 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->userTorrents();
     }
 
+    public function scopeStaff(Builder $query): Builder
+    {
+        return $query->whereIn('role', self::staffRoles());
+    }
+
     public function isStaff(): bool
     {
-        return (bool) ($this->role?->is_staff);
+        return in_array($this->role, self::staffRoles(), true);
+    }
+
+    public function isModerator(): bool
+    {
+        return $this->role === self::ROLE_MODERATOR || $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+    }
+
+    public function isSysop(): bool
+    {
+        return $this->role === self::ROLE_SYSOP;
+    }
+
+    public function isBanned(): bool
+    {
+        return (bool) $this->is_banned;
+    }
+
+    public function isDisabled(): bool
+    {
+        return (bool) $this->is_disabled;
     }
 
     public function roleLevel(): int
@@ -165,10 +207,32 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 
-    private function isDisabled(): bool
+    public function getRoleLabelAttribute(): string
     {
-        $disabled = $this->getAttribute('is_disabled');
+        return Str::of($this->role ?? self::ROLE_USER)
+            ->replace('_', ' ')
+            ->title()
+            ->toString();
+    }
 
-        return (bool) $disabled;
+    /**
+     * @return array<int, string>
+     */
+    private static function staffRoles(): array
+    {
+        return [self::ROLE_MODERATOR, self::ROLE_ADMIN, self::ROLE_SYSOP];
+    }
+
+    public static function roleFromLegacySlug(?string $slug): string
+    {
+        return match ($slug) {
+            'sysop' => self::ROLE_SYSOP,
+            'admin2', 'admin1' => self::ROLE_ADMIN,
+            'mod2', 'mod1' => self::ROLE_MODERATOR,
+            'uploader3', 'uploader2', 'uploader1' => self::ROLE_UPLOADER,
+            'user4', 'user3', 'user2' => self::ROLE_POWER_USER,
+            'user1', 'newbie' => self::ROLE_USER,
+            default => self::ROLE_USER,
+        };
     }
 }

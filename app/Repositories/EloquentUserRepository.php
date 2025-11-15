@@ -39,7 +39,7 @@ class EloquentUserRepository implements UserRepositoryInterface
     public function allStaff(): Collection
     {
         return User::query()
-            ->where('is_staff', true)
+            ->staff()
             ->orderBy('name')
             ->get();
     }
@@ -52,7 +52,9 @@ class EloquentUserRepository implements UserRepositoryInterface
             return;
         }
 
-        $user->role()->associate($role);
-        $user->save();
+        $user->forceFill([
+            'role' => User::roleFromLegacySlug($role->slug),
+            'role_id' => $role->getKey(),
+        ])->save();
     }
 }

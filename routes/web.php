@@ -6,7 +6,7 @@ use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Admin\InviteAdminController;
-use App\Http\Controllers\Admin\TorrentModerationController;
+use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
@@ -37,14 +37,21 @@ Route::middleware(['auth', 'verified', 'role.min:8'])
     ->name('demo.mod');
 
 Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
-    Route::get('/admin/torrents', [TorrentModerationController::class, 'index'])
-        ->name('admin.torrents.index');
-    Route::patch('/admin/torrents/{torrent}', [TorrentModerationController::class, 'update'])
-        ->name('admin.torrents.update');
     Route::get('/admin/invites', [InviteAdminController::class, 'index'])
         ->name('admin.invites.index');
     Route::post('/admin/invites', [InviteAdminController::class, 'store'])
         ->name('admin.invites.store');
+});
+
+Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function (): void {
+    Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
+        ->name('torrents.moderation.index');
+    Route::post('/torrents/{torrent}/approve', [TorrentModerationController::class, 'approve'])
+        ->name('torrents.approve');
+    Route::post('/torrents/{torrent}/reject', [TorrentModerationController::class, 'reject'])
+        ->name('torrents.reject');
+    Route::post('/torrents/{torrent}/soft-delete', [TorrentModerationController::class, 'softDelete'])
+        ->name('torrents.soft_delete');
 });
 
 Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
@@ -85,12 +92,22 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
         ->name('pm.messages.store');
 });
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware('auth')->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+    Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
+        ->whereNumber('torrent')
+        ->name('torrents.show');
+    Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
+        ->whereNumber('torrent')
+        ->name('torrents.download');
+    Route::get('/torrents/{torrent}/magnet', [TorrentDownloadController::class, 'magnet'])
+        ->whereNumber('torrent')
+        ->name('torrents.magnet');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
-    Route::get('/torrents/{torrent:slug}/download', TorrentDownloadController::class)->name('torrents.download');
-    Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });

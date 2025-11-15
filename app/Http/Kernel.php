@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
@@ -26,5 +27,7 @@ class Kernel extends HttpKernel
         ConvertEmptyStringsToNull::class,
         RequestGuard::class,
         ResponseGuard::class,
+        EnsureUserIsActive::class,
     ];
+
 }

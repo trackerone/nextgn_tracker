@@ -18,69 +18,33 @@ final class RoleLevel
     /**
      * @var array<string, int>
      */
-    private const SLUG_TO_LEVEL = [
-        'sysop' => 12,
-        'admin2' => 11,
-        'admin1' => 10,
-        'mod2' => 9,
-        'mod1' => 8,
-        'uploader3' => 7,
-        'uploader2' => 6,
-        'uploader1' => 5,
-        'user4' => 4,
-        'user3' => 3,
-        'user2' => 2,
-        'user1' => 1,
-        'newbie' => 0,
-    ];
-
-    /**
-     * @var array<int, string>
-     */
-    private const LEVEL_TO_SLUG = [
-        12 => 'sysop',
-        11 => 'admin2',
-        10 => 'admin1',
-        9 => 'mod2',
-        8 => 'mod1',
-        7 => 'uploader3',
-        6 => 'uploader2',
-        5 => 'uploader1',
-        4 => 'user4',
-        3 => 'user3',
-        2 => 'user2',
-        1 => 'user1',
-        0 => 'newbie',
+    private const ROLE_TO_LEVEL = [
+        User::ROLE_SYSOP => 12,
+        User::ROLE_ADMIN => 10,
+        User::ROLE_MODERATOR => 8,
+        User::ROLE_UPLOADER => 5,
+        User::ROLE_POWER_USER => 4,
+        User::ROLE_USER => 1,
     ];
 
     private function __construct()
     {
     }
 
-    public static function forSlug(string $slug): ?int
-    {
-        return self::SLUG_TO_LEVEL[$slug] ?? null;
-    }
-
-    public static function forLevel(int $level): ?string
-    {
-        return self::LEVEL_TO_SLUG[$level] ?? null;
-    }
-
     public static function levelForUser(User $user): int
     {
-        $role = $user->role;
+        $role = $user->getAttribute('role');
 
-        if ($role === null) {
-            return self::LOWEST_LEVEL;
+        if (is_string($role) && isset(self::ROLE_TO_LEVEL[$role])) {
+            return self::ROLE_TO_LEVEL[$role];
         }
 
-        if ($role->level !== null) {
-            return (int) $role->level;
-        }
+        $legacyRole = $user->relationLoaded('role')
+            ? $user->getRelation('role')
+            : $user->role()->getResults();
 
-        if ($role->slug !== null) {
-            return self::forSlug($role->slug) ?? self::LOWEST_LEVEL;
+        if ($legacyRole !== null && $legacyRole->level !== null) {
+            return (int) $legacyRole->level;
         }
 
         return self::LOWEST_LEVEL;
