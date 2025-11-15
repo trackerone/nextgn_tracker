@@ -19,10 +19,10 @@ class TorrentDownloadTest extends TestCase
 
     public function test_authenticated_user_can_download_torrent(): void
     {
-        Storage::fake('local');
+        Storage::fake('torrents');
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create();
-        Storage::disk('local')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
+        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
 
         $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
         $response->assertOk();
@@ -45,9 +45,9 @@ class TorrentDownloadTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        Storage::fake('local');
+        Storage::fake('torrents');
         $torrent = Torrent::factory()->create();
-        Storage::disk('local')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
+        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
 
         $response = $this->get(route('torrents.download', $torrent));
 
@@ -57,10 +57,10 @@ class TorrentDownloadTest extends TestCase
 
     public function test_banned_torrent_cannot_be_downloaded(): void
     {
-        Storage::fake('local');
+        Storage::fake('torrents');
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create(['is_banned' => true]);
-        Storage::disk('local')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
+        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $this->makeTorrentPayload());
 
         $response = $this->actingAs($user)->get(route('torrents.download', $torrent));
         $response->assertNotFound();
@@ -68,7 +68,7 @@ class TorrentDownloadTest extends TestCase
 
     public function test_missing_file_returns_not_found(): void
     {
-        Storage::fake('local');
+        Storage::fake('torrents');
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create();
 

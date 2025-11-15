@@ -20,8 +20,17 @@ class Torrent extends Model
         'name',
         'slug',
         'info_hash',
-        'size',
-        'files_count',
+        'size_bytes',
+        'file_count',
+        'type',
+        'source',
+        'resolution',
+        'codecs',
+        'tags',
+        'description',
+        'nfo_text',
+        'imdb_id',
+        'tmdb_id',
         'seeders',
         'leechers',
         'completed',
@@ -30,14 +39,13 @@ class Torrent extends Model
         'is_banned',
         'ban_reason',
         'freeleech',
-        'description',
         'original_filename',
         'uploaded_at',
     ];
 
     protected $casts = [
-        'size' => 'integer',
-        'files_count' => 'integer',
+        'size_bytes' => 'integer',
+        'file_count' => 'integer',
         'seeders' => 'integer',
         'leechers' => 'integer',
         'completed' => 'integer',
@@ -46,6 +54,8 @@ class Torrent extends Model
         'is_banned' => 'boolean',
         'freeleech' => 'boolean',
         'category_id' => 'integer',
+        'codecs' => 'array',
+        'tags' => 'array',
         'uploaded_at' => 'datetime',
     ];
 
@@ -101,11 +111,11 @@ class Torrent extends Model
 
     public function torrentFilePath(): string
     {
-        return Storage::disk('local')->path($this->torrentStoragePath());
+        return Storage::disk('torrents')->path($this->torrentStoragePath());
     }
 
     public function hasTorrentFile(): bool
     {
-        return Storage::disk('local')->exists($this->torrentStoragePath());
+        return Storage::disk('torrents')->exists($this->torrentStoragePath());
     }
 }

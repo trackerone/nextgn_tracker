@@ -4,7 +4,7 @@ The download endpoint serves the pristine *.torrent* files stored under `storage
 
 ## Storage layout
 
-* Every upload is persisted through `TorrentUploadService`, which writes the raw payload to `Storage::disk('local')` using `Torrent::storagePathForHash($infoHash)`.
+* Every upload is persisted through `TorrentIngestService`, which writes the raw payload to `Storage::disk('torrents')` using `Torrent::storagePathForHash($infoHash)`.
 * The `Torrent` model exposes helpers:
   * `torrentStoragePath()` – returns the relative path (`torrents/<INFO_HASH>.torrent`).
   * `torrentFilePath()` / `hasTorrentFile()` – resolve the absolute file and check its presence.

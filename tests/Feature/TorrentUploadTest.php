@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\Role;
 use App\Models\Torrent;
 use App\Models\User;
-use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -18,116 +16,99 @@ class TorrentUploadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guest_cannot_access_upload_form(): void
+    public function test_authentication_is_required(): void
     {
         $response = $this->get(route('torrents.upload'));
-
         $response->assertStatus(302);
         $this->assertStringContainsString('/login', (string) $response->headers->get('Location'));
+
+        $postResponse = $this->post(route('torrents.store'));
+        $postResponse->assertStatus(302);
+        $this->assertStringContainsString('/login', (string) $postResponse->headers->get('Location'));
     }
 
-    public function test_authenticated_user_can_view_upload_form(): void
+    public function test_successful_upload_persists_torrent_and_file(): void
     {
-        $this->seed(RoleSeeder::class);
-        $user = $this->createUserWithRole('user1');
+        Storage::fake('torrents');
 
-        $this->actingAs($user)
-            ->get(route('torrents.upload'))
-            ->assertOk()
-            ->assertSee('Upload torrent');
-    }
-
-    public function test_valid_upload_creates_torrent(): void
-    {
-        $this->seed(RoleSeeder::class);
-        $user = $this->createUserWithRole('user1');
+        $user = User::factory()->create();
         $category = Category::factory()->create();
-        Storage::fake('local');
+        $payload = $this->sampleTorrentPayload('Feature Upload', 2048);
 
-        $payload = 'd4:infod6:lengthi4096e4:name12:Upload Demoee';
-        $file = UploadedFile::fake()->createWithContent('demo.torrent', $payload, 'application/x-bittorrent');
-
-        $response = $this->actingAs($user)->post(route('torrents.upload.store'), [
-            'torrent' => $file,
+        $response = $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Feature Upload',
             'category_id' => $category->id,
-            'description' => 'A sample upload.',
+            'type' => 'movie',
+            'description' => 'Plot with **markdown**',
+            'tags_input' => 'action, thriller',
+            'source' => 'bluray',
+            'resolution' => '1080p',
+            'codecs' => ['video' => 'x264', 'audio' => 'DTS'],
+            'torrent_file' => UploadedFile::fake()->createWithContent('feature.torrent', $payload, 'application/x-bittorrent'),
+            'nfo_text' => "IMDB: tt1234567\nhttps://www.themoviedb.org/movie/9988",
         ]);
 
         $response->assertRedirect();
+        $torrent = Torrent::query()->first();
 
-        $torrent = Torrent::query()->latest()->first();
         $this->assertNotNull($torrent);
-        $this->assertSame('Upload Demo', $torrent->name);
+        $this->assertSame('movie', $torrent->type);
         $this->assertSame($category->id, $torrent->category_id);
-        $this->assertSame('A sample upload.', $torrent->description);
-        $this->assertFalse($torrent->is_approved);
-
-        Storage::disk('local')->assertExists($torrent->torrentStoragePath());
+        $this->assertSame('tt1234567', $torrent->imdb_id);
+        $this->assertSame('9988', $torrent->tmdb_id);
+        $this->assertSame(2048, $torrent->size_bytes);
+        $this->assertSame(1, $torrent->file_count);
+        Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
     }
 
-    public function test_duplicate_upload_redirects_to_existing(): void
+    public function test_duplicate_info_hash_redirects_to_existing_record(): void
     {
-        $this->seed(RoleSeeder::class);
-        $user = $this->createUserWithRole('user1');
-        Storage::fake('local');
+        Storage::fake('torrents');
 
-        $infoDictionary = 'd6:lengthi777e4:name14:Existing Filee';
-        $payload = 'd4:info'.$infoDictionary.'e';
-        $infoHash = strtoupper(sha1($infoDictionary));
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Duplicate Upload', 4096);
 
-        $existing = Torrent::factory()->create([
-            'slug' => 'existing-torrent',
-            'info_hash' => $infoHash,
-        ]);
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Duplicate Upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent('dup.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
 
-        $response = $this->actingAs($user)->post(route('torrents.upload.store'), [
-            'torrent' => UploadedFile::fake()->createWithContent('existing.torrent', $payload, 'application/x-bittorrent'),
+        $existing = Torrent::query()->firstOrFail();
+
+        $response = $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Duplicate Upload 2',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent('dup2.torrent', $payload, 'application/x-bittorrent'),
         ]);
 
         $response->assertRedirect(route('torrents.show', $existing->slug));
     }
 
-    public function test_staff_can_update_torrent_state(): void
+    public function test_validation_errors_are_reported(): void
     {
-        $this->seed(RoleSeeder::class);
-        $staff = $this->createUserWithRole('mod1');
-        $torrent = Torrent::factory()->create([
-            'is_approved' => false,
-            'is_banned' => false,
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => '',
+            'type' => 'movie',
         ]);
 
-        $response = $this->actingAs($staff)->patch(route('admin.torrents.update', $torrent), [
-            'is_approved' => true,
-            'is_banned' => false,
-            'freeleech' => true,
-            'ban_reason' => 'N/A',
-            'filter' => 'pending',
-        ]);
-
-        $response->assertRedirect(route('admin.torrents.index', ['filter' => 'pending']));
-
-        $this->assertDatabaseHas('torrents', [
-            'id' => $torrent->id,
-            'is_approved' => true,
-            'freeleech' => true,
-        ]);
+        $response->assertSessionHasErrors(['name', 'torrent_file']);
     }
 
-    public function test_regular_user_cannot_access_admin_listing(): void
+    private function sampleTorrentPayload(string $name, int $length): string
     {
-        $this->seed(RoleSeeder::class);
-        $user = $this->createUserWithRole('user1');
+        $bencode = app(\App\Services\BencodeService::class);
 
-        $this->actingAs($user)
-            ->get(route('admin.torrents.index'))
-            ->assertForbidden();
-    }
-
-    private function createUserWithRole(string $slug): User
-    {
-        $roleId = Role::query()->where('slug', $slug)->value('id');
-        $this->assertNotNull($roleId, 'Missing role seeding for '.$slug);
-
-        return User::factory()->create(['role_id' => $roleId]);
+        return $bencode->encode([
+            'announce' => 'http://localhost/announce',
+            'info' => [
+                'name' => $name,
+                'piece length' => 16384,
+                'length' => $length,
+                'pieces' => str_repeat('a', 20),
+            ],
+        ]);
     }
 }

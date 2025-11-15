@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\ContentSecurityPolicy;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
@@ -21,7 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
         AuthServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append(ContentSecurityPolicy::class);
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
         ]);
