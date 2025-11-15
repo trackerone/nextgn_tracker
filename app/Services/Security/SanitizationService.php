@@ -50,11 +50,11 @@ final class SanitizationService
         return trim($value);
     }
 
-    public function sanitizeHtmlDocument(string $value): string
+    public function sanitizeHtmlDocument(string $value, array $excludedAttributes = []): string
     {
         $value = $this->normalizeEncoding($value);
         $value = $this->removeForbiddenElements($value, ['script']);
-        $value = $this->stripForbiddenAttributes($value);
+        $value = $this->stripForbiddenAttributes($value, $excludedAttributes);
         $value = $this->neutralizeJavascriptProtocols($value);
 
         return $value;
@@ -158,9 +158,12 @@ final class SanitizationService
         return strip_tags($value, $this->allowedTagString);
     }
 
-    private function stripForbiddenAttributes(string $value): string
+    private function stripForbiddenAttributes(string $value, array $excluded = []): string
     {
         foreach ($this->forbiddenAttributes as $attribute) {
+            if (in_array($attribute, $excluded, true)) {
+                continue;
+            }
             if ($attribute === 'on*') {
                 $value = preg_replace("/\son[a-z0-9_-]+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)/i", '', $value) ?? $value;
                 continue;

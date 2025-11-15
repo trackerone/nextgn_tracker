@@ -87,7 +87,7 @@ final class ResponseGuard
         }
 
         $content = $this->stripInlineScripts($content);
-        $content = $this->sanitizer->sanitizeHtmlDocument($content);
+        $content = $this->sanitizer->sanitizeHtmlDocument($content, ['style']);
 
         $response->setContent($content);
     }
