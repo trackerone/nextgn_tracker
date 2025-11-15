@@ -20,7 +20,11 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
-        Gate::before(static function (User $user): ?bool {
+        Gate::before(static function (?User $user): ?bool {
+            if ($user === null) {
+                return null;
+            }
+
             return RoleLevel::atLeast($user, RoleLevel::SYSOP_LEVEL) ? true : null;
         });
 
