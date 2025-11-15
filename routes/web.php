@@ -112,7 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
 
-Route::middleware(['throttle:120,1'])
+Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
     ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');
 

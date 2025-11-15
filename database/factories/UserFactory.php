@@ -26,7 +26,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => User::ROLE_USER,
             'role_id' => Role::query()->inRandomOrder()->value('id'),
-            'passkey' => bin2hex(random_bytes(16)),
+            'passkey' => bin2hex(random_bytes(32)),
         ];
     }
 

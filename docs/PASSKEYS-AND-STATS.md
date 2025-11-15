@@ -2,7 +2,7 @@
 
 ## Passkeys
 - Each user record has a `passkey` column (see `database/migrations/*add_passkey_to_users_table.php`).
-- `App\Models\User::ensurePasskey()` generates a 32-character hex value if it is missing.
+- `App\Models\User::ensurePasskey()` uses the tracker passkey service to ensure a unique 64-character hex value is assigned.
 - Announce URLs come from `config('tracker.announce_url')`. If the value contains a `%s` placeholder the passkey is injected with `sprintf`; otherwise the passkey is appended as `/passkey`. Users can fetch it via `$user->announce_url`.
 - Use `php artisan tracker:generate-passkeys` to assign passkeys to all existing users without one.
 
