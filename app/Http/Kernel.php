@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http;
 
-use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureUserIsActive;
-use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
 use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
+use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\AuthenticateWithBasicAuth;
 use Illuminate\Auth\Middleware\Authorize;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
