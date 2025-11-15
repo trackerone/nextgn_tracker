@@ -38,4 +38,21 @@ class UserTorrentService
 
         return $userTorrent;
     }
+
+    public function recordGrab(User $user, Torrent $torrent, CarbonInterface $grabbedAt): UserTorrent
+    {
+        $userTorrent = UserTorrent::query()->firstOrNew([
+            'user_id' => $user->getKey(),
+            'torrent_id' => $torrent->getKey(),
+        ]);
+
+        if ($userTorrent->first_grab_at === null) {
+            $userTorrent->first_grab_at = $grabbedAt;
+        }
+
+        $userTorrent->last_grab_at = $grabbedAt;
+        $userTorrent->save();
+
+        return $userTorrent;
+    }
 }

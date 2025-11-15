@@ -24,6 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role_id',
+        'invited_by_id',
         'passkey',
     ];
 
@@ -60,9 +61,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Role::class);
     }
 
+    public function invitedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'invited_by_id');
+    }
+
     public function userTorrents(): HasMany
     {
         return $this->hasMany(UserTorrent::class);
+    }
+
+    public function sentInvites(): HasMany
+    {
+        return $this->hasMany(Invite::class, 'inviter_user_id');
     }
 
     public function snatches(): HasMany
@@ -97,9 +108,16 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getAnnounceUrlAttribute(): string
     {
-        $baseUrl = rtrim((string) config('tracker.announce_url', '/announce'), '/');
+        $announceConfig = (string) config('tracker.announce_url', '/announce/%s');
+        $passkey = $this->ensurePasskey();
 
-        return $baseUrl.'/'.$this->ensurePasskey();
+        if (str_contains($announceConfig, '%s')) {
+            return sprintf($announceConfig, $passkey);
+        }
+
+        $baseUrl = rtrim($announceConfig, '/');
+
+        return $baseUrl.'/'.$passkey;
     }
 
     public function totalUploaded(): int

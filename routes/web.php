@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Admin\InviteAdminController;
 use App\Http\Controllers\Admin\TorrentModerationController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\HealthCheckController;
@@ -11,9 +14,15 @@ use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
+use App\Http\Controllers\TorrentDownloadController;
 use App\Http\Controllers\TorrentUploadController;
 use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
+    Route::post('/register', [RegisteredUserController::class, 'store']);
+});
 
 Route::view('/', 'welcome');
 
@@ -32,6 +41,10 @@ Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
         ->name('admin.torrents.index');
     Route::patch('/admin/torrents/{torrent}', [TorrentModerationController::class, 'update'])
         ->name('admin.torrents.update');
+    Route::get('/admin/invites', [InviteAdminController::class, 'index'])
+        ->name('admin.invites.index');
+    Route::post('/admin/invites', [InviteAdminController::class, 'store'])
+        ->name('admin.invites.store');
 });
 
 Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
@@ -76,8 +89,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents/upload', [TorrentUploadController::class, 'store'])->name('torrents.upload.store');
+    Route::get('/torrents/{torrent:slug}/download', TorrentDownloadController::class)->name('torrents.download');
     Route::get('/torrents/{slug}', [TorrentController::class, 'show'])->name('torrents.show');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
+    Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
 
 Route::middleware(['throttle:120,1'])
