@@ -17,12 +17,19 @@ class SecurityHeadersMiddleware
     {
         $response = $next($request);
 
+        $cspDirectives = [
+            "default-src 'self'",
+            "img-src 'self' data:",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+        ];
+
         $headers = [
             'X-Frame-Options' => 'DENY',
             'X-Content-Type-Options' => 'nosniff',
             'X-XSS-Protection' => '1; mode=block',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            'Content-Security-Policy' => "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'",
+            'Content-Security-Policy' => implode('; ', $cspDirectives),
         ];
 
         foreach ($headers as $header => $value) {
