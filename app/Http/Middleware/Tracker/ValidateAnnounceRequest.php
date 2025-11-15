@@ -39,13 +39,22 @@ class ValidateAnnounceRequest
         if ($user->isBanned() || $user->isDisabled()) {
             return $this->failureResponder->fail('unauthorized_client');
         }
+        $now = now();
+        $minInterval = (int) config('tracker.announce_min_interval_seconds', 30);
         if ($user->announce_rate_limit_exceeded) {
-            $this->securityLogger->log('tracker.rate_limited', 'medium', 'Announce blocked due to persistent rate limit.', [
-                'user_id' => $user->getKey(),
-                'ip' => $request->ip(),
-            ]);
+            $cooldownElapsed = $user->last_announce_at === null
+                || $user->last_announce_at->diffInSeconds($now) >= $minInterval;
 
-            return $this->failureResponder->fail('rate_limit');
+            if ($user->isStaff() || $cooldownElapsed) {
+                $user->forceFill(['announce_rate_limit_exceeded' => false])->save();
+            } else {
+                $this->securityLogger->log('tracker.rate_limited', 'medium', 'Announce blocked due to persistent rate limit.', [
+                    'user_id' => $user->getKey(),
+                    'ip' => $request->ip(),
+                ]);
+
+                return $this->failureResponder->fail('rate_limit');
+            }
         }
         $params = $request->query();
         $required = ['info_hash', 'peer_id', 'port', 'uploaded', 'downloaded', 'left'];
@@ -104,8 +113,6 @@ class ValidateAnnounceRequest
         if ($ipAddress === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
-        $now = now();
-        $minInterval = (int) config('tracker.announce_min_interval_seconds', 30);
         if (! $user->isStaff() && $user->last_announce_at !== null) {
             $diff = $user->last_announce_at->diffInSeconds($now);
             if ($diff < $minInterval) {
@@ -146,6 +153,7 @@ class ValidateAnnounceRequest
         $response = $next($request);
         $user->forceFill([
             'last_announce_at' => $now,
+            'announce_rate_limit_exceeded' => false,
         ])->save();
         return $response;
     }
