@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tracker;
 
-use App\Models\Role;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -18,7 +17,9 @@ class AnnounceTest extends TestCase
 
     public function test_started_event_registers_peer_and_returns_payload(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create([
+            'role' => User::ROLE_MODERATOR,
+        ]);
         $torrent = Torrent::factory()->create([
             'seeders' => 0,
             'leechers' => 0,
@@ -279,16 +280,6 @@ class AnnounceTest extends TestCase
             'seeders' => 0,
             'leechers' => 0,
         ]);
-
-        $staffRole = Role::query()->create([
-            'slug' => 'moderator',
-            'name' => 'Moderator',
-            'level' => 9,
-            'is_staff' => true,
-        ]);
-
-        $user->role()->associate($staffRole);
-        $user->save();
 
         UserTorrent::factory()->for($user)->for($torrent)->create([
             'uploaded' => 10,

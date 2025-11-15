@@ -1,59 +1,143 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ $torrent->name }} – Torrent</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <style>
-        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont; background-color: #020617; color: #e2e8f0; margin: 0; }
-        main { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-        .card { background-color: #0f172a; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.5); border: 1px solid #1e293b; }
-        .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
-        .badge.approved { background-color: rgba(34, 197, 94, 0.1); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
-        .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-        .meta span { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
-        .meta strong { font-size: 1.2rem; color: #f1f5f9; }
-        .actions { margin-top: 2rem; display: flex; flex-direction: column; gap: 0.75rem; }
-        .button { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border-radius: 0.75rem; padding: 0.9rem 1.5rem; font-size: 1rem; font-weight: 600; text-decoration: none; transition: background-color 0.2s ease, box-shadow 0.2s ease; }
-        .button.primary { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.35); }
-        .button.primary:hover { background: linear-gradient(135deg, #1d4ed8, #6d28d9); }
-        .note { font-size: 0.9rem; color: #94a3b8; }
-    </style>
-</head>
-<body>
-    <main>
-        <div class="card">
-            <p class="badge approved">Approved torrent</p>
-            <h1 style="font-size: 2.25rem; margin: 0.5rem 0 0;">{{ $torrent->name }}</h1>
-            <p style="margin-top: 0.5rem; color: #cbd5f5;">Uploaded {{ optional($torrent->uploaded_at)->toDayDateTimeString() ?? 'recently' }} by {{ $torrent->uploader?->name ?? 'Unknown' }}</p>
+@extends('layouts.app')
 
-            <div class="meta">
-                <div>
-                    <span>Size</span>
-                    <strong>{{ number_format($torrent->size / (1024 * 1024), 2) }} MiB</strong>
-                </div>
-                <div>
-                    <span>Files</span>
-                    <strong>{{ $torrent->files_count }}</strong>
-                </div>
-                <div>
-                    <span>Seeders</span>
-                    <strong>{{ $torrent->seeders }}</strong>
-                </div>
-                <div>
-                    <span>Leechers</span>
-                    <strong>{{ $torrent->leechers }}</strong>
-                </div>
-            </div>
+@section('title', $torrent->name.' — Torrent details')
 
-            <div class="actions">
-                <a href="{{ route('torrents.download', $torrent) }}" class="button primary">
-                    Download .torrent
-                </a>
-                <p class="note">Your personal passkey is embedded into the download so your announces work immediately.</p>
+@section('meta')
+    <meta name="robots" content="noindex, nofollow">
+@endsection
+
+@section('content')
+    @php
+        $meta = [
+            ['label' => 'Type', 'value' => ucfirst($torrent->type)],
+            ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
+            ['label' => 'Size', 'value' => $torrent->formatted_size],
+            ['label' => 'Files', 'value' => number_format($torrent->file_count)],
+            ['label' => 'Resolution', 'value' => $torrent->resolution ?? 'Unknown'],
+            ['label' => 'Codecs', 'value' => collect($torrent->codecs ?? [])->filter()->implode(' / ') ?: 'n/a'],
+        ];
+        $stats = [
+            ['label' => 'Seeders', 'value' => number_format($torrent->seeders), 'class' => 'text-emerald-400'],
+            ['label' => 'Leechers', 'value' => number_format($torrent->leechers), 'class' => 'text-amber-400'],
+            ['label' => 'Completed', 'value' => number_format($torrent->completed), 'class' => 'text-slate-100'],
+        ];
+        $links = array_filter([
+            $torrent->imdb_id ? ['label' => 'IMDb: '.$torrent->imdb_id, 'url' => 'https://www.imdb.com/title/'.$torrent->imdb_id.'/'] : null,
+            $torrent->tmdb_id ? ['label' => 'TMDB: '.$torrent->tmdb_id, 'url' => 'https://www.themoviedb.org/movie/'.$torrent->tmdb_id] : null,
+        ]);
+    @endphp
+    <div class="space-y-8">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl shadow-slate-950/40">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">Approved torrent</p>
+                    <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
+                    <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by {{ $torrent->uploader?->name ?? 'Unknown' }}</p>
+                </div>
+                @can('download', $torrent)
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
+                    </div>
+                @endcan
             </div>
+            @can('moderate', $torrent)
+                <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <div class="flex flex-col gap-2 text-sm text-slate-200">
+                        <p><span class="font-semibold">Status:</span> {{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</p>
+                        @if ($torrent->moderator)
+                            <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
+                        @endif
+                        @if ($torrent->moderated_reason)
+                            <p><span class="font-semibold">Reason:</span> {{ $torrent->moderated_reason }}</p>
+                        @endif
+                    </div>
+                    <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
+                        <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2">
+                            @csrf
+                            <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2">
+                            @csrf
+                            <label class="text-xs uppercase tracking-wide text-slate-400">Reject reason
+                                <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white" placeholder="Short reason" />
+                            </label>
+                            <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white">Reject</button>
+                        </form>
+                        <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2">
+                            @csrf
+                            <button type="submit" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Soft-delete</button>
+                        </form>
+                    </div>
+                </section>
+            @endcan
+            <dl class="mt-8 grid gap-6 md:grid-cols-3">
+                @foreach ($meta as $item)
+                    <div>
+                        <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
+                        <dd class="text-lg font-semibold text-white">{{ $item['value'] }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+            <div class="mt-8 grid gap-4 md:grid-cols-3">
+                @foreach ($stats as $stat)
+                    <div class="rounded-2xl bg-slate-950/60 p-4 text-center">
+                        <p class="text-xs uppercase tracking-wide text-slate-400">{{ $stat['label'] }}</p>
+                        <p class="text-3xl font-bold {{ $stat['class'] }}">{{ $stat['value'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+            @if ($links !== [])
+                <div class="mt-8 grid gap-4 md:grid-cols-2">
+                    @foreach ($links as $link)
+                        <a href="{{ $link['url'] }}" class="rounded-2xl border border-slate-800 px-4 py-3 text-sm text-slate-300 hover:border-brand" rel="noreferrer noopener" target="_blank">{{ $link['label'] }}</a>
+                    @endforeach
+                </div>
+            @endif
         </div>
-    </main>
-</body>
-</html>
+        @if (! empty($torrent->tags))
+            <div class="flex flex-wrap gap-2">
+                @foreach ($torrent->tags as $tag)
+                    <span class="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs uppercase tracking-wide text-slate-300">{{ $tag }}</span>
+                @endforeach
+            </div>
+        @endif
+        @if ($descriptionHtml)
+            <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                <h2 class="text-lg font-semibold text-white">Description</h2>
+                <div class="prose prose-invert mt-4 max-w-none text-slate-100">{!! $descriptionHtml !!}</div>
+            </section>
+        @endif
+        @if ($torrent->nfo_text)
+            <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                <h2 class="text-lg font-semibold text-white">NFO</h2>
+                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{{ $torrent->nfo_text }}</pre>
+            </section>
+        @endif
+        <div id="magnetValue" class="hidden rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-4 text-emerald-100 text-sm"></div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const button = document.getElementById('magnetButton');
+            const output = document.getElementById('magnetValue');
+            if (!button || !output) {
+                return;
+            }
+            button.addEventListener('click', async () => {
+                output.textContent = 'Fetching magnet link…';
+                output.classList.remove('hidden');
+                try {
+                    const response = await fetch(button.dataset.url ?? '', { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) {
+                        output.textContent = 'Unable to fetch magnet link right now.';
+                        return;
+                    }
+                    const payload = await response.json();
+                    output.textContent = payload.magnet ?? 'Magnet link unavailable.';
+                } catch (error) {
+                    output.textContent = 'Unable to fetch magnet link right now.';
+                }
+            });
+        });
+    </script>
+@endsection

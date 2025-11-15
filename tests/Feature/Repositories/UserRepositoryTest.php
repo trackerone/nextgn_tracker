@@ -31,7 +31,8 @@ class UserRepositoryTest extends TestCase
 
         $repository->promoteToRole($user, 'mod1');
 
-        $this->assertTrue($user->fresh()->role->is($targetRole));
+        $this->assertSame(User::ROLE_MODERATOR, $user->fresh()->role);
+        $this->assertSame($targetRole->getKey(), $user->fresh()->role_id);
     }
 
     public function test_promote_to_role_is_noop_when_role_missing(): void
@@ -43,6 +44,7 @@ class UserRepositoryTest extends TestCase
         $repository->promoteToRole($user, 'missing-role');
 
         $this->assertSame($userRole->getKey(), $user->fresh()->role_id);
+        $this->assertSame(User::ROLE_USER, $user->fresh()->role);
     }
 
     public function test_all_staff_returns_only_staff_sorted_by_name(): void
@@ -55,16 +57,19 @@ class UserRepositoryTest extends TestCase
         $staffAlpha = User::factory()->create([
             'name' => 'Aaron Staff',
             'role_id' => $modRole->getKey(),
+            'role' => User::roleFromLegacySlug($modRole->slug),
         ]);
 
         $staffBeta = User::factory()->create([
             'name' => 'Zara Staff',
             'role_id' => $adminRole->getKey(),
+            'role' => User::roleFromLegacySlug($adminRole->slug),
         ]);
 
         User::factory()->create([
             'name' => 'Casual Member',
             'role_id' => $memberRole->getKey(),
+            'role' => User::roleFromLegacySlug($memberRole->slug),
         ]);
 
         $staff = $repository->allStaff();

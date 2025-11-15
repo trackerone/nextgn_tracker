@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
 
         User::query()
             ->whereNull('role_id')
-            ->update(['role_id' => $defaultRoleId]);
+            ->update([
+                'role_id' => $defaultRoleId,
+                'role' => User::roleFromLegacySlug(Role::DEFAULT_SLUG),
+            ]);
     }
 }

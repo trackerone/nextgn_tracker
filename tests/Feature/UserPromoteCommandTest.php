@@ -32,6 +32,7 @@ it('promotes a user to the target role', function (): void {
         ->assertSuccessful();
 
     expect($user->fresh()->role_id)->toBe($targetRole->getKey());
+    expect($user->fresh()->role)->toBe(User::roleFromLegacySlug($targetRole->slug));
 });
 
 it('fails when the target role is missing', function (): void {
@@ -52,4 +53,5 @@ it('fails when the target role is missing', function (): void {
         ->assertExitCode(SymfonyCommand::FAILURE);
 
     expect($user->fresh()->role_id)->toBe($initialRoleId);
+    expect($user->fresh()->role)->toBe(User::ROLE_USER);
 });

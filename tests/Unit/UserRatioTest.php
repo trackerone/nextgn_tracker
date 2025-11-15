@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Models\Role;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -74,16 +73,9 @@ class UserRatioTest extends TestCase
 
     public function test_staff_users_are_marked_as_staff(): void
     {
-        $user = User::factory()->create();
-        $role = Role::query()->create([
-            'slug' => 'staff',
-            'name' => 'Staff',
-            'level' => 10,
-            'is_staff' => true,
+        $user = User::factory()->create([
+            'role' => User::ROLE_ADMIN,
         ]);
-
-        $user->role()->associate($role);
-        $user->save();
 
         $this->assertSame('Staff', $user->userClass());
     }

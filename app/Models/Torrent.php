@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class Torrent extends Model
 {
     use HasFactory;
+
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_SOFT_DELETED = 'soft_deleted';
 
     protected $fillable = [
         'user_id',
@@ -39,8 +46,16 @@ class Torrent extends Model
         'is_banned',
         'ban_reason',
         'freeleech',
+        'status',
+        'moderated_by',
+        'moderated_at',
+        'moderated_reason',
         'original_filename',
         'uploaded_at',
+    ];
+
+    protected $attributes = [
+        'status' => self::STATUS_PENDING,
     ];
 
     protected $casts = [
@@ -57,6 +72,7 @@ class Torrent extends Model
         'codecs' => 'array',
         'tags' => 'array',
         'uploaded_at' => 'datetime',
+        'moderated_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -74,19 +90,64 @@ class Torrent extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function moderator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'moderated_by');
+    }
+
+    public function isDisplayable(): bool
+    {
+        return $this->isVisible();
+    }
+
     public function isVisible(): bool
     {
-        return (bool) $this->is_visible;
+        return $this->isApproved();
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
     }
 
     public function isApproved(): bool
     {
-        return (bool) $this->is_approved;
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
+    public function isSoftDeleted(): bool
+    {
+        return $this->status === self::STATUS_SOFT_DELETED;
     }
 
     public function isBanned(): bool
     {
-        return (bool) $this->is_banned;
+        return (bool) $this->is_banned || $this->isSoftDeleted();
+    }
+
+    public function scopeDisplayable(Builder $query): Builder
+    {
+        return $query->visible();
+    }
+
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeModerated(Builder $query): Builder
+    {
+        return $query->where('status', '!=', self::STATUS_PENDING);
     }
 
     public function peers(): HasMany
@@ -117,5 +178,26 @@ class Torrent extends Model
     public function hasTorrentFile(): bool
     {
         return Storage::disk('torrents')->exists($this->torrentStoragePath());
+    }
+
+    public function getFormattedSizeAttribute(): string
+    {
+        $bytes = max(0, (int) ($this->size_bytes ?? 0));
+        $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
+        $unitIndex = 0;
+
+        while ($bytes >= 1024 && $unitIndex < count($units) - 1) {
+            $bytes /= 1024;
+            $unitIndex++;
+        }
+
+        $precision = $unitIndex === 0 ? 0 : 2;
+
+        return number_format($bytes, $precision).' '.$units[$unitIndex];
+    }
+
+    public function uploadedAtForDisplay(): ?Carbon
+    {
+        return $this->uploaded_at ?? $this->created_at;
     }
 }

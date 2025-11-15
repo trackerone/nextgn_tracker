@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureMinimumRole;
+use App\Http\Middleware\EnsureUserIsStaff;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
+            'staff' => EnsureUserIsStaff::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

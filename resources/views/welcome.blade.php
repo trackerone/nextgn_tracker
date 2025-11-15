@@ -19,7 +19,7 @@
                 'user' => $user ? [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'role' => $user->role ? ['name' => $user->role->name] : null,
+                    'role' => ['name' => $user->role_label],
                 ] : null,
             ];
         @endphp
@@ -38,7 +38,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-sm text-slate-300">{{ auth()->user()->name }}</span>
                         <span class="inline-flex items-center rounded-full border border-slate-800 bg-slate-900/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
-                            {{ auth()->user()->role?->name ?? 'Unknown role' }}
+                            {{ auth()->user()->role_label }}
                         </span>
                     </div>
                 @endauth
