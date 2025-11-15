@@ -10,6 +10,7 @@ use App\Services\Torrents\TorrentIngestService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class TorrentIngestServiceTest extends TestCase
@@ -45,6 +46,7 @@ class TorrentIngestServiceTest extends TestCase
         $this->assertStringNotContainsString('<script>', $torrent->description ?? '');
         $this->assertContains('scene', $torrent->tags ?? []);
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
+        $this->assertTrue(Str::startsWith($torrent->torrentStoragePath(), 'torrents/'));
     }
 
     public function test_ingest_detects_duplicate_hash(): void

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Models\SecurityAuditLog;
+use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Validator;
+use Illuminate\Validation\Validator as LaravelValidator;
 
 class TorrentUploadRequest extends FormRequest
 {
@@ -29,6 +31,11 @@ class TorrentUploadRequest extends FormRequest
      */
     public function rules(): array
     {
+        $torrentMimeRule = 'mimetypes:'.implode(',', config('upload.torrents.allowed_mimes'));
+        $torrentExtensionRule = 'extensions:'.implode(',', config('upload.torrents.allowed_extensions'));
+        $nfoMimeRule = 'mimetypes:'.implode(',', config('upload.nfo.allowed_mimes'));
+        $nfoExtensionRule = 'extensions:'.implode(',', config('upload.nfo.allowed_extensions'));
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
@@ -44,25 +51,37 @@ class TorrentUploadRequest extends FormRequest
             'torrent_file' => [
                 'required',
                 'file',
-                'mimetypes:application/x-bittorrent,application/octet-stream',
-                'max:'.config('security.max_torrent_kilobytes'),
+                $torrentMimeRule,
+                $torrentExtensionRule,
+                'max:'.config('upload.torrents.max_kilobytes'),
             ],
             'nfo_file' => [
                 'nullable',
                 'file',
-                'mimetypes:text/plain',
-                'max:'.config('security.max_nfo_kilobytes'),
+                $nfoMimeRule,
+                $nfoExtensionRule,
+                'max:'.config('upload.nfo.max_kilobytes'),
             ],
-            'nfo_text' => ['nullable', 'string'],
+            'nfo_text' => ['nullable', 'string', 'max:'.config('upload.nfo.max_characters')],
         ];
     }
 
-    public function withValidator(Validator $validator): void
+    public function withValidator(LaravelValidator $validator): void
     {
-        $validator->after(function (Validator $validator): void {
+        $validator->after(function (LaravelValidator $validator): void {
             if ($this->file('nfo_file') !== null && $this->filled('nfo_text')) {
                 $validator->errors()->add('nfo_text', 'Provide either an NFO file or inline text, not both.');
             }
         });
+    }
+
+    protected function failedValidation(ValidatorContract $validator): void
+    {
+        SecurityAuditLog::log($this->user(), 'torrent.upload.validation_failed', [
+            'errors' => $validator->errors()->keys(),
+            'has_torrent_file' => $this->hasFile('torrent_file'),
+        ]);
+
+        parent::failedValidation($validator);
     }
 }

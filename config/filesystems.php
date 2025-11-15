@@ -27,9 +27,25 @@ return [
             'root' => storage_path('app/torrents'),
             'throw' => false,
         ],
+
+        'nfo' => [
+            'driver' => 'local',
+            'root' => storage_path('app/nfo'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
+        'images' => [
+            'driver' => 'local',
+            'root' => storage_path('app/images'),
+            'url' => env('APP_URL').'/storage/images',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
     ],
 
     'links' => [
         public_path('storage') => storage_path('app/public'),
+        public_path('storage/images') => storage_path('app/images'),
     ],
 ];

@@ -14,12 +14,14 @@ use App\Services\PermissionService;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
+use App\Services\Uploads\NfoStorageService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use RuntimeException;
 
 class TorrentUploadController extends Controller
 {
@@ -27,6 +29,7 @@ class TorrentUploadController extends Controller
         private readonly SanitizationService $sanitizer,
         private readonly TorrentIngestService $ingestService,
         private readonly NfoParser $nfoParser,
+        private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
     ) {}
 
@@ -67,6 +70,20 @@ class TorrentUploadController extends Controller
         $nfoResult = $nfoPayload !== null
             ? $this->nfoParser->parse($nfoPayload)
             : ['sanitized_text' => null, 'imdb_id' => null, 'tmdb_id' => null];
+        $torrentSizeBytes = $torrentFile->getSize();
+        $torrentMime = $torrentFile->getClientMimeType();
+
+        try {
+            $nfoStoragePath = $this->nfoStorage->store($nfoResult['sanitized_text']);
+        } catch (RuntimeException) {
+            SecurityAuditLog::log($user, 'torrent.upload.rejected', [
+                'reason' => 'nfo_storage_failed',
+            ]);
+
+            throw ValidationException::withMessages([
+                'nfo_file' => 'Unable to store the provided NFO payload at this time.',
+            ]);
+        }
 
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
@@ -79,15 +96,25 @@ class TorrentUploadController extends Controller
                 'resolution' => $this->sanitizeNullable($data['resolution'] ?? null),
                 'codecs' => $this->sanitizeCodecs($data['codecs'] ?? null),
                 'nfo_text' => $nfoResult['sanitized_text'],
+                'nfo_storage_path' => $nfoStoragePath,
                 'imdb_id' => $nfoResult['imdb_id'],
                 'tmdb_id' => $nfoResult['tmdb_id'],
                 'status' => Torrent::STATUS_PENDING,
             ]);
         } catch (TorrentAlreadyExistsException $exception) {
+            SecurityAuditLog::log($user, 'torrent.upload.duplicate', [
+                'existing_torrent_id' => $exception->torrent->getKey(),
+                'info_hash' => $exception->torrent->info_hash,
+            ]);
+
             return redirect()
                 ->route('torrents.show', $exception->torrent->slug)
                 ->with('status', 'Torrent already exists – redirected to the existing entry.');
         } catch (InvalidArgumentException $exception) {
+            SecurityAuditLog::log($user, 'torrent.upload.rejected', [
+                'reason' => $exception->getMessage(),
+            ]);
+
             throw ValidationException::withMessages([
                 'torrent_file' => $exception->getMessage(),
             ]);
@@ -100,6 +127,10 @@ class TorrentUploadController extends Controller
 
         SecurityAuditLog::log($user, 'torrent.upload', [
             'torrent_id' => $torrent->getKey(),
+            'size_bytes' => $torrentSizeBytes,
+            'mime' => $torrentMime,
+            'nfo_present' => $nfoStoragePath !== null,
+            'nfo_bytes' => $this->resolveNfoSize($request, $nfoPayload),
         ]);
 
         return redirect()
@@ -118,6 +149,21 @@ class TorrentUploadController extends Controller
         $text = $data['nfo_text'] ?? null;
 
         return is_string($text) && trim($text) !== '' ? $text : null;
+    }
+
+    private function resolveNfoSize(TorrentUploadRequest $request, ?string $payload): ?int
+    {
+        $file = $request->file('nfo_file');
+
+        if ($file instanceof UploadedFile) {
+            return $file->getSize();
+        }
+
+        if ($payload === null) {
+            return null;
+        }
+
+        return strlen($payload);
     }
 
     private function sanitizeNullable(?string $value): ?string

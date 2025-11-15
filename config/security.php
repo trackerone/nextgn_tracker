@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 return [
     'max_input_length' => (int) env('SECURITY_MAX_INPUT_LENGTH', 12000),
-    'max_torrent_kilobytes' => (int) env('SECURITY_MAX_TORRENT_KB', 8192),
-    'max_nfo_kilobytes' => (int) env('SECURITY_MAX_NFO_KB', 512),
     'allowed_html_tags' => [
         'strong',
         'em',

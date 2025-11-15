@@ -27,6 +27,7 @@ class Torrent extends Model
         'name',
         'slug',
         'info_hash',
+        'storage_path',
         'size_bytes',
         'file_count',
         'type',
@@ -36,6 +37,7 @@ class Torrent extends Model
         'tags',
         'description',
         'nfo_text',
+        'nfo_storage_path',
         'imdb_id',
         'tmdb_id',
         'seeders',
@@ -167,17 +169,37 @@ class Torrent extends Model
 
     public function torrentStoragePath(): string
     {
-        return self::storagePathForHash($this->info_hash);
+        return $this->storage_path ?? self::storagePathForHash($this->info_hash);
     }
 
     public function torrentFilePath(): string
     {
-        return Storage::disk('torrents')->path($this->torrentStoragePath());
+        $disk = (string) config('upload.torrents.disk', 'torrents');
+
+        return Storage::disk($disk)->path($this->torrentStoragePath());
     }
 
     public function hasTorrentFile(): bool
     {
-        return Storage::disk('torrents')->exists($this->torrentStoragePath());
+        $disk = (string) config('upload.torrents.disk', 'torrents');
+
+        return Storage::disk($disk)->exists($this->torrentStoragePath());
+    }
+
+    public function nfoStoragePath(): ?string
+    {
+        return $this->nfo_storage_path;
+    }
+
+    public function hasStoredNfo(): bool
+    {
+        if ($this->nfo_storage_path === null) {
+            return false;
+        }
+
+        $disk = (string) config('upload.nfo.disk', 'nfo');
+
+        return Storage::disk($disk)->exists($this->nfo_storage_path);
     }
 
     public function getFormattedSizeAttribute(): string
