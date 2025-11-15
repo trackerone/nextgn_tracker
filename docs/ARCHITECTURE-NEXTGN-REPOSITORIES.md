@@ -1,16 +1,16 @@
-# NextGN Tracker – Repository-lag
+# NextGN Tracker – Repository Layer
 
-Dette dokument beskriver det repository-lag, der er tilføjet som del af Sprint 1–2.
+This document describes the repository layer added as part of Sprint 1–2.
 
-## Formål
+## Purpose
 
-- Adskille HTTP-lag (controllers) fra domænelogik og databaserelaterede kald.
-- Gøre det nemmere at teste domænelogik isoleret.
-- Skabe et entydigt sted at lægge queries, sortering og filtrering.
+- Decouple the HTTP layer (controllers) from domain logic and database operations.
+- Make domain logic easier to test in isolation.
+- Provide a single, coherent place for queries, sorting, and filtering.
 
-## Kontrakter
+## Contracts
 
-Interfaces findes i `App\Contracts`:
+Interfaces are located in `App\Contracts`:
 
 - `UserRepositoryInterface`
 - `TopicRepositoryInterface`
@@ -20,9 +20,9 @@ Interfaces findes i `App\Contracts`:
 - `RoleRepositoryInterface`
 - `TorrentRepositoryInterface`
 
-## Implementeringer
+## Implementations
 
-Eloquent-baserede repositories findes i `App\Repositories`:
+Eloquent-based repositories are located in `App\Repositories`:
 
 - `EloquentUserRepository`
 - `EloquentTopicRepository`
@@ -32,11 +32,11 @@ Eloquent-baserede repositories findes i `App\Repositories`:
 - `EloquentRoleRepository`
 - `EloquentTorrentRepository`
 
-## DI-binding
+## Dependency Injection Binding
 
-Bindings findes i `App\Providers\RepositoryServiceProvider`.
+Bindings are defined in `App\Providers\RepositoryServiceProvider`.
 
-Registrér provider'en i `config/app.php` under `providers`:
+Register the provider in `config/app.php` under `providers`:
 
 ```php
 'providers' => [
@@ -45,9 +45,9 @@ Registrér provider'en i `config/app.php` under `providers`:
 ],
 ```
 
-## Anvendelse i controllers
+## Usage in Controllers
 
-Eksempel:
+Example:
 
 ```php
 use App\Contracts\TopicRepositoryInterface;
@@ -67,24 +67,24 @@ class TopicController extends Controller
 }
 ```
 
-## CI-kvalitet
+## CI Quality Pipeline
 
-Workflow-filen `.github/workflows/quality.yml` kører:
+The `.github/workflows/quality.yml` workflow runs:
 
 - Pest tests
-- PHPStan analyse
-- Pint (kode-stil, dry-run)
+- PHPStan analysis
+- Pint (code style, dry-run)
 - Rector (dry-run)
 
-## Torrent domain (v1)
+## Torrent Domain (v1)
 
-- **Database** – `torrents`-tabellen rummer `user_id`, `name`, `slug`, `info_hash`, `size`, `files_count`, statistikfelter (`seeders`, `leechers`, `completed`) samt `is_visible` og timestamps.
-- **Model** – `App\Models\Torrent` + `database/factories/TorrentFactory.php` giver realistiske data og casts.
-- **Repository** – `TorrentRepositoryInterface` og `EloquentTorrentRepository` leverer pagination af synlige torrents, slug-opslag, brugeroprettelser og stats-inkrementer. Binding ligger i `RepositoryServiceProvider`.
-- **HTTP** – `TorrentController` håndterer `GET /torrents` og `GET /torrents/{slug}` (auth + verificeret) for liste- og detailvisning.
+- **Database** – The `torrents` table contains `user_id`, `name`, `slug`, `info_hash`, `size`, `files_count`, statistical fields (`seeders`, `leechers`, `completed`), `is_visible`, and timestamps.
+- **Model** – `App\Models\Torrent` + `database/factories/TorrentFactory.php` provide realistic seed data and casts.
+- **Repository** – `TorrentRepositoryInterface` and `EloquentTorrentRepository` provide pagination for visible torrents, slug lookups, user-created items, and stat increments. Binding is handled in `RepositoryServiceProvider`.
+- **HTTP** – `TorrentController` handles `GET /torrents` and `GET /torrents/{slug}` (auth + verified) for list and detail views.
 
-## Tracker engine (v1)
+## Tracker Engine (v1)
 
-- **Peers** – `peers`-tabellen binder brugere til torrents med `peer_id`, IP, port, up/down-statistik samt `last_announce_at`. Modellen/factory findes i `App\Models\Peer` og `database/factories/PeerFactory.php`.
-- **Bencode** – `App\Services\BencodeService` håndterer bencoding af svar, inkl. lister og dictionaries.
-- **Announce** – `GET /announce` (auth, verificeret, throttlet) tager standard BitTorrent-parametre, opdaterer `peers` og torrent-statistik (seeders/leechers/completed) og svarer med et gyldigt bencoded payload.
+- **Peers** – The `peers` table associates users with torrents, storing `peer_id`, IP, port, up/down statistics, and `last_announce_at`. The model/factory is located at `App\Models\Peer` and `database/factories/PeerFactory.php`.
+- **Bencode** – `App\Services\BencodeService` handles bencoding of responses, including lists and dictionaries.
+- **Announce** – `GET /announce` (auth, verified, throttled) accepts standard BitTorrent parameters, updates `peers` and torrent statistics (seeders/leechers/completed), and returns a valid bencoded payload.
