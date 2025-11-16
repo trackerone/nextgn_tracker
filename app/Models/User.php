@@ -16,6 +16,16 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 
+/**
+ * @property string $email
+ * @property string $name
+ * @property string $passkey
+ * @property bool $is_banned
+ * @property bool $is_disabled
+ * @property bool $announce_rate_limit_exceeded
+ * @property \Carbon\Carbon|null $last_announce_at
+ * @property \App\Models\Role|null $role
+ */
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory;
@@ -70,8 +80,10 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function booted(): void
     {
         static::creating(function (User $user): void {
-            if ($user->role === null) {
-                $user->role = self::ROLE_USER;
+            $roleValue = $user->getAttribute('role');
+
+            if (! is_string($roleValue) || $roleValue === '') {
+                $user->forceFill(['role' => self::ROLE_USER]);
             }
         });
     }
@@ -113,27 +125,35 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
-        return in_array($this->role, self::staffRoles(), true);
+        $roleValue = $this->resolveRoleIdentifier();
+
+        return $roleValue !== null && in_array($roleValue, self::staffRoles(), true);
     }
 
     public function isModerator(): bool
     {
-        return $this->role === self::ROLE_MODERATOR || $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+        $roleValue = $this->resolveRoleIdentifier();
+
+        return $roleValue === self::ROLE_MODERATOR || $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isAdmin(): bool
     {
-        return $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+        $roleValue = $this->resolveRoleIdentifier();
+
+        return $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isSysop(): bool
     {
-        return $this->role === self::ROLE_SYSOP;
+        return $this->resolveRoleIdentifier() === self::ROLE_SYSOP;
     }
 
     public function isLogViewer(): bool
     {
-        return $this->role === self::ROLE_ADMIN || $this->role === self::ROLE_SYSOP;
+        $roleValue = $this->resolveRoleIdentifier();
+
+        return $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isBanned(): bool
@@ -226,7 +246,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getRoleLabelAttribute(): string
     {
-        return Str::of($this->role ?? self::ROLE_USER)
+        return Str::of($this->resolveRoleIdentifier() ?? self::ROLE_USER)
             ->replace('_', ' ')
             ->title()
             ->toString();
@@ -238,6 +258,23 @@ class User extends Authenticatable implements MustVerifyEmail
     private static function staffRoles(): array
     {
         return [self::ROLE_MODERATOR, self::ROLE_ADMIN, self::ROLE_SYSOP];
+    }
+
+    public function resolveRoleIdentifier(): ?string
+    {
+        $roleRelation = $this->getRelationValue('role');
+
+        if ($roleRelation instanceof Role) {
+            if (is_string($roleRelation->slug) && $roleRelation->slug !== '') {
+                return $roleRelation->slug;
+            }
+
+            return is_string($roleRelation->name) ? $roleRelation->name : null;
+        }
+
+        $roleAttribute = $this->getAttribute('role');
+
+        return is_string($roleAttribute) ? $roleAttribute : null;
     }
 
     public static function roleFromLegacySlug(?string $slug): string

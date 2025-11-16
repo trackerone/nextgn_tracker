@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Role;
 use App\Models\User;
 
 class PermissionService
@@ -14,7 +15,7 @@ class PermissionService
             return false;
         }
 
-        $role = self::normalizeRole($user->role);
+        $role = self::normalizeRole($user->resolveRoleIdentifier());
         $rolePermissions = config('security.role_permissions', []);
         $permissions = $rolePermissions[$role] ?? ($rolePermissions['guest'] ?? []);
 
@@ -27,11 +28,19 @@ class PermissionService
             return false;
         }
 
-        return self::normalizeRole($user->role) === $role;
+        return self::normalizeRole($user->resolveRoleIdentifier()) === $role;
     }
 
-    private static function normalizeRole(?string $role): string
+    private static function normalizeRole(string|Role|null $role): string
     {
+        if ($role instanceof Role) {
+            $role = $role->slug ?? $role->name;
+        }
+
+        if ($role !== null) {
+            $role = User::roleFromLegacySlug($role);
+        }
+
         return match ($role) {
             null => 'guest',
             User::ROLE_SYSOP, User::ROLE_ADMIN => 'admin',

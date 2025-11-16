@@ -27,6 +27,8 @@ class UserPromoteCommand extends Command
             return self::FAILURE;
         }
 
+        /** @var \App\Models\User $user */
+
         $role = Role::query()->where('slug', $roleSlug)->first();
 
         if ($role === null) {

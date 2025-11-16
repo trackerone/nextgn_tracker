@@ -31,7 +31,7 @@ class UserRoleController extends Controller
             ])],
         ]);
 
-        $oldRole = $user->role;
+        $oldRole = $user->getAttribute('role');
         $user->forceFill(['role' => $data['role']])->save();
 
         $this->auditLogger->log('user.role_changed', $user, [

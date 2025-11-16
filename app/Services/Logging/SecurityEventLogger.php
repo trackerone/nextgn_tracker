@@ -36,7 +36,7 @@ class SecurityEventLogger
             'event_type' => $eventType,
             'severity' => $severity,
             'message' => $message,
-            'context' => $context === [] ? null : $context,
+            'context' => $context ?: null,
         ]);
 
         $this->writeFrameworkLog($severity, $message, $context + ['event_type' => $eventType]);

@@ -27,6 +27,7 @@ class PrivateMessageController extends Controller
     {
         $user = $request->user();
 
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $conversations */
         $conversations = $this->conversations->paginateForUser($user, perPage: 20);
 
         return response()->json($conversations->getCollection());
