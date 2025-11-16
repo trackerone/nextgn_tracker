@@ -20,7 +20,7 @@ final class RequestGuard
         'javascript\\s*:',
         'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
         'PHNjcmlwdD4',
-        '\\"__proto__\\"\\s*:',
+        '"__proto__"\\s*:',
         '(\\{|\\[)\\s*\\"(?:__proto__|constructor)\\"',
     ];
 
