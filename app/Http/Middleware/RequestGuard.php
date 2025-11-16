@@ -26,7 +26,8 @@ final class RequestGuard
 
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    ) {}
+    ) {
+    }
 
     /**
      * @param  Closure(Request):Response  $next

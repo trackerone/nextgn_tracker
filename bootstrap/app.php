@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use App\Http\Middleware\EnsureMinimumRole;
@@ -28,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => EnsureUserIsStaff::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
-        // behold gerne din nuværende, men ingen ekstra response()-logik her
+    ->withExceptions(function (Exceptions $exceptions): void {
+        // Keep the existing exception handling here without adding extra response() logic.
     })
     ->create();

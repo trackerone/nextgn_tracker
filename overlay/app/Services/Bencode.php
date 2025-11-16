@@ -1,31 +1,44 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
-class Bencode
+final class Bencode
 {
-    public static function encode($value): string
+    public static function encode(mixed $value): string
     {
         if (is_int($value)) {
-            return 'i' . $value . 'e';
+            return 'i'.$value.'e';
         }
+
         if (is_string($value)) {
-            return strlen($value) . ':' . $value;
+            return strlen($value).':'.$value;
         }
+
         if (is_array($value)) {
             $isList = array_keys($value) === range(0, count($value) - 1);
+
             if ($isList) {
-                $out = 'l';
-                foreach ($value as $v) $out .= self::encode($v);
-                return $out . 'e';
+                $encodedList = 'l';
+
+                foreach ($value as $item) {
+                    $encodedList .= self::encode($item);
+                }
+
+                return $encodedList.'e';
             }
+
             ksort($value, SORT_STRING);
-            $out = 'd';
-            foreach ($value as $k => $v) {
-                $out .= self::encode((string)$k) . self::encode($v);
+            $encodedDictionary = 'd';
+
+            foreach ($value as $key => $item) {
+                $encodedDictionary .= self::encode((string) $key).self::encode($item);
             }
-            return $out . 'e';
+
+            return $encodedDictionary.'e';
         }
-        return self::encode((string)$value);
+
+        return self::encode((string) $value);
     }
 }
