@@ -47,6 +47,16 @@ jobs:
       - name: Install composer dependencies
         run: composer install --no-progress --prefer-dist --no-interaction
 
+      - name: Prepare application environment
+        run: |
+          if [ ! -f .env ]; then
+            cp .env.example .env
+          fi
+          php artisan key:generate --force
+          touch database/database.sqlite
+          perl -0pi -e 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/m' .env
+          perl -0pi -e "s#^DB_DATABASE=.*#DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite#m" .env
+
       - name: Display PHP version
         run: php -v
 
