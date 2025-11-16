@@ -1,0 +1,40 @@
+name: Pint Fix
+
+on:
+  # Kørres manuelt fra Actions-fanen
+  workflow_dispatch: {}
+
+jobs:
+  pint-fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Vi skal kunne committe tilbage
+          fetch-depth: 0
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run Laravel Pint (auto-fix)
+        run: |
+          ./vendor/bin/pint
+
+      - name: Commit and push Pint changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: format codebase with Laravel Pint"
+          branch: main   # <-- RET til din default branch hvis den ikke hedder main
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
+          push_options: "--force-with-lease"
+          
