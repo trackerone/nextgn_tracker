@@ -26,8 +26,6 @@
 
 </p>
 
-// > Replace `YOUR_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
-
 NextGN Tracker is the next-generation tracker-style web application rebuilt on Laravel 12 with hardened security defaults and a Vite-driven frontend. It replaces the legacy stack entirely and follows modern Laravel conventions.
 
 ## Stack
@@ -66,14 +64,12 @@ NextGN Tracker is the next-generation tracker-style web application rebuilt on L
 - Reproduce the same checks locally with `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
 
 ## Contributing
-// <<<<<< codex/create-contributing.md-and-update-readme.md-mvu9hi
 Contributions are welcome.  
 Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for full details.
 =======
 Thanks for helping shape NextGN Tracker. Review the contribution workflow, coding standards, and security rules before opening a pull request.
 
 [See CONTRIBUTING.md for details](./CONTRIBUTING.md)
-// >>>>>> main
 
 ## Security & reference docs
 - `docs/SECURITY-OVERVIEW.md` – describes auth hardening, tracker requirements, rate limiting, and API passkey/HMAC expectations.
