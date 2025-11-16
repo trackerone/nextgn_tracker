@@ -11,8 +11,10 @@ final class SanitizationService
 {
     private readonly array $allowedTags;
     private readonly string $allowedTagString;
+
     private readonly array $forbiddenTags;
     private readonly array $forbiddenAttributes;
+
     private readonly int $maxInputLength;
 
     public function __construct()
