@@ -24,6 +24,7 @@ class TopicController extends Controller
         private readonly TopicSlugService $slugService,
         private readonly MarkdownService $markdownService,
     ) {
+        // Dependencies are injected via constructor.
     }
 
     public function index(Request $request): JsonResponse
@@ -126,6 +127,8 @@ class TopicController extends Controller
     }
 
     /**
+     * Format the topics paginator for a JSON response.
+     *
      * @param \Illuminate\Pagination\LengthAwarePaginator $paginator
      * @return array<string, mixed>
      */
