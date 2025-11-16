@@ -37,15 +37,34 @@ class SecurityAuditLog extends Model
 
     public static function log(?User $user, string $action, mixed $context = null): void
     {
+        self::storePayload($user, $action, $context);
+    }
+
+    public static function logAndWarn(?User $user, string $action, mixed $context = null): void
+    {
+        $payload = self::storePayload($user, $action, $context);
+
+        logger()->warning('security.audit', [
+            'action' => $payload['action'],
+            'user_id' => $payload['user_id'],
+            'ip' => $payload['ip'],
+            'context' => $payload['context'],
+        ]);
+    }
+
+    private static function storePayload(?User $user, string $action, mixed $context = null): array
+    {
         $payload = [
             'user_id' => $user?->id,
             'action' => $action,
             'context' => self::normalizeContext($context),
-            'ip' => request()->ip(),
-            'user_agent' => request()->userAgent(),
+            'ip' => request()?->ip(),
+            'user_agent' => request()?->userAgent(),
         ];
 
         self::query()->create($payload);
+
+        return $payload;
     }
 
     private static function normalizeContext(mixed $context): ?array

@@ -8,6 +8,7 @@ use App\Http\Requests\TorrentBrowseRequest;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Services\Security\SanitizationService;
+use App\Support\ContentSafety;
 use Illuminate\Contracts\View\View;
 
 class TorrentController extends Controller
@@ -98,15 +99,10 @@ class TorrentController extends Controller
     {
         $this->authorize('view', $torrent);
 
-        $descriptionHtml = null;
-
-        if ($torrent->description !== null) {
-            $descriptionHtml = nl2br(e($torrent->description));
-        }
-
         return view('torrents.show', [
             'torrent' => $torrent,
-            'descriptionHtml' => $descriptionHtml,
+            'descriptionHtml' => ContentSafety::markdownToSafeHtml($torrent->description),
+            'nfoText' => ContentSafety::nfoToSafeText($torrent->nfo_text),
         ]);
     }
 
