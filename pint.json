@@ -1,0 +1,10 @@
+{
+    "$schema": "https://pint.laravel.com/schema.json",
+    "preset": "laravel",
+    "exclude": [
+        "vendor",
+        "storage",
+        "node_modules",
+        "bootstrap/cache"
+    ]
+}

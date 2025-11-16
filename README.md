@@ -1,5 +1,19 @@
 # NextGN Tracker
 
+![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel)
+![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php)
+![Node](https://img.shields.io/badge/Node-20--24_LTS-339933?style=for-the-badge&logo=node.js)
+![Vite](https://img.shields.io/badge/Frontend-Vite_Assets-646CFF?style=for-the-badge&logo=vite)
+![License](https://img.shields.io/badge/License-MIT-0EA5E9?style=for-the-badge)
+
+[![CI - PHP](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml)
+[![CI - Frontend](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml)
+![Lint](https://img.shields.io/badge/PHP_Lint-Pint_Passing-0EA5E9?style=flat-square)
+![Static Analysis](https://img.shields.io/badge/Static_Analysis-Larastan-22C55E?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-Pest_Passing-16A34A?style=flat-square)
+
+> Replace `YOUR_GITHUB_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
+
 NextGN Tracker is the next-generation tracker-style web application rebuilt on Laravel 12 with hardened security defaults and a Vite-driven frontend. It replaces the legacy stack entirely and follows modern Laravel conventions.
 
 ## Stack
@@ -30,6 +44,12 @@ NextGN Tracker is the next-generation tracker-style web application rebuilt on L
 ## Local development
 - Serve the backend via `php artisan serve` (or Sail/Herd). The dev server listens on http://localhost:8000 by default.
 - Run `npm run dev` in another terminal to launch Vite with hot reloading. Blade templates should include `@vite(['resources/css/app.css','resources/js/app.tsx'])`.
+
+## CI / Quality
+- **CI - PHP** installs Composer dependencies on PHP 8.3, runs Laravel Pint via `composer lint`, executes Pest tests via `composer test`, and performs Larastan static analysis via `composer analyse`.
+- **CI - Frontend** provisions Node.js 22 LTS, installs npm dependencies, and validates the production asset build with `npm run build`.
+- These workflows trigger on pushes and pull requests targeting main/master as well as feature branches to guard regressions before merge.
+- Reproduce the same checks locally with `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
 
 ## Security & reference docs
 - `docs/SECURITY-OVERVIEW.md` – describes auth hardening, tracker requirements, rate limiting, and API passkey/HMAC expectations.

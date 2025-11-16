@@ -1,0 +1,60 @@
+name: CI - PHP
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - '**'
+  pull_request:
+    branches:
+      - main
+      - master
+      - '**'
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.3']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl, pcntl, bcmath, pdo_mysql, exif, fileinfo
+          ini-values: post_max_size=256M, memory_limit=1G
+          coverage: none
+
+      - name: Determine composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php-version }}-composer-
+
+      - name: Install composer dependencies
+        run: composer install --no-progress --prefer-dist --no-interaction
+
+      - name: Display PHP version
+        run: php -v
+
+      - name: Lint (Laravel Pint)
+        run: composer lint
+
+      - name: Static Analysis (Larastan)
+        run: composer analyse
+
+      - name: Tests (Pest)
+        run: composer test
