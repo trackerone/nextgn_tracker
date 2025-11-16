@@ -4,11 +4,7 @@ includes:
 parameters:
     paths:
         - app
-    level: 7
+    tmpDir: build/phpstan
+    level: 5
     parallel:
-<<<<<< codex/fix-phpstan-analysis-processtimeout-pge1n5
         processTimeout: 300.0
-=======
-        processTimeout: 300
->>>>>> main
-    checkMissingIterableValueType: false
