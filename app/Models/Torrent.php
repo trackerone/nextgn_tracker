@@ -140,6 +140,9 @@ class Torrent extends Model
         return $query->visible();
     }
 
+    /**
+     * Limit the query to torrents marked as visible.
+     */
     public function scopeVisible(Builder $query): Builder
     {
         return $query->where('is_visible', true);
