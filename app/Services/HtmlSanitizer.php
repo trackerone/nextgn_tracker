@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 class HtmlSanitizer
 {
     private const ALLOWED_TAGS = ['p', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'blockquote', 'strong', 'em', 'h1', 'h2', 'h3'];
+
     private const LINK_ATTRIBUTES = ['href', 'rel', 'target'];
 
     public function clean(string $html): string
