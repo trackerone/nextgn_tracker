@@ -1,7 +1,7 @@
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-22C55E?style=for-the-badge&logo=github)
 ![Stack](https://img.shields.io/badge/Stack-Laravel_12,_PHP_8.3%2B,_Vite-2563EB?style=for-the-badge)
-[![CI - PHP](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml)
-[![CI - Frontend](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml)
+[![CI - PHP](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-php.yml)
+[![CI - Frontend](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-frontend.yml)
 
 > Update the `YOUR_GITHUB_ORG` placeholder in the badge URLs above to match your actual GitHub organization or username so the workflow indicators point to the correct repository.
 
