@@ -92,7 +92,7 @@ We invite new maintainers from the pool of consistent contributors who:
 
 If you're interested, contact the current maintainers via the channel listed in `docs/SECURITY-OVERVIEW.md` or start a discussion outlining your contributions and availability.
 
- <p align="center">
+<p align="center">
 
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-22C55E?style=for-the-badge&logo=github)
 ![Stack](https://img.shields.io/badge/Stack-Laravel_12,_PHP_8.3%2B,_Vite-2563EB?style=for-the-badge)
