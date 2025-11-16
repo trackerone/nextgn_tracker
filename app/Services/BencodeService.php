@@ -169,16 +169,20 @@ class BencodeService
 
         $items = [];
 
-        while ($offset < strlen($payload) && $payload[$offset] !== 'e') {
+        while (true) {
+            if ($offset >= strlen($payload)) {
+                throw new InvalidArgumentException('Dictionary not terminated.');
+            }
+
+            if ($payload[$offset] === 'e') {
+                $offset++;
+
+                break;
+            }
+
             $key = $this->decodeStringValue($payload, $offset);
             $items[$key] = $this->decodeValue($payload, $offset);
         }
-
-        if ($offset >= strlen($payload)) {
-            throw new InvalidArgumentException('Dictionary not terminated.');
-        }
-
-        $offset++;
 
         return $items;
     }

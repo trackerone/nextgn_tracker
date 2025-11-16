@@ -25,7 +25,7 @@ class UserFactory extends Factory
             'password' => '$2y$10$'.Str::random(53),
             'remember_token' => Str::random(10),
             'role' => User::ROLE_USER,
-            'role_id' => Role::query()->inRandomOrder()->value('id'),
+            'role_id' => $this->defaultRoleId(),
             'passkey' => bin2hex(random_bytes(32)),
         ];
     }
@@ -35,5 +35,13 @@ class UserFactory extends Factory
         return $this->state(fn () => [
             'email_verified_at' => null,
         ]);
+    }
+
+    private function defaultRoleId(): int
+    {
+        $preferred = Role::query()->where('slug', 'user1')->value('id')
+            ?? Role::query()->where('slug', Role::DEFAULT_SLUG)->value('id');
+
+        return $preferred ?? Role::factory()->withSlug(Role::DEFAULT_SLUG)->create()->getKey();
     }
 }

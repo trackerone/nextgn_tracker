@@ -49,6 +49,12 @@ class HtmlSanitizer
         if ($node instanceof DOMElement) {
             $tag = Str::lower($node->tagName);
 
+            if ($tag === 'script') {
+                $this->removeNode($node);
+
+                return;
+            }
+
             if (! in_array($tag, self::ALLOWED_TAGS, true)) {
                 $children = iterator_to_array($node->childNodes);
                 $this->unwrap($node);
@@ -118,6 +124,17 @@ class HtmlSanitizer
 
         while ($element->firstChild !== null) {
             $parent->insertBefore($element->firstChild, $element);
+        }
+
+        $parent->removeChild($element);
+    }
+
+    private function removeNode(DOMElement $element): void
+    {
+        $parent = $element->parentNode;
+
+        if ($parent === null) {
+            return;
         }
 
         $parent->removeChild($element);
