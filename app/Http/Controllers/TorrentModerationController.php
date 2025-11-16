@@ -44,7 +44,7 @@ class TorrentModerationController extends Controller
     {
         $this->authorize('moderate', $torrent);
 
-        if (! PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
+        if (!PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
             abort(403);
         }
 
@@ -71,7 +71,7 @@ class TorrentModerationController extends Controller
     {
         $this->authorize('moderate', $torrent);
 
-        if (! PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
+        if (!PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
             abort(403);
         }
 
@@ -104,7 +104,7 @@ class TorrentModerationController extends Controller
     {
         $this->authorize('moderate', $torrent);
 
-        if (! PermissionService::allow($request->user(), 'torrent.delete', $torrent)) {
+        if (!PermissionService::allow($request->user(), 'torrent.delete', $torrent)) {
             abort(403);
         }
 

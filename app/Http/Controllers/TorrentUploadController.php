@@ -31,8 +31,7 @@ class TorrentUploadController extends Controller
         private readonly NfoParser $nfoParser,
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
-    )
-    {
+    ) {
     }
 
     public function create(): View
@@ -53,7 +52,7 @@ class TorrentUploadController extends Controller
     {
         $this->authorize('create', Torrent::class);
 
-        if (! PermissionService::allow($request->user(), 'torrent.upload')) {
+        if (!PermissionService::allow($request->user(), 'torrent.upload')) {
             abort(403);
         }
 
@@ -62,7 +61,7 @@ class TorrentUploadController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (! $torrentFile instanceof UploadedFile) {
+        if (!$torrentFile instanceof UploadedFile) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
@@ -212,7 +211,7 @@ class TorrentUploadController extends Controller
         $clean = [];
 
         foreach ($codecs as $key => $value) {
-            if (! is_string($key) || ! is_string($value)) {
+            if (!is_string($key) || !is_string($value)) {
                 continue;
             }
 

@@ -16,8 +16,7 @@ final class ResponseGuard
 {
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    )
-    {
+    ) {
     }
 
     /**
@@ -78,7 +77,7 @@ final class ResponseGuard
     {
         $contentType = $response->headers->get('Content-Type', '');
 
-        if (! is_string($contentType) || ($contentType !== '' && ! str_contains($contentType, 'text/html') && ! str_contains($contentType, 'text/plain'))) {
+        if (!is_string($contentType) || ($contentType !== '' && !str_contains($contentType, 'text/html') && !str_contains($contentType, 'text/plain'))) {
             return;
         }
 

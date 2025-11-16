@@ -14,8 +14,7 @@ class EloquentUserRepository implements UserRepositoryInterface
 {
     public function __construct(
         private readonly RoleRepositoryInterface $roles,
-    )
-    {
+    ) {
     }
 
     public function paginate(int $perPage = 50): LengthAwarePaginator
@@ -49,7 +48,7 @@ class EloquentUserRepository implements UserRepositoryInterface
     {
         $role = $this->roles->findBySlug($roleSlug);
 
-        if (! $role) {
+        if (!$role) {
             return;
         }
 

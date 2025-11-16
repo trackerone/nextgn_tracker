@@ -35,7 +35,7 @@ class AuditLogger
 
     private function resolveRequest(): ?Request
     {
-        if (! App::has('request')) {
+        if (!App::has('request')) {
             return null;
         }
 

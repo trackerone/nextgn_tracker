@@ -23,8 +23,7 @@ final class TorrentIngestService
         private readonly BencodeService $bencode,
         private readonly SanitizationService $sanitizer,
         private readonly UploadPathGenerator $pathGenerator,
-    )
-    {
+    ) {
     }
 
     /**
@@ -35,7 +34,7 @@ final class TorrentIngestService
         $payload = (string) $torrentFile->get();
         $decoded = $this->bencode->decode($payload);
 
-        if (! is_array($decoded) || ! isset($decoded['info']) || ! is_array($decoded['info'])) {
+        if (!is_array($decoded) || !isset($decoded['info']) || !is_array($decoded['info'])) {
             throw new InvalidArgumentException('Invalid torrent payload: missing info dictionary.');
         }
 
@@ -100,7 +99,7 @@ final class TorrentIngestService
     {
         $name = $info['name'] ?? null;
 
-        if (! is_string($name) || trim($name) === '') {
+        if (!is_string($name) || trim($name) === '') {
             throw new InvalidArgumentException('Torrent is missing a valid name.');
         }
 
@@ -118,7 +117,7 @@ final class TorrentIngestService
 
         $files = $info['files'] ?? null;
 
-        if (! is_array($files) || $files === []) {
+        if (!is_array($files) || $files === []) {
             throw new InvalidArgumentException('Torrent files metadata is missing.');
         }
 
@@ -127,7 +126,7 @@ final class TorrentIngestService
         foreach ($files as $file) {
             $length = $file['length'] ?? null;
 
-            if (! is_numeric($length)) {
+            if (!is_numeric($length)) {
                 throw new InvalidArgumentException('Torrent file entry is missing length.');
             }
 
@@ -180,7 +179,7 @@ final class TorrentIngestService
         $cleaned = [];
 
         foreach ($tags as $tag) {
-            if (! is_string($tag)) {
+            if (!is_string($tag)) {
                 continue;
             }
 
@@ -207,7 +206,7 @@ final class TorrentIngestService
         $cleaned = [];
 
         foreach ($codecs as $key => $value) {
-            if (! is_string($key) || $value === null) {
+            if (!is_string($key) || $value === null) {
                 continue;
             }
 
