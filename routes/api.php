@@ -1,3 +1,4 @@
+<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
 <?php
 
 declare(strict_types=1);
@@ -14,3 +15,10 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
         ]);
     })->name('api.user');
 });
+=======
+<?php declare(strict_types=1);
+
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['api', 'api.hmac'])->group(static function (): void {});
+>>>>>> main

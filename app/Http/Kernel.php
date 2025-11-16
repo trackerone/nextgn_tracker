@@ -77,5 +77,4 @@ class Kernel extends HttpKernel
         'lockdown' => LockdownModeMiddleware::class,
         'api.hmac' => ApiKeyHmacMiddleware::class,
     ];
-
 }

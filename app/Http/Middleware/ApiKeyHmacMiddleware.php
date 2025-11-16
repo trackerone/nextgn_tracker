@@ -6,16 +6,23 @@ namespace App\Http\Middleware;
 
 use App\Models\ApiKey;
 use App\Models\SecurityAuditLog;
+<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
+=======
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+>>>>>> main
 
 class ApiKeyHmacMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
+<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
         $secret = (string) config('security.api.hmac_secret');
 
         if ($secret === '') {
@@ -66,20 +73,57 @@ class ApiKeyHmacMiddleware
 
         if (! auth()->check()) {
             auth()->setUser($apiKey->user);
+=======
+        $secret = config('security.api.hmac_secret') ?? config('api.hmac_secret');
+        abort_if(empty($secret), 500, 'API HMAC not configured');
+
+        $headers = ['key' => $request->header('X-Api-Key'), 'timestamp' => $request->header('X-Api-Timestamp'), 'signature' => $request->header('X-Api-Signature')];
+        if (in_array(null, $headers, true)) {
+            $this->reject($request, 'missing_headers');
+        }
+
+        $timestamp = ctype_digit($headers['timestamp']) ? (int) $headers['timestamp'] : (($parsed = strtotime($headers['timestamp'])) === false ? null : $parsed);
+        if ($timestamp === null) {
+            $this->reject($request, 'invalid_timestamp');
+        }
+
+        if (abs(time() - $timestamp) > (int) config('security.api.allowed_time_skew_seconds', 300)) {
+            $this->reject($request, 'timestamp_skew');
+        }
+
+        $apiKey = ApiKey::query()->where('key', $headers['key'])->first();
+        if ($apiKey === null) {
+            $this->reject($request, 'unknown_key');
+        }
+
+        $canonical = strtoupper($request->getMethod())."\n".$request->getPathInfo()."\n".$headers['timestamp']."\n".$request->getContent();
+        if (! hash_equals(hash_hmac('sha256', $canonical, $secret), $headers['signature'])) {
+            $this->reject($request, 'invalid_signature');
+        }
+
+        $user = $apiKey->user;
+        if ($user !== null && auth()->user() === null) {
+            auth()->setUser($user);
+>>>>>> main
         }
 
         $apiKey->forceFill(['last_used_at' => now()])->save();
 
+<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
         SecurityAuditLog::log($apiKey->user, 'api.request', [
             'user_id' => $apiKey->user_id,
             'path' => $request->path(),
             'method' => $request->method(),
             'ip' => $request->ip(),
         ]);
+=======
+        SecurityAuditLog::log($user, 'api.request', ['ip' => $request->ip(), 'path' => $request->path(), 'method' => $request->method()]);
+>>>>>> main
 
         return $next($request);
     }
 
+<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
     private function normalizeTimestamp(string $value): ?int
     {
         if (ctype_digit($value)) {
@@ -109,5 +153,11 @@ class ApiKeyHmacMiddleware
             'path' => $request->path(),
             'reason' => $reason,
         ]);
+=======
+    private function reject(Request $request, string $reason): never
+    {
+        SecurityAuditLog::log(null, 'api.request.failed', ['ip' => $request->ip(), 'path' => $request->path(), 'reason' => $reason]);
+        abort(401, 'Invalid API signature.');
+>>>>>> main
     }
 }

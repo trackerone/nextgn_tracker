@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TorrentBrowseRequest;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Services\Security\SanitizationService;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class TorrentController extends Controller
 {
@@ -19,33 +18,40 @@ class TorrentController extends Controller
     {
     }
 
-    public function index(Request $request): View
+    public function index(TorrentBrowseRequest $request): View
     {
-        $orderMap = [
-            'created' => 'uploaded_at',
-            'size' => 'size_bytes',
-            'seeders' => 'seeders',
-            'leechers' => 'leechers',
-            'completed' => 'completed',
-        ];
+        $orderMap = config('search.order_aliases', []);
+        $allowedSortFields = config('search.allowed_sort_fields', []);
+        $defaultOrderKey = array_key_first($orderMap) ?? 'created';
 
-        $validated = $request->validate([
-            'q' => ['nullable', 'string', 'max:120'],
-            'type' => ['nullable', Rule::in(self::TYPES)],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'order' => ['nullable', Rule::in(array_keys($orderMap))],
-            'direction' => ['nullable', Rule::in(['asc', 'desc'])],
-        ]);
+        $validated = $request->validated();
 
         $searchTerm = isset($validated['q']) ? $this->sanitizer->sanitizeString($validated['q']) : null;
         $searchTerm = $searchTerm !== '' ? $searchTerm : null;
+
+        $orderKey = $validated['order'] ?? $defaultOrderKey;
+        if (! array_key_exists($orderKey, $orderMap)) {
+            $orderKey = $defaultOrderKey;
+        }
+
+        $orderColumn = $orderMap[$orderKey] ?? 'uploaded_at';
+        if ($allowedSortFields !== [] && ! in_array($orderColumn, $allowedSortFields, true)) {
+            $orderColumn = $allowedSortFields[0];
+        }
+
+        $direction = $validated['direction'] ?? 'desc';
+        $direction = in_array($direction, ['asc', 'desc'], true) ? $direction : 'desc';
+
+        $perPage = (int) ($validated['per_page'] ?? config('search.default_per_page', 25));
+        $perPage = max(1, min($perPage, (int) config('search.max_per_page', 100)));
 
         $filters = [
             'q' => $searchTerm,
             'type' => $validated['type'] ?? null,
             'category_id' => $validated['category_id'] ?? null,
-            'order' => $validated['order'] ?? 'created',
-            'direction' => $validated['direction'] ?? 'desc',
+            'order' => $orderKey,
+            'direction' => $direction,
+            'per_page' => $perPage,
         ];
 
         $torrentsQuery = Torrent::query()
@@ -70,13 +76,10 @@ class TorrentController extends Controller
             $torrentsQuery->where('category_id', $filters['category_id']);
         }
 
-        $orderColumn = $orderMap[$filters['order']] ?? $orderMap['created'];
-        $direction = $filters['direction'];
-
         $torrents = $torrentsQuery
             ->orderBy($orderColumn, $direction)
             ->orderByDesc('id')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         $categories = Category::query()

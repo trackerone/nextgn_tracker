@@ -82,6 +82,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(User::class, 'invited_by_id');
     }
 
+    public function apiKeys(): HasMany
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
     public function userTorrents(): HasMany
     {
         return $this->hasMany(UserTorrent::class);
