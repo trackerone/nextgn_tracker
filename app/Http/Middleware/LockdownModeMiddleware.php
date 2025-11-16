@@ -12,11 +12,11 @@ use Symfony\Component\HttpFoundation\Response;
 class LockdownModeMiddleware
 {
     /**
-     * @param Closure(Request): Response $next
+     * @param  Closure(Request):Response  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!config('security.lockdown', false)) {
+        if (! config('security.lockdown', false)) {
             return $next($request);
         }
 

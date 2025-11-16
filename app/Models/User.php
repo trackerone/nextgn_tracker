@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\ApiKey;
+use App\Models\Invite;
+use App\Models\Role;
+use App\Models\UserTorrent;
 use App\Services\Tracker\PasskeyService;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -90,11 +93,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function userTorrents(): HasMany
     {
         return $this->hasMany(UserTorrent::class);
-    }
-
-    public function apiKeys(): HasMany
-    {
-        return $this->hasMany(ApiKey::class);
     }
 
     public function sentInvites(): HasMany

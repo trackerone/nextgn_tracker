@@ -82,12 +82,10 @@ const App: React.FC = () => {
 
 const element = document.getElementById('app');
 
-if (!element) {
-  throw new Error('App root element not found');
+if (element) {
+  ReactDOM.createRoot(element).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
 }
-
-ReactDOM.createRoot(element).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
