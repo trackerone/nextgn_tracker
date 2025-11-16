@@ -98,8 +98,6 @@ If you're interested, contact the current maintainers via the channel listed in 
 [![CI - PHP](https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-php.yml)
 [![CI - Frontend](https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-frontend.yml)
 
-> Update the `YOUR_GITHUB_ORG` placeholder in the badge URLs above to match your actual GitHub organization or username so the workflow indicators point to the correct repository.
-
 # Contributing to NextGN Tracker
 
 ## Introduction
