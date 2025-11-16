@@ -36,14 +36,33 @@ class ApiKeyHmacMiddleware
             $this->reject($request, 'unknown_key');
         }
 
-        $canonical = strtoupper($request->getMethod())."\n".$request->getPathInfo()."\n".$headers['timestamp']."\n".$request->getContent();
+        $queryString = $request->getQueryString() ?? '';
+        $canonical = implode("\n", [
+            strtoupper($request->getMethod()),
+            $request->getPathInfo(),
+            $queryString,
+            $headers['timestamp'],
+            $request->getContent(),
+        ]);
         if (! hash_equals(hash_hmac('sha256', $canonical, $secret), $headers['signature'])) {
             $this->reject($request, 'invalid_signature');
         }
 
         $user = $apiKey->user;
-        if ($user !== null && auth()->user() === null) {
-            auth()->setUser($user);
+        if ($user !== null) {
+            if ($user->isBanned() || $user->isDisabled()) {
+                SecurityAuditLog::log($user, 'api.request.blocked', [
+                    'ip' => $request->ip(),
+                    'path' => $request->path(),
+                    'reason' => $user->isBanned() ? 'banned' : 'disabled',
+                ]);
+
+                abort(403, 'Your account is disabled.');
+            }
+
+            if (auth()->user() === null) {
+                auth()->setUser($user);
+            }
         }
 
         $apiKey->forceFill(['last_used_at' => now()])->save();
