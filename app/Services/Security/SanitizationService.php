@@ -185,7 +185,7 @@ final class SanitizationService
     private function neutralizeJavascriptProtocols(string $value): string
     {
         $value = preg_replace_callback(
-            '~\b(href|src)\s*=\s*("|\')(.*?)\2~i',
+            "~\\b(href|src)\\s*=\\s*(['\"])(.*?)\\2~i",
             function (array $matches): string {
                 $attribute = strtolower($matches[1]);
                 $url = trim($matches[3]);
