@@ -24,7 +24,7 @@ class TopicController extends Controller
         private readonly TopicSlugService $slugService,
         private readonly MarkdownService $markdownService,
     ) {
-        // Dependencies are injected via constructor.
+        // Dependencies are injected via the constructor.
     }
 
     public function index(Request $request): JsonResponse
@@ -84,7 +84,9 @@ class TopicController extends Controller
             'title' => ['required', 'string', 'min:3', 'max:140'],
         ]);
 
-        $updated = $this->topics->update($topic, ['title' => $validated['title']]);
+        $updated = $this->topics->update($topic, [
+            'title' => $validated['title'],
+        ]);
 
         return response()->json($updated);
     }
@@ -134,7 +136,6 @@ class TopicController extends Controller
      */
     private function formatTopics(LengthAwarePaginator $paginator): array
     {
-        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
         return [
             'data' => $paginator->getCollection(),
             'meta' => [
