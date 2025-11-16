@@ -14,7 +14,8 @@ class ScrapeController extends Controller
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly ScrapeService $scrape,
-    ) {
+    )
+    {
     }
 
     public function __invoke(Request $request): Response

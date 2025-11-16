@@ -50,7 +50,7 @@ class BencodeService
     }
 
     /**
-     * @param array<int, mixed> $values
+     * @param  array<int, mixed>  $values
      */
     private function encodeList(array $values): string
     {
@@ -64,7 +64,7 @@ class BencodeService
     }
 
     /**
-     * @param array<string, mixed> $dictionary
+     * @param  array<string, mixed>  $dictionary
      */
     private function encodeDictionary(array $dictionary): string
     {

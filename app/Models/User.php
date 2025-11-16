@@ -4,10 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\ApiKey;
-use App\Models\Invite;
-use App\Models\Role;
-use App\Models\UserTorrent;
 use App\Services\Tracker\PasskeyService;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -27,10 +23,15 @@ class User extends Authenticatable implements MustVerifyEmail
     use Notifiable;
 
     public const ROLE_USER = 'user';
+
     public const ROLE_POWER_USER = 'power_user';
+
     public const ROLE_UPLOADER = 'uploader';
+
     public const ROLE_MODERATOR = 'moderator';
+
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_SYSOP = 'sysop';
 
     protected $fillable = [

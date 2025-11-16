@@ -23,7 +23,9 @@ final class TorrentIngestService
         private readonly BencodeService $bencode,
         private readonly SanitizationService $sanitizer,
         private readonly UploadPathGenerator $pathGenerator,
-    ) {}
+    )
+    {
+    }
 
     /**
      * @param  array<string, mixed>  $attributes

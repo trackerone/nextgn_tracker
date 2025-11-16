@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -10,18 +9,19 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InviteAdminController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\AnnounceController;
+use App\Http\Controllers\Api\ApiKeyController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
-use App\Http\Controllers\ConversationMessageController;
+use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
+use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
-use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));

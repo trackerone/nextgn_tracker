@@ -8,7 +8,9 @@ use App\Services\Security\SanitizationService;
 
 final class NfoParser
 {
-    public function __construct(private readonly SanitizationService $sanitizer)
+    public function __construct(
+        private readonly SanitizationService $sanitizer,
+    )
     {
     }
 

@@ -63,10 +63,7 @@ NextGN Tracker is the next-generation tracker-style web application rebuilt on L
 - These workflows trigger on pushes and pull requests targeting main/master as well as feature branches to guard regressions before merge.
 - Reproduce the same checks locally with `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
 
-## Contributing
-Contributions are welcome.  
-Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for full details.
-=======
+## CONTRIBUTING
 Thanks for helping shape NextGN Tracker. Review the contribution workflow, coding standards, and security rules before opening a pull request.
 
 [See CONTRIBUTING.md for details](./CONTRIBUTING.md)

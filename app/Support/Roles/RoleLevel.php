@@ -9,10 +9,15 @@ use App\Models\User;
 final class RoleLevel
 {
     public const SYSOP_LEVEL = 12;
+
     public const ADMIN_LEVEL = 10;
+
     public const MODERATOR_LEVEL = 8;
+
     public const UPLOADER_LEVEL = 5;
+
     public const USER_LEVEL = 1;
+
     public const LOWEST_LEVEL = 0;
 
     /**

@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Log;
 
 class PasskeyService
 {
-    public function __construct(private readonly AuditLogger $auditLogger)
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+    )
     {
     }
 

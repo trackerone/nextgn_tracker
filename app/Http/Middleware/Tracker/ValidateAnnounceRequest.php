@@ -19,7 +19,8 @@ class ValidateAnnounceRequest
         private readonly FailureResponder $failureResponder,
         private readonly ClientValidator $clientValidator,
         private readonly SecurityEventLogger $securityLogger,
-    ) {
+    )
+    {
     }
 
     public function handle(Request $request, Closure $next): Response

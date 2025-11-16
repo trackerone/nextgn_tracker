@@ -9,7 +9,9 @@ use RuntimeException;
 
 final class NfoStorageService
 {
-    public function __construct(private readonly UploadPathGenerator $pathGenerator)
+    public function __construct(
+        private readonly UploadPathGenerator $pathGenerator,
+    )
     {
     }
 

@@ -19,7 +19,8 @@ class PostController extends Controller
     public function __construct(
         private readonly MarkdownService $markdownService,
         private readonly PostRepositoryInterface $posts,
-    ) {
+    )
+    {
     }
 
     public function store(StorePostRequest $request, Topic $topic): JsonResponse

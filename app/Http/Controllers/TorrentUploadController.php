@@ -31,7 +31,9 @@ class TorrentUploadController extends Controller
         private readonly NfoParser $nfoParser,
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
-    ) {}
+    )
+    {
+    }
 
     public function create(): View
     {

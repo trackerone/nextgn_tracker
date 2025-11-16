@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -7,7 +9,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::create('peers', function (Blueprint $table) {
+        Schema::create('peers', function (Blueprint $table): void {
             $table->id();
             $table->string('info_hash', 40)->index();
             $table->string('peer_id', 40);
@@ -18,7 +20,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('left_bytes')->default(0);
             $table->string('event', 16)->nullable();
             $table->timestamp('last_announce')->index();
-            $table->unique(['info_hash','peer_id']);
+            $table->unique(['info_hash', 'peer_id']);
         });
     }
 
