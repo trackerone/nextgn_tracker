@@ -91,10 +91,13 @@ We invite new maintainers from the pool of consistent contributors who:
 - Demonstrate ownership of security, performance, and accessibility concerns.
 
 If you're interested, contact the current maintainers via the channel listed in `docs/SECURITY-OVERVIEW.md` or start a discussion outlining your contributions and availability.
- 
- <!-- Stack -->
+
+ <p align="center">
+
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-22C55E?style=for-the-badge&logo=github)
 ![Stack](https://img.shields.io/badge/Stack-Laravel_12,_PHP_8.3%2B,_Vite-2563EB?style=for-the-badge)
 [![CI - PHP](https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-php.yml)
 [![CI - Frontend](https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-frontend.yml)
+
+</p>
 
