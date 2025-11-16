@@ -28,7 +28,6 @@ class UserPromoteCommand extends Command
         }
 
         /** @var \App\Models\User $user */
-
         $role = Role::query()->where('slug', $roleSlug)->first();
 
         if ($role === null) {
