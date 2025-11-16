@@ -43,15 +43,17 @@ final class SanitizationService
 
     public function sanitizeString(string $value): string
     {
-        $value = $this->normalizeEncoding($value);
-        $value = $this->limitLength($value);
-        $value = $this->removeNullBytes($value);
-        $value = $this->removeForbiddenElements($value);
-        $value = $this->stripDisallowedTags($value);
-        $value = $this->stripForbiddenAttributes($value);
-        $value = $this->neutralizeJavascriptProtocols($value);
+        $s = $value;
 
-        return trim($value);
+        $s = $this->normalizeEncoding($s);
+        $s = $this->limitLength($s);
+        $s = $this->removeNullBytes($s);
+        $s = $this->removeForbiddenElements($s);
+        $s = $this->stripDisallowedTags($s);
+        $s = $this->stripForbiddenAttributes($s);
+        $s = $this->neutralizeJavascriptProtocols($s);
+
+        return trim($s);
     }
 
     public function sanitizeHtmlDocument(string $value): string
