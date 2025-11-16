@@ -1,90 +1,43 @@
 # NextGN Tracker
 
-Baseline Laravel 11 application with modern tooling and security defaults.
+NextGN Tracker is the next-generation tracker-style web application rebuilt on Laravel 12 with hardened security defaults and a Vite-driven frontend. It replaces the legacy stack entirely and follows modern Laravel conventions.
 
-## Prerequisites
+## Stack
+- **Laravel**: 12.x
+- **PHP**: >= 8.3 (targeting 8.4 in containers/CI)
+- **Node.js**: 20–24 LTS with Vite 5
+- **Database**: MySQL/MariaDB by default (update `.env` to match your engine)
 
-- PHP 8.3+
-- Composer 2
-- Node.js 20+
-- npm 10+
+## Installation
+1. Clone the repository and enter the directory.
+2. Copy the environment template and adjust secrets:
+   ```bash
+   cp .env.example .env
+   ```
+3. Configure `APP_URL`, database credentials, queues/mail, and any tracker-specific values.
+4. Install backend and frontend dependencies:
+   ```bash
+   composer install
+   npm install
+   ```
+5. Generate the application key and run migrations:
+   ```bash
+   php artisan key:generate
+   php artisan migrate
+   ```
+6. Build assets for production (`npm run build`) or start Vite in dev mode (`npm run dev`).
 
-## Getting started
+## Local development
+- Serve the backend via `php artisan serve` (or Sail/Herd). The dev server listens on http://localhost:8000 by default.
+- Run `npm run dev` in another terminal to launch Vite with hot reloading. Blade templates should include `@vite(['resources/css/app.css','resources/js/app.tsx'])`.
 
-```bash
-cp .env.example .env
-composer install
-php artisan key:generate
-npm install
-npm run build
-php artisan serve
-```
+## Security & reference docs
+- `docs/SECURITY-OVERVIEW.md` – describes auth hardening, tracker requirements, rate limiting, and API passkey/HMAC expectations.
+- `docs/SECURITY-CHECKLIST.md` – deployment checklist that covers headers, TLS, env handling, and log redaction.
+- `docs/STACK-BASELINE.md` – outlines the supported runtime versions (PHP, Node, Laravel) and upgrade guidance.
+- `docs/FRONTEND-SETUP.md` – explains how the Vite/Tailwind/shadcn UI is wired and how to extend entrypoints.
 
-The application boots on http://localhost:8000 with frontend assets built by Vite.
-
-## Testing
-
-```bash
-composer test
-npm run lint
-```
-
-Focus on the repository coverage only with:
-
-```bash
-composer test -- --filter=Repository
-```
-
-> TODO: configure ESLint and integrate ExtendedPDO/FluentPDO when persistence is introduced.
-
-## Roles schema & seed
-
-User permissions are organised in the `roles` table, ranging from `sysop` (level 12) down to `newbie` (level 0). Seed or refresh the hierarchy with:
-
-```bash
-php artisan db:seed --class=RoleSeeder
-```
-
-Running the database seeder ensures the role ladder exists and backfills any existing users without a role to the default `newbie` record.
-
-## Demo content seeding
-
-Local, development, and testing environments automatically load `DemoContentSeeder` when running `php artisan db:seed`, ensuring production databases stay untouched. To reseed the demo fixtures explicitly, run:
-
-```bash
-php artisan db:seed --class=DemoContentSeeder
-```
-
-## Role middleware examples
-
-Two demo routes illustrate the `role.min:{level}` middleware:
-
-- `GET /admin` &rarr; requires an authenticated, verified user with role level ≥ 10 (admin).
-- `GET /mod` &rarr; requires an authenticated, verified user with role level ≥ 8 (moderator).
-
-Behind the scenes a sysop (level 12) bypasses all checks via a `Gate::before` hook, while named gates like `isAdmin` and `isUploader` are available for policy checks.
-
-## User promotion command
-
-Promote an existing account to a higher role directly from the CLI:
-
-```bash
-php artisan user:promote user@example.com admin1
-```
-
-The command validates the email and role slug before updating the user's `role_id`, returning a non-zero exit code when either lookup fails.
-
-## Forum core
-
-The forum feature introduces the following pieces:
-
-- **Models**: `Topic`, `Post`, and `PostRevision` capture discussions, replies, and edit history (including soft deletes for posts).
-- **Services**: `TopicSlugService` ensures unique slugs, while `MarkdownService` renders CommonMark-style input and sanitises the resulting HTML with a strict whitelist.
-- **Routes & policies**:
-  - Browse topics (`GET /topics`) and inspect a thread (`GET /topics/{slug}`) are public.
-  - Authenticated, verified users with role level ≥ `user1` may create topics (`POST /topics`) and replies (`POST /topics/{id}/posts`), both throttled at 60 writes/minute.
-  - Moderators (`role.min:8`) can lock/unlock and pin/unpin (`POST /topics/{id}/lock`, `/pin`), and edit/delete posts.
-  - Admins (`role.min:10`) may delete topics once the discussion is cleared.
-- **Frontend**: React components under `resources/js/components/forum` provide topic lists, thread views, and forms for creating topics or replies with inline moderation controls.
-
-All markdown input is rendered through the `MarkdownService`, which strips scripts/unsafe attributes and preserves formatting such as headings, emphasis, and links.
+## Deployment
+- Ensure environment variables, queues, and cache stores are configured for production (Redis/MySQL, S3, mail, etc.).
+- Run `php artisan migrate --force` and `npm run build` (or `npm run build && npm run preview` for smoke tests) as part of the release pipeline.
+- Serve the built app behind nginx/Apache or your platform (Render, Docker, Fly). Point the web server to `/public`, ensure PHP-FPM has write access to `storage/` and `bootstrap/cache`, and reload caches with `php artisan config:cache route:cache view:cache` after deployment.
