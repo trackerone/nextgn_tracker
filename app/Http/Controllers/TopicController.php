@@ -92,7 +92,9 @@ class TopicController extends Controller
     {
         $this->authorize('lock', $topic);
 
-        $updated = $this->topics->update($topic, ['is_locked' => ! $topic->is_locked]);
+        $updated = $this->topics->update($topic, [
+            'is_locked' => $topic->is_locked ? false : true,
+        ]);
 
         return response()->json($updated);
     }
@@ -101,7 +103,9 @@ class TopicController extends Controller
     {
         $this->authorize('pin', $topic);
 
-        $updated = $this->topics->update($topic, ['is_pinned' => ! $topic->is_pinned]);
+        $updated = $this->topics->update($topic, [
+            'is_pinned' => $topic->is_pinned ? false : true,
+        ]);
 
         return response()->json($updated);
     }
