@@ -137,7 +137,7 @@ class Torrent extends Model
 
     public function scopeDisplayable(Builder $query): Builder
     {
-        return $query->visible();
+        return $query;
     }
 
     public function scopeVisible(Builder $query): Builder
