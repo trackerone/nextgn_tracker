@@ -34,7 +34,7 @@
             "@php artisan key:generate --force"
         ],
         "test": "./vendor/bin/pest",
-        "lint": "./vendor/bin/pint",
+        "lint": "./vendor/bin/pint --test",
         "analyse": "./vendor/bin/phpstan"
     },
     "prefer-stable": true,
