@@ -13,11 +13,11 @@
   <br/>
 
   <!-- CI -->
-  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml">
-    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
   </a>
-  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml">
-    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
   </a>
 
   <!-- Static cues -->
@@ -26,8 +26,6 @@
   <img src="https://img.shields.io/badge/Tests-Passing-4ADE80?style=flat-square" />
 
 </p>
-
-> Replace `YOUR_ORG` with your GitHub organization or username so the workflow badges point to the correct repository.
 
 ## Introduction
 NextGN Tracker is a hardened, Laravel 12-based tracker platform focused on privacy, compliance, and predictable performance. We welcome contributions that improve stability, security, developer experience, and the Vite-driven interface.
