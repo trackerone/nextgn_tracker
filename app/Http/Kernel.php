@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http;
 
+use App\Http\Middleware\ApiKeyHmacMiddleware;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EnsureUserIsActive;
-<<<<<< codex/apply-zero-trust-security-hardening
 use App\Http\Middleware\LockdownModeMiddleware;
-=======
 use App\Http\Middleware\RedirectIfAuthenticated;
->>>>>> main
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\ResponseGuard;
 use App\Http\Middleware\SecurityHeadersMiddleware;
@@ -66,6 +64,6 @@ class Kernel extends HttpKernel
         'verified' => EnsureEmailIsVerified::class,
         'tracker.validate-announce' => ValidateAnnounceRequest::class,
         'lockdown' => LockdownModeMiddleware::class,
+        'api.hmac' => ApiKeyHmacMiddleware::class,
     ];
-
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
+$searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '30,1'));
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
@@ -113,8 +115,10 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
         ->name('pm.messages.store');
 });
 
-Route::middleware('auth')->group(function (): void {
-    Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+Route::middleware('auth')->group(function () use ($searchThrottle): void {
+    Route::get('/torrents', [TorrentController::class, 'index'])
+        ->middleware($searchThrottle)
+        ->name('torrents.index');
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
         ->whereNumber('torrent')
         ->name('torrents.show');
@@ -131,6 +135,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+});
+
+Route::middleware('auth')->prefix('account/api-keys')->name('account.api-keys.')->group(function (): void {
+    Route::get('/', [ApiKeyController::class, 'index'])->name('index');
+    Route::post('/', [ApiKeyController::class, 'store'])->name('store');
+    Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
 });
 
 Route::middleware(['throttle:120,1', 'tracker.validate-announce'])

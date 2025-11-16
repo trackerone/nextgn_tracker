@@ -72,13 +72,16 @@ return [
             'torrent.edit',
             'torrent.delete',
             'comment.delete',
+            'api.access',
         ],
         'uploader' => [
             'torrent.upload',
             'comment.post',
+            'api.access',
         ],
         'user' => [
             'comment.post',
+            'api.access',
         ],
         'guest' => [],
     ],
@@ -90,5 +93,12 @@ return [
         'torrent_upload' => '10,60',
         'api' => '60,1',
         'admin' => '30,1',
+        'search' => '30,1',
+    ],
+
+    'api' => [
+        'hmac_secret' => env('API_HMAC_SECRET'),
+        'allowed_time_skew_seconds' => (int) env('API_ALLOWED_TIME_SKEW', 300),
+        'default_rate_limit' => env('API_DEFAULT_RATE_LIMIT', '60,1'),
     ],
 ];
