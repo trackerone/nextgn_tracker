@@ -1,3 +1,100 @@
+<<<<<< codex/create-contributing.md-and-update-readme.md-mvu9hi
+# Contributing to NextGN Tracker
+
+<p align="center">
+
+  <!-- Stack -->
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" />
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" />
+
+  <br/>
+
+  <!-- CI -->
+  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
+  </a>
+  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
+  </a>
+
+  <!-- Static cues -->
+  <img src="https://img.shields.io/badge/Pint-Passing-22C55E?style=flat-square" />
+  <img src="https://img.shields.io/badge/Larastan-Passing-16A34A?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-Passing-4ADE80?style=flat-square" />
+
+</p>
+
+> Replace `YOUR_ORG` with your GitHub organization or username so the workflow badges point to the correct repository.
+
+## Introduction
+NextGN Tracker is a hardened, Laravel 12-based tracker platform focused on privacy, compliance, and predictable performance. We welcome contributions that improve stability, security, developer experience, and the Vite-driven interface.
+
+## Code of Conduct
+All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage with kindness, accept feedback gracefully, and keep reviews focused on the work rather than the person.
+
+## Getting Started
+1. Review the [README](./README.md) for supported runtimes, tooling, and CI workflows.
+2. Search existing issues and discussions to avoid duplicates and learn the current direction.
+3. For non-trivial changes, open an issue or proposal outlining motivation, scope, and acceptance criteria before coding.
+4. Coordinate with maintainers when touching security-sensitive paths or the deployment pipeline.
+
+## Development Setup (PHP 8.3+, Laravel 12, Node 20–24 LTS, Composer, npm, Vite)
+- Requirements: PHP 8.3+, Composer 2, Node 20–24 LTS, npm 9+, and a database supported by Laravel 12.
+- Clone the repository, then run `composer install` and `npm install`.
+- Copy `.env.example` to `.env`, set database credentials, queue/mail drivers, and tracker-specific keys.
+- Run `php artisan key:generate`, `php artisan migrate`, and boot the stack with `php artisan serve` plus `npm run dev`.
+- Use `npm run build` before submitting frontend work to ensure the Vite manifest stays valid.
+
+## Branching Strategy & Workflow
+- `main` mirrors production; all pull requests must target `develop` (or your fork's upstream integration branch).
+- Prefix branches according to intent: `feature/<short-name>`, `bugfix/<short-name>`, or `hotfix/<short-name>`.
+- Keep branches rebased on the latest `develop`: `git fetch origin && git rebase origin/develop`.
+- Example flow:
+  ```bash
+  git checkout -b feature/better-announce
+  git commit -m "Add announce endpoint metrics"
+  git push origin feature/better-announce
+  ```
+- Keep commits atomic (<200 lines when possible) and write meaningful messages describing intent.
+
+## Coding Standards (PSR-12, Pint, Larastan, Tests)
+- Follow PSR-12, strict typing, and Laravel architectural conventions.
+- Run `composer lint` (Laravel Pint) before every push; the codebase treats lint violations as blockers.
+- Execute `composer analyse` (Larastan at high level) and resolve or justify all findings.
+- Ensure `composer test` (Pest/PHPUnit) passes locally and add coverage for new behavior.
+- Frontend changes must satisfy ESLint/Prettier configs and ship with `npm run build` proof.
+
+## Security & Responsible Disclosure
+- Never introduce raw SQL that touches user input; use the query builder or parameterized statements.
+- All uploads must go through the centralized upload pipeline with antivirus and MIME validation enabled.
+- Escape or sanitize every piece of user-generated content using ContentSafety helpers before rendering.
+- Report vulnerabilities privately using the contact in `docs/SECURITY-OVERVIEW.md` before disclosing publicly.
+- When fixing vulnerabilities, include regression tests and describe risk/mitigation clearly in the PR.
+
+## Submitting Pull Requests
+1. Rebase on the latest `develop` and confirm your branch builds cleanly.
+2. Run the full toolchain locally: `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
+3. Update docs or changelogs when behavior changes.
+4. Push your branch and open a PR against `develop`, filling out the template and referencing related issues.
+5. PRs must stay green on both **CI - PHP** and **CI - Frontend** workflows; maintainers will not merge red builds.
+
+## Style Guidelines (PHP, Blade, JS, Markdown)
+- **PHP**: Prefer constructor injection, typed properties, and small service classes. Avoid facades in domain logic. Keep methods focused and document complex decisions inline.
+- **Blade**: Escape everything with `{{ }}` by default, leverage components/slots, and keep inline scripts minimal. Use `@vite` helpers for assets.
+- **JavaScript/TypeScript**: Use functional components with hooks, keep state localized, and follow the repo ESLint/Prettier setup. Import icons from `lucide-react` and shared UI from shadcn components.
+- **Markdown**: Use sentence case headings, keep paragraphs short, and favor relative links for local references.
+
+## Becoming a Maintainer
+We invite new maintainers from the pool of consistent contributors who:
+- Deliver well-tested, documented features end-to-end.
+- Participate actively in reviews and triage.
+- Demonstrate ownership of security, performance, and accessibility concerns.
+
+If you're interested, contact the current maintainers via the channel listed in `docs/SECURITY-OVERVIEW.md` or start a discussion outlining your contributions and availability.
+=======
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-22C55E?style=for-the-badge&logo=github)
 ![Stack](https://img.shields.io/badge/Stack-Laravel_12,_PHP_8.3%2B,_Vite-2563EB?style=for-the-badge)
 [![CI - PHP](https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/trackerone/nextgn_tracker/blob/main/.github/workflows/ci-php.yml)
@@ -67,3 +164,4 @@ Consistent, high-quality contributions unlock elevated permissions. Demonstrate:
 - Proactive work on documentation, CI, and security hardening.
 
 If you are interested, reach out through the maintainer contact listed in `docs/SECURITY-OVERVIEW.md` or via the project discussion board.
+>>>>>> main
