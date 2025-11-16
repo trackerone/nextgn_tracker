@@ -1,17 +1,26 @@
 <?php
+
 // tools/ensure-skeleton.php
 declare(strict_types=1);
 
 $root = rtrim(getenv('APP_ROOT') ?: '/app', '/');
 
-function put($path, $contents) {
+function put($path, $contents)
+{
     $dir = dirname($path);
-    if (!is_dir($dir)) mkdir($dir, 0775, true);
-    if (!file_exists($path)) file_put_contents($path, $contents);
+    if (! is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+    if (! file_exists($path)) {
+        file_put_contents($path, $contents);
+    }
 }
 
-function ensureDir($path) {
-    if (!is_dir($path)) mkdir($path, 0775, true);
+function ensureDir($path)
+{
+    if (! is_dir($path)) {
+        mkdir($path, 0775, true);
+    }
     @chmod($path, 0775);
 }
 
@@ -91,7 +100,7 @@ ENV;
 put("$root/.env.example", $envExample);
 
 $envPath = "$root/.env";
-if (!file_exists($envPath)) {
+if (! file_exists($envPath)) {
     @copy("$root/.env.example", $envPath);
 }
 
