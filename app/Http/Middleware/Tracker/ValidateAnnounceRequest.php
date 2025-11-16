@@ -177,6 +177,7 @@ class ValidateAnnounceRequest
 
     private function parseIntegerParam(Request $request, string $key, int $min, ?int $max, bool $logNegative = false): ?int
     {
+        /** @var mixed $value */
         $value = $request->query($key);
 
         if (is_int($value)) {

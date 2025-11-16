@@ -223,6 +223,12 @@ class Torrent extends Model
 
     public function uploadedAtForDisplay(): ?Carbon
     {
-        return $this->uploaded_at ?? $this->created_at;
+        $timestamp = $this->uploaded_at ?? $this->created_at;
+
+        if ($timestamp === null) {
+            return null;
+        }
+
+        return Carbon::instance($timestamp);
     }
 }

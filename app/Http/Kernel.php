@@ -56,7 +56,7 @@ class Kernel extends HttpKernel
     ];
 
     /**
-     * @var array<string, class-string|string>
+     * @var array<string, array<int, string>>
      */
     protected $middlewareGroups = [
         'web' => [

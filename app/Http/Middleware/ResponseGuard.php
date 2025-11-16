@@ -82,7 +82,7 @@ final class ResponseGuard
 
         $content = $response->getContent();
 
-        if ($content === false || $content === null) {
+        if ($content === false) {
             return;
         }
 

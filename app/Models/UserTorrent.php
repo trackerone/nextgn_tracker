@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property \Carbon\CarbonInterface|null $completed_at
+ * @property \Carbon\CarbonInterface|null $first_grab_at
+ * @property \Carbon\CarbonInterface|null $last_grab_at
+ */
 class UserTorrent extends Model
 {
     use HasFactory;

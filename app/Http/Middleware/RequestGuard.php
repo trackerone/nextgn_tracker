@@ -92,7 +92,7 @@ final class RequestGuard
     private function containsMaliciousPayload(string $value): bool
     {
         foreach (self::MALICIOUS_PATTERNS as $pattern) {
-            if (preg_match('/'.$pattern.'/i', $value)) {
+            if (preg_match('~'.$pattern.'~i', $value)) {
                 return true;
             }
         }

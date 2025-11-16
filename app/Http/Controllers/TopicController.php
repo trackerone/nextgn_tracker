@@ -121,10 +121,12 @@ class TopicController extends Controller
     }
 
     /**
+     * @param \Illuminate\Pagination\LengthAwarePaginator $paginator
      * @return array<string, mixed>
      */
     private function formatTopics(LengthAwarePaginator $paginator): array
     {
+        /** @var \Illuminate\Pagination\LengthAwarePaginator $paginator */
         return [
             'data' => $paginator->getCollection(),
             'meta' => [

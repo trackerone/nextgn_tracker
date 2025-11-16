@@ -54,12 +54,14 @@ class SecurityAuditLog extends Model
 
     private static function storePayload(?User $user, string $action, mixed $context = null): array
     {
+        $request = request();
+
         $payload = [
             'user_id' => $user?->id,
             'action' => $action,
             'context' => self::normalizeContext($context),
-            'ip' => request()?->ip(),
-            'user_agent' => request()?->userAgent(),
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
         ];
 
         self::query()->create($payload);
