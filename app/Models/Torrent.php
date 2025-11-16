@@ -142,7 +142,7 @@ class Torrent extends Model
 
     public function scopeVisible(Builder $query): Builder
     {
-        return $query->where('status', self::STATUS_APPROVED);
+        return $query->where('is_visible', true);
     }
 
     public function scopePending(Builder $query): Builder
