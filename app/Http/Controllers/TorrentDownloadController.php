@@ -29,7 +29,7 @@ class TorrentDownloadController extends Controller
     {
         $this->authorize('download', $torrent);
 
-        if (! $torrent->hasTorrentFile()) {
+        if (!$torrent->hasTorrentFile()) {
             abort(404);
         }
 

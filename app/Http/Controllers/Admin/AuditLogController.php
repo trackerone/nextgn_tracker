@@ -68,11 +68,11 @@ class AuditLogController extends Controller
             return null;
         }
 
-        if (! class_exists($log->target_type)) {
+        if (!class_exists($log->target_type)) {
             return null;
         }
 
-        if (! is_subclass_of($log->target_type, Model::class)) {
+        if (!is_subclass_of($log->target_type, Model::class)) {
             return null;
         }
 

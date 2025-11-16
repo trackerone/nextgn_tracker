@@ -49,7 +49,7 @@ class EloquentUserRepository implements UserRepositoryInterface
     {
         $role = $this->roles->findBySlug($roleSlug);
 
-        if (! $role) {
+        if (!$role) {
             return;
         }
 

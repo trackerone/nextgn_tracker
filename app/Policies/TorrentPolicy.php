@@ -32,7 +32,7 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        return ! $user->isBanned() && ! $user->isDisabled();
+        return !$user->isBanned() && !$user->isDisabled();
     }
 
     public function update(User $user, Torrent $torrent): bool
@@ -41,7 +41,7 @@ class TorrentPolicy
             return true;
         }
 
-        return $torrent->user_id === $user->id && ! $torrent->isSoftDeleted();
+        return $torrent->user_id === $user->id && !$torrent->isSoftDeleted();
     }
 
     public function delete(User $user, Torrent $torrent): bool

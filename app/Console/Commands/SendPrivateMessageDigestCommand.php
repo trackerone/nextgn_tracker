@@ -20,7 +20,7 @@ class SendPrivateMessageDigestCommand extends Command
     {
         $frequency = (string) $this->argument('frequency');
 
-        if (! in_array($frequency, ['daily', 'weekly'], true)) {
+        if (!in_array($frequency, ['daily', 'weekly'], true)) {
             $this->error('Frequency must be daily or weekly.');
 
             return self::FAILURE;

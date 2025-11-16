@@ -16,7 +16,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if (! PermissionService::hasRole($user, 'admin')) {
+        if (!PermissionService::hasRole($user, 'admin')) {
             abort(403);
         }
 

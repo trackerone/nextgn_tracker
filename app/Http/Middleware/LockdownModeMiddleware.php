@@ -16,7 +16,7 @@ class LockdownModeMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('security.lockdown', false)) {
+        if (!config('security.lockdown', false)) {
             return $next($request);
         }
 

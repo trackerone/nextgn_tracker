@@ -75,7 +75,7 @@ class ApiKeyController extends Controller
 
     private function ensureApiAccess(?User $user): void
     {
-        if ($user === null || ! PermissionService::allow($user, 'api.access')) {
+        if ($user === null || !PermissionService::allow($user, 'api.access')) {
             abort(403);
         }
     }
