@@ -11,7 +11,8 @@ final class NfoStorageService
 {
     public function __construct(
         private readonly UploadPathGenerator $pathGenerator,
-    ) {
+    )
+    {
     }
 
     public function store(?string $contents): ?string

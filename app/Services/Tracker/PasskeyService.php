@@ -13,7 +13,8 @@ class PasskeyService
 {
     public function __construct(
         private readonly AuditLogger $auditLogger,
-    ) {
+    )
+    {
     }
 
     public function generate(User $user): string

@@ -31,12 +31,12 @@ class TorrentController extends Controller
         $searchTerm = $searchTerm !== '' ? $searchTerm : null;
 
         $orderKey = $validated['order'] ?? $defaultOrderKey;
-        if (!array_key_exists($orderKey, $orderMap)) {
+        if (! array_key_exists($orderKey, $orderMap)) {
             $orderKey = $defaultOrderKey;
         }
 
         $orderColumn = $orderMap[$orderKey] ?? 'uploaded_at';
-        if ($allowedSortFields !== [] && !in_array($orderColumn, $allowedSortFields, true)) {
+        if ($allowedSortFields !== [] && ! in_array($orderColumn, $allowedSortFields, true)) {
             $orderColumn = $allowedSortFields[0];
         }
 

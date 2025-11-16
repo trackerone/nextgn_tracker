@@ -10,7 +10,8 @@ final class NfoParser
 {
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    ) {
+    )
+    {
     }
 
     /**
