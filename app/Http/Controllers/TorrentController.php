@@ -15,9 +15,7 @@ class TorrentController extends Controller
 {
     private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
 
-    public function __construct(private readonly SanitizationService $sanitizer)
-    {
-    }
+    public function __construct(private readonly SanitizationService $sanitizer) {}
 
     public function index(TorrentBrowseRequest $request): View
     {
@@ -31,12 +29,12 @@ class TorrentController extends Controller
         $searchTerm = $searchTerm !== '' ? $searchTerm : null;
 
         $orderKey = $validated['order'] ?? $defaultOrderKey;
-        if (!array_key_exists($orderKey, $orderMap)) {
+        if (! array_key_exists($orderKey, $orderMap)) {
             $orderKey = $defaultOrderKey;
         }
 
         $orderColumn = $orderMap[$orderKey] ?? 'uploaded_at';
-        if ($allowedSortFields !== [] && !in_array($orderColumn, $allowedSortFields, true)) {
+        if ($allowedSortFields !== [] && ! in_array($orderColumn, $allowedSortFields, true)) {
             $orderColumn = $allowedSortFields[0];
         }
 

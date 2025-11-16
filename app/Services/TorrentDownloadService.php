@@ -11,23 +11,21 @@ use RuntimeException;
 
 class TorrentDownloadService
 {
-    public function __construct(private readonly BencodeService $bencode)
-    {
-    }
+    public function __construct(private readonly BencodeService $bencode) {}
 
     public function buildPersonalizedPayload(Torrent $torrent, User $user): string
     {
         $disk = Storage::disk((string) config('upload.torrents.disk', 'torrents'));
         $relativePath = $torrent->torrentStoragePath();
 
-        if (!$disk->exists($relativePath)) {
+        if (! $disk->exists($relativePath)) {
             throw new RuntimeException('Torrent file not found.');
         }
 
         $payload = $disk->get($relativePath);
         $decoded = $this->bencode->decode($payload);
 
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             throw new RuntimeException('Invalid torrent payload.');
         }
 

@@ -15,7 +15,7 @@ final class TorrentDownloadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function testGuestsCannotAccessDownloadOrMagnet(): void
+    public function test_guests_cannot_access_download_or_magnet(): void
     {
         $torrent = Torrent::factory()->create();
 
@@ -23,7 +23,7 @@ final class TorrentDownloadTest extends TestCase
         $this->get('/torrents/'.$torrent->getKey().'/magnet')->assertRedirect('/login');
     }
 
-    public function testDownloadReturnsFileWhenExists(): void
+    public function test_download_returns_file_when_exists(): void
     {
         Storage::fake('torrents');
         $user = User::factory()->create();
@@ -42,7 +42,7 @@ final class TorrentDownloadTest extends TestCase
         $response->assertHeader('Content-Type', 'application/x-bittorrent');
     }
 
-    public function testDownloadReturns404WhenFileMissing(): void
+    public function test_download_returns404_when_file_missing(): void
     {
         Storage::fake('torrents');
         $user = User::factory()->create();
@@ -53,7 +53,7 @@ final class TorrentDownloadTest extends TestCase
             ->assertNotFound();
     }
 
-    public function testMagnetReturnsTrackerInformation(): void
+    public function test_magnet_returns_tracker_information(): void
     {
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create([

@@ -15,9 +15,7 @@ class EnsureUserIsActive
 {
     public function __construct(
         private readonly SecurityEventLogger $securityLogger,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next

@@ -32,9 +32,7 @@ final class RoleLevel
         User::ROLE_USER => 1,
     ];
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function levelForUser(User $user): int
     {

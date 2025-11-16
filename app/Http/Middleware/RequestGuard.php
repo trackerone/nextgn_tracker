@@ -26,9 +26,7 @@ final class RequestGuard
 
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @param  Closure(Request):Response  $next
@@ -60,6 +58,7 @@ final class RequestGuard
         foreach ($payload as $key => $value) {
             if ($value instanceof UploadedFile) {
                 $sanitized[$key] = $value;
+
                 continue;
             }
 
@@ -67,6 +66,7 @@ final class RequestGuard
                 [$childSanitized, $childIncidents] = $this->sanitizePayload($value);
                 $sanitized[$key] = $childSanitized;
                 $incidents = array_merge($incidents, $childIncidents);
+
                 continue;
             }
 
@@ -79,6 +79,7 @@ final class RequestGuard
                 }
 
                 $sanitized[$key] = $this->sanitizer->sanitizeString($value);
+
                 continue;
             }
 

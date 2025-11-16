@@ -20,10 +20,12 @@ test('security event logger persists events and writes to security channel', fun
     $request->server->set('REMOTE_ADDR', '172.16.0.1');
     app()->instance('request', $request);
 
-    $fakeChannel = new class ()
-{
+    $fakeChannel = new class
+    {
         public string $lastLevel = '';
+
         public string $lastMessage = '';
+
         public array $lastContext = [];
 
         public function info(string $message, array $context = []): void

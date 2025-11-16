@@ -17,7 +17,7 @@ class EnsureUserIsStaff
     {
         $user = $request->user();
 
-        if ($user === null || !$user->isStaff()) {
+        if ($user === null || ! $user->isStaff()) {
             abort(403, 'Staff only area.');
         }
 

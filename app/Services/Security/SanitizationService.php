@@ -10,9 +10,13 @@ use Normalizer;
 final class SanitizationService
 {
     private readonly array $allowedTags;
+
     private readonly string $allowedTagString;
+
     private readonly array $forbiddenTags;
+
     private readonly array $forbiddenAttributes;
+
     private readonly int $maxInputLength;
 
     public function __construct()
@@ -67,16 +71,19 @@ final class SanitizationService
         foreach ($value as $key => $item) {
             if ($item instanceof UploadedFile) {
                 $sanitized[$key] = $item;
+
                 continue;
             }
 
             if (is_array($item)) {
                 $sanitized[$key] = $this->sanitizeArray($item);
+
                 continue;
             }
 
             if (is_string($item)) {
                 $sanitized[$key] = $this->sanitizeString($item);
+
                 continue;
             }
 
@@ -163,6 +170,7 @@ final class SanitizationService
         foreach ($this->forbiddenAttributes as $attribute) {
             if ($attribute === 'on*') {
                 $value = preg_replace("/\son[a-z0-9_-]+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)/i", '', $value) ?? $value;
+
                 continue;
             }
 

@@ -35,6 +35,7 @@ class MarkdownRenderer
 
             if ($codeBuffer !== null) {
                 $codeBuffer[] = $line;
+
                 continue;
             }
 
@@ -57,16 +58,18 @@ class MarkdownRenderer
 
                 $level = strlen($matches[1]);
                 $html .= sprintf('<h%d>%s</h%d>', $level, $this->inline($matches[2]), $level);
+
                 continue;
             }
 
             if (preg_match('/^\s*([-*])\s+(.*)$/', $line, $matches) === 1) {
-                if (!$inList) {
+                if (! $inList) {
                     $html .= '<ul>';
                     $inList = true;
                 }
 
                 $html .= sprintf('<li>%s</li>', $this->inline($matches[2]));
+
                 continue;
             }
 
@@ -77,6 +80,7 @@ class MarkdownRenderer
 
             if (preg_match('/^>\s?(.*)$/', $trimmed, $matches) === 1) {
                 $html .= sprintf('<blockquote>%s</blockquote>', $this->inline($matches[1]));
+
                 continue;
             }
 

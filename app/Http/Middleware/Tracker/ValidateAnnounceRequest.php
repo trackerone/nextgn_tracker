@@ -19,14 +19,12 @@ class ValidateAnnounceRequest
         private readonly FailureResponder $failureResponder,
         private readonly ClientValidator $clientValidator,
         private readonly SecurityEventLogger $securityLogger,
-    )
-    {
-    }
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
         $passkey = (string) $request->route('passkey', '');
-        if ($passkey === '' || strlen($passkey) !== 64 || !ctype_xdigit($passkey)) {
+        if ($passkey === '' || strlen($passkey) !== 64 || ! ctype_xdigit($passkey)) {
             $this->logInvalidPasskey($request, $passkey);
 
             return $this->failureResponder->fail('invalid_passkey');
@@ -60,7 +58,7 @@ class ValidateAnnounceRequest
         $params = $request->query();
         $required = ['info_hash', 'peer_id', 'port', 'uploaded', 'downloaded', 'left'];
         foreach ($required as $key) {
-            if (!array_key_exists($key, $params)) {
+            if (! array_key_exists($key, $params)) {
                 return $this->failureResponder->fail('invalid_parameters');
             }
         }
@@ -77,7 +75,7 @@ class ValidateAnnounceRequest
             return $this->failureResponder->fail('invalid_parameters');
         }
         $peerId = $request->query('peer_id');
-        if (!is_string($peerId) || strlen($peerId) !== 20) {
+        if (! is_string($peerId) || strlen($peerId) !== 20) {
             return $this->failureResponder->fail('invalid_parameters');
         }
         $port = $this->parseIntegerParam($request, 'port', 1, 65535);
@@ -99,7 +97,7 @@ class ValidateAnnounceRequest
 
             return $this->failureResponder->fail('client_banned');
         }
-        if (!$clientInfo->isAllowed) {
+        if (! $clientInfo->isAllowed) {
             $this->securityLogger->log('tracker.unauthorized_client', 'medium', 'Client not allowed to announce.', [
                 'peer_id' => $peerId,
                 'info_hash' => bin2hex($infoHash),
@@ -114,7 +112,7 @@ class ValidateAnnounceRequest
         if ($ipAddress === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
-        if (!$user->isStaff() && $user->last_announce_at !== null) {
+        if (! $user->isStaff() && $user->last_announce_at !== null) {
             $diff = $user->last_announce_at->diffInSeconds($now);
             if ($diff < $minInterval) {
                 $user->forceFill(['announce_rate_limit_exceeded' => true])->save();
@@ -156,12 +154,13 @@ class ValidateAnnounceRequest
             'last_announce_at' => $now,
             'announce_rate_limit_exceeded' => false,
         ])->save();
+
         return $response;
     }
 
     private function normaliseInfoHash(mixed $value): ?string
     {
-        if (!is_string($value)) {
+        if (! is_string($value)) {
             return null;
         }
 
@@ -184,7 +183,7 @@ class ValidateAnnounceRequest
             $value = (string) $value;
         }
 
-        if (!is_string($value) || $value === '' || preg_match('/^-?\d+$/', $value) !== 1) {
+        if (! is_string($value) || $value === '' || preg_match('/^-?\d+$/', $value) !== 1) {
             return null;
         }
 
@@ -217,7 +216,7 @@ class ValidateAnnounceRequest
             return $remoteIp ?? '0.0.0.0';
         }
 
-        if (!is_string($paramIp) || filter_var($paramIp, FILTER_VALIDATE_IP) === false) {
+        if (! is_string($paramIp) || filter_var($paramIp, FILTER_VALIDATE_IP) === false) {
             return null;
         }
 

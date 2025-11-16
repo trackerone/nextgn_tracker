@@ -13,19 +13,19 @@ final class TorrentBrowseTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function testGuestsCannotAccessIndex(): void
+    public function test_guests_cannot_access_index(): void
     {
         $this->get('/torrents')->assertRedirect('/login');
     }
 
-    public function testGuestsCannotAccessShow(): void
+    public function test_guests_cannot_access_show(): void
     {
         $torrent = Torrent::factory()->create();
 
         $this->get('/torrents/'.$torrent->getKey())->assertRedirect('/login');
     }
 
-    public function testAuthenticatedUserSeesPaginatedList(): void
+    public function test_authenticated_user_sees_paginated_list(): void
     {
         $user = User::factory()->create();
         Torrent::factory()->count(30)->create();
@@ -37,7 +37,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
-    public function testSearchFilterLimitsResults(): void
+    public function test_search_filter_limits_results(): void
     {
         $user = User::factory()->create();
         $match = Torrent::factory()->create(['name' => 'Alpha Release', 'tags' => ['alpha']]);
@@ -50,7 +50,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertDontSee($miss->name);
     }
 
-    public function testTypeFilterWorks(): void
+    public function test_type_filter_works(): void
     {
         $user = User::factory()->create();
         $movie = Torrent::factory()->create(['type' => 'movie']);
@@ -63,7 +63,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertDontSee($movie->name);
     }
 
-    public function testOrderAndDirectionAffectSorting(): void
+    public function test_order_and_direction_affect_sorting(): void
     {
         $user = User::factory()->create();
         $low = Torrent::factory()->create(['seeders' => 1, 'uploaded_at' => now()->subDay()]);
@@ -78,7 +78,7 @@ final class TorrentBrowseTest extends TestCase
         $responseDesc->assertSeeInOrder([$high->name, $low->name]);
     }
 
-    public function testPendingTorrentsAreHiddenFromIndex(): void
+    public function test_pending_torrents_are_hidden_from_index(): void
     {
         $user = User::factory()->create();
         $approved = Torrent::factory()->create();

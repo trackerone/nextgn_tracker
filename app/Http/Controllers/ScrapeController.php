@@ -14,9 +14,7 @@ class ScrapeController extends Controller
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly ScrapeService $scrape,
-    )
-    {
-    }
+    ) {}
 
     public function __invoke(Request $request): Response
     {
@@ -46,7 +44,7 @@ class ScrapeController extends Controller
         $hashes = [];
 
         foreach ($values as $value) {
-            if (!is_string($value) || strlen($value) !== 20) {
+            if (! is_string($value) || strlen($value) !== 20) {
                 continue;
             }
 

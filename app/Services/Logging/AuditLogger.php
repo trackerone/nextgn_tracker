@@ -13,9 +13,7 @@ use Illuminate\Support\Facades\App;
 
 class AuditLogger
 {
-    public function __construct(private readonly AuthFactory $auth)
-    {
-    }
+    public function __construct(private readonly AuthFactory $auth) {}
 
     public function log(string $action, ?Model $target = null, array $metadata = []): AuditLog
     {
@@ -35,7 +33,7 @@ class AuditLogger
 
     private function resolveRequest(): ?Request
     {
-        if (!App::has('request')) {
+        if (! App::has('request')) {
             return null;
         }
 

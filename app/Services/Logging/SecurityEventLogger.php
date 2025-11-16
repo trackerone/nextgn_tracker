@@ -16,15 +16,13 @@ class SecurityEventLogger
 {
     private const SEVERITY_LEVELS = ['low', 'medium', 'high', 'critical'];
 
-    public function __construct(private readonly AuthFactory $auth)
-    {
-    }
+    public function __construct(private readonly AuthFactory $auth) {}
 
     public function log(string $eventType, string $severity, string $message, array $context = []): SecurityEvent
     {
         $severity = strtolower($severity);
 
-        if (!in_array($severity, self::SEVERITY_LEVELS, true)) {
+        if (! in_array($severity, self::SEVERITY_LEVELS, true)) {
             throw new InvalidArgumentException('Invalid security event severity.');
         }
 
@@ -48,7 +46,7 @@ class SecurityEventLogger
 
     private function resolveRequest(): ?Request
     {
-        if (!App::has('request')) {
+        if (! App::has('request')) {
             return null;
         }
 

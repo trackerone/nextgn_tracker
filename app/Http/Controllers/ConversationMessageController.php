@@ -19,9 +19,7 @@ class ConversationMessageController extends Controller
     public function __construct(
         private readonly MarkdownService $markdownService,
         private readonly MessageRepositoryInterface $messages,
-    )
-    {
-    }
+    ) {}
 
     public function store(StoreMessageRequest $request, Conversation $conversation): JsonResponse
     {

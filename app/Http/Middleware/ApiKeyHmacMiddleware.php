@@ -59,12 +59,12 @@ class ApiKeyHmacMiddleware
         $canonical = $this->buildCanonicalString($request, $timestampHeader);
         $computedSignature = hash_hmac('sha256', $canonical, $secret);
 
-        if (!hash_equals($computedSignature, (string) $signature)) {
+        if (! hash_equals($computedSignature, (string) $signature)) {
             $this->logFailure($request, 'invalid_signature');
             abort(401, 'Invalid API signature.');
         }
 
-        if (!auth()->check()) {
+        if (! auth()->check()) {
             auth()->setUser($apiKey->user);
         }
 

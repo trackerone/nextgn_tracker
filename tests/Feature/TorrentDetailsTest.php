@@ -13,7 +13,7 @@ final class TorrentDetailsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function testAuthenticatedUserCanSeeDetails(): void
+    public function test_authenticated_user_can_see_details(): void
     {
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create([

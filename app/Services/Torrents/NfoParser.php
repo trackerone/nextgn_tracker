@@ -10,9 +10,7 @@ final class NfoParser
 {
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    )
-    {
-    }
+    ) {}
 
     /**
      * @return array{sanitized_text: string|null, imdb_id: string|null, tmdb_id: string|null}
