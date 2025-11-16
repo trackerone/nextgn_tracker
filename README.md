@@ -1,18 +1,32 @@
 # NextGN Tracker
 
-![Laravel](https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel)
-![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=for-the-badge&logo=php)
-![Node](https://img.shields.io/badge/Node-20--24_LTS-339933?style=for-the-badge&logo=node.js)
-![Vite](https://img.shields.io/badge/Frontend-Vite_Assets-646CFF?style=for-the-badge&logo=vite)
-![License](https://img.shields.io/badge/License-MIT-0EA5E9?style=for-the-badge)
+<p align="center">
 
-[![CI - PHP](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-php.yml)
-[![CI - Frontend](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg)](https://github.com/YOUR_GITHUB_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml)
-![Lint](https://img.shields.io/badge/PHP_Lint-Pint_Passing-0EA5E9?style=flat-square)
-![Static Analysis](https://img.shields.io/badge/Static_Analysis-Larastan-22C55E?style=flat-square)
-![Tests](https://img.shields.io/badge/Tests-Pest_Passing-16A34A?style=flat-square)
+  <!-- Stack -->
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" />
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" />
 
-> Replace `YOUR_GITHUB_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
+  <br/>
+
+  <!-- CI -->
+  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
+  </a>
+  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
+  </a>
+
+  <!-- Static cues -->
+  <img src="https://img.shields.io/badge/Pint-Passing-22C55E?style=flat-square" />
+  <img src="https://img.shields.io/badge/Larastan-Passing-16A34A?style=flat-square" />
+  <img src="https://img.shields.io/badge/Tests-Passing-4ADE80?style=flat-square" />
+
+</p>
+
+> Replace `YOUR_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
 
 NextGN Tracker is the next-generation tracker-style web application rebuilt on Laravel 12 with hardened security defaults and a Vite-driven frontend. It replaces the legacy stack entirely and follows modern Laravel conventions.
 
@@ -50,6 +64,10 @@ NextGN Tracker is the next-generation tracker-style web application rebuilt on L
 - **CI - Frontend** provisions Node.js 22 LTS, installs npm dependencies, and validates the production asset build with `npm run build`.
 - These workflows trigger on pushes and pull requests targeting main/master as well as feature branches to guard regressions before merge.
 - Reproduce the same checks locally with `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
+
+## Contributing
+Contributions are welcome.  
+Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for full details.
 
 ## Security & reference docs
 - `docs/SECURITY-OVERVIEW.md` – describes auth hardening, tracker requirements, rate limiting, and API passkey/HMAC expectations.
