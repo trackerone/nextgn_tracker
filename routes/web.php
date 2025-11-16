@@ -17,7 +17,6 @@ use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ConversationMessageController;
-use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
@@ -30,7 +29,8 @@ $searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
-    Route::post('/register', [RegisteredUserController::class, 'store']);
+    Route::post('/register', [RegisteredUserController::class, 'store'])
+        ->middleware(sprintf('throttle:%s', config('security.rate_limits.register', '3,60')));
 });
 
 Route::view('/', 'welcome');
@@ -141,13 +141,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware('auth')->prefix('account/api-keys')->name('account.api-keys.')->group(function (): void {
     Route::get('/', [ApiKeyController::class, 'index'])->name('index');
     Route::post('/', [ApiKeyController::class, 'store'])->name('store');
-<<<<<< codex/harden-file-upload-surface-in-nextgn-tracker
     Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])
         ->whereNumber('apiKey')
         ->name('destroy');
-=======
-    Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
->>>>>> main
 });
 
 Route::middleware(['throttle:120,1', 'tracker.validate-announce'])

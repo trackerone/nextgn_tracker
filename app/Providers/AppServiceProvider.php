@@ -15,6 +15,14 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Kør opstartslogik her hvis nødvendigt.
+        if (app()->environment('production')) {
+            config(['app.debug' => false]);
+        }
+
+        config([
+            'session.secure' => config('session.secure', app()->environment('production')),
+            'session.http_only' => config('session.http_only', true),
+            'session.same_site' => config('session.same_site', 'strict'),
+        ]);
     }
 }

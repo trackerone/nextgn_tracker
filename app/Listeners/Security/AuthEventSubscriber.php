@@ -34,7 +34,7 @@ class AuthEventSubscriber
 
     public function handleLoginFailed(Failed $event): void
     {
-        SecurityAuditLog::log(null, 'auth.login.failed', [
+        SecurityAuditLog::logAndWarn(null, 'auth.login.failed', [
             'email' => $event->credentials['email'] ?? null,
             'ip' => request()->ip(),
         ]);
