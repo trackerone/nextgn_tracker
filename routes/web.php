@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\ApiKeyController;
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -131,6 +132,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+});
+
+Route::middleware('auth')->prefix('account/api-keys')->name('account.api-keys.')->group(function (): void {
+    Route::get('/', [ApiKeyController::class, 'index'])->name('index');
+    Route::post('/', [ApiKeyController::class, 'store'])->name('store');
+    Route::delete('/{apiKey}', [ApiKeyController::class, 'destroy'])->name('destroy');
 });
 
 Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
