@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
