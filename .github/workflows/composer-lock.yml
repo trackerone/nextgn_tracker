@@ -1,9 +1,6 @@
 name: Generate composer.lock
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'composer.json'
 jobs:
   build:
     runs-on: ubuntu-latest
