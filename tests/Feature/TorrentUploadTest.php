@@ -30,6 +30,7 @@ class TorrentUploadTest extends TestCase
     public function test_successful_upload_persists_torrent_and_file(): void
     {
         Storage::fake('torrents');
+        Storage::fake('nfo');
 
         $user = User::factory()->create();
         $category = Category::factory()->create();
@@ -59,6 +60,8 @@ class TorrentUploadTest extends TestCase
         $this->assertSame(2048, $torrent->size_bytes);
         $this->assertSame(1, $torrent->file_count);
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
+        $this->assertNotNull($torrent->nfoStoragePath());
+        Storage::disk('nfo')->assertExists($torrent->nfoStoragePath());
     }
 
     public function test_duplicate_info_hash_redirects_to_existing_record(): void

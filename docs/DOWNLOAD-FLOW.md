@@ -1,13 +1,13 @@
 # Torrent download flow
 
-The download endpoint serves the pristine *.torrent* files stored under `storage/app/torrents/{INFO_HASH}.torrent` and injects the requesting user's passkey into the `announce` URL before responding.
+The download endpoint serves the pristine *.torrent* files stored under `storage/app/torrents/{YYYY}/{MM}/{UUID}.torrent` (the exact path is persisted per record) and injects the requesting user's passkey into the `announce` URL before responding.
 
 ## Storage layout
 
-* Every upload is persisted through `TorrentIngestService`, which writes the raw payload to `Storage::disk('torrents')` using `Torrent::storagePathForHash($infoHash)`.
+* Every upload is persisted through `TorrentIngestService`, which writes the raw payload to the configured torrents disk using a randomized directory layout (`torrents/{year}/{month}/{uuid}.torrent`). The resulting path is saved on each `Torrent` row (`storage_path`). Legacy rows without this value fall back to the old hash-based path.
 * The `Torrent` model exposes helpers:
-  * `torrentStoragePath()` – returns the relative path (`torrents/<INFO_HASH>.torrent`).
-  * `torrentFilePath()` / `hasTorrentFile()` – resolve the absolute file and check its presence.
+  * `torrentStoragePath()` – returns the stored relative path.
+  * `torrentFilePath()` / `hasTorrentFile()` – resolve the absolute file and check its presence using the configured disk.
 
 ## Endpoint
 

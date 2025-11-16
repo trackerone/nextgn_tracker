@@ -25,6 +25,7 @@ use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
 use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Middleware\SetCacheHeaders;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ValidateSignature;
 use Illuminate\Session\Middleware\AuthenticateSession;
@@ -45,6 +46,16 @@ class Kernel extends HttpKernel
         ResponseGuard::class,
         EnsureUserIsActive::class,
         LockdownModeMiddleware::class,
+    ];
+
+    /**
+     * @var array<string, class-string|string>
+     */
+    protected $middlewareGroups = [
+        'api' => [
+            'throttle:'.config('security.api.default_rate_limit', '60,1'),
+            SubstituteBindings::class,
+        ],
     ];
 
     /**

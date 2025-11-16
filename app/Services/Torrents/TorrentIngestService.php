@@ -9,17 +9,20 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Security\SanitizationService;
+use App\Services\Uploads\UploadPathGenerator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use RuntimeException;
 
 final class TorrentIngestService
 {
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly SanitizationService $sanitizer,
+        private readonly UploadPathGenerator $pathGenerator,
     ) {}
 
     /**
@@ -47,6 +50,10 @@ final class TorrentIngestService
         $sizeBytes = $this->calculateSizeBytes($info);
         $fileCount = $this->calculateFileCount($info);
 
+        $storageDirectory = (string) config('upload.torrents.directory', 'torrents');
+        $storageDisk = (string) config('upload.torrents.disk', 'torrents');
+        $storagePath = $this->pathGenerator->generate($storageDirectory, 'torrent');
+
         $torrent = new Torrent([
             'user_id' => $user->id,
             'category_id' => $attributes['category_id'] ?? null,
@@ -62,16 +69,24 @@ final class TorrentIngestService
             'tags' => $this->sanitizeTags($attributes['tags'] ?? []),
             'description' => $this->sanitizeOptionalString($attributes['description'] ?? null),
             'nfo_text' => $this->sanitizeOptionalString($attributes['nfo_text'] ?? null),
+            'nfo_storage_path' => $attributes['nfo_storage_path'] ?? null,
             'imdb_id' => $this->normalizeImdbId($attributes['imdb_id'] ?? null),
             'tmdb_id' => $this->normalizeNumericId($attributes['tmdb_id'] ?? null),
             'original_filename' => $this->sanitizeOptionalString($torrentFile->getClientOriginalName()),
             'is_approved' => false,
             'uploaded_at' => Carbon::now(),
+            'storage_path' => $storagePath,
         ]);
 
         $torrent->save();
 
-        Storage::disk('torrents')->put(Torrent::storagePathForHash($infoHash), $payload);
+        $stored = Storage::disk($storageDisk)->put($storagePath, $payload);
+
+        if ($stored === false) {
+            $torrent->delete();
+
+            throw new RuntimeException('Unable to persist torrent payload.');
+        }
 
         return $torrent;
     }
