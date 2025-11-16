@@ -51,6 +51,11 @@ NextGN Tracker is the next-generation tracker-style web application rebuilt on L
 - These workflows trigger on pushes and pull requests targeting main/master as well as feature branches to guard regressions before merge.
 - Reproduce the same checks locally with `composer lint`, `composer analyse`, `composer test`, and `npm run build`.
 
+## Contributing
+Thanks for helping shape NextGN Tracker. Review the contribution workflow, coding standards, and security rules before opening a pull request.
+
+[See CONTRIBUTING.md for details](./CONTRIBUTING.md)
+
 ## Security & reference docs
 - `docs/SECURITY-OVERVIEW.md` – describes auth hardening, tracker requirements, rate limiting, and API passkey/HMAC expectations.
 - `docs/SECURITY-CHECKLIST.md` – deployment checklist that covers headers, TLS, env handling, and log redaction.
