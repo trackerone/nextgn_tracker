@@ -39,6 +39,6 @@ class AuditLogger
 
         $request = App::make('request');
 
-        return $request instanceof Request ? $request : null;
+        return $request;
     }
 }

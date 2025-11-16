@@ -134,7 +134,7 @@ class TopicController extends Controller
     private function formatTopics(LengthAwarePaginator $paginator): array
     {
         return [
-            'data' => $paginator->getCollection(),
+            'data' => $paginator->items(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
