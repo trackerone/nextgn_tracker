@@ -25,6 +25,7 @@ use App\Http\Controllers\ScrapeController;
 use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
+$searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '30,1'));
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
@@ -114,8 +115,10 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
         ->name('pm.messages.store');
 });
 
-Route::middleware('auth')->group(function (): void {
-    Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+Route::middleware('auth')->group(function () use ($searchThrottle): void {
+    Route::get('/torrents', [TorrentController::class, 'index'])
+        ->middleware($searchThrottle)
+        ->name('torrents.index');
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
         ->whereNumber('torrent')
         ->name('torrents.show');

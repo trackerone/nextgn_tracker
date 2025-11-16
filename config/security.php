@@ -93,6 +93,7 @@ return [
         'torrent_upload' => '10,60',
         'api' => '60,1',
         'admin' => '30,1',
+        'search' => '30,1',
     ],
 
     'api' => [
