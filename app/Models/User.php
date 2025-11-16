@@ -269,7 +269,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 return $roleRelation->slug;
             }
 
-            return is_string($roleRelation->name) ? $roleRelation->name : null;
+            return $roleRelation->name;
         }
 
         $roleAttribute = $this->getAttribute('role');

@@ -27,7 +27,7 @@ class AuditLogger
             'action' => $action,
             'target_type' => $target?->getMorphClass(),
             'target_id' => $target?->getKey(),
-            'metadata' => $metadata ?: null,
+            'metadata' => $metadata,
         ]);
     }
 
