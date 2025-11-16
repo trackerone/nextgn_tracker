@@ -12,11 +12,11 @@
   <br/>
 
   <!-- CI -->
-  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml">
-    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
   </a>
-  <a href="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml">
-    <img src="https://github.com/YOUR_ORG/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
   </a>
 
   <!-- Static cues -->
@@ -26,7 +26,7 @@
 
 </p>
 
-> Replace `YOUR_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
+// > Replace `YOUR_ORG` with your organization/user slug so the workflow badges track your repository automatically. Static "Passing" text on the Shields.io badges is informational only; the GitHub Actions badges above reflect the real status.
 
 NextGN Tracker is the next-generation tracker-style web application rebuilt on Laravel 12 with hardened security defaults and a Vite-driven frontend. It replaces the legacy stack entirely and follows modern Laravel conventions.
 
