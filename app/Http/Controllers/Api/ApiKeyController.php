@@ -26,8 +26,8 @@ class ApiKeyController extends Controller
             'data' => $keys->map(static fn (ApiKey $key): array => [
                 'id' => $key->id,
                 'label' => $key->label,
-                'created_at' => $key->created_at,
-                'last_used_at' => $key->last_used_at,
+                'created_at' => $key->created_at?->toISOString(),
+                'last_used_at' => $key->last_used_at?->toISOString(),
             ]),
         ]);
     }
@@ -51,8 +51,8 @@ class ApiKeyController extends Controller
         return response()->json([
             'id' => $apiKey->id,
             'label' => $apiKey->label,
-            'created_at' => $apiKey->created_at,
-            'last_used_at' => $apiKey->last_used_at,
+            'created_at' => $apiKey->created_at?->toISOString(),
+            'last_used_at' => $apiKey->last_used_at?->toISOString(),
             'key' => $plainKey,
         ], 201);
     }
