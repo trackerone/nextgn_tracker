@@ -13,6 +13,7 @@ class Role extends Model
     use HasFactory;
 
     public const DEFAULT_SLUG = 'newbie';
+
     public const STAFF_LEVEL_THRESHOLD = 8;
 
     protected $fillable = [

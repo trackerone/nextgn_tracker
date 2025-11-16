@@ -17,12 +17,12 @@ interface TorrentRepositoryInterface
     public function findByInfoHash(string $infoHash): ?Torrent;
 
     /**
-     * @param array<string, mixed> $attributes
+     * @param  array<string, mixed>  $attributes
      */
     public function createForUser(User $user, array $attributes): Torrent;
 
     /**
-     * @param array<string, int> $stats
+     * @param  array<string, int>  $stats
      */
     public function incrementStats(Torrent $torrent, array $stats): void;
 

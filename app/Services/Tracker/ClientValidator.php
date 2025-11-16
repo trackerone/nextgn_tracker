@@ -84,7 +84,7 @@ class ClientValidator
     }
 
     /**
-     * @param array<int, string> $patterns
+     * @param  array<int, string>  $patterns
      */
     private function matchesAny(string $value, array $patterns): bool
     {
