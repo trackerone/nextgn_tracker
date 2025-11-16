@@ -131,7 +131,7 @@ class TopicController extends Controller
     /**
      * Format the topics paginator for a JSON response.
      *
-     * @param \Illuminate\Pagination\LengthAwarePaginator $paginator
+     * @param  \Illuminate\Pagination\LengthAwarePaginator  $paginator
      * @return array<string, mixed>
      */
     private function formatTopics(LengthAwarePaginator $paginator): array
