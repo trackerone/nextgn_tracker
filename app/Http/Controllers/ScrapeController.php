@@ -46,7 +46,7 @@ class ScrapeController extends Controller
         $hashes = [];
 
         foreach ($values as $value) {
-            if (! is_string($value) || strlen($value) !== 20) {
+            if (!is_string($value) || strlen($value) !== 20) {
                 continue;
             }
 

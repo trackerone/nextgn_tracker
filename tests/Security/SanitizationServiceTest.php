@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 final class SanitizationServiceTest extends TestCase
 {
-    public function test_it_sanitizes_allowed_markup(): void
+    public function testItSanitizesAllowedMarkup(): void
     {
         config()->set('security.max_input_length', 12000);
         $service = new SanitizationService();
@@ -19,7 +19,7 @@ final class SanitizationServiceTest extends TestCase
         $this->assertSame('<strong>bold</strong><em>ok</em>', $service->sanitizeString($input));
     }
 
-    public function test_it_removes_dangerous_attributes(): void
+    public function testItRemovesDangerousAttributes(): void
     {
         $service = new SanitizationService();
 
@@ -28,7 +28,7 @@ final class SanitizationServiceTest extends TestCase
         $this->assertSame('<a href="#">payload</a>', $service->sanitizeHtmlDocument($html));
     }
 
-    public function test_it_limits_input_length(): void
+    public function testItLimitsInputLength(): void
     {
         config()->set('security.max_input_length', 5);
         $service = new SanitizationService();

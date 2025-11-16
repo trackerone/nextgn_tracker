@@ -50,7 +50,7 @@ class EloquentTorrentRepository implements TorrentRepositoryInterface
         $updates = [];
 
         foreach ($stats as $key => $value) {
-            if (! in_array($key, $allowedKeys, true)) {
+            if (!in_array($key, $allowedKeys, true)) {
                 continue;
             }
 

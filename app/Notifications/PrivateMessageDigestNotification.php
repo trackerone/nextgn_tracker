@@ -34,7 +34,7 @@ class PrivateMessageDigestNotification extends Notification implements ShouldQue
     {
         $count = $this->messages->count();
 
-        $mail = (new MailMessage)
+        $mail = (new MailMessage())
             ->subject(match ($this->frequency) {
                 'weekly' => 'Your weekly private message digest',
                 default => 'Your daily private message digest',

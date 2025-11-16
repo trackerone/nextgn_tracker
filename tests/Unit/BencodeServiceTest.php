@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 class BencodeServiceTest extends TestCase
 {
-    public function test_it_encodes_scalars_and_lists(): void
+    public function testItEncodesScalarsAndLists(): void
     {
         $service = new BencodeService();
 
@@ -18,7 +18,7 @@ class BencodeServiceTest extends TestCase
         $this->assertSame('li1ei2ei3ee', $service->encode([1, 2, 3]));
     }
 
-    public function test_it_encodes_dictionaries_sorted_by_key(): void
+    public function testItEncodesDictionariesSortedByKey(): void
     {
         $service = new BencodeService();
 
@@ -31,7 +31,7 @@ class BencodeServiceTest extends TestCase
         $this->assertSame('d8:completei1e8:intervali60e5:peerslee', $service->encode($payload));
     }
 
-    public function test_decode_dictionary(): void
+    public function testDecodeDictionary(): void
     {
         $service = new BencodeService();
         $payload = 'd4:name5:hello6:numberi42e4:listl5:items5:moreee';

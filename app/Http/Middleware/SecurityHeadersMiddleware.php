@@ -26,7 +26,7 @@ class SecurityHeadersMiddleware
         ];
 
         foreach ($headers as $header => $value) {
-            if (! $response->headers->has($header)) {
+            if (!$response->headers->has($header)) {
                 $response->headers->set($header, $value, true);
             }
         }

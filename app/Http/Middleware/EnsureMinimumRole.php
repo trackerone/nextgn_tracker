@@ -20,7 +20,7 @@ class EnsureMinimumRole
         $requiredLevel = (int) $minimumLevel;
         $user = $request->user();
 
-        if ($user === null || ! RoleLevel::atLeast($user, $requiredLevel)) {
+        if ($user === null || !RoleLevel::atLeast($user, $requiredLevel)) {
             throw new AuthorizationException('This action requires a higher role level.');
         }
 

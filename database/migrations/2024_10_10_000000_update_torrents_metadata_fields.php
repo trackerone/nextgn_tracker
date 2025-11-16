@@ -7,47 +7,48 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::table('torrents', function (Blueprint $table): void {
-            if (! Schema::hasColumn('torrents', 'size_bytes')) {
+            if (!Schema::hasColumn('torrents', 'size_bytes')) {
                 $table->unsignedBigInteger('size_bytes')->default(0)->after('info_hash');
             }
 
-            if (! Schema::hasColumn('torrents', 'file_count')) {
+            if (!Schema::hasColumn('torrents', 'file_count')) {
                 $table->unsignedInteger('file_count')->default(0)->after('size_bytes');
             }
 
-            if (! Schema::hasColumn('torrents', 'type')) {
+            if (!Schema::hasColumn('torrents', 'type')) {
                 $table->string('type', 20)->default('other')->after('file_count');
             }
 
-            if (! Schema::hasColumn('torrents', 'source')) {
+            if (!Schema::hasColumn('torrents', 'source')) {
                 $table->string('source', 50)->nullable()->after('type');
             }
 
-            if (! Schema::hasColumn('torrents', 'resolution')) {
+            if (!Schema::hasColumn('torrents', 'resolution')) {
                 $table->string('resolution', 20)->nullable()->after('source');
             }
 
-            if (! Schema::hasColumn('torrents', 'codecs')) {
+            if (!Schema::hasColumn('torrents', 'codecs')) {
                 $table->json('codecs')->nullable()->after('resolution');
             }
 
-            if (! Schema::hasColumn('torrents', 'tags')) {
+            if (!Schema::hasColumn('torrents', 'tags')) {
                 $table->json('tags')->nullable()->after('codecs');
             }
 
-            if (! Schema::hasColumn('torrents', 'nfo_text')) {
+            if (!Schema::hasColumn('torrents', 'nfo_text')) {
                 $table->longText('nfo_text')->nullable()->after('description');
             }
 
-            if (! Schema::hasColumn('torrents', 'imdb_id')) {
+            if (!Schema::hasColumn('torrents', 'imdb_id')) {
                 $table->string('imdb_id', 16)->nullable()->after('nfo_text');
             }
 
-            if (! Schema::hasColumn('torrents', 'tmdb_id')) {
+            if (!Schema::hasColumn('torrents', 'tmdb_id')) {
                 $table->string('tmdb_id', 16)->nullable()->after('imdb_id');
             }
         });
