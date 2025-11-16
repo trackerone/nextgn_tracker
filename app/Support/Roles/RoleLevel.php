@@ -34,7 +34,6 @@ final class RoleLevel
 
     private function __construct()
     {
-
     }
 
     public static function levelForUser(User $user): int

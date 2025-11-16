@@ -11,7 +11,6 @@ class TrackerClientInfo
         public readonly ?string $clientVersion,
         public readonly bool $isAllowed,
         public readonly bool $isBanned,
-    )
-    {
+    ) {
     }
 }

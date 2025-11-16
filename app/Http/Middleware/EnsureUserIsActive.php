@@ -13,8 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureUserIsActive
 {
-    public function __construct(private readonly SecurityEventLogger $securityLogger)
-    {
+    public function __construct(
+        private readonly SecurityEventLogger $securityLogger,
+    ) {
     }
 
     /**

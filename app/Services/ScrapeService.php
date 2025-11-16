@@ -10,7 +10,6 @@ class ScrapeService
 {
     /**
      * @param  array<int, string>  $infoHashes  Uppercase hex-encoded info_hash values.
-     *
      * @return array{files: array<string, array{complete: int, incomplete: int, downloaded: int}>}
      */
     public function buildResponse(array $infoHashes): array

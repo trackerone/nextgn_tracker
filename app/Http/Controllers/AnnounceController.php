@@ -22,8 +22,7 @@ class AnnounceController extends Controller
         private readonly BencodeService $bencode,
         private readonly TorrentRepositoryInterface $torrents,
         private readonly UserTorrentService $userTorrents,
-    )
-    {
+    ) {
     }
 
     public function __invoke(Request $request, string $passkey): Response
@@ -67,11 +66,11 @@ class AnnounceController extends Controller
 
         $isStaff = $user->isStaff();
 
-        if ($torrent->isBanned() && ! $isStaff) {
+        if ($torrent->isBanned() && !$isStaff) {
             return $this->failure('Torrent is banned.');
         }
 
-        if (! $torrent->isApproved() && ! $isStaff) {
+        if (!$torrent->isApproved() && !$isStaff) {
             return $this->failure('Torrent is not approved yet.');
         }
 
@@ -88,7 +87,7 @@ class AnnounceController extends Controller
         $now = now();
 
         if (
-            ! $isStaff
+            !$isStaff
             && $event === 'started'
             && $left > 0
         ) {
