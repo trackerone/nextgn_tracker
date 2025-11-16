@@ -24,7 +24,7 @@ class SecurityEventLogger
     {
         $severity = strtolower($severity);
 
-        if (!in_array($severity, self::SEVERITY_LEVELS, true)) {
+        if (! in_array($severity, self::SEVERITY_LEVELS, true)) {
             throw new InvalidArgumentException('Invalid security event severity.');
         }
 
@@ -48,7 +48,7 @@ class SecurityEventLogger
 
     private function resolveRequest(): ?Request
     {
-        if (!App::has('request')) {
+        if (! App::has('request')) {
             return null;
         }
 

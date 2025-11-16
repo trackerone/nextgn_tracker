@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $requiresInvite = !app()->environment('local');
+        $requiresInvite = ! app()->environment('local');
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
@@ -69,7 +69,7 @@ class RegisteredUserController extends Controller
 
     private function resolveInvite(?string $code, bool $required): ?Invite
     {
-        if (!$code) {
+        if (! $code) {
             if ($required) {
                 throw ValidationException::withMessages([
                     'invite_code' => __('A valid invite is required.'),
@@ -81,13 +81,13 @@ class RegisteredUserController extends Controller
 
         $invite = Invite::where('code', $code)->first();
 
-        if (!$invite) {
+        if (! $invite) {
             throw ValidationException::withMessages([
                 'invite_code' => __('Invalid invite code.'),
             ]);
         }
 
-        if ($invite->isExpired() || !$invite->hasRemainingUses()) {
+        if ($invite->isExpired() || ! $invite->hasRemainingUses()) {
             throw ValidationException::withMessages([
                 'invite_code' => __('Invite has expired or has no remaining uses.'),
             ]);

@@ -15,7 +15,8 @@ class NewPrivateMessageNotification extends Notification implements ShouldQueue
 
     public function __construct(
         private readonly Message $message,
-    ) {
+    )
+    {
     }
 
     public function via(object $notifiable): array

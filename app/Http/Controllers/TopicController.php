@@ -23,7 +23,8 @@ class TopicController extends Controller
         private readonly PostRepositoryInterface $posts,
         private readonly TopicSlugService $slugService,
         private readonly MarkdownService $markdownService,
-    ) {
+    )
+    {
     }
 
     public function index(Request $request): JsonResponse
@@ -92,7 +93,7 @@ class TopicController extends Controller
     {
         $this->authorize('lock', $topic);
 
-        $updated = $this->topics->update($topic, ['is_locked' => !$topic->is_locked]);
+        $updated = $this->topics->update($topic, ['is_locked' => ! $topic->is_locked]);
 
         return response()->json($updated);
     }
@@ -101,7 +102,7 @@ class TopicController extends Controller
     {
         $this->authorize('pin', $topic);
 
-        $updated = $this->topics->update($topic, ['is_pinned' => !$topic->is_pinned]);
+        $updated = $this->topics->update($topic, ['is_pinned' => ! $topic->is_pinned]);
 
         return response()->json($updated);
     }

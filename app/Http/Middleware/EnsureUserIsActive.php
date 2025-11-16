@@ -15,7 +15,8 @@ class EnsureUserIsActive
 {
     public function __construct(
         private readonly SecurityEventLogger $securityLogger,
-    ) {
+    )
+    {
     }
 
     /**

@@ -21,7 +21,8 @@ class PrivateMessageController extends Controller
         private readonly MarkdownService $markdownService,
         private readonly ConversationRepositoryInterface $conversations,
         private readonly MessageRepositoryInterface $messages,
-    ) {
+    )
+    {
     }
 
     public function index(Request $request): JsonResponse
