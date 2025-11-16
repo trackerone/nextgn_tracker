@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 class TorrentBrowseRequest extends FormRequest
 {
     private const ORDER_OPTIONS = ['created', 'size', 'seeders', 'leechers', 'completed'];
+
     private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
 
     public function authorize(): bool

@@ -22,7 +22,7 @@ class TopicSlugService
 
         while (Topic::query()->where('slug', $slug)->exists()) {
             $slug = sprintf('%s-%d', $base, $suffix);
-            ++$suffix;
+            $suffix++;
         }
 
         return $slug;

@@ -23,7 +23,8 @@ class TopicController extends Controller
         private readonly PostRepositoryInterface $posts,
         private readonly TopicSlugService $slugService,
         private readonly MarkdownService $markdownService,
-    ) {
+    )
+    {
     }
 
     public function index(Request $request): JsonResponse
@@ -112,7 +113,7 @@ class TopicController extends Controller
 
         if ($topic->posts()->exists()) {
             return response()->json([
-                "message" => 'Topic must be empty before deletion.',
+                'message' => 'Topic must be empty before deletion.',
             ], Response::HTTP_FORBIDDEN);
         }
 

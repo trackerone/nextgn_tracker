@@ -21,7 +21,8 @@ class TorrentDownloadController extends Controller
         private readonly TorrentDownloadService $downloadService,
         private readonly UserTorrentService $userTorrentService,
         private readonly SanitizationService $sanitizer,
-    ) {
+    )
+    {
     }
 
     public function download(Request $request, Torrent $torrent): Response

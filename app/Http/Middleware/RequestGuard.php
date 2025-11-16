@@ -15,18 +15,19 @@ use Symfony\Component\HttpFoundation\Response;
 final class RequestGuard
 {
     private const MALICIOUS_PATTERNS = [
-        "(?:%3C|<)script",
-        "\s<script",
-        "javascript\s*:",
-        "data\s*:\s*(?:text|application)/(?:html|javascript)\s*;base64",
-        "PHNjcmlwdD4",
-        "\"__proto__\"\s*:",
-        "(\{|\[)\s*\"(?:__proto__|constructor)\"",
+        '(?:%3C|<)script',
+        '\\s<script',
+        'javascript\\s*:',
+        'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
+        'PHNjcmlwdD4',
+        '\\"__proto__\\"\\s*:',
+        '(\\{|\\[)\\s*\\"(?:__proto__|constructor)\\"',
     ];
 
     public function __construct(
         private readonly SanitizationService $sanitizer,
-    ) {
+    )
+    {
     }
 
     /**

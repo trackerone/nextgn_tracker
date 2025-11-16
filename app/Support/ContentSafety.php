@@ -9,6 +9,7 @@ use App\Services\MarkdownService;
 final class ContentSafety
 {
     private const MARKDOWN_ALLOWED_TAGS = '<p><br><strong><em><ul><ol><li><code><pre><blockquote><a><span>';
+
     private const NFO_MAX_OUTPUT_BYTES = 65536;
 
     public static function e(?string $value): string
