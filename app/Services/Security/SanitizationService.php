@@ -142,10 +142,10 @@ final class SanitizationService
                 continue;
             }
             $escaped = preg_quote($tag, '/');
-            $patternWithContent = sprintf("/<%1$s\b[^>]*>.*?<\/%1$s>/is", $escaped);
-            $patternSelfClosing = sprintf("/<%s\b[^>]*\/>/i", $escaped);
-            $patternOpening = sprintf("/<%s\b[^>]*>/i", $escaped);
-            $patternClosing = sprintf("/<\/%s>/i", $escaped);
+            $patternWithContent = sprintf('/<%1$s\\b[^>]*>.*?<\\/%1$s>/is', $escaped);
+            $patternSelfClosing = sprintf('/<%s\\b[^>]*\\/>/i', $escaped);
+            $patternOpening = sprintf('/<%s\\b[^>]*>/i', $escaped);
+            $patternClosing = sprintf('/<\\/%s>/i', $escaped);
 
             $value = preg_replace($patternWithContent, '', $value) ?? $value;
             $value = preg_replace($patternSelfClosing, '', $value) ?? $value;
