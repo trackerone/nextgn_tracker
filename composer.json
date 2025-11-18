@@ -81,7 +81,7 @@
         "@analyse",
         "@rector"
     ]
-}
+    },
     "extra": {
         "laravel": {
             "dont-discover": []
