@@ -77,12 +77,12 @@
     "rector": "vendor/bin/rector --dry-run",
 
     "check": [
-        "@lint",
-        "@analyse",
-        "@rector"
+    "@lint",
+    "@analyse",
+    "@rector"
     ]
-    },
-    "extra": {
+},
+"extra": {
         "laravel": {
             "dont-discover": []
         }
