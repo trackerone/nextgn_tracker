@@ -1,6 +1,5 @@
 includes:
     - vendor/larastan/larastan/extension.neon
-    - vendor/larastan/larastan/rules.neon
 
 parameters:
     paths:
