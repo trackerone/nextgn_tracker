@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Models\Role;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Schema;
 use Mockery;
 
 abstract class TestCase extends BaseTestCase
