@@ -5,7 +5,16 @@ includes:
 parameters:
     paths:
         - app
-    tmpDir: build/phpstan
+        - bootstrap
+        - config
+        - database
+        - routes
+        - tests
+
+    tmpDir: var/phpstan
+
     level: 5
-    parallel:
-        processTimeout: 300.0
+
+    checkOctaneCompatibility: true
+
+    ignoreErrors: []
