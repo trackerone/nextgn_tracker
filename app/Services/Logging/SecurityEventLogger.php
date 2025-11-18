@@ -50,9 +50,7 @@ class SecurityEventLogger
             return null;
         }
 
-        $request = App::make('request');
-
-        return $request;
+        return App::make(Request::class);
     }
 
     private function writeFrameworkLog(string $severity, string $message, array $context): void

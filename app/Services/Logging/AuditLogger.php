@@ -37,8 +37,6 @@ class AuditLogger
             return null;
         }
 
-        $request = App::make('request');
-
-        return $request;
+        return App::make(Request::class);
     }
 }

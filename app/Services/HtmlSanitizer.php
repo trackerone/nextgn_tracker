@@ -8,6 +8,7 @@ use DOMDocument;
 use DOMElement;
 use DOMNode;
 use Illuminate\Support\Str;
+use function collect;
 
 class HtmlSanitizer
 {
