@@ -109,7 +109,6 @@ class HtmlSanitizer
         }
 
         $href = Str::lower((string) $element->getAttribute('href'));
-
         if (
             $href === ''
             || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false
@@ -120,7 +119,6 @@ class HtmlSanitizer
         }
 
         $target = Str::lower((string) $element->getAttribute('target'));
-
         if ($target !== '_blank') {
             $element->removeAttribute('target');
             $element->removeAttribute('rel');
@@ -136,7 +134,6 @@ class HtmlSanitizer
             ->merge(['noopener', 'noreferrer'])
             ->unique()
             ->implode(' ');
-
         $element->setAttribute('rel', $rel);
     }
 
