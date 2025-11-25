@@ -64,7 +64,7 @@ class MarkdownRenderer
             }
 
             if (preg_match('/^\s*([-*])\s+(.*)$/', $line, $matches) === 1) {
-                if (! $inList) {
+                if ($inList === false) {
                     $html .= '<ul>';
                     $inList = true;
                 }
