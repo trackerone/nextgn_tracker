@@ -13,7 +13,21 @@ use function collect;
 
 class HtmlSanitizer
 {
-    private const ALLOWED_TAGS = ['p', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'blockquote', 'strong', 'em', 'h1', 'h2', 'h3'];
+    private const ALLOWED_TAGS = [
+        'p',
+        'ul',
+        'ol',
+        'li',
+        'a',
+        'code',
+        'pre',
+        'blockquote',
+        'strong',
+        'em',
+        'h1',
+        'h2',
+        'h3',
+    ];
 
     private const LINK_ATTRIBUTES = ['href', 'rel', 'target'];
 
@@ -25,7 +39,12 @@ class HtmlSanitizer
 
         $document = new DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
-        $document->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $document->loadHTML(
+            '<?xml encoding="utf-8" ?>' . $html,
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -57,8 +76,9 @@ class HtmlSanitizer
                 return;
             }
 
-        if (in_array($tag, self::ALLOWED_TAGS, true) === false) {
+            if (in_array($tag, self::ALLOWED_TAGS, true) === false) {
                 $children = iterator_to_array($node->childNodes);
+
                 $this->unwrap($node);
 
                 foreach ($children as $child) {
@@ -68,7 +88,11 @@ class HtmlSanitizer
                 return;
             }
 
-            $tag === 'a' ? $this->sanitizeLink($node) : $this->stripAttributes($node);
+            if ($tag === 'a') {
+                $this->sanitizeLink($node);
+            } else {
+                $this->stripAttributes($node);
+            }
         }
 
         foreach (iterator_to_array($node->childNodes) as $child) {
@@ -79,15 +103,20 @@ class HtmlSanitizer
     private function sanitizeLink(DOMElement $element): void
     {
         foreach (iterator_to_array($element->attributes) as $attribute) {
-        if (in_array($attribute->name, self::LINK_ATTRIBUTES, true) === false) {
-            $element->removeAttribute($attribute->name);
-        }
+            if (in_array($attribute->name, self::LINK_ATTRIBUTES, true) === false) {
+                $element->removeAttribute($attribute->name);
+            }
         }
 
         $href = Str::lower((string) $element->getAttribute('href'));
 
-        if ($href === '' || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false) {
+        if (
+            $href === ''
+            || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false
+        ) {
             $element->removeAttribute('href');
+
+            return;
         }
 
         $target = Str::lower((string) $element->getAttribute('target'));
@@ -101,7 +130,9 @@ class HtmlSanitizer
 
         $rel = collect(explode(' ', (string) $element->getAttribute('rel')))
             ->filter()
-            ->map(static fn (string $value) => Str::lower($value))
+            ->map(
+                static fn (string $value): string => Str::lower($value),
+            )
             ->merge(['noopener', 'noreferrer'])
             ->unique()
             ->implode(' ');
