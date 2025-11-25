@@ -56,7 +56,7 @@ class HtmlSanitizer
                 return;
             }
 
-            if (! in_array($tag, self::ALLOWED_TAGS, true)) {
+        if (in_array($tag, self::ALLOWED_TAGS, true) === false) {
                 $children = iterator_to_array($node->childNodes);
                 $this->unwrap($node);
 
@@ -78,14 +78,14 @@ class HtmlSanitizer
     private function sanitizeLink(DOMElement $element): void
     {
         foreach (iterator_to_array($element->attributes) as $attribute) {
-            if (! in_array($attribute->name, self::LINK_ATTRIBUTES, true)) {
-                $element->removeAttribute($attribute->name);
-            }
+        if (in_array($attribute->name, self::LINK_ATTRIBUTES, true) === false) {
+            $element->removeAttribute($attribute->name);
+        }
         }
 
         $href = Str::lower((string) $element->getAttribute('href'));
 
-        if ($href === '' || ! Str::startsWith($href, ['http://', 'https://', 'mailto:'])) {
+        if ($href === '' || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false) {
             $element->removeAttribute('href');
         }
 
