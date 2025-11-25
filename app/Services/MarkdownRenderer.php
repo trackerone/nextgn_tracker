@@ -116,18 +116,26 @@ class MarkdownRenderer
             $escaped = preg_replace($pattern, $replacement, $escaped) ?? $escaped;
         }
 
-        $escaped = preg_replace_callback('/\[(.+?)\]\((.+?)\)/', function (array $matches): string {
-            $url = e($matches[2]);
-            $label = e($matches[1]);
+        $escaped = preg_replace_callback(
+            '/\[(.+?)\]\((.+?)\)/',
+            function (array $matches): string {
+                $url = e($matches[2]);
+                $label = e($matches[1]);
 
-            return sprintf('<a href="%s">%s</a>', $url, $label);
-        }, $escaped) ?? $escaped;
+                return sprintf('<a href="%s">%s</a>', $url, $label);
+            },
+            $escaped,
+        ) ?? $escaped;
 
-        $escaped = preg_replace_callback('/((?:https?:\/\/)[^\s<]+)/i', static function (array $matches): string {
-            $url = e($matches[1]);
+        $escaped = preg_replace_callback(
+            '/((?:https?:\/\/)[^\s<]+)/i',
+            static function (array $matches): string {
+                $url = e($matches[1]);
 
-            return sprintf('<a href="%s">%s</a>', $url, $url);
-        }, $escaped) ?? $escaped;
+                return sprintf('<a href="%s">%s</a>', $url, $url);
+            },
+            $escaped,
+        ) ?? $escaped;
 
         return $escaped;
     }
