@@ -76,6 +76,8 @@
 
     "rector": "vendor/bin/rector --dry-run",
 
+    "test": "php artisan test --colors=always",
+
     "check": [
     "@lint",
     "@analyse",
