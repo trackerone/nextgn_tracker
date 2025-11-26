@@ -8,7 +8,11 @@ parameters:
         - config
         - database
         - routes
-        - tests
+
+    excludePaths:
+        analyse:
+            - database/factories/*
+            - tests/*
 
     tmpDir: var/phpstan
 
