@@ -14,6 +14,7 @@ use function collect;
 class HtmlSanitizer
 {
     private const ALLOWED_TAGS = ['p', 'ul', 'ol', 'li', 'a', 'code', 'pre', 'blockquote', 'strong', 'em', 'h1', 'h2', 'h3'];
+
     private const LINK_ATTRIBUTES = ['href', 'rel', 'target'];
 
     public function clean(string $html): string
@@ -24,7 +25,12 @@ class HtmlSanitizer
 
         $document = new DOMDocument('1.0', 'UTF-8');
         $previous = libxml_use_internal_errors(true);
-        $document->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $document->loadHTML(
+            "<?xml encoding=\"utf-8\" ?>{$html}",
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD,
+        );
+
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
@@ -90,7 +96,10 @@ class HtmlSanitizer
 
         $href = Str::lower((string) $element->getAttribute('href'));
 
-        if ($href === '' || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false) {
+        if (
+            $href === ''
+            || Str::startsWith($href, ['http://', 'https://', 'mailto:']) === false
+        ) {
             $element->removeAttribute('href');
 
             return;
