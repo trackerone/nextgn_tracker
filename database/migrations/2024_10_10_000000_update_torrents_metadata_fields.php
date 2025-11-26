@@ -11,6 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('torrents')) {
+            return;
+        }
+
         Schema::table('torrents', function (Blueprint $table): void {
             if (! Schema::hasColumn('torrents', 'size_bytes')) {
                 $table->unsignedBigInteger('size_bytes')->default(0)->after('info_hash');
@@ -59,6 +63,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('torrents')) {
+            return;
+        }
+
         Schema::table('torrents', function (Blueprint $table): void {
             if (Schema::hasColumn('torrents', 'tmdb_id')) {
                 $table->dropColumn('tmdb_id');

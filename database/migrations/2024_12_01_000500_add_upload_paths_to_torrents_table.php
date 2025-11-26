@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('torrents')) {
+            return;
+        }
+
         Schema::table('torrents', function (Blueprint $table): void {
             if (! Schema::hasColumn('torrents', 'storage_path')) {
                 $table->string('storage_path', 255)->nullable()->after('info_hash');
@@ -23,6 +27,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('torrents')) {
+            return;
+        }
+
         Schema::table('torrents', function (Blueprint $table): void {
             if (Schema::hasColumn('torrents', 'nfo_storage_path')) {
                 $table->dropColumn('nfo_storage_path');

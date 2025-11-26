@@ -12,10 +12,22 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->string('role')->default('user')->after('password');
-            $table->boolean('is_banned')->default(false)->after('role');
-            $table->boolean('is_disabled')->default(false)->after('is_banned');
+            if (! Schema::hasColumn('users', 'role')) {
+                $table->string('role')->default('user')->after('password');
+            }
+
+            if (! Schema::hasColumn('users', 'is_banned')) {
+                $table->boolean('is_banned')->default(false)->after('role');
+            }
+
+            if (! Schema::hasColumn('users', 'is_disabled')) {
+                $table->boolean('is_disabled')->default(false)->after('is_banned');
+            }
         });
 
         DB::table('users')
@@ -34,8 +46,28 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->dropColumn(['role', 'is_banned', 'is_disabled']);
+            $columns = [];
+
+            if (Schema::hasColumn('users', 'role')) {
+                $columns[] = 'role';
+            }
+
+            if (Schema::hasColumn('users', 'is_banned')) {
+                $columns[] = 'is_banned';
+            }
+
+            if (Schema::hasColumn('users', 'is_disabled')) {
+                $columns[] = 'is_disabled';
+            }
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
     }
 };
