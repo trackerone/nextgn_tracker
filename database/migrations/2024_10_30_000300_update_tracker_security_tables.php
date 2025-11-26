@@ -11,30 +11,94 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->timestamp('last_announce_at')->nullable()->after('passkey');
-            $table->boolean('announce_rate_limit_exceeded')->default(false)->after('last_announce_at');
+            if (! Schema::hasColumn('users', 'last_announce_at')) {
+                $table->timestamp('last_announce_at')->nullable()->after('passkey');
+            }
+
+            if (! Schema::hasColumn('users', 'announce_rate_limit_exceeded')) {
+                $table->boolean('announce_rate_limit_exceeded')->default(false)->after('last_announce_at');
+            }
         });
 
         $this->ensureUserPasskeys();
         $this->enforcePasskeyNotNull();
 
+        if (! Schema::hasTable('peers')) {
+            return;
+        }
+
         Schema::table('peers', function (Blueprint $table): void {
-            $table->string('client', 64)->default('')->after('peer_id');
-            $table->boolean('is_banned_client')->default(false)->after('client');
-            $table->unsignedInteger('spoof_score')->default(0)->after('is_banned_client');
-            $table->string('last_action', 20)->nullable()->after('left');
+            if (! Schema::hasColumn('peers', 'client')) {
+                $table->string('client', 64)->default('')->after('peer_id');
+            }
+
+            if (! Schema::hasColumn('peers', 'is_banned_client')) {
+                $table->boolean('is_banned_client')->default(false)->after('client');
+            }
+
+            if (! Schema::hasColumn('peers', 'spoof_score')) {
+                $table->unsignedInteger('spoof_score')->default(0)->after('is_banned_client');
+            }
+
+            if (! Schema::hasColumn('peers', 'last_action')) {
+                $table->string('last_action', 20)->nullable()->after('left');
+            }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('peers')) {
+            return;
+        }
+
         Schema::table('peers', function (Blueprint $table): void {
-            $table->dropColumn(['client', 'is_banned_client', 'spoof_score', 'last_action']);
+            $columns = [];
+
+            if (Schema::hasColumn('peers', 'client')) {
+                $columns[] = 'client';
+            }
+
+            if (Schema::hasColumn('peers', 'is_banned_client')) {
+                $columns[] = 'is_banned_client';
+            }
+
+            if (Schema::hasColumn('peers', 'spoof_score')) {
+                $columns[] = 'spoof_score';
+            }
+
+            if (Schema::hasColumn('peers', 'last_action')) {
+                $columns[] = 'last_action';
+            }
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
 
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->dropColumn(['last_announce_at', 'announce_rate_limit_exceeded']);
+            $columns = [];
+
+            if (Schema::hasColumn('users', 'last_announce_at')) {
+                $columns[] = 'last_announce_at';
+            }
+
+            if (Schema::hasColumn('users', 'announce_rate_limit_exceeded')) {
+                $columns[] = 'announce_rate_limit_exceeded';
+            }
+
+            if ($columns !== []) {
+                $table->dropColumn($columns);
+            }
         });
 
         $this->allowNullablePasskey();

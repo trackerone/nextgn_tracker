@@ -10,19 +10,31 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->foreignId('invited_by_id')
-                ->nullable()
-                ->after('role_id')
-                ->constrained('users')
-                ->nullOnDelete();
+            if (! Schema::hasColumn('users', 'invited_by_id')) {
+                $table->foreignId('invited_by_id')
+                    ->nullable()
+                    ->after('role_id')
+                    ->constrained('users')
+                    ->nullOnDelete();
+            }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('invited_by_id');
+            if (Schema::hasColumn('users', 'invited_by_id')) {
+                $table->dropConstrainedForeignId('invited_by_id');
+            }
         });
     }
 };
