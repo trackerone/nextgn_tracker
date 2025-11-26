@@ -10,16 +10,34 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Hvis der ikke er nogen users-tabel (fx i en tom test-DB), så gør ingenting
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->string('passkey', 64)->nullable()->unique()->after('remember_token');
+            // Undgå fejl hvis kolonnen allerede findes
+            if (! Schema::hasColumn('users', 'passkey')) {
+                $table
+                    ->string('passkey', 64)
+                    ->nullable()
+                    ->unique()
+                    ->after('remember_token');
+            }
         });
     }
 
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table): void {
-            $table->dropUnique('users_passkey_unique');
-            $table->dropColumn('passkey');
+            // Kun prøv at droppe, hvis kolonnen faktisk findes
+            if (Schema::hasColumn('users', 'passkey')) {
+                $table->dropColumn('passkey');
+            }
         });
     }
 };
