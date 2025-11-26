@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests;
 
 use App\Models\Role;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Schema;
 use Mockery;
@@ -12,6 +13,7 @@ use Mockery;
 abstract class TestCase extends BaseTestCase
 {
     use CreatesApplication;
+    use RefreshDatabase;
 
     protected function setUp(): void
     {
