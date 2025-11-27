@@ -41,6 +41,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public const ROLE_ADMIN = 'admin';
     public const ROLE_SYSOP = 'sysop';
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -53,12 +58,22 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_disabled',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
         'passkey',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -68,6 +83,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'announce_rate_limit_exceeded' => 'boolean',
     ];
 
+    /**
+     * The model's default values for attributes.
+     *
+     * @var array<string, mixed>
+     */
     protected $attributes = [
         'role' => self::ROLE_USER,
         'is_banned' => false,
@@ -79,7 +99,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (!is_string($roleValue) || $roleValue === '') {
+            if (! is_string($roleValue) || $roleValue === '') {
                 $user->forceFill([
                     'role' => self::ROLE_USER,
                 ]);
@@ -94,7 +114,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        if (!Route::has('verification.verify')) {
+        if (! Route::has('verification.verify')) {
             return;
         }
 
