@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 /**
  * @property string $email
  * @property string $name
- * @property string $passkey
+ * @property string|null $passkey
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -30,9 +30,7 @@ use Illuminate\Support\Str;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory;
-    use MustVerifyEmailTrait;
-    use Notifiable;
+    use HasFactory, MustVerifyEmailTrait, Notifiable;
 
     public const ROLE_USER = 'user';
     public const ROLE_POWER_USER = 'power_user';
@@ -41,9 +39,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public const ROLE_ADMIN = 'admin';
     public const ROLE_SYSOP = 'sysop';
 
-    /**
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -56,18 +51,12 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_disabled',
     ];
 
-    /**
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
         'passkey',
     ];
 
-    /**
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -77,9 +66,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'announce_rate_limit_exceeded' => 'boolean',
     ];
 
-    /**
-     * @var array<string, mixed>
-     */
     protected $attributes = [
         'role' => self::ROLE_USER,
         'is_banned' => false,
@@ -91,7 +77,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (! is_string($roleValue) || $roleValue === '') {
+            if (is_string($roleValue) === false || $roleValue === '') {
                 $user->forceFill([
                     'role' => self::ROLE_USER,
                 ]);
@@ -106,16 +92,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        if (! Route::has('verification.verify')) {
+        // Hvis verifikations-ruten ikke er defineret, så gør ingenting
+        if (Route::has('verification.verify') === false) {
             return;
         }
 
-        $this->notify(new VerifyEmail);
+        $this->notify(new VerifyEmail());
     }
 
     public function invitedBy(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'invited_by_id');
+        return $this->belongsTo(User::class, 'invited_by_id');
     }
 
     public function apiKeys(): HasMany
@@ -220,7 +207,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return $baseUrl . '/' . $passkey;
+        return $baseUrl.'/'.$passkey;
     }
 
     public function totalUploaded(): int
@@ -302,9 +289,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $roleAttribute = $this->getAttribute('role');
 
-        return is_string($roleAttribute)
-            ? $roleAttribute
-            : null;
+        return is_string($roleAttribute) ? $roleAttribute : null;
     }
 
     public static function roleFromLegacySlug(?string $slug): string
