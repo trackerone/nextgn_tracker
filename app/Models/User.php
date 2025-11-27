@@ -52,13 +52,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_banned',
         'is_disabled',
     ];
-
     protected $hidden = [
         'password',
         'remember_token',
         'passkey',
     ];
-
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -67,7 +65,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_announce_at' => 'datetime',
         'announce_rate_limit_exceeded' => 'boolean',
     ];
-
     protected $attributes = [
         'role' => self::ROLE_USER,
         'is_banned' => false,
@@ -80,7 +77,9 @@ class User extends Authenticatable implements MustVerifyEmail
             $roleValue = $user->getAttribute('role');
 
             if (!is_string($roleValue) || $roleValue === '') {
-                $user->forceFill(['role' => self::ROLE_USER]);
+                $user->forceFill([
+                    'role' => self::ROLE_USER,
+                ]);
             }
         });
     }
@@ -96,7 +95,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return;
         }
 
-        $this->notify(new VerifyEmail());
+        $this->notify(new VerifyEmail);
     }
 
     public function invitedBy(): BelongsTo
