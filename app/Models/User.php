@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 /**
  * @property string $email
  * @property string $name
- * @property string|null $passkey
+ * @property string $passkey
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -30,18 +30,15 @@ use Illuminate\Support\Str;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, MustVerifyEmailTrait, Notifiable;
+    use HasFactory;
+    use MustVerifyEmailTrait;
+    use Notifiable;
 
     public const ROLE_USER = 'user';
-
     public const ROLE_POWER_USER = 'power_user';
-
     public const ROLE_UPLOADER = 'uploader';
-
     public const ROLE_MODERATOR = 'moderator';
-
     public const ROLE_ADMIN = 'admin';
-
     public const ROLE_SYSOP = 'sysop';
 
     /**
@@ -107,6 +104,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Role::class, 'role_id');
     }
 
+    public function sendEmailVerificationNotification(): void
+    {
+        if (! Route::has('verification.verify')) {
+            return;
+        }
+
+        $this->notify(new VerifyEmail);
+    }
+
     public function invitedBy(): BelongsTo
     {
         return $this->belongsTo(self::class, 'invited_by_id');
@@ -132,15 +138,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->userTorrents();
     }
 
-    public function sendEmailVerificationNotification(): void
-    {
-        if (! Route::has('verification.verify')) {
-            return;
-        }
-
-        $this->notify(new VerifyEmail());
-    }
-
     public function scopeStaff(Builder $query): Builder
     {
         return $query->whereIn('role', self::staffRoles());
@@ -150,8 +147,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleValue = $this->resolveRoleIdentifier();
 
-        return $roleValue !== null
-            && in_array($roleValue, self::staffRoles(), true);
+        return $roleValue !== null && in_array($roleValue, self::staffRoles(), true);
     }
 
     public function isModerator(): bool
@@ -224,7 +220,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return $baseUrl.'/'.$passkey;
+        return $baseUrl . '/' . $passkey;
     }
 
     public function totalUploaded(): int
@@ -306,7 +302,9 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $roleAttribute = $this->getAttribute('role');
 
-        return is_string($roleAttribute) ? $roleAttribute : null;
+        return is_string($roleAttribute)
+            ? $roleAttribute
+            : null;
     }
 
     public static function roleFromLegacySlug(?string $slug): string
