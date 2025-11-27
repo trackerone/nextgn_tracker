@@ -35,15 +35,10 @@ class User extends Authenticatable implements MustVerifyEmail
     use Notifiable;
 
     public const ROLE_USER = 'user';
-
     public const ROLE_POWER_USER = 'power_user';
-
     public const ROLE_UPLOADER = 'uploader';
-
     public const ROLE_MODERATOR = 'moderator';
-
     public const ROLE_ADMIN = 'admin';
-
     public const ROLE_SYSOP = 'sysop';
 
     protected $fillable = [
@@ -84,7 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (is_string($roleValue) === false || $roleValue === '') {
+            if (!is_string($roleValue) || $roleValue === '') {
                 $user->forceFill(['role' => self::ROLE_USER]);
             }
         });
@@ -97,11 +92,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        if (Route::has('verification.verify') === false) {
+        if (!Route::has('verification.verify')) {
             return;
         }
 
-        $this->notify(new VerifyEmail);
+        $this->notify(new VerifyEmail());
     }
 
     public function invitedBy(): BelongsTo
@@ -209,7 +204,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return $baseUrl . '/' . $passkey;
+        return $baseUrl.'/'.$passkey;
     }
 
     public function totalUploaded(): int
@@ -270,7 +265,11 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     private static function staffRoles(): array
     {
-        return [self::ROLE_MODERATOR, self::ROLE_ADMIN, self::ROLE_SYSOP];
+        return [
+            self::ROLE_MODERATOR,
+            self::ROLE_ADMIN,
+            self::ROLE_SYSOP,
+        ];
     }
 
     public function resolveRoleIdentifier(): ?string
