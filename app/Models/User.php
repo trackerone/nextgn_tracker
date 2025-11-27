@@ -208,7 +208,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return "{$baseUrl}/{$passkey}";
+        return $baseUrl . '/' . $passkey;
     }
 
     public function totalUploaded(): int
