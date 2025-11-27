@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('api_keys')) {
+            return;
+        }
+
         Schema::create('api_keys', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -22,6 +26,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('api_keys');
+        if (Schema::hasTable('api_keys')) {
+            Schema::drop('api_keys');
+        }
     }
 };

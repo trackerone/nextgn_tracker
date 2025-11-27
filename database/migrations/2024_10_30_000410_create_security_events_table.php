@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('security_events')) {
+            return;
+        }
+
         Schema::create('security_events', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -27,6 +31,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('security_events');
+        if (Schema::hasTable('security_events')) {
+            Schema::drop('security_events');
+        }
     }
 };

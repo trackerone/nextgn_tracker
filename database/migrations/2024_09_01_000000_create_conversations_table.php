@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('conversations')) {
+            return;
+        }
+
         Schema::create('conversations', static function (Blueprint $table): void {
             $table->id();
             $table->foreignId('user_a_id')->constrained('users')->cascadeOnDelete();
@@ -21,6 +25,10 @@ return new class extends Migration
             $table->index('user_b_id');
             $table->unique(['user_a_id', 'user_b_id']);
         });
+
+        if (Schema::hasTable('messages')) {
+            return;
+        }
 
         Schema::create('messages', static function (Blueprint $table): void {
             $table->id();
@@ -40,7 +48,12 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('messages');
-        Schema::dropIfExists('conversations');
+        if (Schema::hasTable('messages')) {
+            Schema::drop('messages');
+        }
+
+        if (Schema::hasTable('conversations')) {
+            Schema::drop('conversations');
+        }
     }
 };
