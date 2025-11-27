@@ -10,6 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('torrents')) {
+            return;
+        }
+
         Schema::create('torrents', function (Blueprint $table): void {
             $table->bigIncrements('id');
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -30,6 +34,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('torrents');
+        if (Schema::hasTable('torrents')) {
+            Schema::drop('torrents');
+        }
     }
 };
