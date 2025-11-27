@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 /**
  * @property string $email
  * @property string $name
- * @property string $passkey
+ * @property string|null $passkey
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -30,20 +30,21 @@ use Illuminate\Support\Str;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory;
-    use MustVerifyEmailTrait;
-    use Notifiable;
+    use HasFactory, MustVerifyEmailTrait, Notifiable;
 
     public const ROLE_USER = 'user';
+
     public const ROLE_POWER_USER = 'power_user';
+
     public const ROLE_UPLOADER = 'uploader';
+
     public const ROLE_MODERATOR = 'moderator';
+
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_SYSOP = 'sysop';
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var array<int, string>
      */
     protected $fillable = [
@@ -59,8 +60,6 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var array<int, string>
      */
     protected $hidden = [
@@ -70,8 +69,6 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * The attributes that should be cast.
-     *
      * @var array<string, string>
      */
     protected $casts = [
@@ -84,8 +81,6 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     /**
-     * The model's default values for attributes.
-     *
      * @var array<string, mixed>
      */
     protected $attributes = [
@@ -112,18 +107,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    public function sendEmailVerificationNotification(): void
-    {
-        if (! Route::has('verification.verify')) {
-            return;
-        }
-
-        $this->notify(new VerifyEmail);
-    }
-
     public function invitedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invited_by_id');
+        return $this->belongsTo(self::class, 'invited_by_id');
     }
 
     public function apiKeys(): HasMany
@@ -146,6 +132,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->userTorrents();
     }
 
+    public function sendEmailVerificationNotification(): void
+    {
+        if (! Route::has('verification.verify')) {
+            return;
+        }
+
+        $this->notify(new VerifyEmail());
+    }
+
     public function scopeStaff(Builder $query): Builder
     {
         return $query->whereIn('role', self::staffRoles());
@@ -155,7 +150,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleValue = $this->resolveRoleIdentifier();
 
-        return $roleValue !== null && in_array($roleValue, self::staffRoles(), true);
+        return $roleValue !== null
+            && in_array($roleValue, self::staffRoles(), true);
     }
 
     public function isModerator(): bool
@@ -171,7 +167,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleValue = $this->resolveRoleIdentifier();
 
-        return $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
+        return $roleValue === self::ROLE_ADMIN
+            || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isSysop(): bool
@@ -183,7 +180,8 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleValue = $this->resolveRoleIdentifier();
 
-        return $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
+        return $roleValue === self::ROLE_ADMIN
+            || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isBanned(): bool
