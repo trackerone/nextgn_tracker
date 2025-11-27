@@ -30,7 +30,9 @@ use Illuminate\Support\Str;
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasFactory, MustVerifyEmailTrait, Notifiable;
+    use HasFactory;
+    use MustVerifyEmailTrait;
+    use Notifiable;
 
     public const ROLE_USER = 'user';
     public const ROLE_POWER_USER = 'power_user';
