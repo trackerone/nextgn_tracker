@@ -22,11 +22,17 @@ class UserFactory extends Factory
             'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => '$2y$10$'.Str::random(53),
+            // IMPORTANT:
+            // With the Laravel 11 "hashed" cast, assigning a plain string here
+            // causes Laravel to hash it correctly.
+            'password' => 'password',
             'remember_token' => Str::random(10),
-            'role' => User::ROLE_USER,
-            'role_id' => $this->defaultRoleId(),
-            'passkey' => bin2hex(random_bytes(32)),
+            // IMPORTANT:
+            // Passkeys are NOT hashed values. Ensure this is null unless created explicitly.
+            'passkey' => null,
+            // If your User model has a role_id column, set it to null.
+            // If it does not exist, skip it.
+            'role_id' => null,
         ];
     }
 
