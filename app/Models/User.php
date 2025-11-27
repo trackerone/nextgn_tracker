@@ -21,7 +21,7 @@ use Illuminate\Support\Str;
 /**
  * @property string $email
  * @property string $name
- * @property string|null $passkey
+ * @property string $passkey
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -79,7 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (is_string($roleValue) === false || $roleValue === '') {
+            if (! is_string($roleValue) || $roleValue === '') {
                 $user->forceFill([
                     'role' => self::ROLE_USER,
                 ]);
@@ -94,8 +94,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        // Hvis verifikations-ruten ikke er defineret, så gør ingenting
-        if (Route::has('verification.verify') === false) {
+        if (! Route::has('verification.verify')) {
             return;
         }
 
@@ -104,7 +103,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function invitedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'invited_by_id');
+        return $this->belongsTo(self::class, 'invited_by_id');
     }
 
     public function apiKeys(): HasMany
@@ -209,7 +208,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return $baseUrl.'/'.$passkey;
+        return $baseUrl . '/' . $passkey;
     }
 
     public function totalUploaded(): int
@@ -241,6 +240,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         if ($this->isDisabled()) {
             return 'Disabled';
+        
         }
 
         $ratio = $this->ratio();
