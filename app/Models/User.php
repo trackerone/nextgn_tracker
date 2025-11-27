@@ -84,7 +84,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (! is_string($roleValue) || $roleValue === '') {
+            if (is_string($roleValue) === false || $roleValue === '') {
                 $user->forceFill(['role' => self::ROLE_USER]);
             }
         });
@@ -97,11 +97,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        if (! Route::has('verification.verify')) {
+        if (Route::has('verification.verify') === false) {
             return;
         }
 
-        $this->notify(new VerifyEmail());
+        $this->notify(new VerifyEmail);
     }
 
     public function invitedBy(): BelongsTo
@@ -145,7 +145,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleValue = $this->resolveRoleIdentifier();
 
-        return $roleValue === self::ROLE_MODERATOR || $roleValue === self::ROLE_ADMIN || $roleValue === self::ROLE_SYSOP;
+        return $roleValue === self::ROLE_MODERATOR
+            || $roleValue === self::ROLE_ADMIN
+            || $roleValue === self::ROLE_SYSOP;
     }
 
     public function isAdmin(): bool
@@ -207,7 +209,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $baseUrl = rtrim($announceConfig, '/');
 
-        return $baseUrl.'/'.$passkey;
+        return $baseUrl . '/' . $passkey;
     }
 
     public function totalUploaded(): int
