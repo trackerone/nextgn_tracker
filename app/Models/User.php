@@ -35,10 +35,15 @@ class User extends Authenticatable implements MustVerifyEmail
     use Notifiable;
 
     public const ROLE_USER = 'user';
+
     public const ROLE_POWER_USER = 'power_user';
+
     public const ROLE_UPLOADER = 'uploader';
+
     public const ROLE_MODERATOR = 'moderator';
+
     public const ROLE_ADMIN = 'admin';
+
     public const ROLE_SYSOP = 'sysop';
 
     protected $fillable = [
