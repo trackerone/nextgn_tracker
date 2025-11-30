@@ -79,7 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail
         static::creating(function (User $user): void {
             $roleValue = $user->getAttribute('role');
 
-            if (!is_string($roleValue) || $roleValue === '') {
+            if (! is_string($roleValue) || $roleValue === '') {
                 $user->forceFill([
                     'role' => self::ROLE_USER,
                 ]);
@@ -94,7 +94,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        if (!Route::has('verification.verify')) {
+        if (! Route::has('verification.verify')) {
             return;
         }
 
@@ -240,7 +240,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
         if ($this->isDisabled()) {
             return 'Disabled';
-        
         }
 
         $ratio = $this->ratio();
