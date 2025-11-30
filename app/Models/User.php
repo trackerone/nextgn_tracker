@@ -103,7 +103,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return;
         }
 
-        $this->notify(new VerifyEmail());
+        $this->notify(new VerifyEmail);
     }
 
     public function invitedBy(): BelongsTo
