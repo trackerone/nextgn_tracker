@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('slug')->unique();
             $table->string('info_hash', 40)->unique();
-            $table->unsignedBigInteger('size');
+            $table->unsignedBigInteger('size_bytes');
             $table->unsignedInteger('files_count');
             $table->unsignedInteger('seeders')->default(0);
             $table->unsignedInteger('leechers')->default(0);
