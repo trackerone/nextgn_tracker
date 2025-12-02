@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Exceptions\TorrentAlreadyExistsException;
-use App\Http\Requests\TorrentUploadRequest;
+use App\Http\Requests\StoreTorrentRequest;
 use App\Models\Category;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
@@ -47,7 +47,7 @@ class TorrentUploadController extends Controller
         ]);
     }
 
-    public function store(TorrentUploadRequest $request): RedirectResponse
+    public function store(StoreTorrentRequest $request): RedirectResponse
     {
         $this->authorize('create', Torrent::class);
 
@@ -56,6 +56,7 @@ class TorrentUploadController extends Controller
         }
 
         $data = $request->validated();
+
         /** @var \App\Models\User $user */
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
@@ -67,9 +68,11 @@ class TorrentUploadController extends Controller
         }
 
         $nfoPayload = $this->resolveNfoText($request, $data);
+
         $nfoResult = $nfoPayload !== null
             ? $this->nfoParser->parse($nfoPayload)
             : ['sanitized_text' => null, 'imdb_id' => null, 'tmdb_id' => null];
+
         $torrentSizeBytes = $torrentFile->getSize();
         $torrentMime = $torrentFile->getClientMimeType();
 
@@ -138,7 +141,7 @@ class TorrentUploadController extends Controller
             ->with('status', 'Torrent uploaded and awaiting approval.');
     }
 
-    private function resolveNfoText(TorrentUploadRequest $request, array $data): ?string
+    private function resolveNfoText(StoreTorrentRequest $request, array $data): ?string
     {
         $file = $request->file('nfo_file');
 
@@ -151,7 +154,7 @@ class TorrentUploadController extends Controller
         return is_string($text) && trim($text) !== '' ? $text : null;
     }
 
-    private function resolveNfoSize(TorrentUploadRequest $request, ?string $payload): ?int
+    private function resolveNfoSize(StoreTorrentRequest $request, ?string $payload): ?int
     {
         $file = $request->file('nfo_file');
 
