@@ -7,6 +7,7 @@ use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InviteAdminController;
+use App\Http\Controllers\Admin\RatioSettingsController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\AnnounceController;
@@ -40,6 +41,13 @@ Route::get('/health', HealthCheckController::class)->name('health.index');
 Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])
     ->get('/admin', DashboardController::class)
     ->name('demo.admin');
+
+Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])->group(function (): void {
+    Route::get('/admin/settings/ratio', [RatioSettingsController::class, 'edit'])
+        ->name('admin.settings.ratio.edit');
+    Route::patch('/admin/settings/ratio', [RatioSettingsController::class, 'update'])
+        ->name('admin.settings.ratio.update');
+});
 
 Route::middleware(['auth', 'verified', 'role.min:8'])
     ->get('/mod', static fn () => response()->json(['message' => 'Moderator area']))

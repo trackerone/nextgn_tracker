@@ -247,16 +247,23 @@ class User extends Authenticatable implements MustVerifyEmail
             return 'Disabled';
         }
 
+        /** @var \App\Services\Settings\RatioSettings $ratioSettings */
+        $ratioSettings = app(\App\Services\Settings\RatioSettings::class);
+
         $ratio = $this->ratio();
 
         if ($ratio === null) {
             return 'User';
         }
 
+        $totalDownloaded = $this->totalDownloaded();
+        $userMinRatio = $ratioSettings->userMinRatio();
+
         return match (true) {
-            $ratio >= 1.5 => 'Elite',
-            $ratio >= 0.8 => 'Power User',
-            $ratio >= 0.4 => 'User',
+            $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
+            $ratio >= $ratioSettings->powerUserMinRatio()
+                && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
+            $ratio >= $userMinRatio => 'User',
             default => 'Leech',
         };
     }
