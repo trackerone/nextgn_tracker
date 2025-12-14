@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\ActiveUserMiddleware;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
+use App\Http\Middleware\ValidateAnnounceRequest;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
@@ -23,10 +25,23 @@ return Application::configure(basePath: dirname(__DIR__))
         ViewServiceProvider::class,
         AuthServiceProvider::class,
     ])
-    ->withMiddleware(function (Middleware $middleware) {
+    ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
             'staff' => EnsureUserIsStaff::class,
+
+            // Tracker
+            'tracker.validate-announce' => ValidateAnnounceRequest::class,
+        ]);
+
+        // IMPORTANT: actually run the middleware for all web routes (incl. torrents.show)
+        $middleware->web(append: [
+            ActiveUserMiddleware::class,
+        ]);
+
+        // Optional but recommended if you want the same behavior for API routes:
+        $middleware->api(append: [
+            ActiveUserMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

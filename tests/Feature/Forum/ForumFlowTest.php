@@ -9,6 +9,9 @@ use App\Models\User;
 use App\Services\MarkdownService;
 use App\Services\TopicSlugService;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 it('allows forum interactions with proper permissions', function (): void {
     $this->seed(RoleSeeder::class);
@@ -20,15 +23,20 @@ it('allows forum interactions with proper permissions', function (): void {
     $moderatorRole = Role::query()->where('slug', 'mod2')->firstOrFail();
     $adminRole = Role::query()->where('slug', 'admin2')->firstOrFail();
 
-    $existingAuthor = User::factory()->create(['role_id' => $authorRole->getKey()]);
+    $existingAuthor = User::factory()->create([
+        'role'    => $authorRole->slug,
+        'role_id' => $authorRole->getKey(),
+    ]);
+
     $topic = Topic::query()->create([
         'user_id' => $existingAuthor->getKey(),
-        'slug' => $slugger->generate('Velkommen'),
-        'title' => 'Velkommen',
+        'slug'    => $slugger->generate('Velkommen'),
+        'title'   => 'Velkommen',
     ]);
+
     $topic->posts()->create([
-        'user_id' => $existingAuthor->getKey(),
-        'body_md' => 'Første indlæg',
+        'user_id'   => $existingAuthor->getKey(),
+        'body_md'   => 'Første indlæg',
         'body_html' => $markdown->render('Første indlæg'),
     ]);
 
@@ -40,11 +48,14 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertOk()
         ->assertJsonFragment(['title' => 'Velkommen']);
 
-    $writer = User::factory()->create(['role_id' => $authorRole->getKey()]);
+    $writer = User::factory()->create([
+        'role'    => $authorRole->slug,
+        'role_id' => $authorRole->getKey(),
+    ]);
 
     $createResponse = $this->actingAs($writer)
         ->postJson('/topics', [
-            'title' => 'Test emne',
+            'title'   => 'Test emne',
             'body_md' => '# Overskrift',
         ])
         ->assertCreated();
@@ -70,7 +81,10 @@ it('allows forum interactions with proper permissions', function (): void {
     $this->deleteJson("/posts/{$postId}")
         ->assertNoContent();
 
-    $moderator = User::factory()->create(['role_id' => $moderatorRole->getKey()]);
+    $moderator = User::factory()->create([
+        'role'    => $moderatorRole->slug,
+        'role_id' => $moderatorRole->getKey(),
+    ]);
 
     $this->actingAs($moderator)
         ->postJson("/topics/{$createdTopicId}/lock")
@@ -81,7 +95,10 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertOk()
         ->assertJsonFragment(['is_pinned' => true]);
 
-    $admin = User::factory()->create(['role_id' => $adminRole->getKey()]);
+    $admin = User::factory()->create([
+        'role'    => $adminRole->slug,
+        'role_id' => $adminRole->getKey(),
+    ]);
 
     $this->actingAs($admin)
         ->deleteJson("/topics/{$createdTopicId}")
@@ -108,7 +125,7 @@ it('allows forum interactions with proper permissions', function (): void {
 
     $xssResponse = $this->actingAs($writer)
         ->postJson('/topics', [
-            'title' => 'XSS test',
+            'title'   => 'XSS test',
             'body_md' => $payload,
         ])
         ->assertCreated();

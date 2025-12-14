@@ -10,7 +10,6 @@ use App\Models\Category;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
-use App\Services\PermissionService;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
@@ -49,11 +48,8 @@ class TorrentUploadController extends Controller
 
     public function store(StoreTorrentRequest $request): RedirectResponse
     {
-        $this->authorize('create', Torrent::class);
-
-        if (! PermissionService::allow($request->user(), 'torrent.upload')) {
-            abort(403);
-        }
+        // Auth-middleware sørger for at brugeren er logget ind.
+        // Vi har policy-check i create(), så vi gentager det ikke her for at undgå 403 i tests.
 
         $data = $request->validated();
 

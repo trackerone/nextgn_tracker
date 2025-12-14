@@ -9,45 +9,40 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-/**
- * @extends Factory<User>
- */
 class UserFactory extends Factory
 {
     protected $model = User::class;
 
     public function definition(): array
     {
+        // Vi undgår Faker "name" fuldstændigt for at slippe for Unknown format "name"
+        $unique = Str::uuid()->toString();
+
         return [
-            'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
+            'name' => 'Test User '.$unique,
+            'email' => 'user_'.$unique.'@example.test',
             'email_verified_at' => now(),
-            // IMPORTANT:
-            // With the Laravel 11 "hashed" cast, assigning a plain string here
-            // causes Laravel to hash it correctly.
-            'password' => 'password',
+            'password' => bcrypt('password'),
             'remember_token' => Str::random(10),
-            // IMPORTANT:
-            // Passkeys are NOT hashed values. Ensure this is null unless created explicitly.
-            'passkey' => null,
-            // If your User model has a role_id column, set it to null.
-            // If it does not exist, skip it.
-            'role_id' => null,
+            'role' => User::ROLE_USER,
+            'role_id' => Role::query()->where('slug', 'newbie')->value('id'),
+            'is_banned' => false,
+            'is_disabled' => false,
+            'passkey' => substr(hash('sha256', $unique), 0, 32),
+            'is_staff' => false,
         ];
     }
 
-    public function unverified(): self
+    public function staff(): self
     {
-        return $this->state(fn () => [
-            'email_verified_at' => null,
-        ]);
-    }
+        return $this->state(function (): array {
+            $role = Role::query()->whereIn('slug', ['mod1', 'admin1', 'sysop'])->first();
 
-    private function defaultRoleId(): int
-    {
-        $preferred = Role::query()->where('slug', 'user1')->value('id')
-            ?? Role::query()->where('slug', Role::DEFAULT_SLUG)->value('id');
-
-        return $preferred ?? Role::factory()->withSlug(Role::DEFAULT_SLUG)->create()->getKey();
+            return [
+                'role' => $role?->slug ?? 'mod1',
+                'role_id' => $role?->id,
+                'is_staff' => true,
+            ];
+        });
     }
 }

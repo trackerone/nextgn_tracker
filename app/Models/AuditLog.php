@@ -23,7 +23,7 @@ class AuditLog extends Model
     ];
 
     protected $casts = [
-        'metadata' => 'array',
+        'metadata' => 'json',
     ];
 
     public function user(): BelongsTo

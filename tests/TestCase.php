@@ -19,6 +19,11 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        // Sluk Vite i tests, så vi ikke skal have manifest/public/build osv.
+        if (method_exists($this, 'withoutVite')) {
+            $this->withoutVite();
+        }
+
         // Force in-memory cache to avoid SQLite cache table issues in tests
         config()->set('cache.default', 'array');
 

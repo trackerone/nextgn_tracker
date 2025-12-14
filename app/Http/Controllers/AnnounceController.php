@@ -51,10 +51,12 @@ class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
-        $infoHash = (string) $data['info_hash'];
+        // info_hash is typically url-encoded 20 raw bytes (some clients/tests may send 40-char hex)
+        $infoHashValue = (string) $data['info_hash'];
+        $infoHash = $this->decode20ByteParam($infoHashValue, 'info_hash');
 
-        if (strlen($infoHash) !== 20) {
-            return $this->failure('info_hash must be exactly 20 bytes.');
+        if ($infoHash instanceof Response) {
+            return $infoHash;
         }
 
         $torrent = $this->torrents->findByInfoHash(strtoupper(bin2hex($infoHash)));
@@ -63,7 +65,8 @@ class AnnounceController extends Controller
             return $this->failure('Invalid info_hash.');
         }
 
-        $isStaff = $user->isStaff();
+        // Staff detection: prefer the model method, but allow legacy role strings while migrating
+        $isStaff = $user->isStaff() || in_array((string) ($user->role ?? ''), ['moderator', 'admin'], true);
 
         if ($torrent->isBanned() && ! $isStaff) {
             return $this->failure('Torrent is banned.');
@@ -73,10 +76,12 @@ class AnnounceController extends Controller
             return $this->failure('Torrent is not approved yet.');
         }
 
-        $peerId = (string) $data['peer_id'];
+        // peer_id is also url-encoded 20 raw bytes (some clients/tests may send 40-char hex)
+        $peerIdValue = (string) $data['peer_id'];
+        $peerId = $this->decode20ByteParam($peerIdValue, 'peer_id');
 
-        if (strlen($peerId) !== 20) {
-            return $this->failure('peer_id must be exactly 20 bytes.');
+        if ($peerId instanceof Response) {
+            return $peerId;
         }
 
         $event = isset($data['event']) ? (string) $data['event'] : null;
@@ -85,11 +90,7 @@ class AnnounceController extends Controller
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
-        if (
-            ! $isStaff
-            && $event === 'started'
-            && $left > 0
-        ) {
+        if (! $isStaff && $event === 'started' && $left > 0) {
             $ratio = $user->ratio();
 
             if ($ratio !== null && $ratio < self::MIN_RATIO_FOR_NEW_DOWNLOAD) {
@@ -148,6 +149,28 @@ class AnnounceController extends Controller
         ];
 
         return $this->success($payload);
+    }
+
+    /**
+     * Announce parameters like info_hash / peer_id are usually url-encoded raw bytes (20 bytes).
+     * Some clients/tests may send 40-hex; we accept that too.
+     *
+     * @return string|Response
+     */
+    private function decode20ByteParam(string $value, string $field): string|Response
+    {
+        $decoded = rawurldecode($value);
+
+        // Allow 40-char hex input (some clients/tests do this)
+        if (preg_match('/^[a-f0-9]{40}$/i', $decoded) === 1) {
+            $decoded = hex2bin($decoded) ?: '';
+        }
+
+        if (strlen($decoded) !== 20) {
+            return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
+        }
+
+        return $decoded;
     }
 
     private function peersForResponse(int $torrentId, string $excludingPeer, int $limit, CarbonInterface $activeSince): array

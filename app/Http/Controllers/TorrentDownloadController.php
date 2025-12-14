@@ -5,88 +5,67 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Torrent;
-use App\Services\Security\SanitizationService;
-use App\Services\TorrentDownloadService;
-use App\Services\UserTorrentService;
-use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use RuntimeException;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class TorrentDownloadController extends Controller
+final class TorrentDownloadController extends Controller
 {
-    public function __construct(
-        private readonly TorrentDownloadService $downloadService,
-        private readonly UserTorrentService $userTorrentService,
-        private readonly SanitizationService $sanitizer,
-    ) {}
-
-    public function download(Request $request, Torrent $torrent): Response
+    public function download(Request $request, string $torrent): StreamedResponse
     {
-        $this->authorize('download', $torrent);
+        $model = $this->resolveTorrent($torrent);
 
-        if (! $torrent->hasTorrentFile()) {
+        $disk = (string) config('upload.torrents.disk', 'torrents');
+        $path = $model->torrentStoragePath();
+
+        if (! Storage::disk($disk)->exists($path)) {
             abort(404);
         }
 
-        $user = $request->user();
+        $filename = ($model->slug ?: (string) $model->getKey()) . '.torrent';
 
-        if ($user === null) {
-            abort(403);
-        }
-
-        try {
-            $payload = $this->downloadService->buildPersonalizedPayload($torrent, $user);
-        } catch (RuntimeException) {
-            abort(404);
-        }
-
-        $this->userTorrentService->recordGrab($user, $torrent, CarbonImmutable::now());
-
-        $baseFilename = Str::slug($torrent->name ?: 'torrent-'.$torrent->getKey()) ?: 'torrent-'.$torrent->getKey();
-        $filename = $baseFilename.'.torrent';
-
-        return response($payload, 200, [
+        return Storage::disk($disk)->download($path, $filename, [
             'Content-Type' => 'application/x-bittorrent',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
 
-    /**
-     * Returns the magnet link as JSON for client-side copy helpers.
-     */
-    public function magnet(Torrent $torrent): JsonResponse
+    public function magnet(Request $request, string $torrent): JsonResponse
     {
-        $this->authorize('download', $torrent);
+        $model = $this->resolveTorrent($torrent);
 
-        $infoHash = strtoupper($torrent->info_hash);
-        $displayName = $this->sanitizer->sanitizeString($torrent->name ?? '');
-        $displayName = $displayName !== '' ? $displayName : 'torrent-'.$torrent->getKey();
+        $announceUrl = (string) config('tracker.announce_url', '');
+        $additional = (array) config('tracker.additional_trackers', []);
 
-        $announce = $this->sanitizer->sanitizeString((string) config('tracker.announce_url', ''));
-        $additionalTrackers = array_filter((array) config('tracker.additional_trackers', []));
+        $xt = 'xt=urn:btih:' . strtoupper((string) $model->info_hash);
 
-        $magnet = 'magnet:?xt=urn:btih:'.$infoHash;
-        $magnet .= '&dn='.rawurlencode($displayName);
+        $params = [
+            $xt,
+            'dn=' . rawurlencode((string) $model->name),
+        ];
 
-        if ($announce !== '') {
-            $magnet .= '&tr='.rawurlencode($announce);
+        if ($announceUrl !== '') {
+            $params[] = 'tr=' . rawurlencode($announceUrl);
         }
 
-        foreach ($additionalTrackers as $tracker) {
-            $sanitized = $this->sanitizer->sanitizeString((string) $tracker);
-
-            if ($sanitized === '') {
-                continue;
+        foreach ($additional as $tracker) {
+            if (is_string($tracker) && $tracker !== '') {
+                $params[] = 'tr=' . rawurlencode($tracker);
             }
-
-            $magnet .= '&tr='.rawurlencode($sanitized);
         }
+
+        $magnet = 'magnet:?' . implode('&', $params);
 
         return response()->json([
             'magnet' => $magnet,
         ]);
+    }
+
+    private function resolveTorrent(string $torrent): Torrent
+    {
+        return Torrent::query()
+            ->where('id', $torrent)
+            ->orWhere('slug', $torrent)
+            ->firstOrFail();
     }
 }

@@ -10,61 +10,65 @@ class StoreTorrentRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        // Upload kræver allerede auth-middleware på route-niveau,
-        // så her kan vi bare returnere true.
-        return true;
+        return $this->user() !== null;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
-        $torrentConfig = config('upload.torrents');
-
         return [
             'name' => ['required', 'string', 'max:255'],
-
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'type' => ['required', 'string', 'max:50'],
 
-            'source' => ['nullable', 'string', 'max:255'],
-            'resolution' => ['nullable', 'string', 'max:255'],
-
-            'description' => ['nullable', 'string'],
-            'tags' => ['nullable', 'array'],
-            'tags.*' => ['string', 'max:255'],
-
-            'codecs' => ['nullable', 'array'],
-            'codecs.*' => ['nullable', 'string', 'max:255'],
-
-            'imdb_id' => ['nullable', 'string', 'max:20'],
-            'tmdb_id' => ['nullable', 'string', 'max:20'],
-
-            'nfo_text' => ['nullable', 'string'],
-            'nfo_storage_path' => ['nullable', 'string', 'max:1024'],
+            'type' => ['required', 'string', 'max:32'],
 
             'torrent_file' => [
                 'required',
                 'file',
-                // Laravel "max" er i kilobytes:
-                'max:' . ($torrentConfig['max_kilobytes'] ?? 1024),
-                'mimetypes:' . implode(',', $torrentConfig['allowed_mimes'] ?? ['application/x-bittorrent']),
-                'mimes:' . implode(',', $torrentConfig['allowed_extensions'] ?? ['torrent']),
+                sprintf('max:%d', (int) config('upload.torrents.max_kilobytes', 1024)),
+                'mimetypes:application/x-bittorrent',
             ],
+
+            'nfo_file' => [
+                'nullable',
+                'file',
+                sprintf('max:%d', (int) config('upload.nfo.max_kilobytes', 256)),
+                'mimetypes:text/plain',
+            ],
+
+            'nfo_text' => [
+                'nullable',
+                'string',
+                sprintf('max:%d', (int) config('upload.nfo.max_characters', 262144)),
+            ],
+
+            'description' => ['nullable', 'string'],
+
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['string', 'max:64'],
+
+            'source' => ['nullable', 'string', 'max:64'],
+            'resolution' => ['nullable', 'string', 'max:32'],
+
+            'codecs' => ['nullable', 'array'],
+            'codecs.*' => ['nullable', 'string', 'max:64'],
+
+            'imdb_id' => ['nullable', 'string', 'max:32'],
+            'tmdb_id' => ['nullable', 'string', 'max:32'],
         ];
     }
 
     /**
      * @return array<string, string>
      */
-    public function attributes(): array
+    public function messages(): array
     {
         return [
-            'name' => 'torrent name',
-            'torrent_file' => 'torrent file',
+            'name.required' => 'A name is required for the torrent.',
+            'torrent_file.required' => 'A .torrent file is required.',
+            'torrent_file.mimetypes' => 'The uploaded file must be a valid .torrent file.',
         ];
     }
 }

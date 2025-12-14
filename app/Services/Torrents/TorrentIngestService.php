@@ -62,6 +62,7 @@ final class TorrentIngestService
             'info_hash' => $infoHash,
             'size_bytes' => $sizeBytes,
             'file_count' => $fileCount,
+            'files_count' => $fileCount,
             'type' => (string) ($attributes['type'] ?? 'other'),
             'source' => $this->sanitizeOptionalString($attributes['source'] ?? null),
             'resolution' => $this->sanitizeOptionalString($attributes['resolution'] ?? null),
@@ -149,7 +150,9 @@ final class TorrentIngestService
 
     private function sanitizeName(string $name): string
     {
-        $clean = $this->sanitizer->sanitizeString($name);
+        // Test expects name to be plain text (no HTML tags)
+        $plain = strip_tags($name);
+        $clean = $this->sanitizer->sanitizeString($plain);
 
         if ($clean === '') {
             throw new InvalidArgumentException('Torrent name is empty after sanitization.');
@@ -164,7 +167,9 @@ final class TorrentIngestService
             return null;
         }
 
-        $clean = $this->sanitizer->sanitizeString($value);
+        // Keep DB content safe/consistent: strip tags before sanitizer
+        $plain = strip_tags($value);
+        $clean = $this->sanitizer->sanitizeString($plain);
 
         return $clean === '' ? null : $clean;
     }
@@ -182,7 +187,9 @@ final class TorrentIngestService
                 continue;
             }
 
-            $value = $this->sanitizer->sanitizeString($tag);
+            // Tags must be plain text
+            $plain = strip_tags($tag);
+            $value = $this->sanitizer->sanitizeString($plain);
 
             if ($value === '') {
                 continue;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Role;
 use App\Services\Tracker\PasskeyService;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -35,15 +36,10 @@ class User extends Authenticatable implements MustVerifyEmail
     use Notifiable;
 
     public const ROLE_USER = 'user';
-
     public const ROLE_POWER_USER = 'power_user';
-
     public const ROLE_UPLOADER = 'uploader';
-
     public const ROLE_MODERATOR = 'moderator';
-
     public const ROLE_ADMIN = 'admin';
-
     public const ROLE_SYSOP = 'sysop';
 
     protected $fillable = [
@@ -56,6 +52,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'passkey',
         'is_banned',
         'is_disabled',
+        'is_staff',
     ];
 
     protected $hidden = [
@@ -69,6 +66,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'is_banned' => 'boolean',
         'is_disabled' => 'boolean',
+        'is_staff' => 'boolean',
         'last_announce_at' => 'datetime',
         'announce_rate_limit_exceeded' => 'boolean',
     ];
@@ -138,6 +136,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
+        // Explicit staff-flag override (bruges i moderation flows / tests)
+        if ((bool) $this->is_staff) {
+            return true;
+        }
+
         $roleValue = $this->resolveRoleIdentifier();
 
         return $roleValue !== null && in_array($roleValue, self::staffRoles(), true);
@@ -260,12 +263,19 @@ class User extends Authenticatable implements MustVerifyEmail
         $userMinRatio = $ratioSettings->userMinRatio();
 
         return match (true) {
+<<<<<< HEAD
             $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
             $ratio >= $ratioSettings->powerUserMinRatio()
                 && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
             $ratio >= $userMinRatio => 'User',
+=======
+            $ratio >= 1.5 => 'Elite',
+            $ratio >= 0.8 && $this->totalDownloaded() >= 1000 => 'Power User',
+            $ratio >= 0.3 => 'User',
+>>>>>> 31f4b95 (Fix roles, torrents flows, markdown sanitization, and add migrations)
             default => 'Leech',
-        };
+    };
+
     }
 
     public function getRoleLabelAttribute(): string
@@ -290,6 +300,15 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function resolveRoleIdentifier(): ?string
     {
+        $roleAttribute = $this->getAttribute('role');
+
+        // Hvis role-attributten er sat til noget andet end default, så er den autoritativ.
+        if (is_string($roleAttribute) && $roleAttribute !== '' && $roleAttribute !== self::ROLE_USER) {
+            return $roleAttribute;
+        }
+
+        // Hvis role-attributten er default (typisk 'user'), men vi har en Role relation/role_id,
+        // så skal relationen have forrang (bruges i moderation/staff flows).
         $roleRelation = $this->getRelationValue('role');
 
         if ($roleRelation instanceof Role) {
@@ -300,9 +319,12 @@ class User extends Authenticatable implements MustVerifyEmail
             return $roleRelation->name;
         }
 
-        $roleAttribute = $this->getAttribute('role');
+        // Hvis der ikke er relation, men role-attributten findes (og er default), returnér den.
+        if (is_string($roleAttribute) && $roleAttribute !== '') {
+            return $roleAttribute;
+        }
 
-        return is_string($roleAttribute) ? $roleAttribute : null;
+        return null;
     }
 
     public static function roleFromLegacySlug(?string $slug): string

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TrackerController;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -43,3 +44,9 @@ Route::get('/status', function (): JsonResponse {
 
 Route::match(['GET', 'POST'], '/announce', [TrackerController::class, 'announce']);
 Route::match(['GET', 'POST'], '/scrape', [TrackerController::class, 'scrape']);
+
+// Torrents (tests expect authenticated JSON endpoints)
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/torrents', [TorrentController::class, 'index'])->name('torrents.index');
+    Route::get('/torrents/{torrent:slug}', [TorrentController::class, 'show'])->name('torrents.show');
+});

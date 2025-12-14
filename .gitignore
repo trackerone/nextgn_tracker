@@ -9,3 +9,5 @@
 /storage/app/public/*
 /resources/**/*.min.js
 /resources/**/*.min.css
+.env
+.env

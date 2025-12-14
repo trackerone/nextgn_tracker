@@ -56,7 +56,7 @@ class TorrentUploadTest extends TestCase
         $this->assertSame('movie', $torrent->type);
         $this->assertSame($category->id, $torrent->category_id);
         $this->assertSame('tt1234567', $torrent->imdb_id);
-        $this->assertSame('9988', $torrent->tmdb_id);
+        $this->assertSame(9988, $torrent->tmdb_id);
         $this->assertSame(2048, $torrent->size_bytes);
         $this->assertSame(1, $torrent->file_count);
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());

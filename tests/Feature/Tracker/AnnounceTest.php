@@ -20,6 +20,7 @@ class AnnounceTest extends TestCase
         $user = User::factory()->create([
             'role' => User::ROLE_MODERATOR,
         ]);
+
         $torrent = Torrent::factory()->create([
             'seeders' => 0,
             'leechers' => 0,
@@ -56,6 +57,7 @@ class AnnounceTest extends TestCase
     {
         $firstUser = User::factory()->create();
         $secondUser = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'seeders' => 0,
             'leechers' => 0,
@@ -104,6 +106,7 @@ class AnnounceTest extends TestCase
     public function test_stopped_event_removes_peer_and_updates_stats(): void
     {
         $user = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'seeders' => 0,
             'leechers' => 0,
@@ -181,6 +184,7 @@ class AnnounceTest extends TestCase
     public function test_invalid_passkey_returns_failure(): void
     {
         $torrent = Torrent::factory()->create();
+
         $infoHashBinary = hex2bin($torrent->info_hash);
         $this->assertIsString($infoHashBinary);
 
@@ -209,6 +213,7 @@ class AnnounceTest extends TestCase
     public function test_banned_torrent_returns_failure(): void
     {
         $user = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'is_banned' => true,
             'ban_reason' => 'DMCA',
@@ -223,8 +228,11 @@ class AnnounceTest extends TestCase
     public function test_unapproved_torrent_is_rejected_for_regular_users(): void
     {
         $user = User::factory()->create();
+
+        // VIGTIGT: model checks status, not is_approved
         $torrent = Torrent::factory()->create([
             'is_approved' => false,
+            'status' => Torrent::STATUS_PENDING,
         ]);
 
         $response = $this->announce($user, $torrent, $this->makePeerId('unapproved'));
@@ -254,6 +262,7 @@ class AnnounceTest extends TestCase
     public function test_normal_ratio_user_is_allowed_to_start(): void
     {
         $user = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'seeders' => 0,
             'leechers' => 0,
@@ -274,9 +283,15 @@ class AnnounceTest extends TestCase
 
     public function test_staff_can_bypass_ratio_and_approval_checks(): void
     {
-        $user = User::factory()->create();
+        // VIGTIGT: user must actually be staff
+        $user = User::factory()->create([
+            'role' => User::ROLE_MODERATOR,
+        ]);
+
+        // VIGTIGT: model checks status
         $torrent = Torrent::factory()->create([
             'is_approved' => false,
+            'status' => Torrent::STATUS_PENDING,
             'seeders' => 0,
             'leechers' => 0,
         ]);

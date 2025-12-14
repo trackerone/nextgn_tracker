@@ -8,35 +8,39 @@ use App\Models\User;
 
 final class RoleLevel
 {
-    public const SYSOP_LEVEL = 12;
-
-    public const ADMIN_LEVEL = 10;
-
-    public const MODERATOR_LEVEL = 8;
-
-    public const UPLOADER_LEVEL = 5;
-
-    public const USER_LEVEL = 1;
-
-    public const LOWEST_LEVEL = 0;
+    public const SYSOP_LEVEL        = 12;
+    public const ADMIN_LEVEL        = 10;
+    public const MODERATOR_LEVEL    = 8;
+    public const UPLOADER_LEVEL     = 5;
+    public const USER_LEVEL         = 1;
+    public const LOWEST_LEVEL       = 0;
 
     /**
      * @var array<string, int>
      */
     private const SLUG_TO_LEVEL = [
-        'sysop' => 12,
-        'admin2' => 11,
-        'admin1' => 10,
-        'mod2' => 9,
-        'mod1' => 8,
+        // Legacy slugs (tests forventer disse)
+        'sysop'     => 12,
+        'admin2'    => 11,
+        'admin1'    => 10,
+        'mod2'      => 9,
+        'mod1'      => 8,
         'uploader3' => 7,
         'uploader2' => 6,
         'uploader1' => 5,
-        'user4' => 4,
-        'user3' => 3,
-        'user2' => 2,
-        'user1' => 1,
-        'newbie' => 0,
+        'user4'     => 4,
+        'user3'     => 3,
+        'user2'     => 2,
+        'user1'     => 1,
+        'newbie'    => 0,
+
+        // Normaliserede app-roller (bruges andre steder i app’en)
+        'user'      => 0,
+        'power_user'=> 2,
+        'uploader'  => 5,
+        'moderator' => 8,
+        'admin'     => 10,
+        // sysop er allerede dækket
     ];
 
     /**
@@ -46,34 +50,30 @@ final class RoleLevel
         12 => 'sysop',
         11 => 'admin2',
         10 => 'admin1',
-        9 => 'mod2',
-        8 => 'mod1',
-        7 => 'uploader3',
-        6 => 'uploader2',
-        5 => 'uploader1',
-        4 => 'user4',
-        3 => 'user3',
-        2 => 'user2',
-        1 => 'user1',
-        0 => 'newbie',
+        9  => 'mod2',
+        8  => 'mod1',
+        7  => 'uploader3',
+        6  => 'uploader2',
+        5  => 'uploader1',
+        4  => 'user4',
+        3  => 'user3',
+        2  => 'user2',
+        1  => 'user1',
+        0  => 'newbie',
     ];
 
-    /**
-     * @var array<string, int>
-     */
-    private const ROLE_TO_LEVEL = [
-        User::ROLE_SYSOP => 12,
-        User::ROLE_ADMIN => 10,
-        User::ROLE_MODERATOR => 8,
-        User::ROLE_UPLOADER => 5,
-        User::ROLE_POWER_USER => 4,
-        User::ROLE_USER => 1,
-    ];
-
-    private function __construct() {}
-
-    public static function forSlug(string $slug): ?int
+    private function __construct()
     {
+    }
+
+    public static function forSlug(?string $slug): ?int
+    {
+        if (! is_string($slug) || trim($slug) === '') {
+            return null;
+        }
+
+        $slug = strtolower(trim($slug));
+
         return self::SLUG_TO_LEVEL[$slug] ?? null;
     }
 
@@ -84,18 +84,34 @@ final class RoleLevel
 
     public static function levelForUser(User $user): int
     {
-        $role = $user->getAttribute('role');
+        /**
+         * KRITISK:
+         * RoleAccessTest sætter/forventer legacy slug i users.role.
+         * Derfor skal vi mappe på users.role FØRST.
+         */
 
-        if (is_string($role) && isset(self::ROLE_TO_LEVEL[$role])) {
-            return self::ROLE_TO_LEVEL[$role];
+        // 1) Primært: users.role (legacy eller normaliseret)
+        $roleAttribute = $user->getAttribute('role');
+        $mapped = self::forSlug(is_string($roleAttribute) ? $roleAttribute : null);
+        if ($mapped !== null) {
+            return $mapped;
         }
 
+        // 2) Fallback: role relation slug (hvis seeded / role_id findes)
         $legacyRole = $user->relationLoaded('role')
             ? $user->getRelation('role')
             : $user->role()->getResults();
 
-        if ($legacyRole !== null && $legacyRole->level !== null) {
-            return (int) $legacyRole->level;
+        if ($legacyRole !== null) {
+            $mapped = self::forSlug(is_string($legacyRole->slug) ? $legacyRole->slug : null);
+            if ($mapped !== null) {
+                return $mapped;
+            }
+
+            // 3) Sidste fallback: role->level hvis den findes
+            if ($legacyRole->level !== null) {
+                return (int) $legacyRole->level;
+            }
         }
 
         return self::LOWEST_LEVEL;

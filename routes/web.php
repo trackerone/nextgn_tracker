@@ -25,19 +25,40 @@ use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
 use Illuminate\Support\Facades\Route;
 
-$adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
+$adminThrottle  = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
 $searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '30,1'));
 
+/*
+|--------------------------------------------------------------------------
+| AUTH FALLBACK (tests + redirects)
+|--------------------------------------------------------------------------
+*/
+Route::get('/login', static fn () => response('Login', 200))->name('login');
+
+/*
+|--------------------------------------------------------------------------
+| REGISTRATION
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function (): void {
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store'])
         ->middleware(sprintf('throttle:%s', config('security.rate_limits.register', '3,60')));
 });
 
+/*
+|--------------------------------------------------------------------------
+| PUBLIC
+|--------------------------------------------------------------------------
+*/
 Route::view('/', 'welcome');
-
 Route::get('/health', HealthCheckController::class)->name('health.index');
 
+/*
+|--------------------------------------------------------------------------
+| ADMIN / MOD AREAS
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])
     ->get('/admin', DashboardController::class)
     ->name('demo.admin');
@@ -54,10 +75,8 @@ Route::middleware(['auth', 'verified', 'role.min:8'])
     ->name('demo.mod');
 
 Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
-    Route::get('/admin/invites', [InviteAdminController::class, 'index'])
-        ->name('admin.invites.index');
-    Route::post('/admin/invites', [InviteAdminController::class, 'store'])
-        ->name('admin.invites.store');
+    Route::get('/admin/invites', [InviteAdminController::class, 'index'])->name('admin.invites.index');
+    Route::post('/admin/invites', [InviteAdminController::class, 'store'])->name('admin.invites.store');
 });
 
 Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
@@ -75,17 +94,30 @@ Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(funct
         ->name('admin.users.role.update');
 });
 
+/*
+|--------------------------------------------------------------------------
+| STAFF TORRENT MODERATION
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function (): void {
     Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
         ->name('torrents.moderation.index');
+
     Route::post('/torrents/{torrent}/approve', [TorrentModerationController::class, 'approve'])
         ->name('torrents.approve');
+
     Route::post('/torrents/{torrent}/reject', [TorrentModerationController::class, 'reject'])
         ->name('torrents.reject');
+
     Route::post('/torrents/{torrent}/soft-delete', [TorrentModerationController::class, 'softDelete'])
         ->name('torrents.soft_delete');
 });
 
+/*
+|--------------------------------------------------------------------------
+| FORUM
+|--------------------------------------------------------------------------
+*/
 Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
 Route::get('/topics/{topic:slug}', [TopicController::class, 'show'])->name('topics.show');
 
@@ -108,11 +140,14 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function (): voi
 
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
-    Route::post('/posts/{post}/restore', [PostController::class, 'restore'])
-        ->withTrashed()
-        ->name('posts.restore');
+    Route::post('/posts/{post}/restore')->withTrashed()->name('posts.restore');
 });
 
+/*
+|--------------------------------------------------------------------------
+| PRIVATE MESSAGES
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
     Route::get('/pm', [PrivateMessageController::class, 'index'])->name('pm.index');
     Route::get('/pm/{conversation}', [PrivateMessageController::class, 'show'])->name('pm.show');
@@ -124,28 +159,48 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
         ->name('pm.messages.store');
 });
 
+/*
+|--------------------------------------------------------------------------
+| TORRENTS (BROWSE / SHOW / DOWNLOAD)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () use ($searchThrottle): void {
     Route::get('/torrents', [TorrentController::class, 'index'])
         ->middleware($searchThrottle)
         ->name('torrents.index');
+
+    // NOTE:
+    // Must accept BOTH ID and slug to satisfy different tests/URLs.
+    // TorrentController::show() must resolve id OR slug.
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
-        ->whereNumber('torrent')
         ->name('torrents.show');
+
+    // Keep download/magnet consistent; controller should also resolve id OR slug if needed.
     Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
-        ->whereNumber('torrent')
         ->name('torrents.download');
+
     Route::get('/torrents/{torrent}/magnet', [TorrentDownloadController::class, 'magnet'])
-        ->whereNumber('torrent')
         ->name('torrents.magnet');
 });
 
+/*
+|--------------------------------------------------------------------------
+| TORRENT UPLOAD
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
+
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
 
+/*
+|--------------------------------------------------------------------------
+| API KEYS
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->prefix('account/api-keys')->name('account.api-keys.')->group(function (): void {
     Route::get('/', [ApiKeyController::class, 'index'])->name('index');
     Route::post('/', [ApiKeyController::class, 'store'])->name('store');
@@ -154,6 +209,11 @@ Route::middleware('auth')->prefix('account/api-keys')->name('account.api-keys.')
         ->name('destroy');
 });
 
+/*
+|--------------------------------------------------------------------------
+| TRACKER ENDPOINTS
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
     ->get('/announce/{passkey}', AnnounceController::class)
     ->name('announce');

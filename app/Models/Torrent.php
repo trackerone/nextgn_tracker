@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class Torrent extends Model
@@ -17,11 +18,8 @@ class Torrent extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
-
     public const STATUS_APPROVED = 'approved';
-
     public const STATUS_REJECTED = 'rejected';
-
     public const STATUS_SOFT_DELETED = 'soft_deleted';
 
     protected $fillable = [
@@ -33,6 +31,7 @@ class Torrent extends Model
         'storage_path',
         'size_bytes',
         'file_count',
+        'files_count',
         'type',
         'source',
         'resolution',
@@ -66,6 +65,7 @@ class Torrent extends Model
     protected $casts = [
         'size_bytes' => 'integer',
         'file_count' => 'integer',
+        'files_count' => 'integer',
         'seeders' => 'integer',
         'leechers' => 'integer',
         'completed' => 'integer',
@@ -79,6 +79,14 @@ class Torrent extends Model
         'uploaded_at' => 'datetime',
         'moderated_at' => 'datetime',
     ];
+
+    /**
+     * Use slug for implicit route model binding (/torrents/{torrent}).
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
 
     public function user(): BelongsTo
     {
@@ -107,7 +115,8 @@ class Torrent extends Model
 
     public function isVisible(): bool
     {
-        return $this->isApproved();
+        // “Visible” følger godkendelse + ikke-banned (status/flag afgør isApproved/isBanned)
+        return $this->isApproved() && ! $this->isBanned();
     }
 
     public function isPending(): bool
@@ -117,6 +126,15 @@ class Torrent extends Model
 
     public function isApproved(): bool
     {
+        // Vi understøtter både legacy "status" og boolean "is_approved".
+        // Hvis schemaet har is_approved, så skal den være true, og status skal være approved.
+        $hasIsApprovedColumn = Schema::hasColumn($this->getTable(), 'is_approved');
+
+        if ($hasIsApprovedColumn) {
+            return (bool) $this->is_approved && $this->status === self::STATUS_APPROVED;
+        }
+
+        // Fallback hvis kolonnen ikke findes (fx ældre schema/test setup)
         return $this->status === self::STATUS_APPROVED;
     }
 
@@ -135,16 +153,30 @@ class Torrent extends Model
         return (bool) $this->is_banned || $this->isSoftDeleted();
     }
 
+    /**
+     * Scope for torrents, der må vises offentligt (forsiden/index).
+     */
     public function scopeDisplayable(Builder $query): Builder
     {
-        return $query;
+        return $query->visible();
     }
 
+    /**
+     * Basisscope for “synlige” torrents.
+     *
+     * Konservativt: kun APPROVED torrents, og ikke banned/soft-deleted.
+     * Hvis vi har is_approved kolonnen, skal den også være true.
+     */
     public function scopeVisible(Builder $query): Builder
     {
-        // Temporary conservative implementation:
-        // we just return the query unchanged so the scope exists,
-        // and phpstan can see it. The filtering logic can be refined later.
+        $query = $query
+            ->where('status', self::STATUS_APPROVED)
+            ->where('is_banned', false);
+
+        if (Schema::hasColumn($this->getTable(), 'is_approved')) {
+            $query->where('is_approved', true);
+        }
+
         return $query;
     }
 
@@ -170,7 +202,7 @@ class Torrent extends Model
 
     public static function storagePathForHash(string $infoHash): string
     {
-        return 'torrents/'.strtoupper($infoHash).'.torrent';
+        return 'torrents/' . strtoupper($infoHash) . '.torrent';
     }
 
     public function torrentStoragePath(): string
@@ -221,7 +253,7 @@ class Torrent extends Model
 
         $precision = $unitIndex === 0 ? 0 : 2;
 
-        return number_format($bytes, $precision).' '.$units[$unitIndex];
+        return number_format($bytes, $precision) . ' ' . $units[$unitIndex];
     }
 
     public function uploadedAtForDisplay(): ?Carbon
