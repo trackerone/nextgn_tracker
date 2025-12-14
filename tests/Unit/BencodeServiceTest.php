@@ -34,7 +34,7 @@ class BencodeServiceTest extends TestCase
     public function test_decode_dictionary(): void
     {
         $service = new BencodeService;
-        $payload = 'd4:name5:hello6:numberi42e4:listl5:items5:moreee';
+        $payload = 'd4:name5:hello6:numberi42e4:listl5:items4:moreee';
 
         $decoded = $service->decode($payload);
 
