@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Support\Torrents\TorrentBrowseFilters;
+use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,17 +15,24 @@ use Illuminate\View\View;
 
 final class TorrentController extends Controller
 {
+    public function __construct()
+    {
+        // Matcher tests:
+        // - guests -> /login på både index og show
+        $this->middleware('auth');
+    }
+
     public function index(Request $request): Response|JsonResponse|View
     {
-        $query = Torrent::query()
-            ->visible()
-            ->latest('uploaded_at');
+        $filters = TorrentBrowseFilters::fromRequest($request);
+        $query = (new TorrentBrowseQuery())->apply(Torrent::query()->visible(), $filters);
 
         if ($request->expectsJson()) {
             return response()->json($query->get());
         }
 
-        $torrents = $query->paginate(25);
+        $perPage = (int) config('torrents.per_page', 25);
+        $torrents = $query->paginate($perPage)->appends($filters->queryParams());
 
         $types = Torrent::query()
             ->select('type')
@@ -41,6 +50,13 @@ final class TorrentController extends Controller
             'torrents' => $torrents,
             'types' => $types,
             'categories' => $categories,
+
+            // View-friendly (og test-neutralt)
+            'filters' => $filters->toArray(),
+            'q' => $filters->q,
+            'type' => $filters->type,
+            'order' => $filters->order !== '' ? $filters->order : 'uploaded_at',
+            'direction' => $filters->direction,
         ]);
     }
 
