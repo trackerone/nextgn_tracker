@@ -1,14 +1,14 @@
-name: CI - Frontend
+name: CI-Frontend
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -22,14 +22,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
+      - name: Enforce lockfile
         run: |
-          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
-            npm ci
-          else
-            npm install --no-fund --no-audit
+          if [ ! -f package-lock.json ]; then
+            echo "package-lock.json is required"
+            exit 1
           fi
 
-      - name: Build assets
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      - name: Build frontend
         run: npm run build
