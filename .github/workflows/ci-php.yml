@@ -2,19 +2,19 @@ name: CI-PHP
 
 on:
   push:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [main, develop]
+
+concurrency:
+  group: ci-php-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   php:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         php-version: ['8.3']
 
@@ -22,46 +22,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PHP ${{ matrix.php-version }}
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
           extensions: mbstring, intl, pcntl, bcmath, pdo_mysql, pdo_sqlite, sqlite3, exif, fileinfo, tokenizer, xml, ctype, gd
-          ini-values: post_max_size=256M, memory_limit=1G
+          ini-values: memory_limit=1G
           coverage: none
 
-      - name: Determine composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache composer dependencies
+      - name: Cache Composer files
         uses: actions/cache@v4
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php-version }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php-version }}-composer-
+          path: |
+            ~/.composer/cache
+            vendor
+          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
 
-      - name: Install composer dependencies
-        run: composer install --no-progress --prefer-dist --no-interaction
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Prepare application environment
+      - name: Prepare environment
         run: |
-          if [ ! -f .env ]; then
-            cp .env.example .env
-          fi
+          cp .env.example .env
+          {
+            echo "APP_ENV=testing"
+            echo "APP_DEBUG=false"
+            echo "DB_CONNECTION=sqlite"
+            echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite"
+            echo "CACHE_STORE=array"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=array"
+          } >> .env
           php artisan key:generate --force
+          mkdir -p database
           touch database/database.sqlite
-          perl -0pi -e 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/m' .env
-          perl -0pi -e "s#^DB_DATABASE=.*#DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite#m" .env
 
-      - name: Display PHP version
-        run: php -v
-
-      - name: Lint (Laravel Pint)
+      - name: Lint (Pint)
         run: composer lint
 
-      - name: Static Analysis (Larastan)
+      - name: Static analysis (PHPStan)
         run: composer analyse
 
       - name: Tests (Pest)
