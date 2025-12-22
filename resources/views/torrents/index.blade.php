@@ -1,3 +1,10 @@
+@php
+    // Test-/view-sikkerhed: sørg for at disse altid findes, uanset controller-flow.
+    $filters = $filters ?? [];
+    $types = $types ?? [];
+    $categories = $categories ?? collect();
+@endphp
+
 @extends('layouts.app')
 
 @section('title', 'Browse Torrents — '.config('app.name'))

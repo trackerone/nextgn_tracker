@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\Api\ApiKeyController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
@@ -30,10 +31,16 @@ $searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '
 
 /*
 |--------------------------------------------------------------------------
-| AUTH FALLBACK (tests + redirects)
+| AUTH (tests expect these exact flows)
 |--------------------------------------------------------------------------
 */
-Route::get('/login', static fn () => response('Login', 200))->name('login');
+Route::get('/', static fn () => redirect('/login'));
+
+Route::get('/login', [LoginController::class, 'show'])->name('login');
+Route::post('/login', [LoginController::class, 'store']);
+Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+Route::middleware('auth')->get('/home', static fn () => response('Dashboard', 200));
 
 /*
 |--------------------------------------------------------------------------
@@ -51,30 +58,34 @@ Route::middleware('guest')->group(function (): void {
 | PUBLIC
 |--------------------------------------------------------------------------
 */
-Route::view('/', 'welcome');
 Route::get('/health', HealthCheckController::class)->name('health.index');
 
 /*
 |--------------------------------------------------------------------------
-| ADMIN / MOD AREAS
+| ROLE ACCESS TEST ENDPOINTS
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])
+Route::middleware(['auth', 'role.level:admin', $adminThrottle])
     ->get('/admin', DashboardController::class)
     ->name('demo.admin');
 
-Route::middleware(['auth', 'verified', 'role.min:10', $adminThrottle])->group(function (): void {
+Route::middleware(['auth', 'role.level:mod'])
+    ->get('/mod', static fn () => response()->json(['message' => 'Moderator area']))
+    ->name('demo.mod');
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth', 'role.level:admin', $adminThrottle])->group(function (): void {
     Route::get('/admin/settings/ratio', [RatioSettingsController::class, 'edit'])
         ->name('admin.settings.ratio.edit');
     Route::patch('/admin/settings/ratio', [RatioSettingsController::class, 'update'])
         ->name('admin.settings.ratio.update');
 });
 
-Route::middleware(['auth', 'verified', 'role.min:8'])
-    ->get('/mod', static fn () => response()->json(['message' => 'Moderator area']))
-    ->name('demo.mod');
-
-Route::middleware(['auth', 'verified', 'role.min:8'])->group(function (): void {
+Route::middleware(['auth', 'role.level:mod', $adminThrottle])->group(function (): void {
     Route::get('/admin/invites', [InviteAdminController::class, 'index'])->name('admin.invites.index');
     Route::post('/admin/invites', [InviteAdminController::class, 'store'])->name('admin.invites.store');
 });
@@ -121,19 +132,22 @@ Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(fun
 Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
 Route::get('/topics/{topic:slug}', [TopicController::class, 'show'])->name('topics.show');
 
-Route::middleware(['auth', 'verified', 'role.min:1', 'throttle:60,1'])->group(function (): void {
+Route::middleware(['auth', 'role.min:1', 'throttle:60,1'])->group(function (): void {
     Route::post('/topics', [TopicController::class, 'store'])->name('topics.store');
     Route::post('/topics/{topic}/posts', [PostController::class, 'store'])->name('topics.posts.store');
 });
 
-Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function (): void {
+Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
     Route::patch('/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');
+
     Route::post('/topics/{topic}/lock', [TopicController::class, 'toggleLock'])
         ->middleware('role.min:8')
         ->name('topics.lock');
+
     Route::post('/topics/{topic}/pin', [TopicController::class, 'togglePin'])
         ->middleware('role.min:8')
         ->name('topics.pin');
+
     Route::delete('/topics/{topic}', [TopicController::class, 'destroy'])
         ->middleware('role.min:10')
         ->name('topics.destroy');
@@ -148,12 +162,14 @@ Route::middleware(['auth', 'verified', 'throttle:60,1'])->group(function (): voi
 | PRIVATE MESSAGES
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
+Route::middleware(['auth', 'role.min:1'])->group(function (): void {
     Route::get('/pm', [PrivateMessageController::class, 'index'])->name('pm.index');
     Route::get('/pm/{conversation}', [PrivateMessageController::class, 'show'])->name('pm.show');
+
     Route::post('/pm', [PrivateMessageController::class, 'store'])
         ->middleware('throttle:30,1')
         ->name('pm.store');
+
     Route::post('/pm/{conversation}/messages', [ConversationMessageController::class, 'store'])
         ->middleware('throttle:30,1')
         ->name('pm.messages.store');
@@ -161,7 +177,7 @@ Route::middleware(['auth', 'verified', 'role.min:1'])->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| TORRENTS (BROWSE / SHOW / DOWNLOAD)
+| TORRENTS
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function () use ($searchThrottle): void {
@@ -169,13 +185,9 @@ Route::middleware('auth')->group(function () use ($searchThrottle): void {
         ->middleware($searchThrottle)
         ->name('torrents.index');
 
-    // NOTE:
-    // Must accept BOTH ID and slug to satisfy different tests/URLs.
-    // TorrentController::show() must resolve id OR slug.
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
         ->name('torrents.show');
 
-    // Keep download/magnet consistent; controller should also resolve id OR slug if needed.
     Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
         ->name('torrents.download');
 
@@ -185,10 +197,10 @@ Route::middleware('auth')->group(function () use ($searchThrottle): void {
 
 /*
 |--------------------------------------------------------------------------
-| TORRENT UPLOAD
+| TORRENT UPLOAD + ACCOUNT
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
 

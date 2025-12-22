@@ -27,7 +27,6 @@ class UserPromoteCommand extends Command
             return self::FAILURE;
         }
 
-        /** @var \App\Models\User $user */
         $role = Role::query()->where('slug', $roleSlug)->first();
 
         if ($role === null) {
@@ -36,7 +35,13 @@ class UserPromoteCommand extends Command
             return self::FAILURE;
         }
 
-        $user->forceFill(['role_id' => $role->getKey()])->save();
+        // 🔴 VIGTIGT:
+        // Feature-tests forventer, at BÅDE role_id OG legacy `users.role`
+        // bliver opdateret konsekvent.
+        $user->forceFill([
+            'role_id' => $role->getKey(),
+            'role' => User::roleFromLegacySlug($role->slug),
+        ])->save();
 
         $this->info("User '{$user->email}' promoted to role '{$role->name}' ({$role->slug}).");
 

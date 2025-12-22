@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Models\Role;
 use App\Services\Tracker\PasskeyService;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
@@ -263,19 +262,16 @@ class User extends Authenticatable implements MustVerifyEmail
         $userMinRatio = $ratioSettings->userMinRatio();
 
         return match (true) {
-<<<<<< HEAD
             $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
-            $ratio >= $ratioSettings->powerUserMinRatio()
-                && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
-            $ratio >= $userMinRatio => 'User',
-=======
-            $ratio >= 1.5 => 'Elite',
-            $ratio >= 0.8 && $this->totalDownloaded() >= 1000 => 'Power User',
-            $ratio >= 0.3 => 'User',
->>>>>> 31f4b95 (Fix roles, torrents flows, markdown sanitization, and add migrations)
-            default => 'Leech',
-    };
 
+            $ratio >= $ratioSettings->powerUserMinRatio()
+                && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded()
+                => 'Power User',
+
+            $ratio >= $userMinRatio => 'User',
+
+            default => 'Leech',
+        };
     }
 
     public function getRoleLabelAttribute(): string

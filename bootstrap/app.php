@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\ValidateAnnounceRequest;
 use App\Providers\AuthServiceProvider;
+use App\Http\Middleware\ApiKeyHmacMiddleware;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -29,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
             'staff' => EnsureUserIsStaff::class,
+            'api.hmac' => \App\Http\Middleware\ApiKeyHmacMiddleware::class,
+            'role.level' => \App\Http\Middleware\RequireRoleLevel::class,
 
             // Tracker
             'tracker.validate-announce' => ValidateAnnounceRequest::class,

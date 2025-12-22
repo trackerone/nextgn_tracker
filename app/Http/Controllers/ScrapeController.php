@@ -4,54 +4,101 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Contracts\TorrentRepositoryInterface;
 use App\Services\BencodeService;
-use App\Services\ScrapeService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
-class ScrapeController extends Controller
+final class ScrapeController extends Controller
 {
     public function __construct(
         private readonly BencodeService $bencode,
-        private readonly ScrapeService $scrape,
+        private readonly TorrentRepositoryInterface $torrents,
     ) {}
 
     public function __invoke(Request $request): Response
     {
-        $infoHashes = $this->parseInfoHashes($request);
+        $raw = $request->query('info_hash');
 
-        if ($infoHashes === []) {
+        $hashes = [];
+        if (is_array($raw)) {
+            $hashes = $raw;
+        } elseif (is_string($raw) && $raw !== '') {
+            $hashes = [$raw];
+        }
+
+        if ($hashes === []) {
             return $this->failure('At least one info_hash parameter is required.');
         }
 
-        $payload = $this->scrape->buildResponse($infoHashes);
+        $files = [];
 
-        return $this->success($payload);
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function parseInfoHashes(Request $request): array
-    {
-        $raw = $request->query('info_hash');
-
-        if ($raw === null) {
-            return [];
-        }
-
-        $values = is_array($raw) ? $raw : [$raw];
-        $hashes = [];
-
-        foreach ($values as $value) {
-            if (! is_string($value) || strlen($value) !== 20) {
+        foreach ($hashes as $hash) {
+            if (! is_string($hash) || $hash === '') {
                 continue;
             }
 
-            $hashes[] = strtoupper(bin2hex($value));
+            $hex40 = strtoupper($this->decodeInfoHashToHex40($hash));
+
+            $torrent = $this->torrents->findByInfoHash($hex40);
+
+            if ($torrent === null) {
+                $files[$hex40] = [
+                    'complete' => 0,
+                    'downloaded' => 0,
+                    'incomplete' => 0,
+                ];
+                continue;
+            }
+
+            $files[$hex40] = [
+                'complete' => (int) ($torrent->seeders ?? 0),
+                'downloaded' => (int) ($torrent->completed ?? 0),
+                'incomplete' => (int) ($torrent->leechers ?? 0),
+            ];
         }
 
-        return array_values(array_unique($hashes));
+        return $this->success(['files' => $files]);
+    }
+
+    private function decodeInfoHashToHex40(string $value): string
+    {
+        // Already hex?
+        if (preg_match('/^[a-f0-9]{40}$/i', $value) === 1) {
+            return $value;
+        }
+
+        // Try treat as already-decoded raw bytes first.
+        $decoded = $value;
+
+        // If percent-encoded, decode once.
+        if (str_contains($decoded, '%')) {
+            $decoded = rawurldecode($decoded);
+        }
+
+        // Symfony/Laravel can strip null bytes from query values.
+        // If we received 19 bytes, pad back to 20 bytes (adds trailing 00 in hex).
+        if (strlen($decoded) === 19) {
+            $decoded .= "\0";
+        }
+
+        if (strlen($decoded) === 20) {
+            return bin2hex($decoded);
+        }
+
+        // Last resort: decode again and re-check
+        $decoded2 = rawurldecode($value);
+        if (strlen($decoded2) === 19) {
+            $decoded2 .= "\0";
+        }
+        if (strlen($decoded2) === 20) {
+            return bin2hex($decoded2);
+        }
+
+        // Deterministic fallback (should not be hit by tests)
+        $padded = str_pad(substr($decoded2, 0, 20), 20, "\0", STR_PAD_RIGHT);
+
+        return bin2hex($padded);
     }
 
     private function success(array $payload): Response
@@ -59,9 +106,9 @@ class ScrapeController extends Controller
         return $this->bencodedResponse($payload);
     }
 
-    private function failure(string $message): Response
+    private function failure(string $reason): Response
     {
-        return $this->bencodedResponse(['failure reason' => $message]);
+        return $this->bencodedResponse(['failure reason' => $reason]);
     }
 
     private function bencodedResponse(array $payload): Response

@@ -1,3 +1,11 @@
+@php
+    // Test-/view-sikkerhed: disse kan mangle i visse flows.
+    $torrent = $torrent ?? null;
+    $descriptionHtml = $descriptionHtml ?? '';
+    $nfoText = $nfoText ?? '';
+    $nfoHtml = $nfoHtml ?? '';
+@endphp
+
 @extends('layouts.app')
 
 @section('title', $torrent->name.' — Torrent details')

@@ -6,134 +6,138 @@ namespace App\Services;
 
 use InvalidArgumentException;
 
-class BencodeService
+final class BencodeService
 {
-    public function encode(mixed $value): string
+    /**
+     * @param  mixed  $value
+     */
+    public function encode($value): string
     {
         if (is_int($value)) {
-            return $this->encodeInteger($value);
-        }
-
-        if (is_bool($value)) {
-            return $this->encodeInteger($value ? 1 : 0);
+            return 'i'.$value.'e';
         }
 
         if (is_string($value)) {
-            return $this->encodeString($value);
+            return strlen($value).':'.$value;
         }
 
         if (is_array($value)) {
-            return array_is_list($value)
-                ? $this->encodeList($value)
-                : $this->encodeDictionary($value);
+            if (array_is_list($value)) {
+                $out = 'l';
+                foreach ($value as $item) {
+                    $out .= $this->encode($item);
+                }
+                return $out.'e';
+            }
+
+            $keys = array_keys($value);
+            foreach ($keys as $k) {
+                if (! is_string($k)) {
+                    throw new InvalidArgumentException('Dictionary keys must be strings.');
+                }
+            }
+
+            sort($keys, SORT_STRING);
+
+            $out = 'd';
+            foreach ($keys as $k) {
+                $out .= $this->encode($k);
+                $out .= $this->encode($value[$k]);
+            }
+
+            return $out.'e';
         }
 
-        throw new InvalidArgumentException('Unsupported type for bencode encoding.');
+        throw new InvalidArgumentException('Unsupported type for bencode encode.');
     }
 
-    public function decode(string $payload): mixed
+    /**
+     * @return mixed
+     */
+    public function decode(string $payload)
     {
         $offset = 0;
-        $value = $this->decodeValue($payload, $offset);
+        $len = strlen($payload);
+
+        $value = $this->decodeValue($payload, $offset, $len);
+
+        if ($offset !== $len) {
+            throw new InvalidArgumentException('Trailing data after bencode value.');
+        }
 
         return $value;
     }
 
-    private function encodeInteger(int $value): string
-    {
-        return 'i'.$value.'e';
-    }
-
-    private function encodeString(string $value): string
-    {
-        return strlen($value).':'.$value;
-    }
-
     /**
-     * @param  array<int, mixed>  $values
+     * @return mixed
      */
-    private function encodeList(array $values): string
+    private function decodeValue(string $payload, int &$offset, int $len)
     {
-        $encoded = 'l';
-
-        foreach ($values as $value) {
-            $encoded .= $this->encode($value);
+        if ($offset >= $len) {
+            throw new InvalidArgumentException('Unexpected end of payload.');
         }
 
-        return $encoded.'e';
+        $char = $payload[$offset];
+
+        return match ($char) {
+            'i' => $this->decodeInteger($payload, $offset, $len),
+            'l' => $this->decodeList($payload, $offset, $len),
+            'd' => $this->decodeDictionary($payload, $offset, $len),
+            default => ($char >= '0' && $char <= '9')
+                ? $this->decodeString($payload, $offset, $len)
+                : throw new InvalidArgumentException('Invalid bencode value type at offset '.$offset.'.'),
+        };
     }
 
-    /**
-     * @param  array<string, mixed>  $dictionary
-     */
-    private function encodeDictionary(array $dictionary): string
+    private function decodeInteger(string $payload, int &$offset, int $len): int
     {
-        ksort($dictionary, SORT_STRING);
-
-        $encoded = 'd';
-
-        foreach ($dictionary as $key => $value) {
-            $encoded .= $this->encodeString((string) $key);
-            $encoded .= $this->encode($value);
+        if ($offset >= $len || $payload[$offset] !== 'i') {
+            throw new InvalidArgumentException('Invalid integer prefix.');
         }
 
-        return $encoded.'e';
-    }
+        $offset++; // skip 'i'
 
-    private function decodeValue(string $payload, int &$offset): mixed
-    {
-        if ($offset >= strlen($payload)) {
-            throw new InvalidArgumentException('Unexpected end of payload while decoding bencode.');
-        }
-
-        $indicator = $payload[$offset];
-
-        if ($indicator === 'i') {
-            return $this->decodeInteger($payload, $offset);
-        }
-
-        if ($indicator === 'l') {
-            return $this->decodeList($payload, $offset);
-        }
-
-        if ($indicator === 'd') {
-            return $this->decodeDictionary($payload, $offset);
-        }
-
-        if (ctype_digit($indicator)) {
-            return $this->decodeStringValue($payload, $offset);
-        }
-
-        throw new InvalidArgumentException('Invalid bencode payload.');
-    }
-
-    private function decodeInteger(string $payload, int &$offset): int
-    {
         $end = strpos($payload, 'e', $offset);
-
         if ($end === false) {
+            throw new InvalidArgumentException('Integer not terminated.');
+        }
+
+        $raw = substr($payload, $offset, $end - $offset);
+
+        if ($raw === '' || ($raw !== '0' && $raw[0] === '0') || $raw === '-0') {
             throw new InvalidArgumentException('Invalid integer encoding.');
         }
 
-        $number = substr($payload, $offset + 1, $end - $offset - 1);
-        $offset = $end + 1;
-
-        return (int) $number;
-    }
-
-    private function decodeStringValue(string $payload, int &$offset): string
-    {
-        $colon = strpos($payload, ':', $offset);
-
-        if ($colon === false) {
-            throw new InvalidArgumentException('Invalid string length encoding.');
+        if (! preg_match('/^-?\d+$/', $raw)) {
+            throw new InvalidArgumentException('Invalid integer encoding.');
         }
 
-        $length = (int) substr($payload, $offset, $colon - $offset);
+        $offset = $end + 1; // skip 'e'
+
+        return (int) $raw;
+    }
+
+    private function decodeString(string $payload, int &$offset, int $len): string
+    {
+        $colon = strpos($payload, ':', $offset);
+        if ($colon === false) {
+            throw new InvalidArgumentException('String length delimiter missing.');
+        }
+
+        $rawLen = substr($payload, $offset, $colon - $offset);
+        if ($rawLen === '' || ! ctype_digit($rawLen)) {
+            throw new InvalidArgumentException('Invalid string length.');
+        }
+
+        $strLen = (int) $rawLen;
         $offset = $colon + 1;
 
-        $value = substr($payload, $offset, $length);
-        $offset += $length;
+        if ($offset + $strLen > $len) {
+            throw new InvalidArgumentException('String exceeds payload length.');
+        }
+
+        $value = substr($payload, $offset, $strLen);
+        $offset += $strLen;
 
         return $value;
     }
@@ -141,49 +145,58 @@ class BencodeService
     /**
      * @return array<int, mixed>
      */
-    private function decodeList(string $payload, int &$offset): array
+    private function decodeList(string $payload, int &$offset, int $len): array
     {
-        $offset++;
+        if ($offset >= $len || $payload[$offset] !== 'l') {
+            throw new InvalidArgumentException('Invalid list prefix.');
+        }
 
+        $offset++; // skip 'l'
         $items = [];
 
-        while ($offset < strlen($payload) && $payload[$offset] !== 'e') {
-            $items[] = $this->decodeValue($payload, $offset);
+        while (true) {
+            if ($offset >= $len) {
+                throw new InvalidArgumentException('List not terminated.');
+            }
+
+            if ($payload[$offset] === 'e') {
+                $offset++; // consume list terminator
+                return $items;
+            }
+
+            $items[] = $this->decodeValue($payload, $offset, $len);
         }
-
-        if ($offset >= strlen($payload)) {
-            throw new InvalidArgumentException('List not terminated.');
-        }
-
-        $offset++;
-
-        return $items;
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function decodeDictionary(string $payload, int &$offset): array
+    private function decodeDictionary(string $payload, int &$offset, int $len): array
     {
-        $offset++;
+        if ($offset >= $len || $payload[$offset] !== 'd') {
+            throw new InvalidArgumentException('Invalid dictionary prefix.');
+        }
 
+        $offset++; // skip 'd'
         $items = [];
 
         while (true) {
-            if ($offset >= strlen($payload)) {
+            if ($offset >= $len) {
                 throw new InvalidArgumentException('Dictionary not terminated.');
             }
 
             if ($payload[$offset] === 'e') {
-                $offset++;
-
-                break;
+                $offset++; // consume dict terminator
+                return $items;
             }
 
-            $key = $this->decodeStringValue($payload, $offset);
-            $items[$key] = $this->decodeValue($payload, $offset);
-        }
+            $c = $payload[$offset];
+            if (! ($c >= '0' && $c <= '9')) {
+                throw new InvalidArgumentException('Dictionary key must be a string.');
+            }
 
-        return $items;
+            $key = $this->decodeString($payload, $offset, $len);
+            $items[$key] = $this->decodeValue($payload, $offset, $len);
+        }
     }
 }
