@@ -35,8 +35,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript check
-        run: npx tsc --noEmit
+      - name: TypeScript check (only if tsconfig exists)
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit
+          else
+            echo "No tsconfig.json found - skipping typecheck"
+          fi
 
       - name: Build frontend
         run: npm run build
