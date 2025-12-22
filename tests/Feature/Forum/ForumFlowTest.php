@@ -24,19 +24,19 @@ it('allows forum interactions with proper permissions', function (): void {
     $adminRole = Role::query()->where('slug', 'admin2')->firstOrFail();
 
     $existingAuthor = User::factory()->create([
-        'role'    => $authorRole->slug,
+        'role' => $authorRole->slug,
         'role_id' => $authorRole->getKey(),
     ]);
 
     $topic = Topic::query()->create([
         'user_id' => $existingAuthor->getKey(),
-        'slug'    => $slugger->generate('Velkommen'),
-        'title'   => 'Velkommen',
+        'slug' => $slugger->generate('Velkommen'),
+        'title' => 'Velkommen',
     ]);
 
     $topic->posts()->create([
-        'user_id'   => $existingAuthor->getKey(),
-        'body_md'   => 'Første indlæg',
+        'user_id' => $existingAuthor->getKey(),
+        'body_md' => 'Første indlæg',
         'body_html' => $markdown->render('Første indlæg'),
     ]);
 
@@ -49,13 +49,13 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertJsonFragment(['title' => 'Velkommen']);
 
     $writer = User::factory()->create([
-        'role'    => $authorRole->slug,
+        'role' => $authorRole->slug,
         'role_id' => $authorRole->getKey(),
     ]);
 
     $createResponse = $this->actingAs($writer)
         ->postJson('/topics', [
-            'title'   => 'Test emne',
+            'title' => 'Test emne',
             'body_md' => '# Overskrift',
         ])
         ->assertCreated();
@@ -82,7 +82,7 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertNoContent();
 
     $moderator = User::factory()->create([
-        'role'    => $moderatorRole->slug,
+        'role' => $moderatorRole->slug,
         'role_id' => $moderatorRole->getKey(),
     ]);
 
@@ -96,7 +96,7 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertJsonFragment(['is_pinned' => true]);
 
     $admin = User::factory()->create([
-        'role'    => $adminRole->slug,
+        'role' => $adminRole->slug,
         'role_id' => $adminRole->getKey(),
     ]);
 
@@ -125,7 +125,7 @@ it('allows forum interactions with proper permissions', function (): void {
 
     $xssResponse = $this->actingAs($writer)
         ->postJson('/topics', [
-            'title'   => 'XSS test',
+            'title' => 'XSS test',
             'body_md' => $payload,
         ])
         ->assertCreated();

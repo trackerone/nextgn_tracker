@@ -27,6 +27,7 @@ final class BencodeService
                 foreach ($value as $item) {
                     $out .= $this->encode($item);
                 }
+
                 return $out.'e';
             }
 
@@ -161,6 +162,7 @@ final class BencodeService
 
             if ($payload[$offset] === 'e') {
                 $offset++; // consume list terminator
+
                 return $items;
             }
 
@@ -187,6 +189,7 @@ final class BencodeService
 
             if ($payload[$offset] === 'e') {
                 $offset++; // consume dict terminator
+
                 return $items;
             }
 

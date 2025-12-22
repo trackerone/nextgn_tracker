@@ -48,6 +48,7 @@ final class ScrapeController extends Controller
                     'downloaded' => 0,
                     'incomplete' => 0,
                 ];
+
                 continue;
             }
 

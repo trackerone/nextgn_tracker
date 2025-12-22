@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-use function Pest\Laravel\actingAs;
 use App\Models\SecurityEvent;
 use App\Models\User;
 use App\Services\Logging\SecurityEventLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+
+use function Pest\Laravel\actingAs;
 
 uses(RefreshDatabase::class);
 

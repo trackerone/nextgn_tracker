@@ -114,6 +114,7 @@ final class ValidateAnnounceRequest
                 $key = is_string($k) ? $this->sanitizeString($k) : $k;
                 $out[$key] = $this->sanitizeForJson($v);
             }
+
             return $out;
         }
 

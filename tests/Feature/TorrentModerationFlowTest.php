@@ -44,15 +44,15 @@ final class TorrentModerationFlowTest extends TestCase
 
         if ($role === null) {
             // Fald tilbage til at lave en "moderator"-rolle med høj level og is_staff = true.
-            $slug  = User::ROLE_MODERATOR ?? 'moderator';
+            $slug = User::ROLE_MODERATOR ?? 'moderator';
             $level = RoleLevel::forSlug($slug) ?? (RoleLevel::LOWEST_LEVEL + 20);
 
             /** @var Role $role */
             $role = Role::query()->firstOrCreate(
                 ['slug' => $slug],
                 [
-                    'name'     => 'Moderator',
-                    'level'    => $level,
+                    'name' => 'Moderator',
+                    'level' => $level,
                     'is_staff' => true,
                 ],
             );
@@ -91,8 +91,8 @@ final class TorrentModerationFlowTest extends TestCase
             $role = Role::query()->firstOrCreate(
                 ['slug' => $defaultSlug],
                 [
-                    'name'     => 'User',
-                    'level'    => $level,
+                    'name' => 'User',
+                    'level' => $level,
                     'is_staff' => false,
                 ],
             );
@@ -185,7 +185,7 @@ final class TorrentModerationFlowTest extends TestCase
         $staff = $this->createStaffUser();
 
         $torrent = Torrent::factory()->create([
-            'status'           => Torrent::STATUS_REJECTED,
+            'status' => Torrent::STATUS_REJECTED,
             'moderated_reason' => 'Invalid proof',
         ]);
 

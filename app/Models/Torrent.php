@@ -18,8 +18,11 @@ class Torrent extends Model
     use HasFactory;
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_SOFT_DELETED = 'soft_deleted';
 
     protected $fillable = [
@@ -202,7 +205,7 @@ class Torrent extends Model
 
     public static function storagePathForHash(string $infoHash): string
     {
-        return 'torrents/' . strtoupper($infoHash) . '.torrent';
+        return 'torrents/'.strtoupper($infoHash).'.torrent';
     }
 
     public function torrentStoragePath(): string
@@ -253,7 +256,7 @@ class Torrent extends Model
 
         $precision = $unitIndex === 0 ? 0 : 2;
 
-        return number_format($bytes, $precision) . ' ' . $units[$unitIndex];
+        return number_format($bytes, $precision).' '.$units[$unitIndex];
     }
 
     public function uploadedAtForDisplay(): ?Carbon

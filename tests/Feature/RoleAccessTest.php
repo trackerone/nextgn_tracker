@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Support\Roles\RoleLevel;
+
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 

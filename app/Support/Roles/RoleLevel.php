@@ -8,39 +8,44 @@ use App\Models\User;
 
 final class RoleLevel
 {
-    public const SYSOP_LEVEL        = 12;
-    public const ADMIN_LEVEL        = 10;
-    public const MODERATOR_LEVEL    = 8;
-    public const UPLOADER_LEVEL     = 5;
-    public const USER_LEVEL         = 1;
-    public const LOWEST_LEVEL       = 0;
+    public const SYSOP_LEVEL = 12;
+
+    public const ADMIN_LEVEL = 10;
+
+    public const MODERATOR_LEVEL = 8;
+
+    public const UPLOADER_LEVEL = 5;
+
+    public const USER_LEVEL = 1;
+
+    public const LOWEST_LEVEL = 0;
 
     /**
      * @var array<string, int>
      */
     private const SLUG_TO_LEVEL = [
         // Legacy slugs (tests forventer disse)
-        'sysop'     => 12,
-        'admin2'    => 11,
-        'admin1'    => 10,
-        'mod2'      => 9,
-        'mod1'      => 8,
+        'sysop' => 12,
+        'admin2' => 11,
+        'admin1' => 10,
+        'mod2' => 9,
+        'mod1' => 8,
         'uploader3' => 7,
         'uploader2' => 6,
         'uploader1' => 5,
-        'user4'     => 4,
-        'user3'     => 3,
-        'user2'     => 2,
-        'user1'     => 1,
-        'newbie'    => 0,
+        'user4' => 4,
+        'user3' => 3,
+        'user2' => 2,
+        'user1' => 1,
+        'newbie' => 0,
 
         // Normaliserede app-roller
         // IMPORTANT: default "user" must be >= 1 to pass role.min:1 routes (e.g., /pm).
-        'user'       => 1,
+        'user' => 1,
         'power_user' => 2,
-        'uploader'   => 5,
-        'moderator'  => 8,
-        'admin'      => 10,
+        'uploader' => 5,
+        'moderator' => 8,
+        'admin' => 10,
         // sysop er allerede dækket
     ];
 
@@ -51,21 +56,19 @@ final class RoleLevel
         12 => 'sysop',
         11 => 'admin2',
         10 => 'admin1',
-        9  => 'mod2',
-        8  => 'mod1',
-        7  => 'uploader3',
-        6  => 'uploader2',
-        5  => 'uploader1',
-        4  => 'user4',
-        3  => 'user3',
-        2  => 'user2',
-        1  => 'user1',
-        0  => 'newbie',
+        9 => 'mod2',
+        8 => 'mod1',
+        7 => 'uploader3',
+        6 => 'uploader2',
+        5 => 'uploader1',
+        4 => 'user4',
+        3 => 'user3',
+        2 => 'user2',
+        1 => 'user1',
+        0 => 'newbie',
     ];
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     public static function forSlug(?string $slug): ?int
     {
@@ -91,7 +94,6 @@ final class RoleLevel
          * Derfor skal vi mappe på users.role FØRST - men default 'user'
          * må ikke overstyre en tilknyttet role_id/role relation.
          */
-
         $roleAttribute = $user->getAttribute('role');
         $roleAttributeSlug = is_string($roleAttribute) ? strtolower(trim($roleAttribute)) : null;
 

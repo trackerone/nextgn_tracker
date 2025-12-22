@@ -19,8 +19,7 @@ class RatioSettingsController extends Controller
     public function __construct(
         private readonly RatioSettings $ratioSettings,
         private readonly AuditLogger $auditLogger,
-    ) {
-    }
+    ) {}
 
     public function edit(): View
     {

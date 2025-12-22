@@ -25,7 +25,7 @@ final class MarkdownService
                     return $label;
                 }
 
-                return '<a href="' . $this->escapeAttribute($url) . '">' . $label . '</a>';
+                return '<a href="'.$this->escapeAttribute($url).'">'.$label.'</a>';
             },
             $markdown
         );
@@ -39,8 +39,9 @@ final class MarkdownService
         $html = preg_replace_callback(
             '/<a href="[^"]*">.*?<\/a>/u',
             function (array $m) use (&$placeholders): string {
-                $key = '__A' . count($placeholders) . '__';
+                $key = '__A'.count($placeholders).'__';
                 $placeholders[$key] = $m[0];
+
                 return $key;
             },
             $html
@@ -98,7 +99,7 @@ final class MarkdownService
                     return $label;
                 }
 
-                return '<a href="' . $this->escapeAttribute($safeUrl) . '">' . $label . '</a>';
+                return '<a href="'.$this->escapeAttribute($safeUrl).'">'.$label.'</a>';
             },
             $input
         ) ?? $input;
