@@ -1,8 +1,11 @@
 name: Pint Fix
 
 on:
-  # Kørres manuelt fra Actions-fanen
-  workflow_dispatch: {}
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   pint-fix:
@@ -12,7 +15,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Vi skal kunne committe tilbage
           fetch-depth: 0
 
       - name: Setup PHP
@@ -21,20 +23,22 @@ jobs:
           php-version: '8.3'
           coverage: none
 
-      - name: Install Composer dependencies
-        run: |
-          composer install --no-interaction --no-progress --prefer-dist
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Run Laravel Pint (auto-fix)
-        run: |
-          ./vendor/bin/pint
+      - name: Run Pint
+        run: vendor/bin/pint
 
-      - name: Commit and push Pint changes
-        uses: stefanzweifel/git-auto-commit-action@v5
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
         with:
-          commit_message: "chore: format codebase with Laravel Pint"
-          branch: main   # <-- RET til din default branch hvis den ikke hedder main
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "41898282+github-actions[bot]@users.noreply.github.com"
-          push_options: "--force-with-lease"
-          
+          branch: chore/pint-fix
+          delete-branch: true
+          commit-message: "chore: format codebase with Laravel Pint"
+          title: "chore: format codebase with Laravel Pint"
+          body: |
+            Automated code formatting using Laravel Pint.
+            No functional changes intended.
+          labels: |
+            chore
+            ci
