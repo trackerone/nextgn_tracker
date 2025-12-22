@@ -26,11 +26,12 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, pcntl, bcmath, pdo_mysql, pdo_sqlite, sqlite3, exif, fileinfo, tokenizer, xml, ctype, gd
+          # Match composer.json ext-* requirements + a few useful ones
+          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath, pdo_mysql, pdo_sqlite, sqlite3, exif
           ini-values: memory_limit=1G
           coverage: none
 
-      - name: Cache Composer files
+      - name: Cache Composer + vendor
         uses: actions/cache@v4
         with:
           path: |
