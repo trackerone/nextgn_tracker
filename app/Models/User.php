@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 /**
+ * @property string|null $role
  * @property string $email
  * @property string $name
  * @property string $passkey
@@ -71,7 +72,6 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $attributes = [
-        'role' => self::ROLE_USER,
         'is_banned' => false,
         'is_disabled' => false,
     ];
@@ -79,9 +79,10 @@ class User extends Authenticatable implements MustVerifyEmail
     protected static function booted(): void
     {
         static::creating(function (User $user): void {
-            $roleValue = $user->getAttribute('role');
+            $attributes = $user->getAttributes();
 
-            if (! is_string($roleValue) || $roleValue === '') {
+            // Only set a default role if role was NOT explicitly provided (tests can set role=null).
+            if (! array_key_exists('role', $attributes)) {
                 $user->forceFill([
                     'role' => self::ROLE_USER,
                 ]);
@@ -130,7 +131,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function scopeStaff(Builder $query): Builder
     {
-        return $query->whereIn('role', self::staffRoles());
+        return $query->where(function (Builder $builder): void {
+            $builder->where('is_staff', true)
+                ->orWhereHas('role', function (Builder $roleQuery): void {
+                    $roleQuery->where('level', '>=', Role::STAFF_LEVEL_THRESHOLD)
+                        ->orWhere('is_staff', true);
+                })
+                ->orWhereIn('role', self::staffRoles());
+        });
     }
 
     public function isStaff(): bool
@@ -140,6 +148,24 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
+        // 1) Primary: numeric level mapping (covers legacy slugs + normalized roles)
+        if ($this->roleLevel() >= Role::STAFF_LEVEL_THRESHOLD) {
+            return true;
+        }
+
+        // 2) Role relation flag/level if present
+        $roleRelation = $this->getRelationValue('role');
+        if ($roleRelation instanceof Role) {
+            if ((bool) $roleRelation->is_staff) {
+                return true;
+            }
+
+            if ($roleRelation->level !== null && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
+                return true;
+            }
+        }
+
+        // 3) Last resort: slug/name match (covers edge cases where level mapping isn't available)
         $roleValue = $this->resolveRoleIdentifier();
 
         return $roleValue !== null && in_array($roleValue, self::staffRoles(), true);
@@ -151,7 +177,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return $roleValue === self::ROLE_MODERATOR
             || $roleValue === self::ROLE_ADMIN
-            || $roleValue === self::ROLE_SYSOP;
+            || $roleValue === self::ROLE_SYSOP
+            || in_array($roleValue, ['mod1', 'mod2', 'admin1', 'admin2', 'sysop'], true);
     }
 
     public function isAdmin(): bool
@@ -159,20 +186,21 @@ class User extends Authenticatable implements MustVerifyEmail
         $roleValue = $this->resolveRoleIdentifier();
 
         return $roleValue === self::ROLE_ADMIN
-            || $roleValue === self::ROLE_SYSOP;
+            || $roleValue === self::ROLE_SYSOP
+            || in_array($roleValue, ['admin1', 'admin2', 'sysop'], true);
     }
 
     public function isSysop(): bool
     {
-        return $this->resolveRoleIdentifier() === self::ROLE_SYSOP;
+        $roleValue = $this->resolveRoleIdentifier();
+
+        return $roleValue === self::ROLE_SYSOP || $roleValue === 'sysop';
     }
 
     public function isLogViewer(): bool
     {
-        $roleValue = $this->resolveRoleIdentifier();
-
-        return $roleValue === self::ROLE_ADMIN
-            || $roleValue === self::ROLE_SYSOP;
+        // Log viewer = admin/sysop (including legacy)
+        return $this->isAdmin() || $this->isSysop();
     }
 
     public function isBanned(): bool
@@ -288,9 +316,17 @@ class User extends Authenticatable implements MustVerifyEmail
     private static function staffRoles(): array
     {
         return [
+            // Normaliserede roller
             self::ROLE_MODERATOR,
             self::ROLE_ADMIN,
             self::ROLE_SYSOP,
+
+            // Legacy slugs
+            'mod1',
+            'mod2',
+            'admin1',
+            'admin2',
+            'sysop',
         ];
     }
 

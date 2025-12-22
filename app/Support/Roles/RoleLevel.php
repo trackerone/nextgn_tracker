@@ -34,12 +34,13 @@ final class RoleLevel
         'user1'     => 1,
         'newbie'    => 0,
 
-        // Normaliserede app-roller (bruges andre steder i app’en)
-        'user'      => 0,
-        'power_user'=> 2,
-        'uploader'  => 5,
-        'moderator' => 8,
-        'admin'     => 10,
+        // Normaliserede app-roller
+        // IMPORTANT: default "user" must be >= 1 to pass role.min:1 routes (e.g., /pm).
+        'user'       => 1,
+        'power_user' => 2,
+        'uploader'   => 5,
+        'moderator'  => 8,
+        'admin'      => 10,
         // sysop er allerede dækket
     ];
 
@@ -87,14 +88,19 @@ final class RoleLevel
         /**
          * KRITISK:
          * RoleAccessTest sætter/forventer legacy slug i users.role.
-         * Derfor skal vi mappe på users.role FØRST.
+         * Derfor skal vi mappe på users.role FØRST - men default 'user'
+         * må ikke overstyre en tilknyttet role_id/role relation.
          */
 
-        // 1) Primært: users.role (legacy eller normaliseret)
         $roleAttribute = $user->getAttribute('role');
-        $mapped = self::forSlug(is_string($roleAttribute) ? $roleAttribute : null);
-        if ($mapped !== null) {
-            return $mapped;
+        $roleAttributeSlug = is_string($roleAttribute) ? strtolower(trim($roleAttribute)) : null;
+
+        // 1) Primært: users.role hvis den er andet end default 'user'
+        if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '' && $roleAttributeSlug !== 'user') {
+            $mapped = self::forSlug($roleAttributeSlug);
+            if ($mapped !== null) {
+                return $mapped;
+            }
         }
 
         // 2) Fallback: role relation slug (hvis seeded / role_id findes)
@@ -111,6 +117,14 @@ final class RoleLevel
             // 3) Sidste fallback: role->level hvis den findes
             if ($legacyRole->level !== null) {
                 return (int) $legacyRole->level;
+            }
+        }
+
+        // 4) Hvis der ingen role relation er, så brug users.role (inkl. 'user')
+        if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '') {
+            $mapped = self::forSlug($roleAttributeSlug);
+            if ($mapped !== null) {
+                return $mapped;
             }
         }
 

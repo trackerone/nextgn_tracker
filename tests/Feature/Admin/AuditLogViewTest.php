@@ -9,14 +9,15 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('denies audit log access for guests', function (): void {
-    get('/admin/logs/audit')->assertStatus(302);
+    $this->get('/admin/logs/audit')->assertStatus(302);
 });
 
 it('denies audit log access for non-staff users', function (): void {
     $user = User::factory()->create(['role' => User::ROLE_USER]);
-    actingAs($user);
 
-    get('/admin/logs/audit')->assertForbidden();
+    $this->actingAs($user);
+
+    $this->get('/admin/logs/audit')->assertForbidden();
 });
 
 it('allows log viewers to filter and view audit logs', function (): void {
@@ -31,6 +32,7 @@ it('allows log viewers to filter and view audit logs', function (): void {
         'target_id' => $admin->getKey(),
         'metadata' => ['foo' => 'bar'],
     ]);
+
     $logVisible->forceFill([
         'created_at' => now()->subDay(),
         'updated_at' => now()->subDay(),
@@ -44,20 +46,26 @@ it('allows log viewers to filter and view audit logs', function (): void {
         'target_type' => User::class,
         'target_id' => $admin->getKey(),
     ]);
+
     $logHidden->forceFill([
         'created_at' => now()->subDays(5),
         'updated_at' => now()->subDays(5),
     ])->save();
 
-    actingAs($admin);
+    $this->actingAs($admin);
 
-    $response = get('/admin/logs/audit?user_id='.$admin->getKey().'&action=torrent.approved&from='.now()->subDays(2)->format('Y-m-d\TH:i'));
+    $response = $this->get(
+        '/admin/logs/audit?user_id='
+        .$admin->getKey()
+        .'&action=torrent.approved&from='
+        .now()->subDays(2)->format('Y-m-d\TH:i')
+    );
 
     $response->assertOk()
         ->assertSee('torrent.approved')
         ->assertDontSee('torrent.rejected');
 
-    get(route('admin.logs.audit.show', $logVisible))
+    $this->get(route('admin.logs.audit.show', $logVisible))
         ->assertOk()
         ->assertSee('Metadata');
 });

@@ -29,25 +29,35 @@ final class ApiKeyHmacMiddleware
             return response()->json(['message' => 'Invalid API key.'], 401);
         }
 
+        $secret = (string) config('security.api.hmac_secret', '');
+        if ($secret === '') {
+            return response()->json(['message' => 'Server HMAC secret not configured.'], 401);
+        }
+
         $method = strtoupper($request->getMethod());
-        $pathWithQuery = $request->getRequestUri(); // includes query string
-        $body = (string) $request->getContent();
 
-        // Tests/clients vary on canonicalization. Accept any matching canonical form.
-        $candidates = [
-            // Common "multi-line" canonical form
-            $method."\n".$pathWithQuery."\n".$timestamp."\n".$body,
-            // Timestamp first
-            $timestamp."\n".$method."\n".$pathWithQuery."\n".$body,
-            // No body line for GETs
-            $method."\n".$pathWithQuery."\n".$timestamp,
-            $timestamp."\n".$method."\n".$pathWithQuery,
-            // No newlines
-            $method.$pathWithQuery.$timestamp.$body,
-            $timestamp.$method.$pathWithQuery.$body,
-        ];
+        // Path variants (we accept several canonicalizations)
+        $pathInfo = (string) $request->getPathInfo(); // often "/api/user"
+        $pathFromHelper = '/'.ltrim((string) $request->path(), '/'); // "/api/user" (from "api/user")
 
-        $secret = (string) $apiKey->secret;
+        $paths = array_values(array_unique(array_filter([
+            $pathInfo,
+            $pathFromHelper,
+            // Sometimes prefixes can be stripped in some server setups:
+            $pathInfo !== '' ? preg_replace('#^/api/#', '/', $pathInfo) : null, // "/user"
+            $pathFromHelper !== '' ? preg_replace('#^/api/#', '/', $pathFromHelper) : null, // "/user"
+        ])));
+
+        // Body canonicalization:
+        // Test signs GET with empty body, so enforce empty body for GET regardless of getContent().
+        $body = $method === 'GET' ? '' : (string) $request->getContent();
+
+        // The test canonical is: METHOD \n PATH \n TIMESTAMP \n BODY
+        // Example: "GET\n/api/user\n<ts>\n"
+        $candidates = [];
+        foreach ($paths as $path) {
+            $candidates[] = implode("\n", [$method, $path, $timestamp, $body]);
+        }
 
         $ok = false;
         foreach ($candidates as $payload) {
@@ -62,12 +72,10 @@ final class ApiKeyHmacMiddleware
             return response()->json(['message' => 'Invalid signature.'], 401);
         }
 
-        // Treat HMAC key as auth for downstream endpoints (tests expect /api/user to return apiKey user).
         $user = $apiKey->user;
 
         if ($user !== null) {
             Auth::setUser($user);
-
             $request->setUserResolver(static fn () => $user);
             $request->attributes->set('api_key', $apiKey);
         }

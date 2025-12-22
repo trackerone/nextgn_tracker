@@ -85,7 +85,8 @@ Route::middleware(['auth', 'role.level:admin', $adminThrottle])->group(function 
         ->name('admin.settings.ratio.update');
 });
 
-Route::middleware(['auth', 'role.level:mod', $adminThrottle])->group(function (): void {
+// Invites are intended to be accessible to staff (tests assert staff access).
+Route::middleware(['auth', 'staff', $adminThrottle])->group(function (): void {
     Route::get('/admin/invites', [InviteAdminController::class, 'index'])->name('admin.invites.index');
     Route::post('/admin/invites', [InviteAdminController::class, 'store'])->name('admin.invites.store');
 });

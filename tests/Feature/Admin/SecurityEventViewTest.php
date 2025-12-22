@@ -9,14 +9,15 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('denies security event access for guests', function (): void {
-    get('/admin/logs/security')->assertStatus(302);
+    $this->get('/admin/logs/security')->assertStatus(302);
 });
 
 it('denies security event access for non-staff users', function (): void {
     $user = User::factory()->create(['role' => User::ROLE_USER]);
-    actingAs($user);
 
-    get('/admin/logs/security')->assertForbidden();
+    $this->actingAs($user);
+
+    $this->get('/admin/logs/security')->assertForbidden();
 });
 
 it('allows log viewers to filter and view security events', function (): void {
@@ -31,6 +32,7 @@ it('allows log viewers to filter and view security events', function (): void {
         'message' => 'Banned client attempted announce',
         'context' => ['peer_id' => '123'],
     ]);
+
     $eventVisible->forceFill([
         'created_at' => now()->subHour(),
         'updated_at' => now()->subHour(),
@@ -44,20 +46,24 @@ it('allows log viewers to filter and view security events', function (): void {
         'severity' => 'low',
         'message' => 'Ignored',
     ]);
+
     $eventHidden->forceFill([
         'created_at' => now()->subDays(3),
         'updated_at' => now()->subDays(3),
     ])->save();
 
-    actingAs($admin);
+    $this->actingAs($admin);
 
-    $response = get('/admin/logs/security?severity=high&event_type=tracker.client_banned&from='.now()->subDay()->format('Y-m-d\TH:i'));
+    $response = $this->get(
+        '/admin/logs/security?severity=high&event_type=tracker.client_banned&from='
+        .now()->subDay()->format('Y-m-d\TH:i')
+    );
 
     $response->assertOk()
         ->assertSee('tracker.client_banned')
         ->assertDontSee('tracker.invalid_passkey');
 
-    get(route('admin.logs.security.show', $eventVisible))
+    $this->get(route('admin.logs.security.show', $eventVisible))
         ->assertOk()
         ->assertSee('Banned client attempted announce');
 });

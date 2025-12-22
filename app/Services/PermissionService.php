@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Roles\RoleLevel;
 
 class PermissionService
 {
@@ -15,8 +16,19 @@ class PermissionService
             return false;
         }
 
+        /**
+         * Staff moderation actions should be allowed based on role level, not only config.
+         * This keeps core moderation flows stable even if role_permissions config is incomplete.
+         */
+        if (in_array($permission, ['torrent.edit', 'torrent.delete'], true)) {
+            return RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+        }
+
         $role = self::normalizeRole($user->resolveRoleIdentifier());
+
+        /** @var array<string, array<int, string>> $rolePermissions */
         $rolePermissions = config('security.role_permissions', []);
+
         $permissions = $rolePermissions[$role] ?? ($rolePermissions['guest'] ?? []);
 
         return in_array($permission, $permissions, true);

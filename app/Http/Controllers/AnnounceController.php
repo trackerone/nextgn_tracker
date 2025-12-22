@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
+use App\Models\SecurityEvent;
 use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\UserTorrentService;
@@ -15,7 +16,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
-class AnnounceController extends Controller
+final class AnnounceController extends Controller
 {
     private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
 
@@ -30,6 +31,8 @@ class AnnounceController extends Controller
         $user = User::query()->where('passkey', $passkey)->first();
 
         if ($user === null) {
+            $this->logInvalidPasskey($request, $passkey);
+
             return $this->failure('Invalid passkey.');
         }
 
@@ -57,14 +60,20 @@ class AnnounceController extends Controller
             return $infoHash;
         }
 
-        $torrent = $this->torrents->findByInfoHash(strtoupper(bin2hex($infoHash)));
+        $infoHashHex = strtolower(bin2hex($infoHash));
+        $torrent = $this->torrents->findByInfoHash($infoHashHex);
         if ($torrent === null) {
             return $this->failure('Invalid info_hash.');
         }
 
-        $isStaff = $user->isStaff() || in_array((string) ($user->role ?? ''), ['moderator', 'admin'], true);
+        $isStaff = $user->isStaff() || in_array((string) ($user->role ?? ''), ['moderator', 'admin', 'sysop', 'mod1', 'mod2', 'admin1', 'admin2'], true);
 
         if ($torrent->isBanned() && ! $isStaff) {
+            // Optional: log as security event
+            $this->logSecurityEvent($request, $user, 'tracker.client_banned', 'high', 'Banned client attempted announce', [
+                'torrent_id' => $torrent->getKey(),
+            ]);
+
             return $this->failure('Torrent is banned.');
         }
 
@@ -156,6 +165,93 @@ class AnnounceController extends Controller
         ];
 
         return $this->success($payload);
+    }
+
+    private function logInvalidPasskey(Request $request, string $passkey): void
+    {
+        // Anything coming from announce can contain raw/binary bytes. Sanitize before JSON.
+        $this->logSecurityEvent(
+            $request,
+            null,
+            'tracker.invalid_passkey',
+            'low',
+            'Invalid passkey used during announce attempt',
+            [
+                'passkey' => $passkey,
+                'path' => $request->path(),
+                'query' => $request->query(),
+                'headers' => [
+                    'user-agent' => $request->userAgent(),
+                ],
+            ]
+        );
+    }
+
+    private function logSecurityEvent(
+        Request $request,
+        ?User $user,
+        string $eventType,
+        string $severity,
+        string $message,
+        array $context
+    ): void {
+        $payload = [
+            'user_id' => $user?->getKey(),
+            'ip_address' => (string) ($request->ip() ?? '0.0.0.0'),
+            'user_agent' => (string) ($request->userAgent() ?? ''),
+            'event_type' => $eventType,
+            'severity' => $severity,
+            'message' => $message,
+            'context' => $this->sanitizeForJson($context),
+        ];
+
+        // Never let logging break the tracker response.
+        try {
+            SecurityEvent::query()->create($payload);
+        } catch (\Throwable) {
+            // swallow
+        }
+    }
+
+    /**
+     * Recursively sanitize values for JSON storage (UTF-8 safe).
+     */
+    private function sanitizeForJson(mixed $value): mixed
+    {
+        if ($value === null || is_bool($value) || is_int($value) || is_float($value)) {
+            return $value;
+        }
+
+        if (is_string($value)) {
+            return $this->sanitizeString($value);
+        }
+
+        if (is_array($value)) {
+            $out = [];
+            foreach ($value as $k => $v) {
+                $key = is_string($k) ? $this->sanitizeString($k) : $k;
+                $out[$key] = $this->sanitizeForJson($v);
+            }
+            return $out;
+        }
+
+        if ($value instanceof \Stringable) {
+            return $this->sanitizeString((string) $value);
+        }
+
+        // Fallback: string-cast anything else
+        return $this->sanitizeString((string) $value);
+    }
+
+    private function sanitizeString(string $value): string
+    {
+        // If already valid UTF-8, keep it.
+        if (mb_check_encoding($value, 'UTF-8')) {
+            return $value;
+        }
+
+        // Otherwise, store a safe representation.
+        return 'base64:'.base64_encode($value);
     }
 
     /**
