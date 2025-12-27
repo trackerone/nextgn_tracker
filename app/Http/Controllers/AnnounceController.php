@@ -32,20 +32,19 @@ final class AnnounceController extends Controller
 
         if ($user === null) {
             $this->logInvalidPasskey($request, $passkey);
-
             return $this->failure('Invalid passkey.');
         }
 
         $validator = Validator::make($request->query(), [
-            'info_hash' => 'required|string',
-            'peer_id' => 'required|string',
-            'port' => 'required|integer|min:1|max:65535',
-            'uploaded' => 'required|integer|min:0',
-            'downloaded' => 'required|integer|min:0',
-            'left' => 'required|integer|min:0',
-            'event' => 'sometimes|string|in:started,stopped,completed',
-            'numwant' => 'sometimes|integer|min:1|max:200',
-            'ip' => 'sometimes|ip',
+            'info_hash'   => 'required|string',
+            'peer_id'     => 'required|string',
+            'port'        => 'required|integer|min:1|max:65535',
+            'uploaded'    => 'required|integer|min:0',
+            'downloaded'  => 'required|integer|min:0',
+            'left'        => 'required|integer|min:0',
+            'event'       => 'sometimes|string|in:started,stopped,completed',
+            'numwant'     => 'sometimes|integer|min:1|max:200',
+            'ip'          => 'sometimes|ip',
         ]);
 
         if ($validator->fails()) {
@@ -55,12 +54,12 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
-        $infoHashBin = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
-        if ($infoHashBin instanceof Response) {
-            return $infoHashBin;
+        $infoHash = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
+        if ($infoHash instanceof Response) {
+            return $infoHash;
         }
 
-        $infoHashHex = strtolower(bin2hex($infoHashBin));
+        $infoHashHex = strtolower(bin2hex($infoHash));
         $torrent = $this->torrents->findByInfoHash($infoHashHex);
 
         if ($torrent === null) {
@@ -69,13 +68,7 @@ final class AnnounceController extends Controller
 
         $isStaff = $user->isStaff()
             || in_array((string) ($user->role ?? ''), [
-                'moderator',
-                'admin',
-                'sysop',
-                'mod1',
-                'mod2',
-                'admin1',
-                'admin2',
+                'moderator', 'admin', 'sysop', 'mod1', 'mod2', 'admin1', 'admin2',
             ], true);
 
         if ($torrent->isBanned() && ! $isStaff) {
@@ -85,9 +78,7 @@ final class AnnounceController extends Controller
                 'tracker.client_banned',
                 'high',
                 'Banned client attempted announce',
-                [
-                    'torrent_id' => $torrent->getKey(),
-                ]
+                ['torrent_id' => $torrent->getKey()],
             );
 
             return $this->failure('Torrent is banned.');
@@ -97,16 +88,16 @@ final class AnnounceController extends Controller
             return $this->failure('Torrent is not approved yet.');
         }
 
-        $peerIdBin = $this->decode20ByteParam((string) $data['peer_id'], 'peer_id');
-        if ($peerIdBin instanceof Response) {
-            return $peerIdBin;
+        $peerId = $this->decode20ByteParam((string) $data['peer_id'], 'peer_id');
+        if ($peerId instanceof Response) {
+            return $peerId;
         }
 
-        $event = isset($data['event']) ? (string) $data['event'] : null;
-        $left = (int) $data['left'];
-        $isSeeder = $left === 0;
-        $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
-        $now = now();
+        $event     = isset($data['event']) ? (string) $data['event'] : null;
+        $left      = (int) $data['left'];
+        $isSeeder  = $left === 0;
+        $ip        = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
+        $now       = now();
 
         if (! $isStaff && $event === 'started' && $left > 0) {
             $ratio = $user->ratio();
@@ -118,22 +109,22 @@ final class AnnounceController extends Controller
         if ($event === 'stopped') {
             Peer::query()
                 ->where('torrent_id', $torrent->id)
-                ->where('peer_id', $peerIdBin)
+                ->where('peer_id', $peerId)
                 ->delete();
         } else {
             Peer::query()->updateOrCreate(
                 [
                     'torrent_id' => $torrent->id,
-                    'peer_id' => $peerIdBin,
+                    'peer_id'    => $peerId,
                 ],
                 [
-                    'user_id' => $user->getKey(),
-                    'ip' => $ip,
-                    'port' => (int) $data['port'],
-                    'uploaded' => (int) $data['uploaded'],
-                    'downloaded' => (int) $data['downloaded'],
-                    'left' => $left,
-                    'is_seeder' => $isSeeder,
+                    'user_id'          => $user->getKey(),
+                    'ip'               => $ip,
+                    'port'             => (int) $data['port'],
+                    'uploaded'         => (int) $data['uploaded'],
+                    'downloaded'       => (int) $data['downloaded'],
+                    'left'             => $left,
+                    'is_seeder'        => $isSeeder,
                     'last_announce_at' => $now,
                 ],
             );
@@ -145,11 +136,11 @@ final class AnnounceController extends Controller
 
         DB::table('user_torrents')->updateOrInsert(
             [
-                'user_id' => $user->getKey(),
+                'user_id'    => $user->getKey(),
                 'torrent_id' => $torrent->id,
             ],
             [
-                'uploaded' => (int) $data['uploaded'],
+                'uploaded'   => (int) $data['uploaded'],
                 'downloaded' => (int) $data['downloaded'],
                 'updated_at' => $now,
                 'created_at' => $now,
@@ -170,43 +161,65 @@ final class AnnounceController extends Controller
         $numwant = isset($data['numwant']) ? (int) $data['numwant'] : 50;
         $numwant = max(1, min($numwant, 200));
 
-        $activeSince = now()->subMinutes(60);
-
         $payload = [
-            'complete' => (int) $torrent->seeders,
+            'complete'   => (int) $torrent->seeders,
             'incomplete' => (int) $torrent->leechers,
-            'interval' => 1800,
-            'peers' => $this->peersForResponse($torrent->id, $peerIdBin, $numwant, $activeSince),
+            'interval'   => 1800,
+            'peers'      => $this->peersForResponse(
+                $torrent->id,
+                $peerId,
+                $numwant,
+                now()->subMinutes(60),
+            ),
         ];
 
         return $this->success($payload);
     }
 
     /**
-     * Accept:
-     * - 40-char hex (tests/tools)
-     * - percent-encoded raw bytes (clients)
-     * - 20 raw bytes (already decoded by Laravel/Symfony)
+     * Deterministic 20-byte decoder for tracker params.
+     * Fixes flakiness caused by stripped trailing NULL bytes.
      */
     private function decode20ByteParam(string $value, string $field): string|Response
     {
-        $decoded = $value;
+        $raw = $value;
 
-        if (str_contains($decoded, '%')) {
-            $decoded = rawurldecode($decoded);
-        }
-
-        if (preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
-            $bin = hex2bin($decoded);
+        // 1) 40-char hex
+        if (preg_match('/\A[0-9a-fA-F]{40}\z/', $raw) === 1) {
+            $bin = hex2bin($raw);
             if ($bin === false) {
                 return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
             }
-
             return $bin;
         }
 
-        if (strlen($decoded) === 20) {
-            return $decoded;
+        // 2) Raw bytes (already decoded)
+        $len = strlen($raw);
+        if ($len === 20) {
+            return $raw;
+        }
+        if ($len === 19) {
+            return $raw . "\0";
+        }
+
+        // 3) Percent-encoded bytes
+        if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
+            $decoded = rawurldecode($raw);
+            $dlen = strlen($decoded);
+
+            if ($dlen === 20) {
+                return $decoded;
+            }
+            if ($dlen === 19) {
+                return $decoded . "\0";
+            }
+
+            if (preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
+                $bin = hex2bin($decoded);
+                if ($bin !== false) {
+                    return $bin;
+                }
+            }
         }
 
         return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
@@ -226,9 +239,10 @@ final class AnnounceController extends Controller
             ->limit($limit)
             ->get(['ip', 'port'])
             ->map(static fn (Peer $peer): array => [
-                'ip' => $peer->ip,
+                'ip'   => $peer->ip,
                 'port' => (int) $peer->port,
-            ])->all();
+            ])
+            ->all();
     }
 
     private function success(array $payload): Response
@@ -246,7 +260,7 @@ final class AnnounceController extends Controller
         return response(
             $this->bencode->encode($payload),
             200,
-            ['Content-Type' => 'text/plain; charset=utf-8']
+            ['Content-Type' => 'text/plain; charset=utf-8'],
         );
     }
 
@@ -260,12 +274,12 @@ final class AnnounceController extends Controller
             'Invalid passkey used during announce attempt',
             [
                 'passkey' => $passkey,
-                'path' => $request->path(),
-                'query' => $request->query(),
+                'path'    => $request->path(),
+                'query'   => $request->query(),
                 'headers' => [
                     'user-agent' => $request->userAgent(),
                 ],
-            ]
+            ],
         );
     }
 
@@ -275,58 +289,20 @@ final class AnnounceController extends Controller
         string $eventType,
         string $severity,
         string $message,
-        array $context
+        array $context,
     ): void {
-        $payload = [
-            'user_id' => $user?->getKey(),
-            'ip_address' => (string) ($request->ip() ?? '0.0.0.0'),
-            'user_agent' => (string) ($request->userAgent() ?? ''),
-            'event_type' => $eventType,
-            'severity' => $severity,
-            'message' => $message,
-            'context' => $this->sanitizeForJson($context),
-        ];
-
         try {
-            SecurityEvent::query()->create($payload);
+            SecurityEvent::query()->create([
+                'user_id'    => $user?->getKey(),
+                'ip_address' => (string) ($request->ip() ?? '0.0.0.0'),
+                'user_agent' => (string) ($request->userAgent() ?? ''),
+                'event_type' => $eventType,
+                'severity'   => $severity,
+                'message'    => $message,
+                'context'    => $context,
+            ]);
         } catch (\Throwable) {
             // never break announce
         }
-    }
-
-    private function sanitizeForJson(mixed $value): mixed
-    {
-        if ($value === null || is_bool($value) || is_int($value) || is_float($value)) {
-            return $value;
-        }
-
-        if (is_string($value)) {
-            return $this->sanitizeString($value);
-        }
-
-        if (is_array($value)) {
-            $out = [];
-            foreach ($value as $k => $v) {
-                $key = is_string($k) ? $this->sanitizeString($k) : $k;
-                $out[$key] = $this->sanitizeForJson($v);
-            }
-
-            return $out;
-        }
-
-        if ($value instanceof \Stringable) {
-            return $this->sanitizeString((string) $value);
-        }
-
-        return $this->sanitizeString((string) $value);
-    }
-
-    private function sanitizeString(string $value): string
-    {
-        if (mb_check_encoding($value, 'UTF-8')) {
-            return $value;
-        }
-
-        return 'base64:' . base64_encode($value);
     }
 }
