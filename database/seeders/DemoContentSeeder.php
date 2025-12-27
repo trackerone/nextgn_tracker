@@ -15,41 +15,49 @@ class DemoContentSeeder extends Seeder
     public function run(): void
     {
         if (User::query()->count() === 0) {
+            /** @var User $admin */
             $admin = User::factory()->create([
                 'email' => 'admin@example.com',
                 'name' => 'Admin',
             ]);
 
+            /** @var User $user */
             $user = User::factory()->create([
                 'email' => 'user@example.com',
                 'name' => 'Regular User',
             ]);
         } else {
-            $admin = User::query()->first();
+            /** @var User $admin */
+            $admin = User::query()->firstOrFail();
+
+            /** @var User $user */
             $user = User::query()->skip(1)->first() ?? $admin;
         }
 
         $admin->forceFill(['role' => User::ROLE_ADMIN])->save();
 
         if (Topic::query()->count() === 0) {
-            $topic = Topic::factory()->create([
-                'user_id' => $admin->id,
+            Topic::factory()->create([
+                'user_id' => (int) $admin->getKey(),
             ]);
         } else {
-            $topic = Topic::query()->first();
+            Topic::query()->firstOrFail();
         }
+
+        /** @var Topic $topic */
+        $topic = Topic::query()->firstOrFail();
 
         if (Post::query()->count() === 0) {
             Post::factory()->count(3)->create([
-                'topic_id' => $topic->id,
-                'user_id' => $admin->id,
+                'topic_id' => (int) $topic->getKey(),
+                'user_id' => (int) $admin->getKey(),
             ]);
         }
 
         if (Conversation::query()->count() === 0) {
             Conversation::query()->create([
-                'sender_id' => $admin->id,
-                'recipient_id' => $user->id,
+                'sender_id' => (int) $admin->getKey(),
+                'recipient_id' => (int) $user->getKey(),
                 'subject' => 'Welcome to NextGN',
             ]);
         }
