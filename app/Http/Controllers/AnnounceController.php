@@ -191,7 +191,6 @@ final class AnnounceController extends Controller
     {
         $raw = $value;
 
-        // 1) 40-char hex
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $raw) === 1) {
             $bin = hex2bin($raw);
             if ($bin === false) {
@@ -201,17 +200,15 @@ final class AnnounceController extends Controller
             return $bin;
         }
 
-        // 2) Raw bytes (already decoded)
         $len = strlen($raw);
         if ($len === 20) {
             return $raw;
         }
 
         if ($len === 19) {
-            return $raw . "\0";
+            return str_pad($raw, 20, "\0", STR_PAD_RIGHT);
         }
 
-        // 3) Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
             $decoded = rawurldecode($raw);
             $dlen = strlen($decoded);
@@ -221,7 +218,7 @@ final class AnnounceController extends Controller
             }
 
             if ($dlen === 19) {
-                return $decoded . "\0";
+                return str_pad($decoded, 20, "\0", STR_PAD_RIGHT);
             }
 
             if (preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
