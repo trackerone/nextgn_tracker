@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserTorrent;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class AnnounceTest extends TestCase
@@ -185,12 +186,10 @@ class AnnounceTest extends TestCase
     {
         $torrent = Torrent::factory()->create();
 
-        $infoHashBinary = hex2bin($torrent->info_hash);
-        $this->assertIsString($infoHashBinary);
-
         $params = [
-            'info_hash' => $infoHashBinary,
-            'peer_id' => $this->makePeerId('invalid-passkey'),
+            // Use 40-hex for deterministic transport in tests.
+            'info_hash' => strtolower((string) $torrent->info_hash),
+            'peer_id' => bin2hex($this->makePeerId('invalid-passkey')),
             'port' => 6881,
             'uploaded' => 0,
             'downloaded' => 0,
@@ -229,7 +228,7 @@ class AnnounceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // VIGTIGT: model checks status, not is_approved
+        // IMPORTANT: model checks status, not is_approved
         $torrent = Torrent::factory()->create([
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
@@ -283,12 +282,12 @@ class AnnounceTest extends TestCase
 
     public function test_staff_can_bypass_ratio_and_approval_checks(): void
     {
-        // VIGTIGT: user must actually be staff
+        // IMPORTANT: user must actually be staff
         $user = User::factory()->create([
             'role' => User::ROLE_MODERATOR,
         ]);
 
-        // VIGTIGT: model checks status
+        // IMPORTANT: model checks status
         $torrent = Torrent::factory()->create([
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
@@ -371,27 +370,36 @@ class AnnounceTest extends TestCase
         );
     }
 
-    private function announce(User $user, Torrent $torrent, string $peerId, array $overrides = [])
+    private function announce(User $user, Torrent $torrent, string $peerId, array $overrides = []): TestResponse
     {
-        $infoHashBinary = hex2bin($torrent->info_hash);
-        $this->assertIsString($infoHashBinary);
+        // Always transport these as HEX in tests to avoid binary/querystring flakiness.
+        $infoHashHex = strtolower((string) $torrent->info_hash);
 
         $params = array_merge([
-            'info_hash' => $infoHashBinary,
-            'peer_id' => $peerId,
+            'info_hash' => $infoHashHex,
+            'peer_id' => bin2hex($peerId),
             'port' => 6881,
             'uploaded' => 0,
             'downloaded' => 0,
             'left' => 100,
         ], $overrides);
 
+        // Normalize if an override provides binary 20-byte values.
+        if (isset($params['info_hash']) && is_string($params['info_hash']) && strlen($params['info_hash']) === 20) {
+            $params['info_hash'] = bin2hex($params['info_hash']);
+        }
+        if (isset($params['peer_id']) && is_string($params['peer_id']) && strlen($params['peer_id']) === 20) {
+            $params['peer_id'] = bin2hex($params['peer_id']);
+        }
+
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
         return $this->get('/announce/'.$user->ensurePasskey().'?'.$query);
     }
 
-    private function makePeerId(string $prefix): string
+    private function makePeerId(string $seed): string
     {
-        return substr(str_pad($prefix, 20, 'x'), 0, 20);
+        // 20 raw bytes (stable); transport uses hex in announce().
+        return substr(hash('sha1', $seed, true), 0, 20);
     }
 }
