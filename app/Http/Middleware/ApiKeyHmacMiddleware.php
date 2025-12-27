@@ -36,17 +36,23 @@ final class ApiKeyHmacMiddleware
 
         $method = strtoupper($request->getMethod());
 
-        // Path variants (we accept several canonicalizations)
+    // Path variants (we accept several canonicalizations)
         $pathInfo = (string) $request->getPathInfo(); // often "/api/user"
         $pathFromHelper = '/'.ltrim((string) $request->path(), '/'); // "/api/user" (from "api/user")
 
-        $paths = array_values(array_unique(array_filter([
-            $pathInfo,
-            $pathFromHelper,
-            // Sometimes prefixes can be stripped in some server setups:
-            $pathInfo !== '' ? preg_replace('#^/api/#', '/', $pathInfo) : null, // "/user"
-            $pathFromHelper !== '' ? preg_replace('#^/api/#', '/', $pathFromHelper) : null, // "/user"
-        ])));
+        // Sometimes prefixes can be stripped in some server setups:
+        $pathInfoStripped = preg_replace('#^/api/#', '/', $pathInfo);
+        $pathHelperStripped = preg_replace('#^/api/#', '/', $pathFromHelper);
+
+        $paths = array_values(array_unique(array_filter(
+            [
+                $pathInfo,
+                $pathFromHelper,
+                is_string($pathInfoStripped) ? $pathInfoStripped : '',
+                is_string($pathHelperStripped) ? $pathHelperStripped : '',
+            ],
+            static fn (string $p): bool => $p !== ''
+        )));
 
         // Body canonicalization:
         // Test signs GET with empty body, so enforce empty body for GET regardless of getContent().
