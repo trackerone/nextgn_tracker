@@ -32,7 +32,8 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
-          branch: chore/pint-fix
+          base: main
+          branch: chore/pint-fix-${{ github.run_id }}
           delete-branch: true
           commit-message: "chore: format codebase with Laravel Pint"
           title: "chore: format codebase with Laravel Pint"
