@@ -23,6 +23,7 @@ class AnnounceTest extends TestCase
         ]);
 
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-started'),
             'seeders' => 0,
             'leechers' => 0,
         ]);
@@ -60,6 +61,7 @@ class AnnounceTest extends TestCase
         $secondUser = User::factory()->create();
 
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-completed-updates'),
             'seeders' => 0,
             'leechers' => 0,
             'completed' => 0,
@@ -109,6 +111,7 @@ class AnnounceTest extends TestCase
         $user = User::factory()->create();
 
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-stopped'),
             'seeders' => 0,
             'leechers' => 0,
         ]);
@@ -146,6 +149,7 @@ class AnnounceTest extends TestCase
     public function test_numwant_limits_peer_list(): void
     {
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-numwant'),
             'seeders' => 0,
             'leechers' => 0,
         ]);
@@ -184,10 +188,11 @@ class AnnounceTest extends TestCase
 
     public function test_invalid_passkey_returns_failure(): void
     {
-        $torrent = Torrent::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-invalid-passkey'),
+        ]);
 
         $params = [
-            // Use 40-hex for deterministic transport in tests.
             'info_hash' => strtolower((string) $torrent->info_hash),
             'peer_id' => bin2hex($this->makePeerId('invalid-passkey')),
             'port' => 6881,
@@ -214,6 +219,7 @@ class AnnounceTest extends TestCase
         $user = User::factory()->create();
 
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-banned'),
             'is_banned' => true,
             'ban_reason' => 'DMCA',
         ]);
@@ -228,8 +234,8 @@ class AnnounceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        // IMPORTANT: model checks status, not is_approved
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-unapproved'),
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
         ]);
@@ -243,7 +249,10 @@ class AnnounceTest extends TestCase
     public function test_low_ratio_user_blocked_on_started_event(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create();
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-low-ratio'),
+        ]);
 
         UserTorrent::factory()->for($user)->for($torrent)->create([
             'uploaded' => 10,
@@ -263,6 +272,7 @@ class AnnounceTest extends TestCase
         $user = User::factory()->create();
 
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-ok-ratio'),
             'seeders' => 0,
             'leechers' => 0,
         ]);
@@ -282,13 +292,12 @@ class AnnounceTest extends TestCase
 
     public function test_staff_can_bypass_ratio_and_approval_checks(): void
     {
-        // IMPORTANT: user must actually be staff
         $user = User::factory()->create([
             'role' => User::ROLE_MODERATOR,
         ]);
 
-        // IMPORTANT: model checks status
         $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-staff-bypass'),
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
             'seeders' => 0,
@@ -312,7 +321,11 @@ class AnnounceTest extends TestCase
     public function test_user_torrent_stats_are_upserted_from_announce(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create();
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-user-torrents-upsert'),
+        ]);
+
         $peerId = $this->makePeerId('stats-peer');
 
         $this->announce($user, $torrent, $peerId, [
@@ -343,7 +356,11 @@ class AnnounceTest extends TestCase
     public function test_completed_event_sets_completed_at_once(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create();
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $this->makeInfoHashHex('torrent-completed-at-once'),
+        ]);
+
         $peerId = $this->makePeerId('snatch-peer');
 
         $this->announce($user, $torrent, $peerId, [
@@ -372,11 +389,17 @@ class AnnounceTest extends TestCase
 
     private function announce(User $user, Torrent $torrent, string $peerId, array $overrides = []): TestResponse
     {
-        // Always transport these as HEX in tests to avoid binary/querystring flakiness.
-        $infoHashHex = strtolower((string) $torrent->info_hash);
+        $infoHash = (string) $torrent->info_hash;
+
+        // Always transport as 40-hex in tests (stable and deterministic).
+        if (strlen($infoHash) === 20) {
+            $infoHash = bin2hex($infoHash);
+        } else {
+            $infoHash = strtolower($infoHash);
+        }
 
         $params = array_merge([
-            'info_hash' => $infoHashHex,
+            'info_hash' => $infoHash,
             'peer_id' => bin2hex($peerId),
             'port' => 6881,
             'uploaded' => 0,
@@ -384,7 +407,7 @@ class AnnounceTest extends TestCase
             'left' => 100,
         ], $overrides);
 
-        // Normalize if an override provides binary 20-byte values.
+        // Normalize if an override provides raw 20-byte values.
         if (isset($params['info_hash']) && is_string($params['info_hash']) && strlen($params['info_hash']) === 20) {
             $params['info_hash'] = bin2hex($params['info_hash']);
         }
@@ -399,7 +422,12 @@ class AnnounceTest extends TestCase
 
     private function makePeerId(string $seed): string
     {
-        // 20 raw bytes (stable); transport uses hex in announce().
         return substr(hash('sha1', $seed, true), 0, 20);
+    }
+
+    private function makeInfoHashHex(string $seed): string
+    {
+        // 40-char lowercase hex
+        return strtolower(sha1($seed));
     }
 }
