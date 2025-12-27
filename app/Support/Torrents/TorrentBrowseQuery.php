@@ -45,7 +45,7 @@ final class TorrentBrowseQuery
         if ($filters->q !== '') {
             $search = mb_strtolower($filters->q);
             $query->where(function (Builder $inner) use ($search): void {
-                $inner->whereRaw('LOWER(name) LIKE ?', ['%' . $search . '%']);
+                $inner->whereRaw('LOWER(name) LIKE ?', ['%'.$search.'%']);
             });
         }
 

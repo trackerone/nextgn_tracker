@@ -25,7 +25,7 @@ final class TorrentController extends Controller
     public function index(Request $request): Response|JsonResponse|View
     {
         $filters = TorrentBrowseFilters::fromRequest($request);
-        $query = (new TorrentBrowseQuery())->apply(Torrent::query()->visible(), $filters);
+        $query = (new TorrentBrowseQuery)->apply(Torrent::query()->visible(), $filters);
 
         if ($request->expectsJson()) {
             return response()->json($query->get());

@@ -232,6 +232,7 @@ final class AnnounceController extends Controller
                 $key = is_string($k) ? $this->sanitizeString($k) : $k;
                 $out[$key] = $this->sanitizeForJson($v);
             }
+
             return $out;
         }
 
@@ -261,8 +262,6 @@ final class AnnounceController extends Controller
      * - 40-char hex (tests/clients)
      *
      * Also pads 19 bytes to 20 bytes to compensate for stripped trailing null bytes.
-     *
-     * @return string|Response
      */
     private function decode20ByteParam(string $value, string $field): string|Response
     {
@@ -274,6 +273,7 @@ final class AnnounceController extends Controller
             if ($bin === false) {
                 return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
             }
+
             return $bin;
         }
 

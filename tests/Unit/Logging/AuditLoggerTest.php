@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-use function Pest\Laravel\actingAs;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\Logging\AuditLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+
+use function Pest\Laravel\actingAs;
 
 uses(RefreshDatabase::class);
 

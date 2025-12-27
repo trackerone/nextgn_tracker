@@ -26,7 +26,7 @@ use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
 use Illuminate\Support\Facades\Route;
 
-$adminThrottle  = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
+$adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
 $searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '30,1'));
 
 /*

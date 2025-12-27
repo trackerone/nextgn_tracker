@@ -14,8 +14,7 @@ final class TorrentBrowseFilters
         public readonly ?int $categoryId,
         public readonly string $order,
         public readonly string $direction,
-    ) {
-    }
+    ) {}
 
     public static function fromRequest(Request $request): self
     {

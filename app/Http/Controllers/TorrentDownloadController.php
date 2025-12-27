@@ -23,7 +23,7 @@ final class TorrentDownloadController extends Controller
             abort(404);
         }
 
-        $filename = ($model->slug ?: (string) $model->getKey()) . '.torrent';
+        $filename = ($model->slug ?: (string) $model->getKey()).'.torrent';
 
         return Storage::disk($disk)->download($path, $filename, [
             'Content-Type' => 'application/x-bittorrent',
@@ -37,24 +37,24 @@ final class TorrentDownloadController extends Controller
         $announceUrl = (string) config('tracker.announce_url', '');
         $additional = (array) config('tracker.additional_trackers', []);
 
-        $xt = 'xt=urn:btih:' . strtoupper((string) $model->info_hash);
+        $xt = 'xt=urn:btih:'.strtoupper((string) $model->info_hash);
 
         $params = [
             $xt,
-            'dn=' . rawurlencode((string) $model->name),
+            'dn='.rawurlencode((string) $model->name),
         ];
 
         if ($announceUrl !== '') {
-            $params[] = 'tr=' . rawurlencode($announceUrl);
+            $params[] = 'tr='.rawurlencode($announceUrl);
         }
 
         foreach ($additional as $tracker) {
             if (is_string($tracker) && $tracker !== '') {
-                $params[] = 'tr=' . rawurlencode($tracker);
+                $params[] = 'tr='.rawurlencode($tracker);
             }
         }
 
-        $magnet = 'magnet:?' . implode('&', $params);
+        $magnet = 'magnet:?'.implode('&', $params);
 
         return response()->json([
             'magnet' => $magnet,

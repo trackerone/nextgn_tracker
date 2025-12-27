@@ -7,7 +7,6 @@ use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\ValidateAnnounceRequest;
 use App\Providers\AuthServiceProvider;
-use App\Http\Middleware\ApiKeyHmacMiddleware;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
