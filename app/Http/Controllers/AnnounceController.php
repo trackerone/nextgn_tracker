@@ -32,19 +32,20 @@ final class AnnounceController extends Controller
 
         if ($user === null) {
             $this->logInvalidPasskey($request, $passkey);
+
             return $this->failure('Invalid passkey.');
         }
 
         $validator = Validator::make($request->query(), [
-            'info_hash'   => 'required|string',
-            'peer_id'     => 'required|string',
-            'port'        => 'required|integer|min:1|max:65535',
-            'uploaded'    => 'required|integer|min:0',
-            'downloaded'  => 'required|integer|min:0',
-            'left'        => 'required|integer|min:0',
-            'event'       => 'sometimes|string|in:started,stopped,completed',
-            'numwant'     => 'sometimes|integer|min:1|max:200',
-            'ip'          => 'sometimes|ip',
+            'info_hash' => 'required|string',
+            'peer_id' => 'required|string',
+            'port' => 'required|integer|min:1|max:65535',
+            'uploaded' => 'required|integer|min:0',
+            'downloaded' => 'required|integer|min:0',
+            'left' => 'required|integer|min:0',
+            'event' => 'sometimes|string|in:started,stopped,completed',
+            'numwant' => 'sometimes|integer|min:1|max:200',
+            'ip' => 'sometimes|ip',
         ]);
 
         if ($validator->fails()) {
@@ -68,7 +69,13 @@ final class AnnounceController extends Controller
 
         $isStaff = $user->isStaff()
             || in_array((string) ($user->role ?? ''), [
-                'moderator', 'admin', 'sysop', 'mod1', 'mod2', 'admin1', 'admin2',
+                'moderator',
+                'admin',
+                'sysop',
+                'mod1',
+                'mod2',
+                'admin1',
+                'admin2',
             ], true);
 
         if ($torrent->isBanned() && ! $isStaff) {
@@ -93,11 +100,11 @@ final class AnnounceController extends Controller
             return $peerId;
         }
 
-        $event     = isset($data['event']) ? (string) $data['event'] : null;
-        $left      = (int) $data['left'];
-        $isSeeder  = $left === 0;
-        $ip        = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
-        $now       = now();
+        $event = isset($data['event']) ? (string) $data['event'] : null;
+        $left = (int) $data['left'];
+        $isSeeder = $left === 0;
+        $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
+        $now = now();
 
         if (! $isStaff && $event === 'started' && $left > 0) {
             $ratio = $user->ratio();
@@ -115,16 +122,16 @@ final class AnnounceController extends Controller
             Peer::query()->updateOrCreate(
                 [
                     'torrent_id' => $torrent->id,
-                    'peer_id'    => $peerId,
+                    'peer_id' => $peerId,
                 ],
                 [
-                    'user_id'          => $user->getKey(),
-                    'ip'               => $ip,
-                    'port'             => (int) $data['port'],
-                    'uploaded'         => (int) $data['uploaded'],
-                    'downloaded'       => (int) $data['downloaded'],
-                    'left'             => $left,
-                    'is_seeder'        => $isSeeder,
+                    'user_id' => $user->getKey(),
+                    'ip' => $ip,
+                    'port' => (int) $data['port'],
+                    'uploaded' => (int) $data['uploaded'],
+                    'downloaded' => (int) $data['downloaded'],
+                    'left' => $left,
+                    'is_seeder' => $isSeeder,
                     'last_announce_at' => $now,
                 ],
             );
@@ -136,11 +143,11 @@ final class AnnounceController extends Controller
 
         DB::table('user_torrents')->updateOrInsert(
             [
-                'user_id'    => $user->getKey(),
+                'user_id' => $user->getKey(),
                 'torrent_id' => $torrent->id,
             ],
             [
-                'uploaded'   => (int) $data['uploaded'],
+                'uploaded' => (int) $data['uploaded'],
                 'downloaded' => (int) $data['downloaded'],
                 'updated_at' => $now,
                 'created_at' => $now,
@@ -162,10 +169,10 @@ final class AnnounceController extends Controller
         $numwant = max(1, min($numwant, 200));
 
         $payload = [
-            'complete'   => (int) $torrent->seeders,
+            'complete' => (int) $torrent->seeders,
             'incomplete' => (int) $torrent->leechers,
-            'interval'   => 1800,
-            'peers'      => $this->peersForResponse(
+            'interval' => 1800,
+            'peers' => $this->peersForResponse(
                 $torrent->id,
                 $peerId,
                 $numwant,
@@ -190,6 +197,7 @@ final class AnnounceController extends Controller
             if ($bin === false) {
                 return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
             }
+
             return $bin;
         }
 
@@ -198,6 +206,7 @@ final class AnnounceController extends Controller
         if ($len === 20) {
             return $raw;
         }
+
         if ($len === 19) {
             return $raw . "\0";
         }
@@ -210,6 +219,7 @@ final class AnnounceController extends Controller
             if ($dlen === 20) {
                 return $decoded;
             }
+
             if ($dlen === 19) {
                 return $decoded . "\0";
             }
@@ -239,7 +249,7 @@ final class AnnounceController extends Controller
             ->limit($limit)
             ->get(['ip', 'port'])
             ->map(static fn (Peer $peer): array => [
-                'ip'   => $peer->ip,
+                'ip' => $peer->ip,
                 'port' => (int) $peer->port,
             ])
             ->all();
@@ -274,8 +284,8 @@ final class AnnounceController extends Controller
             'Invalid passkey used during announce attempt',
             [
                 'passkey' => $passkey,
-                'path'    => $request->path(),
-                'query'   => $request->query(),
+                'path' => $request->path(),
+                'query' => $request->query(),
                 'headers' => [
                     'user-agent' => $request->userAgent(),
                 ],
@@ -293,13 +303,13 @@ final class AnnounceController extends Controller
     ): void {
         try {
             SecurityEvent::query()->create([
-                'user_id'    => $user?->getKey(),
+                'user_id' => $user?->getKey(),
                 'ip_address' => (string) ($request->ip() ?? '0.0.0.0'),
                 'user_agent' => (string) ($request->userAgent() ?? ''),
                 'event_type' => $eventType,
-                'severity'   => $severity,
-                'message'    => $message,
-                'context'    => $context,
+                'severity' => $severity,
+                'message' => $message,
+                'context' => $context,
             ]);
         } catch (\Throwable) {
             // never break announce
