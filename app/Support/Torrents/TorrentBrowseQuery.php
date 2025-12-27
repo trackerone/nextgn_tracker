@@ -17,7 +17,7 @@ final class TorrentBrowseQuery
         // 1) Soft deletes (if used)
         // Default Eloquent queries already exclude trashed rows when SoftDeletes is enabled.
         // (Calling withoutTrashed() here confuses static analysis because the Builder is generic.)
-    
+
         // 2) Additional "visibility" constraints if columns exist
         // These are common patterns used in trackers; tests expect rejected/unapproved to be hidden for regular users.
         if (Schema::hasColumn($table, 'is_approved')) {

@@ -16,7 +16,7 @@ final class MarkdownService
         // 2) Convert markdown links: [label](url "optional title")
         $html = preg_replace_callback(
             '/\[(?<label>[^\]]+)\]\((?<url>[^\s\)]+)(?:\s+"[^"]*")?\)/u',
-             function (array $m): string {
+            function (array $m): string {
                 $label = $this->escape((string) $m['label']);
                 $urlRaw = (string) $m['url'];
 
