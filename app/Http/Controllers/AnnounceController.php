@@ -55,24 +55,40 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
-        $infoHash = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
-        if ($infoHash instanceof Response) {
-            return $infoHash;
+        $infoHashBin = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
+        if ($infoHashBin instanceof Response) {
+            return $infoHashBin;
         }
 
-        $infoHashHex = strtolower(bin2hex($infoHash));
+        $infoHashHex = strtolower(bin2hex($infoHashBin));
         $torrent = $this->torrents->findByInfoHash($infoHashHex);
+
         if ($torrent === null) {
             return $this->failure('Invalid info_hash.');
         }
 
-        $isStaff = $user->isStaff() || in_array((string) ($user->role ?? ''), ['moderator', 'admin', 'sysop', 'mod1', 'mod2', 'admin1', 'admin2'], true);
+        $isStaff = $user->isStaff()
+            || in_array((string) ($user->role ?? ''), [
+                'moderator',
+                'admin',
+                'sysop',
+                'mod1',
+                'mod2',
+                'admin1',
+                'admin2',
+            ], true);
 
         if ($torrent->isBanned() && ! $isStaff) {
-            // Optional: log as security event
-            $this->logSecurityEvent($request, $user, 'tracker.client_banned', 'high', 'Banned client attempted announce', [
-                'torrent_id' => $torrent->getKey(),
-            ]);
+            $this->logSecurityEvent(
+                $request,
+                $user,
+                'tracker.client_banned',
+                'high',
+                'Banned client attempted announce',
+                [
+                    'torrent_id' => $torrent->getKey(),
+                ]
+            );
 
             return $this->failure('Torrent is banned.');
         }
@@ -81,9 +97,9 @@ final class AnnounceController extends Controller
             return $this->failure('Torrent is not approved yet.');
         }
 
-        $peerId = $this->decode20ByteParam((string) $data['peer_id'], 'peer_id');
-        if ($peerId instanceof Response) {
-            return $peerId;
+        $peerIdBin = $this->decode20ByteParam((string) $data['peer_id'], 'peer_id');
+        if ($peerIdBin instanceof Response) {
+            return $peerIdBin;
         }
 
         $event = isset($data['event']) ? (string) $data['event'] : null;
@@ -102,13 +118,13 @@ final class AnnounceController extends Controller
         if ($event === 'stopped') {
             Peer::query()
                 ->where('torrent_id', $torrent->id)
-                ->where('peer_id', $peerId)
+                ->where('peer_id', $peerIdBin)
                 ->delete();
         } else {
             Peer::query()->updateOrCreate(
                 [
                     'torrent_id' => $torrent->id,
-                    'peer_id' => $peerId,
+                    'peer_id' => $peerIdBin,
                 ],
                 [
                     'user_id' => $user->getKey(),
@@ -127,7 +143,6 @@ final class AnnounceController extends Controller
             $torrent->increment('completed');
         }
 
-        // Ensure user_torrents exists for tests (they assert directly on the table)
         DB::table('user_torrents')->updateOrInsert(
             [
                 'user_id' => $user->getKey(),
@@ -161,15 +176,82 @@ final class AnnounceController extends Controller
             'complete' => (int) $torrent->seeders,
             'incomplete' => (int) $torrent->leechers,
             'interval' => 1800,
-            'peers' => $this->peersForResponse($torrent->id, $peerId, $numwant, $activeSince),
+            'peers' => $this->peersForResponse($torrent->id, $peerIdBin, $numwant, $activeSince),
         ];
 
         return $this->success($payload);
     }
 
+    /**
+     * Accept:
+     * - 40-char hex (tests/tools)
+     * - percent-encoded raw bytes (clients)
+     * - 20 raw bytes (already decoded by Laravel/Symfony)
+     */
+    private function decode20ByteParam(string $value, string $field): string|Response
+    {
+        $decoded = $value;
+
+        if (str_contains($decoded, '%')) {
+            $decoded = rawurldecode($decoded);
+        }
+
+        if (preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
+            $bin = hex2bin($decoded);
+            if ($bin === false) {
+                return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
+            }
+
+            return $bin;
+        }
+
+        if (strlen($decoded) === 20) {
+            return $decoded;
+        }
+
+        return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
+    }
+
+    private function peersForResponse(
+        int $torrentId,
+        string $excludingPeer,
+        int $limit,
+        CarbonInterface $activeSince
+    ): array {
+        return Peer::query()
+            ->where('torrent_id', $torrentId)
+            ->where('peer_id', '!=', $excludingPeer)
+            ->where('last_announce_at', '>=', $activeSince)
+            ->orderByDesc('last_announce_at')
+            ->limit($limit)
+            ->get(['ip', 'port'])
+            ->map(static fn (Peer $peer): array => [
+                'ip' => $peer->ip,
+                'port' => (int) $peer->port,
+            ])->all();
+    }
+
+    private function success(array $payload): Response
+    {
+        return $this->bencodedResponse($payload);
+    }
+
+    private function failure(string $reason): Response
+    {
+        return $this->bencodedResponse(['failure reason' => $reason]);
+    }
+
+    private function bencodedResponse(array $payload): Response
+    {
+        return response(
+            $this->bencode->encode($payload),
+            200,
+            ['Content-Type' => 'text/plain; charset=utf-8']
+        );
+    }
+
     private function logInvalidPasskey(Request $request, string $passkey): void
     {
-        // Anything coming from announce can contain raw/binary bytes. Sanitize before JSON.
         $this->logSecurityEvent(
             $request,
             null,
@@ -205,17 +287,13 @@ final class AnnounceController extends Controller
             'context' => $this->sanitizeForJson($context),
         ];
 
-        // Never let logging break the tracker response.
         try {
             SecurityEvent::query()->create($payload);
         } catch (\Throwable) {
-            // swallow
+            // never break announce
         }
     }
 
-    /**
-     * Recursively sanitize values for JSON storage (UTF-8 safe).
-     */
     private function sanitizeForJson(mixed $value): mixed
     {
         if ($value === null || is_bool($value) || is_int($value) || is_float($value)) {
@@ -240,101 +318,15 @@ final class AnnounceController extends Controller
             return $this->sanitizeString((string) $value);
         }
 
-        // Fallback: string-cast anything else
         return $this->sanitizeString((string) $value);
     }
 
     private function sanitizeString(string $value): string
     {
-        // If already valid UTF-8, keep it.
         if (mb_check_encoding($value, 'UTF-8')) {
             return $value;
         }
 
-        // Otherwise, store a safe representation.
-        return 'base64:'.base64_encode($value);
-    }
-
-    /**
-     * Accept:
-     * - 20 raw bytes (already decoded)
-     * - percent-encoded raw bytes
-     * - 40-char hex (tests/clients)
-     *
-     * Also pads 19 bytes to 20 bytes to compensate for stripped trailing null bytes.
-     */
-    private function decode20ByteParam(string $value, string $field): string|Response
-    {
-        $decoded = $value;
-
-        // 1) Accept 40-char hex directly
-        if (preg_match('/^[a-f0-9]{40}$/i', $decoded) === 1) {
-            $bin = hex2bin($decoded);
-            if ($bin === false) {
-                return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
-            }
-
-            return $bin;
-        }
-
-        // 2) Percent-decoding if needed
-        if (str_contains($decoded, '%')) {
-            $decoded = rawurldecode($decoded);
-        }
-
-        // 3) Symfony/Laravel may strip trailing null bytes from query values.
-        if (strlen($decoded) === 19) {
-            $decoded .= "\0";
-        }
-
-        if (strlen($decoded) !== 20) {
-            // Try one more decode pass (safe)
-            $decoded2 = rawurldecode($value);
-            if (strlen($decoded2) === 19) {
-                $decoded2 .= "\0";
-            }
-
-            if (strlen($decoded2) !== 20) {
-                return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
-            }
-
-            return $decoded2;
-        }
-
-        return $decoded;
-    }
-
-    private function peersForResponse(int $torrentId, string $excludingPeer, int $limit, CarbonInterface $activeSince): array
-    {
-        return Peer::query()
-            ->where('torrent_id', $torrentId)
-            ->where('peer_id', '!=', $excludingPeer)
-            ->where('last_announce_at', '>=', $activeSince)
-            ->orderByDesc('last_announce_at')
-            ->limit($limit)
-            ->get(['ip', 'port'])
-            ->map(static fn (Peer $peer): array => [
-                'ip' => $peer->ip,
-                'port' => (int) $peer->port,
-            ])->all();
-    }
-
-    private function success(array $payload): Response
-    {
-        return $this->bencodedResponse($payload);
-    }
-
-    private function failure(string $reason): Response
-    {
-        return $this->bencodedResponse(['failure reason' => $reason]);
-    }
-
-    private function bencodedResponse(array $payload): Response
-    {
-        return response(
-            $this->bencode->encode($payload),
-            200,
-            ['Content-Type' => 'text/plain; charset=utf-8']
-        );
+        return 'base64:' . base64_encode($value);
     }
 }
