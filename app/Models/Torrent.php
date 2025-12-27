@@ -159,10 +159,11 @@ class Torrent extends Model
     /**
      * Scope for torrents, der må vises offentligt (forsiden/index).
      */
-     public function scopeDisplayable(Builder $query): Builder
+    public function scopeDisplayable(Builder $query): Builder
     {
         return $this->scopeVisible($query);
     }
+
     /**
      * Basisscope for “synlige” torrents.
      *

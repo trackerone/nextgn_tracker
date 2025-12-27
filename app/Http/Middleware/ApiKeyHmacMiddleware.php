@@ -36,7 +36,7 @@ final class ApiKeyHmacMiddleware
 
         $method = strtoupper($request->getMethod());
 
-    // Path variants (we accept several canonicalizations)
+        // Path variants (we accept several canonicalizations)
         $pathInfo = (string) $request->getPathInfo(); // often "/api/user"
         $pathFromHelper = '/'.ltrim((string) $request->path(), '/'); // "/api/user" (from "api/user")
 
