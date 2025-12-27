@@ -1,59 +1,83 @@
-NextGN Tracker
-<p align="center"> <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" /> <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" /> <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" /> <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" /> <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" /> <br/> <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml"> <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" /> </a> <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml"> <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" /> </a> <img src="https://img.shields.io/badge/Pint-Passing-22C55E?style=flat-square" /> <img src="https://img.shields.io/badge/Larastan-Passing-16A34A?style=flat-square" /> <img src="https://img.shields.io/badge/Tests-Passing-4ADE80?style=flat-square" /> </p>
-Overview
+<h1 align="center">NextGN Tracker</h1>
 
-NextGN Tracker is a next-generation tracker-style web application built on modern Laravel.
-The project is designed from the ground up with no legacy constraints, strict quality gates, and a fully automated CI pipeline.
+<p align="center">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" />
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" />
+</p>
 
-The main branch is always expected to be stable and deployable.
+<p align="center">
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" />
+  </a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" />
+  </a>
+</p>
 
-Technology Stack
-Backend
+<hr/>
 
-Laravel 12
+<h2>Overview</h2>
 
-PHP 8.3+
+<p>
+  <strong>NextGN Tracker</strong> is a next-generation tracker platform built on modern Laravel.
+  The project is <strong>legacy-free by design</strong>, strictly typed, and continuously validated through CI.
+</p>
 
-Pest (testing)
+<p>
+  The <code>main</code> branch is always expected to be <strong>green, stable, and deployable</strong>.
+</p>
 
-PHPStan / Larastan (static analysis)
+<hr/>
 
-Laravel Pint (code style)
+<h2>Technology Stack</h2>
 
-Frontend
+<h3>Backend</h3>
+<ul>
+  <li>Laravel 12</li>
+  <li>PHP 8.3+</li>
+  <li>Pest (testing)</li>
+  <li>PHPStan / Larastan (static analysis)</li>
+  <li>Laravel Pint (code style)</li>
+</ul>
 
-Vite 5
+<h3>Frontend</h3>
+<ul>
+  <li>Vite 5</li>
+  <li>React 18</li>
+  <li>TypeScript</li>
+  <li>Tailwind CSS</li>
+</ul>
 
-React 18
+<h3>Runtime</h3>
+<ul>
+  <li>Node.js 20–24 LTS</li>
+  <li>MySQL / MariaDB (default)</li>
+</ul>
 
-TypeScript
+<hr/>
 
-Tailwind CSS
+<h2>Quality Gates (CI)</h2>
 
-Runtime
+<p>All changes must pass the following automated checks:</p>
 
-Node.js 20–24 LTS
+<ul>
+  <li>Code style enforcement (Laravel Pint)</li>
+  <li>Static analysis (Larastan / PHPStan)</li>
+  <li>Feature &amp; unit tests (Pest)</li>
+  <li>Frontend production build (Vite)</li>
+</ul>
 
-MySQL / MariaDB (default)
+<p><strong>No merges without a fully green pipeline.</strong></p>
 
-Quality & CI
+<hr/>
 
-All changes are validated automatically through CI:
+<h2>Local Installation</h2>
 
-Code style enforcement via Laravel Pint
-
-Static analysis via Larastan / PHPStan
-
-Automated test suite using Pest
-
-Frontend production build using Vite
-
-No merges are accepted unless all checks pass.
-
-Local Installation
-
+<pre><code>
 git clone https://github.com/trackerone/nextgn_tracker.git
-
 cd nextgn_tracker
 
 cp .env.example .env
@@ -66,52 +90,65 @@ php artisan migrate
 
 php artisan serve
 npm run dev
+</code></pre>
 
-Run CI Checks Locally
+<hr/>
 
+<h2>Run CI Checks Locally</h2>
+
+<pre><code>
 composer lint
 composer analyse
 composer test
 npm run build
+</code></pre>
 
-Development Principles
+<hr/>
 
-No legacy code
+<h2>Development Principles</h2>
 
-PHP 8.3+ only
+<ul>
+  <li>No legacy code</li>
+  <li>PHP 8.3+ only</li>
+  <li>Strict typing everywhere</li>
+  <li>CI is the single source of truth</li>
+  <li><code>main</code> is always release-ready</li>
+</ul>
 
-Strict typing
+<hr/>
 
-CI is the source of truth
+<h2>Contributing</h2>
 
-main is always release-ready
+<p>
+  All contributions must comply with the existing architecture, tests, and quality standards.
+</p>
 
-Contributing
+<p>
+  See <code>CONTRIBUTING.md</code> for details.
+</p>
 
-All contributions must comply with the established architecture, tests, and quality standards.
+<hr/>
 
-See CONTRIBUTING.md for details.
+<h2>Documentation</h2>
 
-Documentation
+<ul>
+  <li><code>docs/SECURITY-OVERVIEW.md</code></li>
+  <li><code>docs/SECURITY-CHECKLIST.md</code></li>
+  <li><code>docs/STACK-BASELINE.md</code></li>
+  <li><code>docs/FRONTEND-SETUP.md</code></li>
+</ul>
 
-docs/SECURITY-OVERVIEW.md
+<hr/>
 
-docs/SECURITY-CHECKLIST.md
+<h2>Deployment Notes</h2>
 
-docs/STACK-BASELINE.md
-
-docs/FRONTEND-SETUP.md
-
-Deployment Notes
-
-Configure environment variables, cache, queues, and storage
-
-Run migrations with:
+<pre><code>
 php artisan migrate --force
-
-Build frontend assets with:
 npm run build
+</code></pre>
 
-Point the web server document root to /public
-
-Ensure write access to storage/ and bootstrap/cache
+<ul>
+  <li>Web server document root must point to <code>/public</code></li>
+  <li>Ensure write access to <code>storage/</code> and <code>bootstrap/cache</code></li>
+  <li>Configure cache, queues, and environment variables appropriately</li>
+</ul>
