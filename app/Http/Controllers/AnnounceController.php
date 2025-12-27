@@ -60,8 +60,13 @@ final class AnnounceController extends Controller
             return $infoHash;
         }
 
-        $infoHashHex = strtolower(bin2hex($infoHash));
-        $torrent = $this->torrents->findByInfoHash($infoHashHex);
+        // Info_hash is case-insensitive as hex. Try both to avoid DB normalization issues.
+        $infoHashHex = bin2hex($infoHash);
+
+        $torrent = $this->torrents->findByInfoHash(strtolower($infoHashHex));
+        if ($torrent === null) {
+            $torrent = $this->torrents->findByInfoHash(strtoupper($infoHashHex));
+        }
 
         if ($torrent === null) {
             return $this->failure('Invalid info_hash.');
@@ -191,6 +196,7 @@ final class AnnounceController extends Controller
     {
         $raw = $value;
 
+        // 1) 40-char hex
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $raw) === 1) {
             $bin = hex2bin($raw);
             if ($bin === false) {
@@ -200,6 +206,7 @@ final class AnnounceController extends Controller
             return $bin;
         }
 
+        // 2) Raw bytes (already decoded)
         $len = strlen($raw);
         if ($len === 20) {
             return $raw;
@@ -209,6 +216,7 @@ final class AnnounceController extends Controller
             return str_pad($raw, 20, "\0", STR_PAD_RIGHT);
         }
 
+        // 3) Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
             $decoded = rawurldecode($raw);
             $dlen = strlen($decoded);
