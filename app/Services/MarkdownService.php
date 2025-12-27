@@ -75,8 +75,8 @@ final class MarkdownService
         return preg_replace_callback(
             '/<a\b([^>]*?)>(.*?)<\/a>/is',
             function (array $m): string {
-                $attrs = (string) ($m[1] ?? '');
-                $labelRaw = (string) ($m[2] ?? '');
+                $attrs = (string) $m[1];
+                $labelRaw = (string) $m[2];
 
                 // Extract href="..." or href='...' or href=unquoted
                 $href = null;
