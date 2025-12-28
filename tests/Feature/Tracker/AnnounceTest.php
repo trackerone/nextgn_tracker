@@ -35,7 +35,7 @@ class AnnounceTest extends TestCase
 
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
-        $response = $this->get('/announce/not-a-real-passkey?' . $query);
+        $response = $this->get(sprintf('/announce/%s?%s', 'not-a-real-passkey', $query));
         $response->assertOk();
 
         $expected = app(BencodeService::class)->encode([
@@ -166,14 +166,12 @@ class AnnounceTest extends TestCase
             'info_hash' => $infoHashHex,
         ]);
 
-        // PRECONDITION: client announces started first
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
             'event' => 'started',
             'left' => 100,
         ])->assertOk();
 
-        // Completed
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
             'event' => 'completed',
@@ -192,7 +190,6 @@ class AnnounceTest extends TestCase
 
         $this->travel(5)->minutes();
 
-        // Completed again must NOT overwrite timestamp
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
             'event' => 'completed',
@@ -237,9 +234,6 @@ class AnnounceTest extends TestCase
         ]);
     }
 
-    /**
-     * Deterministic announce helper.
-     */
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse
     {
         $params = array_merge([
@@ -253,7 +247,7 @@ class AnnounceTest extends TestCase
 
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
-        return $this->get('/announce/' . $user->ensurePasskey() . '?' . $query);
+        return $this->get(sprintf('/announce/%s?%s', $user->ensurePasskey(), $query));
     }
 
     private function makePeerIdHex(string $seed): string
