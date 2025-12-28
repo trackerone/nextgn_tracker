@@ -14,13 +14,24 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('torrents', function (Blueprint $table): void {
+        $hasInfoHash = Schema::hasColumn('torrents', 'info_hash');
+        $hasNfoText = Schema::hasColumn('torrents', 'nfo_text');
+
+        Schema::table('torrents', function (Blueprint $table) use ($hasInfoHash, $hasNfoText): void {
             if (! Schema::hasColumn('torrents', 'storage_path')) {
-                $table->string('storage_path', 255)->nullable()->after('info_hash');
+                $col = $table->string('storage_path', 255)->nullable();
+
+                if ($hasInfoHash) {
+                    $col->after('info_hash');
+                }
             }
 
             if (! Schema::hasColumn('torrents', 'nfo_storage_path')) {
-                $table->string('nfo_storage_path', 255)->nullable()->after('nfo_text');
+                $col = $table->string('nfo_storage_path', 255)->nullable();
+
+                if ($hasNfoText) {
+                    $col->after('nfo_text');
+                }
             }
         });
     }
