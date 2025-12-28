@@ -22,9 +22,6 @@
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml/badge.svg" alt="Compile Assets (Vite)" />
   </a>
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-prettier.yml">
-    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-prettier.yml/badge.svg" alt="Format (Prettier)" />
-  </a>
 </p>
 
 <hr/>
