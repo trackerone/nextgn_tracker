@@ -212,6 +212,7 @@ class AnnounceTest extends TestCase
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse
     {
         $params = array_merge([
+            // Send lowercase on wire to ensure robustness; repo normalizes to uppercase.
             'info_hash' => strtolower($infoHashHex),
             'peer_id' => $this->makePeerIdHex('default-peer'),
             'port' => 6881,
@@ -227,13 +228,12 @@ class AnnounceTest extends TestCase
 
     private function createTorrentWithInfoHashHex(string $seed, array $overrides = []): array
     {
+        // Repo expects uppercase lookup against torrents.info_hash
         $infoHashHex = $this->makeInfoHashHex($seed);
-        $infoHashBin = hex2bin($infoHashHex);
-
-        $this->assertNotFalse($infoHashBin);
 
         $torrent = Torrent::factory()->create(array_merge([
-            'info_hash' => $infoHashBin,
+            // Schema: string(40) unique
+            'info_hash' => $infoHashHex,
         ], $overrides));
 
         return [$torrent, $infoHashHex];
