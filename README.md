@@ -1,7 +1,16 @@
 <h1 align="center">NextGN Tracker</h1>
 
 <p align="center">
-  <!-- CI (umbrella) -->
+  <!-- Stack -->
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12.x" />
+  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.3+" />
+  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node 20-24 LTS" />
+  <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite Assets" />
+  <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License MIT" />
+</p>
+
+<p align="center">
+  <!-- CI -->
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" alt="CI-PHP" />
   </a>
@@ -9,7 +18,6 @@
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" alt="CI-Frontend" />
   </a>
 
-  <!-- CI (split checks) -->
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml/badge.svg" alt="PHP Lint (Pint)" />
   </a>
@@ -19,12 +27,11 @@
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-tests-pest.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-tests-pest.yml/badge.svg" alt="PHPUnit Test (Pest)" />
   </a>
+
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml/badge.svg" alt="Compile Assets (Vite)" />
   </a>
 </p>
-
-<hr/>
 
 <h2>Overview</h2>
 
