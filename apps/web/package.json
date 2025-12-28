@@ -1,34 +1,24 @@
 {
-  "name": "nextgn-tracker",
+  "name": "@nextgn/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "engines": {
-    "node": ">=20 <26"
-  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "lint": "echo 'TODO: configure ESLint' && exit 0"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "class-variance-authority": "^0.7.0",
+    "@nextgn/api-contract": "file:../../packages/api-contract",
     "lucide-react": "^0.362.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.3.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.2",
     "@vitejs/plugin-react": "^4.3.2",
     "autoprefixer": "^10.4.20",
-    "laravel-vite-plugin": "^1.0.4",
     "postcss": "^8.4.41",
     "shadcn-ui": "^0.8.0",
     "tailwindcss": "^3.4.9",
