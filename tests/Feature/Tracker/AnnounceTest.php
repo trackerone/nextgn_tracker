@@ -18,14 +18,10 @@ class AnnounceTest extends TestCase
 
     public function test_invalid_passkey_returns_failure(): void
     {
-        $infoHashHex = $this->makeInfoHashHex('torrent-invalid-passkey');
-
-        Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
-        ]);
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-invalid-passkey');
 
         $params = [
-            'info_hash' => hex2bin($infoHashHex),
+            'info_hash' => $infoHashHex,
             'peer_id' => $this->makePeerIdHex('invalid-passkey'),
             'port' => 6881,
             'uploaded' => 0,
@@ -51,12 +47,8 @@ class AnnounceTest extends TestCase
             'role' => User::ROLE_MODERATOR,
         ]);
 
-        $infoHashHex = $this->makeInfoHashHex('torrent-started');
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-started');
         $peerIdHex = $this->makePeerIdHex('peer-started');
-
-        $torrent = Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
-        ]);
 
         $response = $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
@@ -82,10 +74,7 @@ class AnnounceTest extends TestCase
             'role' => User::ROLE_USER,
         ]);
 
-        $infoHashHex = $this->makeInfoHashHex('torrent-banned');
-
-        Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-banned', [
             'is_banned' => true,
         ]);
 
@@ -106,10 +95,7 @@ class AnnounceTest extends TestCase
             'role' => User::ROLE_USER,
         ]);
 
-        $infoHashHex = $this->makeInfoHashHex('torrent-unapproved');
-
-        Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-unapproved', [
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
         ]);
@@ -128,12 +114,8 @@ class AnnounceTest extends TestCase
     public function test_low_ratio_user_blocked_on_started_event(): void
     {
         $user = User::factory()->create();
-        $infoHashHex = $this->makeInfoHashHex('torrent-low-ratio');
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-low-ratio');
         $peerIdHex = $this->makePeerIdHex('low-ratio');
-
-        $torrent = Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
-        ]);
 
         UserTorrent::factory()
             ->for($user)
@@ -159,12 +141,8 @@ class AnnounceTest extends TestCase
     public function test_completed_event_sets_completed_at_once(): void
     {
         $user = User::factory()->create();
-        $infoHashHex = $this->makeInfoHashHex('torrent-complete-once');
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-complete-once');
         $peerIdHex = $this->makePeerIdHex('complete-once');
-
-        $torrent = Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
-        ]);
 
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
@@ -197,6 +175,7 @@ class AnnounceTest extends TestCase
         ])->assertOk();
 
         $snatch->refresh();
+
         $this->assertSame(
             $firstCompletedAt->toDateTimeString(),
             $snatch->completed_at->toDateTimeString()
@@ -206,12 +185,8 @@ class AnnounceTest extends TestCase
     public function test_stopped_event_removes_peer_and_updates_stats(): void
     {
         $user = User::factory()->create();
-        $infoHashHex = $this->makeInfoHashHex('torrent-stopped');
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-stopped');
         $peerIdHex = $this->makePeerIdHex('stopped-peer');
-
-        $torrent = Torrent::factory()->create([
-            'info_hash' => hex2bin($infoHashHex),
-        ]);
 
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
@@ -250,18 +225,6 @@ class AnnounceTest extends TestCase
         return $this->get(sprintf('/announce/%s?%s', $user->ensurePasskey(), $query));
     }
 
-    private function makePeerIdHex(string $seed): string
-    {
-        return strtolower(
-            bin2hex(substr(hash('sha1', $seed, true), 0, 20))
-        );
-    }
-
-    private function makeInfoHashHex(string $seed): string
-    {
-        return strtolower(sha1($seed));
-    }
-
     private function createTorrentWithInfoHashHex(string $seed, array $overrides = []): array
     {
         $infoHashHex = $this->makeInfoHashHex($seed);
@@ -274,5 +237,17 @@ class AnnounceTest extends TestCase
         ], $overrides));
 
         return [$torrent, $infoHashHex];
+    }
+
+    private function makePeerIdHex(string $seed): string
+    {
+        return strtolower(
+            bin2hex(substr(hash('sha1', $seed, true), 0, 20))
+        );
+    }
+
+    private function makeInfoHashHex(string $seed): string
+    {
+        return strtolower(sha1($seed));
     }
 }
