@@ -1,7 +1,15 @@
 <h1 align="center">NextGN Tracker</h1>
 
 <p align="center">
-  <!-- CI -->
+  <!-- CI (umbrella) -->
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" alt="CI-PHP" />
+  </a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml">
+    <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend.yml/badge.svg" alt="CI-Frontend" />
+  </a>
+
+  <!-- CI (split checks) -->
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml/badge.svg" alt="PHP Lint (Pint)" />
   </a>
@@ -18,7 +26,6 @@
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-prettier.yml/badge.svg" alt="Format (Prettier)" />
   </a>
 </p>
-
 
 <hr/>
 
