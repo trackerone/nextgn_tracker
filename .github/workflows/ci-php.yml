@@ -11,9 +11,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint (Pint)
+  php:
     runs-on: ubuntu-latest
+
     strategy:
       fail-fast: true
       matrix:
@@ -27,105 +27,20 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath
+          extensions: >
+            ctype, curl, dom, fileinfo, filter, gd, iconv, json,
+            mbstring, openssl, pdo, session, tokenizer, xml, intl,
+            pcntl, bcmath, pdo_mysql, pdo_sqlite, sqlite3, exif
           ini-values: memory_limit=1G
           coverage: none
 
-      - name: Cache Composer + vendor
+      - name: Cache Composer
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.composer/cache
-            vendor
-          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Lint (Pint)
-        run: composer lint
-
-  analyse:
-    name: Static analysis (PHPStan)
-    runs-on: ubuntu-latest
-    needs: [lint]
-    strategy:
-      fail-fast: true
-      matrix:
-        php-version: ['8.3']
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath
-          ini-values: memory_limit=1G
-          coverage: none
-
-      - name: Cache Composer + vendor
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.composer/cache
-            vendor
-          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
-
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
-
-      - name: Static analysis (PHPStan)
-        run: composer analyse
-
-  test:
-    name: Tests (${{ matrix.db }})
-    runs-on: ubuntu-latest
-    needs: [lint, analyse]
-    strategy:
-      fail-fast: false
-      matrix:
-        php-version: ['8.3']
-        db: [sqlite, mysql]
-
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: nextgn_test
-          MYSQL_USER: nextgn
-          MYSQL_PASSWORD: nextgn
-          MYSQL_ROOT_PASSWORD: root
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php-version }}
-          # include both drivers; tests choose via env
-          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath, pdo_mysql, pdo_sqlite, sqlite3
-          ini-values: memory_limit=1G
-          coverage: none
-
-      - name: Cache Composer + vendor
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.composer/cache
-            vendor
-          key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-${{ matrix.php-version }}-
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -136,34 +51,28 @@ jobs:
           {
             echo "APP_ENV=testing"
             echo "APP_DEBUG=false"
+            echo "DB_CONNECTION=sqlite"
+            echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite"
             echo "CACHE_STORE=array"
             echo "QUEUE_CONNECTION=sync"
             echo "SESSION_DRIVER=array"
             echo "MAIL_MAILER=array"
           } >> .env
 
-          if [ "${{ matrix.db }}" = "sqlite" ]; then
-            {
-              echo "DB_CONNECTION=sqlite"
-              echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite"
-            } >> .env
-            mkdir -p database
-            touch database/database.sqlite
-          else
-            {
-              echo "DB_CONNECTION=mysql"
-              echo "DB_HOST=127.0.0.1"
-              echo "DB_PORT=3306"
-              echo "DB_DATABASE=nextgn_test"
-              echo "DB_USERNAME=nextgn"
-              echo "DB_PASSWORD=nextgn"
-            } >> .env
-          fi
-
           php artisan key:generate --force
+          mkdir -p database
+          touch database/database.sqlite
 
-      - name: Migrate database
+      - name: Run migrations
         run: php artisan migrate --force
 
-      - name: Tests (Pest via Laravel)
-        run: php artisan test --colors=always
+      # ---- Umbrella gate checks ----
+
+      - name: Composer validate
+        run: composer validate --strict
+
+      - name: PHP syntax check
+        run: php -l artisan
+
+      - name: Run test suite (Pest)
+        run: composer test
