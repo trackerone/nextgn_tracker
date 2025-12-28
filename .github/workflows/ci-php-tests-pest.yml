@@ -1,0 +1,64 @@
+name: PHPUnit Test (Pest)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: php-tests-pest-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        php-version: ['8.3']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath, pdo_sqlite, sqlite3
+          ini-values: memory_limit=1G
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: ${{ runner.os }}-pest-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment (SQLite)
+        run: |
+          cp .env.example .env
+          {
+            echo "APP_ENV=testing"
+            echo "APP_DEBUG=false"
+            echo "DB_CONNECTION=sqlite"
+            echo "DB_DATABASE=${GITHUB_WORKSPACE}/database/database.sqlite"
+            echo "CACHE_STORE=array"
+            echo "QUEUE_CONNECTION=sync"
+            echo "SESSION_DRIVER=array"
+            echo "MAIL_MAILER=array"
+          } >> .env
+          php artisan key:generate --force
+          mkdir -p database
+          touch database/database.sqlite
+
+      - name: Migrate
+        run: php artisan migrate --force
+
+      - name: Tests
+        run: php artisan test --colors=always
