@@ -1,51 +1,36 @@
-name: CI-Frontend
+name: CI Frontend
 
 on:
   push:
-    branches: [main, develop]
+    paths:
+      - apps/web/**
+      - packages/api-contract/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/ci-frontend.yml
   pull_request:
-    branches: [main, develop]
-
-concurrency:
-  group: ci-frontend-${{ github.ref }}
-  cancel-in-progress: true
+    paths:
+      - apps/web/**
+      - packages/api-contract/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/ci-frontend.yml
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node20-npm-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node20-npm-
+          node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install --no-fund --no-audit
-          fi
+        run: npm ci
 
-      - name: TypeScript check (only if tsconfig exists)
-        run: |
-          if [ -f tsconfig.json ]; then
-            npx tsc --noEmit
-          else
-            echo "No tsconfig.json found - skipping typecheck"
-          fi
-
-      - name: Build frontend
-        run: npm run build
+      - name: Build web app
+        run: npm run --workspace @nextgn/web build
