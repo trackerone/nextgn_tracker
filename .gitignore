@@ -1,13 +1,47 @@
-/node_modules
-/vendor
-/public/build
-/public/hot
-/public/storage
-/.vite
-/.cache
-/storage/*.key
+# Dependencies
+/vendor/
+/node_modules/
+
+# Environment
+.env
+.env.*
+
+# Laravel runtime / cache
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+
+/storage/framework/*
+!/storage/framework/**/.gitkeep
+!/storage/framework/**/.gitignore
+
+/storage/logs/*
+!/storage/logs/.gitkeep
+
 /storage/app/public/*
-/resources/**/*.min.js
-/resources/**/*.min.css
-.env
-.env
+!/storage/app/public/.gitkeep
+
+/storage/*.key
+
+# Local sqlite databases (dev/test)
+database/*.sqlite
+database/*.sqlite-journal
+
+# PHPUnit / Pest caches
+.phpunit.result.cache
+
+# Coverage / analysis caches
+coverage/
+.phpstan.cache
+phpstan.neon.cache
+.php-cs-fixer.cache
+
+# Frontend build artifacts (if/when Vite is enabled)
+/public/build/
+/public/hot/
+/.vite/
+
+# OS / IDE noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
