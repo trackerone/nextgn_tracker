@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tracker;
 
-use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -254,9 +253,7 @@ class AnnounceTest extends TestCase
 
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
-        return $this->get(
-            '/announce/' . $user->ensurePasskey() . '?' . $query
-        );
+        return $this->get('/announce/' . $user->ensurePasskey() . '?' . $query);
     }
 
     private function makePeerIdHex(string $seed): string
