@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tracker;
 
+use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -20,7 +21,7 @@ class AnnounceTest extends TestCase
     {
         $infoHashHex = $this->makeInfoHashHex('torrent-invalid-passkey');
 
-        $torrent = Torrent::factory()->create([
+        Torrent::factory()->create([
             'info_hash' => $infoHashHex,
         ]);
 
@@ -45,29 +46,31 @@ class AnnounceTest extends TestCase
         $this->assertSame($expected, $response->getContent());
     }
 
-    public function test_started_event_returns_success_payload(): void
+    public function test_started_event_registers_peer_and_returns_payload(): void
     {
         $user = User::factory()->create([
             'role' => User::ROLE_MODERATOR,
         ]);
 
         $infoHashHex = $this->makeInfoHashHex('torrent-started');
+        $peerIdHex = $this->makePeerIdHex('peer-started');
 
         $torrent = Torrent::factory()->create([
             'info_hash' => $infoHashHex,
-            'seeders' => 0,
-            'leechers' => 0,
-            'completed' => 0,
         ]);
 
         $response = $this->announce($user, $infoHashHex, [
-            'peer_id' => $this->makePeerIdHex('peer-started'),
+            'peer_id' => $peerIdHex,
             'left' => 100,
         ]);
 
         $response->assertOk();
 
-        // Stable signal: successful payload includes "interval"
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($peerIdHex),
+        ]);
+
         $this->assertStringContainsString(
             '8:intervali1800e',
             (string) $response->getContent()
@@ -82,14 +85,13 @@ class AnnounceTest extends TestCase
 
         $infoHashHex = $this->makeInfoHashHex('torrent-banned');
 
-        $torrent = Torrent::factory()->create([
+        Torrent::factory()->create([
             'info_hash' => $infoHashHex,
             'is_banned' => true,
-            'ban_reason' => 'DMCA',
         ]);
 
         $response = $this->announce($user, $infoHashHex, [
-            'peer_id' => $this->makePeerIdHex('banned-torrent'),
+            'peer_id' => $this->makePeerIdHex('banned'),
         ]);
 
         $response->assertOk();
@@ -107,7 +109,7 @@ class AnnounceTest extends TestCase
 
         $infoHashHex = $this->makeInfoHashHex('torrent-unapproved');
 
-        $torrent = Torrent::factory()->create([
+        Torrent::factory()->create([
             'info_hash' => $infoHashHex,
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
@@ -127,14 +129,13 @@ class AnnounceTest extends TestCase
     public function test_low_ratio_user_blocked_on_started_event(): void
     {
         $user = User::factory()->create();
-
         $infoHashHex = $this->makeInfoHashHex('torrent-low-ratio');
+        $peerIdHex = $this->makePeerIdHex('low-ratio');
 
         $torrent = Torrent::factory()->create([
             'info_hash' => $infoHashHex,
         ]);
 
-        // Set user ratio low
         UserTorrent::factory()
             ->for($user)
             ->for($torrent)
@@ -144,7 +145,7 @@ class AnnounceTest extends TestCase
             ]);
 
         $response = $this->announce($user, $infoHashHex, [
-            'peer_id' => $this->makePeerIdHex('low-ratio'),
+            'peer_id' => $peerIdHex,
             'event' => 'started',
             'left' => 100,
         ]);
@@ -156,9 +157,89 @@ class AnnounceTest extends TestCase
         );
     }
 
+    public function test_completed_event_sets_completed_at_once(): void
+    {
+        $user = User::factory()->create();
+        $infoHashHex = $this->makeInfoHashHex('torrent-complete-once');
+        $peerIdHex = $this->makePeerIdHex('complete-once');
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $infoHashHex,
+        ]);
+
+        // PRECONDITION: client announces started first
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+
+        // Completed
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $snatch = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->first();
+
+        $this->assertNotNull($snatch);
+        $this->assertNotNull($snatch->completed_at);
+
+        $firstCompletedAt = $snatch->completed_at;
+
+        $this->travel(5)->minutes();
+
+        // Completed again must NOT overwrite timestamp
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $snatch->refresh();
+        $this->assertSame(
+            $firstCompletedAt->toDateTimeString(),
+            $snatch->completed_at->toDateTimeString()
+        );
+    }
+
+    public function test_stopped_event_removes_peer_and_updates_stats(): void
+    {
+        $user = User::factory()->create();
+        $infoHashHex = $this->makeInfoHashHex('torrent-stopped');
+        $peerIdHex = $this->makePeerIdHex('stopped-peer');
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $infoHashHex,
+        ]);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($peerIdHex),
+        ]);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'stopped',
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($peerIdHex),
+        ]);
+    }
+
     /**
-     * Stable announce helper: always uses deterministic 40-hex transport
-     * for info_hash and peer_id.
+     * Deterministic announce helper.
      */
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse
     {
@@ -171,14 +252,6 @@ class AnnounceTest extends TestCase
             'left' => 100,
         ], $overrides);
 
-        // Ensure deterministic casing
-        if (isset($params['info_hash'])) {
-            $params['info_hash'] = strtolower((string) $params['info_hash']);
-        }
-        if (isset($params['peer_id'])) {
-            $params['peer_id'] = strtolower((string) $params['peer_id']);
-        }
-
         $query = http_build_query($params, '', '&', PHP_QUERY_RFC3986);
 
         return $this->get(
@@ -188,7 +261,6 @@ class AnnounceTest extends TestCase
 
     private function makePeerIdHex(string $seed): string
     {
-        // 40-char hex (20 bytes)
         return strtolower(
             bin2hex(substr(hash('sha1', $seed, true), 0, 20))
         );
@@ -196,7 +268,6 @@ class AnnounceTest extends TestCase
 
     private function makeInfoHashHex(string $seed): string
     {
-        // 40-char lowercase hex
         return strtolower(sha1($seed));
     }
 }
