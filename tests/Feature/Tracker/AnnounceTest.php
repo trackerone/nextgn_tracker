@@ -21,11 +21,11 @@ class AnnounceTest extends TestCase
         $infoHashHex = $this->makeInfoHashHex('torrent-invalid-passkey');
 
         Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
         ]);
 
         $params = [
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
             'peer_id' => $this->makePeerIdHex('invalid-passkey'),
             'port' => 6881,
             'uploaded' => 0,
@@ -55,7 +55,7 @@ class AnnounceTest extends TestCase
         $peerIdHex = $this->makePeerIdHex('peer-started');
 
         $torrent = Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
         ]);
 
         $response = $this->announce($user, $infoHashHex, [
@@ -85,7 +85,7 @@ class AnnounceTest extends TestCase
         $infoHashHex = $this->makeInfoHashHex('torrent-banned');
 
         Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
             'is_banned' => true,
         ]);
 
@@ -109,7 +109,7 @@ class AnnounceTest extends TestCase
         $infoHashHex = $this->makeInfoHashHex('torrent-unapproved');
 
         Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
             'is_approved' => false,
             'status' => Torrent::STATUS_PENDING,
         ]);
@@ -132,7 +132,7 @@ class AnnounceTest extends TestCase
         $peerIdHex = $this->makePeerIdHex('low-ratio');
 
         $torrent = Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
         ]);
 
         UserTorrent::factory()
@@ -163,7 +163,7 @@ class AnnounceTest extends TestCase
         $peerIdHex = $this->makePeerIdHex('complete-once');
 
         $torrent = Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
         ]);
 
         $this->announce($user, $infoHashHex, [
@@ -210,7 +210,7 @@ class AnnounceTest extends TestCase
         $peerIdHex = $this->makePeerIdHex('stopped-peer');
 
         $torrent = Torrent::factory()->create([
-            'info_hash' => $infoHashHex,
+            'info_hash' => hex2bin($infoHashHex),
         ]);
 
         $this->announce($user, $infoHashHex, [
