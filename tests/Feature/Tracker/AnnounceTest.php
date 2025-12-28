@@ -1,4 +1,4 @@
-<?php
+?php
 
 declare(strict_types=1);
 
@@ -260,5 +260,19 @@ class AnnounceTest extends TestCase
     private function makeInfoHashHex(string $seed): string
     {
         return strtolower(sha1($seed));
+    }
+
+    private function createTorrentWithInfoHashHex(string $seed, array $overrides = []): array
+    {
+        $infoHashHex = $this->makeInfoHashHex($seed);
+        $infoHashBin = hex2bin($infoHashHex);
+
+        $this->assertNotFalse($infoHashBin);
+
+        $torrent = Torrent::factory()->create(array_merge([
+            'info_hash' => $infoHashBin,
+        ], $overrides));
+
+        return [$torrent, $infoHashHex];
     }
 }
