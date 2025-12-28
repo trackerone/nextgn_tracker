@@ -248,6 +248,6 @@ class AnnounceTest extends TestCase
 
     private function makeInfoHashHex(string $seed): string
     {
-        return strtolower(sha1($seed));
+        return strtoupper(sha1($seed));
     }
 }
