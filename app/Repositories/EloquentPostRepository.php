@@ -14,16 +14,21 @@ class EloquentPostRepository implements PostRepositoryInterface
     public function paginateForTopic(Topic $topic, int $perPage = 50): LengthAwarePaginator
     {
         return $topic->posts()
-            ->with(['author.role'])
+            ->getQuery()
             ->withTrashed()
+            ->with(['author.role'])
             ->orderBy('created_at')
             ->paginate($perPage);
     }
 
     public function createForTopic(Topic $topic, array $attributes): Post
     {
+        /** @var Post $post */
         $post = $topic->posts()->create($attributes);
 
-        return $post->fresh(['author.role']);
+        /** @var Post $fresh */
+        $fresh = $post->fresh(['author.role']);
+
+        return $fresh;
     }
 }
