@@ -1,0 +1,57 @@
+name: Update composer.lock (Laravel 12)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer:v2
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --no-interaction
+
+      - name: Update lockfile for Laravel 12
+        run: |
+          composer update laravel/framework --with-all-dependencies --no-interaction
+          composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Commit composer.lock
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BRANCH="chore/lockfile-laravel-12"
+          git checkout -b "$BRANCH"
+          git add composer.lock composer.json
+          git commit -m "chore(laravel): update composer.lock for Laravel 12"
+          git push -u origin "$BRANCH"
+
+      - name: Open PR (optional)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/lockfile-laravel-12
+          title: "chore(laravel): update composer.lock for Laravel 12"
+          body: |
+            Updates composer.lock to match composer.json Laravel ^12.0 constraint.
+            Generated on GitHub-hosted runner.
+          labels: dependencies
