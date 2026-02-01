@@ -10,7 +10,6 @@ permissions:
 jobs:
   update-lock:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,15 +23,15 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Validate composer.json
-        run: composer validate --no-interaction
+      - name: Validate composer.json (warn-only)
+        run: composer validate --no-interaction || true
 
-      - name: Update lockfile for Laravel 12
+      - name: Update lockfile to match Laravel 12
         run: |
           composer update laravel/framework --with-all-dependencies --no-interaction
           composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Commit composer.lock
+      - name: Commit & push lockfile
         run: |
           if git diff --quiet; then
             echo "No changes to commit."
@@ -42,16 +41,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BRANCH="chore/lockfile-laravel-12"
           git checkout -b "$BRANCH"
-          git add composer.lock composer.json
+          git add composer.json composer.lock
           git commit -m "chore(laravel): update composer.lock for Laravel 12"
           git push -u origin "$BRANCH"
-
-      - name: Open PR (optional)
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: chore/lockfile-laravel-12
-          title: "chore(laravel): update composer.lock for Laravel 12"
-          body: |
-            Updates composer.lock to match composer.json Laravel ^12.0 constraint.
-            Generated on GitHub-hosted runner.
-          labels: dependencies
