@@ -13,8 +13,8 @@ use App\Services\UserTorrentService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 
 final class AnnounceController extends Controller
@@ -74,12 +74,14 @@ final class AnnounceController extends Controller
             return $this->failure('Client is banned.');
         }
 
+        // Parse event EARLY (needed for rate-limit bypass on stopped/completed)
+        $event = isset($data['event']) ? (string) $data['event'] : null;
+
         $infoHash = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
         if ($infoHash instanceof Response) {
             return $infoHash;
         }
 
-        // Info_hash is case-insensitive as hex. Try both to avoid DB normalization issues.
         $infoHashHex = bin2hex($infoHash);
 
         $torrent = $this->torrents->findByInfoHash(strtolower($infoHashHex));
@@ -124,47 +126,48 @@ final class AnnounceController extends Controller
             return $peerId;
         }
 
-        // ---- Rate limiting (log + keep HTTP 200) ----
-        // Tests expect: 1st announce OK; 2nd within window OK + logs tracker.rate_limited
-        $rateKey = sprintf(
-            'announce:%d:%d:%s',
-            (int) $user->getKey(),
-            (int) $torrent->getKey(),
-            (string) ($request->ip() ?? '0.0.0.0'),
-        );
-
-        $maxAttempts = 1;
-        $decaySeconds = 60;
-
-        if (RateLimiter::tooManyAttempts($rateKey, $maxAttempts)) {
-            $this->logSecurityEvent(
-                $request,
-                $user,
-                'tracker.rate_limited',
-                'medium',
-                'Rate limit violation during announce',
-                [
-                    'key' => $rateKey,
-                    'torrent_id' => $torrent->getKey(),
-                ],
-            );
-
-            // Return OK (tracker style), but do not mutate stats/peers.
-            return $this->success([
-                'complete' => (int) $torrent->seeders,
-                'incomplete' => (int) $torrent->leechers,
-                'interval' => 1800,
-                'peers' => [],
-            ]);
-        }
-
-        RateLimiter::hit($rateKey, $decaySeconds);
-
-        $event = isset($data['event']) ? (string) $data['event'] : null;
         $left = (int) $data['left'];
         $isSeeder = $left === 0;
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
+
+        // ---- Rate limiting (log + keep HTTP 200) ----
+        // Tests expect:
+        // - event-less repeated announces: 2nd call logs tracker.rate_limited but still HTTP 200
+        // - stopped/completed must NEVER be blocked (they must mutate state)
+        if ($event !== 'stopped' && $event !== 'completed') {
+            $rateKey = sprintf(
+                'announce:rl:%d:%d:%s',
+                (int) $user->getKey(),
+                (int) $torrent->getKey(),
+                $ip
+            );
+
+            $windowSeconds = 60;
+
+            // Deterministic: first call "claims" the key; second within window triggers rate limit.
+            if (! Cache::add($rateKey, '1', $windowSeconds)) {
+                $this->logSecurityEvent(
+                    $request,
+                    $user,
+                    'tracker.rate_limited',
+                    'medium',
+                    'Rate limit violation during announce',
+                    [
+                        'key' => $rateKey,
+                        'torrent_id' => $torrent->getKey(),
+                    ],
+                );
+
+                // Return OK (tracker style) but do not mutate stats/peers.
+                return $this->success([
+                    'complete' => (int) $torrent->seeders,
+                    'incomplete' => (int) $torrent->leechers,
+                    'interval' => 1800,
+                    'peers' => [],
+                ]);
+            }
+        }
 
         if (! $isStaff && $event === 'started' && $left > 0) {
             $ratio = $user->ratio();
@@ -198,7 +201,32 @@ final class AnnounceController extends Controller
         }
 
         if ($event === 'completed') {
+            // Keep existing behavior
             $torrent->increment('completed');
+
+            // Ensure snatch completed_at is set ONCE (idempotent)
+            $existing = DB::table('snatches')
+                ->where('user_id', $user->getKey())
+                ->where('torrent_id', $torrent->id)
+                ->first();
+
+            if ($existing === null) {
+                DB::table('snatches')->insert([
+                    'user_id' => $user->getKey(),
+                    'torrent_id' => $torrent->id,
+                    'completed_at' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]);
+            } elseif (($existing->completed_at ?? null) === null) {
+                DB::table('snatches')
+                    ->where('user_id', $user->getKey())
+                    ->where('torrent_id', $torrent->id)
+                    ->update([
+                        'completed_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+            }
         }
 
         DB::table('user_torrents')->updateOrInsert(
