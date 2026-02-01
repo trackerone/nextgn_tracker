@@ -59,17 +59,17 @@ final class EnsureUserIsStaff
                 return $next($request);
             }
 
-            if ($roleRelation->level !== null && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
+            if ($roleRelation->level !== ?int && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
                 return $next($request);
             }
 
-            if (is_string($roleRelation->slug) && in_array(strtolower($roleRelation->slug), ['mod1', 'mod2', 'admin1', 'admin2', 'sysop'], true)) {
+            if ($roleRelation->slug) && in_array(strtolower($roleRelation->slug), ['mod1', 'mod2', 'admin1', 'admin2', 'sysop'], true) {
                 return $next($request);
             }
         }
 
         // 4) Fallback to model method if available
-        if (method_exists($user, 'isStaff') && (bool) $user->isStaff()) {
+        if (method_exists($user) && (bool) $user->isStaff()) {
             return $next($request);
         }
 
