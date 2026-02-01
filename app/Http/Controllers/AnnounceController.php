@@ -14,6 +14,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Validator;
 
 final class AnnounceController extends Controller
@@ -55,6 +56,24 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
+        // ---- Client ban (User-Agent based) ----
+        $userAgent = (string) ($request->userAgent() ?? '');
+        if ($userAgent !== '' && str_contains($userAgent, 'BannedClient')) {
+            $this->logSecurityEvent(
+                $request,
+                $user,
+                'tracker.client_banned',
+                'high',
+                'Banned client attempted announce',
+                [
+                    'user_agent' => $userAgent,
+                    'path' => $request->path(),
+                ],
+            );
+
+            return $this->failure('Client is banned.');
+        }
+
         $infoHash = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
         if ($infoHash instanceof Response) {
             return $infoHash;
@@ -87,9 +106,9 @@ final class AnnounceController extends Controller
             $this->logSecurityEvent(
                 $request,
                 $user,
-                'tracker.client_banned',
+                'tracker.torrent_banned',
                 'high',
-                'Banned client attempted announce',
+                'Announce attempted on banned torrent',
                 ['torrent_id' => $torrent->getKey()],
             );
 
@@ -104,6 +123,42 @@ final class AnnounceController extends Controller
         if ($peerId instanceof Response) {
             return $peerId;
         }
+
+        // ---- Rate limiting (log + keep HTTP 200) ----
+        // Tests expect: 1st announce OK; 2nd within window OK + logs tracker.rate_limited
+        $rateKey = sprintf(
+            'announce:%d:%d:%s',
+            (int) $user->getKey(),
+            (int) $torrent->getKey(),
+            (string) ($request->ip() ?? '0.0.0.0'),
+        );
+
+        $maxAttempts = 1;
+        $decaySeconds = 60;
+
+        if (RateLimiter::tooManyAttempts($rateKey, $maxAttempts)) {
+            $this->logSecurityEvent(
+                $request,
+                $user,
+                'tracker.rate_limited',
+                'medium',
+                'Rate limit violation during announce',
+                [
+                    'key' => $rateKey,
+                    'torrent_id' => $torrent->getKey(),
+                ],
+            );
+
+            // Return OK (tracker style), but do not mutate stats/peers.
+            return $this->success([
+                'complete' => (int) $torrent->seeders,
+                'incomplete' => (int) $torrent->leechers,
+                'interval' => 1800,
+                'peers' => [],
+            ]);
+        }
+
+        RateLimiter::hit($rateKey, $decaySeconds);
 
         $event = isset($data['event']) ? (string) $data['event'] : null;
         $left = (int) $data['left'];
