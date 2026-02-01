@@ -37,7 +37,6 @@
         "spatie/laravel-ray": "^1.37"
     },
     "require-dev": {
-        "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.16",
         "pestphp/pest": "^4.0",
