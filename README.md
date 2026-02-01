@@ -2,7 +2,7 @@
 
 <p align="center">
   <!-- Stack -->
-  <img src="https://img.shields.io/badge/Laravel-11.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 11.x" />
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 12.x" />
   <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.3+" />
   <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node 20-24 LTS" />
   <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite Assets" />
@@ -51,7 +51,7 @@
 
 <h3>Backend</h3>
 <ul>
-  <li>Laravel 11</li>
+  <li>Laravel 12</li>
   <li>PHP 8.3+</li>
   <li>Pest (testing)</li>
   <li>PHPStan / Larastan (static analysis)</li>
