@@ -18,31 +18,17 @@ final class ScrapeController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        $hashes = $request->query('info_hash');
-
-        $list = [];
-        if ($hashes === null) {
-            $list = [];
-        } elseif (is_array($hashes)) {
-            $list = $hashes;
-        } else {
-            $list = [$hashes];
-        }
+        $hashes = $this->allInfoHashParams($request);
 
         /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */
         $files = [];
 
-        foreach ($list as $h) {
-            if (! is_string($h)) {
-                continue;
-            }
-
+        foreach ($hashes as $h) {
             $keyHex = $this->toInfoHashHexKey($h);
             if ($keyHex === null) {
                 continue;
             }
 
-            // Force associative keys (never $files[])
             $torrent = $this->torrents->findByInfoHash(strtolower($keyHex))
                 ?? $this->torrents->findByInfoHash(strtoupper($keyHex));
 
@@ -62,30 +48,67 @@ final class ScrapeController extends Controller
             ];
         }
 
-        // Guarantee dictionary encoding (never list):
-        // Even if empty, keep as associative map.
-        $payload = ['files' => $files];
-
         return response(
-            $this->bencode->encode($payload),
+            $this->bencode->encode(['files' => $files]),
             200,
             ['Content-Type' => 'text/plain; charset=utf-8'],
         );
     }
 
+    /**
+     * Return ALL occurrences of info_hash in the raw query string:
+     * supports:
+     * - ?info_hash=AAA&info_hash=BBB
+     * - ?info_hash[]=AAA&info_hash[]=BBB
+     */
+    private function allInfoHashParams(Request $request): array
+    {
+        $qs = (string) $request->getQueryString();
+        if ($qs === '') {
+            return [];
+        }
+
+        $out = [];
+
+        // Match both info_hash=... and info_hash[]=...
+        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $m) === 1) {
+            // preg_match_all returns 1+ only if pattern found;
+            // but in PHP it returns number of matches, so handle below:
+        }
+
+        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
+            foreach ($matches[2] as $rawVal) {
+                $out[] = rawurldecode((string) $rawVal);
+            }
+        }
+
+        // Fallback (if no duplicates): use Laravel’s normal parsing
+        if ($out === []) {
+            $v = $request->query('info_hash');
+            if (is_array($v)) {
+                foreach ($v as $vv) {
+                    if (is_string($vv)) {
+                        $out[] = $vv;
+                    }
+                }
+            } elseif (is_string($v)) {
+                $out[] = $v;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Return 40-char UPPERCASE hex string key.
+     * Supports:
+     * - 40 hex
+     * - raw 20 bytes
+     */
     private function toInfoHashHexKey(string $value): ?string
     {
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $value) === 1) {
             return strtoupper($value);
-        }
-
-        if (preg_match('/%[0-9A-Fa-f]{2}/', $value) === 1) {
-            $decoded = rawurldecode($value);
-            if (strlen($decoded) !== 20) {
-                return null;
-            }
-
-            return strtoupper(bin2hex($decoded));
         }
 
         if (strlen($value) === 20) {
