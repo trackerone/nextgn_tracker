@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\PrivateMessageDigestNotification;
@@ -42,7 +43,10 @@ class SendPrivateMessageDigestCommand extends Command
         }
 
         $grouped = $messages->groupBy(static function (Message $message): int {
-            return $message->conversation->otherParticipantId((int) $message->sender_id);
+            /** @var Conversation $conversation */
+            $conversation = $message->conversation;
+
+            return $conversation->otherParticipantId((int) $message->sender_id);
         });
 
         $userIds = $grouped->keys()->all();
