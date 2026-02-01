@@ -187,7 +187,7 @@ class TorrentUploadController extends Controller
         }
 
         $collection = Collection::make($tags)
-            ->filter(fn ($tag): bool => is_string($tag) && trim($tag) !== '')
+            ->filter(fn (string $tag): bool => trim($tag) !== '')
             ->map(fn (string $tag): string => $this->sanitizer->sanitizeString($tag))
             ->filter(fn (string $tag): bool => $tag !== '')
             ->unique()
