@@ -22,7 +22,6 @@ class GeneratePasskeysCommand extends Command
             ->whereNull('passkey')
             ->chunkById(200, function (Collection $users) use (&$count): void {
                 foreach ($users as $user) {
-                    \assert($user instanceof User);
                     $user->ensurePasskey();
                     $count++;
                 }
