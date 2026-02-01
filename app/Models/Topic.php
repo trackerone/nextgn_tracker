@@ -29,17 +29,11 @@ class Topic extends Model
         'is_pinned' => 'boolean',
     ];
 
-    /**
-     * @return BelongsTo<\App\Models\User, \App\Models\Topic>
-     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * @return HasMany<\App\Models\Post, \App\Models\Topic>
-     */
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
