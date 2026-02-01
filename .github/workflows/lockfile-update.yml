@@ -1,4 +1,4 @@
-name: Repair composer.lock for Laravel 12 baseline
+name: Repair composer.lock (Laravel 12 baseline)
 
 on:
   workflow_dispatch:
@@ -29,27 +29,22 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      # IMPORTANT:
-      # Do NOT run composer validate/install before we have regenerated composer.lock.
-      # The whole purpose of this workflow is to fix the mismatch.
-
-      - name: Show current constraints (debug)
+      - name: Align dev toolchain (no-update)
         run: |
-          php -v
-          composer --version
-          cat composer.json
+          composer require --dev pestphp/pest:^4.0 pestphp/pest-plugin-laravel:^4.0 --no-interaction --no-update
+          composer require --dev rector/rector:^1.3 --no-interaction --no-update
 
-      - name: Regenerate lockfile (full update)
+      - name: Regenerate lockfile
         run: |
           rm -f composer.lock
           composer update --with-all-dependencies --no-interaction
 
-      - name: Sanity check install (after lock regen)
+      - name: Sanity install
         run: |
           rm -rf vendor
           composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Commit & push lockfile
+      - name: Commit & push
         run: |
           if git diff --quiet; then
             echo "No changes to commit."
