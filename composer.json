@@ -23,7 +23,6 @@
         "ext-pdo": "*",
         "ext-session": "*",
         "ext-tokenizer": "*",
-        "brick/math": "^0.14.0",
         "doctrine/dbal": "^4.0",
         "guzzlehttp/guzzle": "^7.9",
         "intervention/image": "^3.8",
@@ -33,17 +32,16 @@
         "league/flysystem-aws-s3-v3": "^3.0",
         "league/flysystem-local": "^3.0",
         "livewire/livewire": "^3.5",
-        "nesbot/carbon": "^3.8",
         "ramsey/uuid": "^4.7",
         "spatie/laravel-permission": "^6.11",
         "spatie/laravel-ray": "^1.37"
     },
     "require-dev": {
-        "larastan/larastan": "^2.6",
+        "larastan/larastan": "^3.0",
         "laravel/pint": "^1.16",
         "pestphp/pest": "^2.36",
         "pestphp/pest-plugin-laravel": "^2.3",
-        "phpstan/phpstan": "^1.12",
+        "phpstan/phpstan": "^2.0",
         "rector/rector": "^1.2",
         "mockery/mockery": "^1.6",
         "fakerphp/faker": "^1.23"
