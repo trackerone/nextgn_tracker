@@ -6,12 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Models\User;
 use App\Support\Torrents\TorrentBrowseFilters;
 use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\View\View;
 
 final class TorrentController extends Controller
 {
@@ -22,7 +22,7 @@ final class TorrentController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request): Response|JsonResponse|View
+    public function index(Request $request): Response|JsonResponse
     {
         $filters = TorrentBrowseFilters::fromRequest($request);
         $query = (new TorrentBrowseQuery)->apply(Torrent::query()->visible(), $filters);
@@ -60,7 +60,7 @@ final class TorrentController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $torrent): Response|JsonResponse|View
+    public function show(Request $request, string $torrent): Response|JsonResponse
     {
         $model = Torrent::query()
             ->where('id', $torrent)
@@ -68,7 +68,7 @@ final class TorrentController extends Controller
             ->firstOrFail();
 
         $user = $request->user();
-        $isStaff = $user !== null && method_exists($user, 'isStaff') && $user->isStaff();
+        $isStaff = $user instanceof User && $user->isStaff();
 
         // Visible for everyone; non-visible only for staff
         if (! $model->isVisible() && ! $isStaff) {
