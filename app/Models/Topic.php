@@ -30,7 +30,7 @@ class Topic extends Model
     ];
 
     /**
-     * @return BelongsTo<User, Topic>
+     * @return BelongsTo<\App\Models\User, \App\Models\Topic>
      */
     public function author(): BelongsTo
     {
@@ -38,7 +38,7 @@ class Topic extends Model
     }
 
     /**
-     * @return HasMany<Post>
+     * @return HasMany<\App\Models\Post, \App\Models\Topic>
      */
     public function posts(): HasMany
     {
