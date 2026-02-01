@@ -81,6 +81,7 @@ final class ApiKeyHmacMiddleware
         $user = $apiKey->user;
 
         if ($user !== null) {
+            /** @var \App\Models\User $user */
             Auth::setUser($user);
             $request->setUserResolver(static fn () => $user);
             $request->attributes->set('api_key', $apiKey);
