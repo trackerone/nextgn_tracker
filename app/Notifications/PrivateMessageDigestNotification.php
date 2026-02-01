@@ -45,7 +45,7 @@ class PrivateMessageDigestNotification extends Notification implements ShouldQue
             ->each(function (Message $message) use (&$mail): void {
                 $mail->line(sprintf(
                     'Fra %s: %s',
-                    $message->sender?->name ?? 'Ukendt',
+                    $message->sender->name ?? 'Ukendt',
                     mb_substr($message->body_md, 0, 80)
                 ));
             });
