@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\ActiveUserMiddleware;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
-use App\Http\Middleware\ValidateAnnounceRequest;
+use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
