@@ -13,6 +13,9 @@ class Topic extends Model
 {
     use HasFactory;
 
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
         'user_id',
         'slug',
@@ -26,26 +29,19 @@ class Topic extends Model
         'is_pinned' => 'boolean',
     ];
 
+    /**
+     * @return BelongsTo<User, Topic>
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * @return HasMany<Post>
+     */
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
-    }
-    public function createForTopic(Topic $topic, array $attributes): Post
-    {
-    /** @var Post $post */
-    $post = $topic->posts()->create($attributes);
-
-    /** @var Post $fresh */
-    $fresh = $post->fresh(['author.role']);
-        
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<\App\Models\Post> */
-    public function posts(): HasMany { ... }
-
-    return $fresh;
     }
 }
