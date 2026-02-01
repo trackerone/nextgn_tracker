@@ -20,7 +20,7 @@ final class ScrapeController extends Controller
     {
         $hashes = $request->query('info_hash');
 
-        // Normalize to array
+        $list = [];
         if ($hashes === null) {
             $list = [];
         } elseif (is_array($hashes)) {
@@ -29,6 +29,7 @@ final class ScrapeController extends Controller
             $list = [$hashes];
         }
 
+        /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */
         $files = [];
 
         foreach ($list as $h) {
@@ -41,6 +42,7 @@ final class ScrapeController extends Controller
                 continue;
             }
 
+            // Force associative keys (never $files[])
             $torrent = $this->torrents->findByInfoHash(strtolower($keyHex))
                 ?? $this->torrents->findByInfoHash(strtoupper($keyHex));
 
@@ -60,30 +62,23 @@ final class ScrapeController extends Controller
             ];
         }
 
+        // Guarantee dictionary encoding (never list):
+        // Even if empty, keep as associative map.
+        $payload = ['files' => $files];
+
         return response(
-            $this->bencode->encode(['files' => $files]),
+            $this->bencode->encode($payload),
             200,
             ['Content-Type' => 'text/plain; charset=utf-8'],
         );
     }
 
-    /**
-     * Return a 40-char UPPERCASE hex string to be used as the dictionary key.
-     * Supports:
-     * - 40-char hex
-     * - percent-encoded raw 20 bytes
-     * - raw 20 bytes
-     *
-     * IMPORTANT: Never pad/truncate; must not mutate hashes.
-     */
     private function toInfoHashHexKey(string $value): ?string
     {
-        // Already 40 hex
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $value) === 1) {
             return strtoupper($value);
         }
 
-        // Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $value) === 1) {
             $decoded = rawurldecode($value);
             if (strlen($decoded) !== 20) {
@@ -93,7 +88,6 @@ final class ScrapeController extends Controller
             return strtoupper(bin2hex($decoded));
         }
 
-        // Raw bytes
         if (strlen($value) === 20) {
             return strtoupper(bin2hex($value));
         }
