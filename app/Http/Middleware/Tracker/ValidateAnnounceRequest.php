@@ -29,17 +29,21 @@ class ValidateAnnounceRequest
 
             return $this->failureResponder->fail('invalid_passkey');
         }
+
         $user = User::query()->where('passkey', $passkey)->first();
         if ($user === null) {
             $this->logInvalidPasskey($request, $passkey);
 
             return $this->failureResponder->fail('invalid_passkey');
         }
+
         if ($user->isBanned() || $user->isDisabled()) {
             return $this->failureResponder->fail('unauthorized_client');
         }
+
         $now = now();
         $minInterval = (int) config('tracker.announce_min_interval_seconds', 30);
+
         if ($user->announce_rate_limit_exceeded) {
             $cooldownElapsed = $user->last_announce_at === null
                 || $user->last_announce_at->diffInSeconds($now) >= $minInterval;
@@ -55,37 +59,47 @@ class ValidateAnnounceRequest
                 return $this->failureResponder->fail('rate_limit');
             }
         }
+
         $params = $request->query();
         $required = ['info_hash', 'peer_id', 'port', 'uploaded', 'downloaded', 'left'];
+
         foreach ($required as $key) {
             if (! array_key_exists($key, $params)) {
                 return $this->failureResponder->fail('invalid_parameters');
             }
         }
+
         foreach ($params as $value) {
             if (is_array($value)) {
                 return $this->failureResponder->fail('invalid_parameters');
             }
+
             if (is_string($value) && strlen($value) > 255) {
                 return $this->failureResponder->fail('invalid_parameters');
             }
         }
+
         $infoHash = $this->normaliseInfoHash($request->query('info_hash'));
         if ($infoHash === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
+
         $peerId = $request->query('peer_id');
         if (! is_string($peerId) || strlen($peerId) !== 20) {
             return $this->failureResponder->fail('invalid_parameters');
         }
+
         $port = $this->parseIntegerParam($request, 'port', 1, 65535);
         $uploaded = $this->parseIntegerParam($request, 'uploaded', 0, null, true);
         $downloaded = $this->parseIntegerParam($request, 'downloaded', 0, null, true);
         $left = $this->parseIntegerParam($request, 'left', 0, null, true);
+
         if ($port === null || $uploaded === null || $downloaded === null || $left === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
+
         $clientInfo = $this->clientValidator->validateClient($peerId);
+
         if ($clientInfo->isBanned) {
             $this->securityLogger->log('tracker.client_banned', 'high', 'Banned client attempted announce.', [
                 'peer_id' => $peerId,
@@ -97,6 +111,7 @@ class ValidateAnnounceRequest
 
             return $this->failureResponder->fail('client_banned');
         }
+
         if (! $clientInfo->isAllowed) {
             $this->securityLogger->log('tracker.unauthorized_client', 'medium', 'Client not allowed to announce.', [
                 'peer_id' => $peerId,
@@ -108,12 +123,15 @@ class ValidateAnnounceRequest
 
             return $this->failureResponder->fail('unauthorized_client');
         }
+
         $ipAddress = $this->resolveIp($request);
         if ($ipAddress === null) {
             return $this->failureResponder->fail('invalid_parameters');
         }
+
         if (! $user->isStaff() && $user->last_announce_at !== null) {
             $diff = $user->last_announce_at->diffInSeconds($now);
+
             if ($diff < $minInterval) {
                 $user->forceFill(['announce_rate_limit_exceeded' => true])->save();
 
@@ -126,15 +144,20 @@ class ValidateAnnounceRequest
                 return $this->failureResponder->fail('rate_limit');
             }
         }
+
         $ghostTimeout = (int) config('tracker.ghost_peer_timeout_minutes', 45);
+
         $existingPeer = Peer::query()
             ->where('user_id', $user->getKey())
             ->where('peer_id', $peerId)
             ->orderByDesc('last_announce_at')
             ->first();
-        $peerExpired = $existingPeer !== null
-            && $existingPeer->last_announce_at !==
-            && $existingPeer->last_announce_at->lt($now->copy()->subMinutes($ghostTimeout));
+
+        $peerExpired = false;
+        if ($existingPeer !== null && $existingPeer->last_announce_at !== null) {
+            $peerExpired = $existingPeer->last_announce_at->lt($now->copy()->subMinutes($ghostTimeout));
+        }
+
         $request->attributes->set('tracker.user', $user);
         $request->attributes->set('tracker.info_hash_binary', $infoHash);
         $request->attributes->set('tracker.info_hash_hex', strtoupper(bin2hex($infoHash)));
@@ -150,6 +173,7 @@ class ValidateAnnounceRequest
 
         /** @var Response $response */
         $response = $next($request);
+
         $user->forceFill([
             'last_announce_at' => $now,
             'announce_rate_limit_exceeded' => false,
