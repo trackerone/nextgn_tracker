@@ -1,6 +1,6 @@
 # NextGN Tracker – Repository Layer
 
-This document summarizes the repository abstractions that ship with the NextGN rebuild. They encapsulate database logic away from controllers/services and keep the Laravel 12 stack testable.
+This document summarizes the repository abstractions that ship with the NextGN rebuild. They encapsulate database logic away from controllers/services and keep the Laravel 11 stack testable.
 
 ## Purpose
 - Decouple the HTTP layer (controllers, Livewire/React bridges) from domain logic and database operations.
