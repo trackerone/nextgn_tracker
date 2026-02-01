@@ -36,17 +36,15 @@ class User extends Authenticatable implements MustVerifyEmail
     use Notifiable;
 
     public const ROLE_USER = 'user';
-
     public const ROLE_POWER_USER = 'power_user';
-
     public const ROLE_UPLOADER = 'uploader';
-
     public const ROLE_MODERATOR = 'moderator';
-
     public const ROLE_ADMIN = 'admin';
-
     public const ROLE_SYSOP = 'sysop';
 
+    /**
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -165,7 +163,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 return true;
             }
 
-            if ($roleRelation->level !== && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
+            if ($roleRelation->level !== null && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
                 return true;
             }
         }
@@ -315,7 +313,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * @return array<int, string>
+     * @return list<string>
      */
     private static function staffRoles(): array
     {
@@ -348,7 +346,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $roleRelation = $this->getRelationValue('role');
 
         if ($roleRelation instanceof Role) {
-            if (($roleRelation->slug) && $roleRelation->slug !== '') {
+            if ($roleRelation->slug !== null && $roleRelation->slug !== '') {
                 return $roleRelation->slug;
             }
 
