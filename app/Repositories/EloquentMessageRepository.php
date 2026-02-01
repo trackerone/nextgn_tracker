@@ -14,13 +14,17 @@ class EloquentMessageRepository implements MessageRepositoryInterface
     public function sendMessage(Conversation $conversation, array $attributes): Message
     {
         return DB::transaction(function () use ($conversation, $attributes): Message {
+            /** @var Message $message */
             $message = $conversation->messages()->create($attributes);
 
             $conversation->forceFill([
                 'last_message_at' => $message->created_at,
             ])->save();
 
-            return $message->fresh(['sender:id,name']);
+            /** @var Message $fresh */
+            $fresh = $message->fresh(['sender:id,name']);
+
+            return $fresh;
         });
     }
 }
