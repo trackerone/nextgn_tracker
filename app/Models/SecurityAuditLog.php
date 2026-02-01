@@ -12,9 +12,9 @@ class SecurityAuditLog extends Model
 {
     use HasFactory;
 
-    /**
-     * @var array<int, string>
-     */
+
+    /** @var list<string> 
+    */
     protected $fillable = [
         'user_id',
         'action',
