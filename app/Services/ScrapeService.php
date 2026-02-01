@@ -32,9 +32,9 @@ class ScrapeService
             $torrent = $torrents->get($hash);
 
             $files[$hash] = [
-                'complete' => $torrent?->seeders ?? 0,
-                'incomplete' => $torrent?->leechers ?? 0,
-                'downloaded' => $torrent?->completed ?? 0,
+                'complete' => $torrent !== null ? (int) $torrent->seeders : 0,
+                'incomplete' => $torrent !== null ? (int) $torrent->leechers : 0,
+                'downloaded' => $torrent !== null ? (int) $torrent->completed : 0,
             ];
         }
 
