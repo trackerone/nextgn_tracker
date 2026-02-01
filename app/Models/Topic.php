@@ -36,7 +36,7 @@ class Topic extends Model
         return $this->hasMany(Post::class);
     }
 public function createForTopic(Topic $topic, array $attributes): Post
-{
+    {
     /** @var Post $post */
     $post = $topic->posts()->create($attributes);
 
@@ -44,5 +44,5 @@ public function createForTopic(Topic $topic, array $attributes): Post
     $fresh = $post->fresh(['author.role']);
 
     return $fresh;
-}
+    }
 }
