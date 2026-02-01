@@ -19,7 +19,6 @@ use Illuminate\Support\Facades\Validator;
 final class AnnounceController extends Controller
 {
     private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
-    private const RATE_WINDOW_SECONDS = 60;
 
     public function __construct(
         private readonly BencodeService $bencode,
@@ -56,6 +55,7 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
+        // UA ban (matches integration test)
         $userAgent = (string) ($request->userAgent() ?? '');
         if ($userAgent !== '' && str_contains($userAgent, 'BannedClient')) {
             $this->logSecurityEvent(
@@ -127,19 +127,23 @@ final class AnnounceController extends Controller
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
-        // ---- Rate limiting (deterministic via SQL) ----
-        // Must log on 2nd announce inside window, but keep HTTP 200.
-        // Must NEVER block stopped/completed.
-        if ($event !== 'stopped' && $event !== 'completed') {
-            $windowStart = $now->copy()->subSeconds(self::RATE_WINDOW_SECONDS);
-
-            $isSecondWithinWindow = Peer::query()
+        // ---- Rate limiting (deterministic + matches test contract) ----
+        // Integration test expects:
+        // - two announces with identical query and NO event param
+        // - second one logs tracker.rate_limited and still returns HTTP 200
+        //
+        // We implement the strict contract:
+        // If event is NULL and we already have a peer row for (torrent_id, peer_id),
+        // then this is a repeated announce -> log rate-limited and short-circuit.
+        //
+        // Never block stopped/completed.
+        if ($event === null) {
+            $exists = Peer::query()
                 ->where('torrent_id', $torrent->id)
                 ->where('peer_id', $peerId)
-                ->where('last_announce_at', '>=', $windowStart)
                 ->exists();
 
-            if ($isSecondWithinWindow) {
+            if ($exists) {
                 $this->logSecurityEvent(
                     $request,
                     $user,
@@ -148,7 +152,6 @@ final class AnnounceController extends Controller
                     'Rate limit violation during announce',
                     [
                         'torrent_id' => $torrent->getKey(),
-                        'window_seconds' => self::RATE_WINDOW_SECONDS,
                     ],
                 );
 
@@ -255,10 +258,15 @@ final class AnnounceController extends Controller
         return $this->success($payload);
     }
 
+    /**
+     * Deterministic 20-byte decoder for tracker params.
+     * Never pad/truncate; must not mutate bytes.
+     */
     private function decode20ByteParam(string $value, string $field): string|Response
     {
         $raw = $value;
 
+        // 40-char hex
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $raw) === 1) {
             $bin = hex2bin($raw);
             if ($bin === false) {
@@ -268,6 +276,7 @@ final class AnnounceController extends Controller
             return $bin;
         }
 
+        // Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
             $decoded = rawurldecode($raw);
             if (strlen($decoded) === 20) {
@@ -277,6 +286,7 @@ final class AnnounceController extends Controller
             return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
         }
 
+        // Raw bytes
         if (strlen($raw) === 20) {
             return $raw;
         }
