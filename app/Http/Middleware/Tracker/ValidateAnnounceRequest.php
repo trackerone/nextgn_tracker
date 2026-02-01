@@ -133,7 +133,7 @@ class ValidateAnnounceRequest
             ->orderByDesc('last_announce_at')
             ->first();
         $peerExpired = $existingPeer !== null
-            && $existingPeer->last_announce_at !== null
+            && $existingPeer->last_announce_at !==
             && $existingPeer->last_announce_at->lt($now->copy()->subMinutes($ghostTimeout));
         $request->attributes->set('tracker.user', $user);
         $request->attributes->set('tracker.info_hash_binary', $infoHash);
