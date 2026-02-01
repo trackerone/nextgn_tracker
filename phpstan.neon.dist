@@ -20,4 +20,6 @@ parameters:
 
     checkOctaneCompatibility: true
 
+    treatPhpDocTypesAsCertain: false
+
     ignoreErrors: []
