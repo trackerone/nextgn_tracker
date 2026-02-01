@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\ActiveUserMiddleware;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
-use App\Http\Middleware\Tracker\ValidateAnnounceRequest;
+use App\Http\Middleware\Tracker\PassThroughAnnounceValidation;
 use App\Providers\AuthServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
@@ -33,7 +33,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role.level' => \App\Http\Middleware\RequireRoleLevel::class,
 
             // Tracker
-            'tracker.validate-announce' => ValidateAnnounceRequest::class,
+            // IMPORTANT:
+            // Validation + SecurityEvent logging happens in AnnounceController.
+            // This middleware must not short-circuit announce requests.
+            'tracker.validate-announce' => PassThroughAnnounceValidation::class,
         ]);
 
         // IMPORTANT: actually run the middleware for all web routes (incl. torrents.show)
