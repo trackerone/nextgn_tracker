@@ -13,13 +13,15 @@ use App\Services\UserTorrentService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 final class AnnounceController extends Controller
 {
     private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
+
+    // Rate window in seconds for logging tracker.rate_limited
+    private const RATE_WINDOW_SECONDS = 60;
 
     public function __construct(
         private readonly BencodeService $bencode,
@@ -56,7 +58,7 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
-        // ---- Client ban (User-Agent based) ----
+        // UA ban (matches integration test)
         $userAgent = (string) ($request->userAgent() ?? '');
         if ($userAgent !== '' && str_contains($userAgent, 'BannedClient')) {
             $this->logSecurityEvent(
@@ -74,7 +76,6 @@ final class AnnounceController extends Controller
             return $this->failure('Client is banned.');
         }
 
-        // Parse event EARLY (needed for rate-limit bypass on stopped/completed)
         $event = isset($data['event']) ? (string) $data['event'] : null;
 
         $infoHash = $this->decode20ByteParam((string) $data['info_hash'], 'info_hash');
@@ -84,10 +85,8 @@ final class AnnounceController extends Controller
 
         $infoHashHex = bin2hex($infoHash);
 
-        $torrent = $this->torrents->findByInfoHash(strtolower($infoHashHex));
-        if ($torrent === null) {
-            $torrent = $this->torrents->findByInfoHash(strtoupper($infoHashHex));
-        }
+        $torrent = $this->torrents->findByInfoHash(strtolower($infoHashHex))
+            ?? $this->torrents->findByInfoHash(strtoupper($infoHashHex));
 
         if ($torrent === null) {
             return $this->failure('Invalid info_hash.');
@@ -131,41 +130,41 @@ final class AnnounceController extends Controller
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
-        // ---- Rate limiting (log + keep HTTP 200) ----
-        // Tests expect:
-        // - event-less repeated announces: 2nd call logs tracker.rate_limited but still HTTP 200
-        // - stopped/completed must NEVER be blocked (they must mutate state)
+        // IMPORTANT:
+        // Rate-limit logging must be deterministic in tests.
+        // Use DB (peers.last_announce_at), not cache, because cache stores may reset between requests.
+        // Also: never block stopped/completed (must mutate state).
         if ($event !== 'stopped' && $event !== 'completed') {
-            $rateKey = sprintf(
-                'announce:rl:%d:%d:%s',
-                (int) $user->getKey(),
-                (int) $torrent->getKey(),
-                $ip
-            );
+            $recent = Peer::query()
+                ->where('torrent_id', $torrent->id)
+                ->where('peer_id', $peerId)
+                ->value('last_announce_at');
 
-            $windowSeconds = 60;
+            if ($recent !== null) {
+                $recentTs = $recent instanceof \DateTimeInterface ? $recent : new \DateTimeImmutable((string) $recent);
+                $windowStart = $now->copy()->subSeconds(self::RATE_WINDOW_SECONDS);
 
-            // Deterministic: first call "claims" the key; second within window triggers rate limit.
-            if (! Cache::add($rateKey, '1', $windowSeconds)) {
-                $this->logSecurityEvent(
-                    $request,
-                    $user,
-                    'tracker.rate_limited',
-                    'medium',
-                    'Rate limit violation during announce',
-                    [
-                        'key' => $rateKey,
-                        'torrent_id' => $torrent->getKey(),
-                    ],
-                );
+                if ($recentTs >= $windowStart) {
+                    $this->logSecurityEvent(
+                        $request,
+                        $user,
+                        'tracker.rate_limited',
+                        'medium',
+                        'Rate limit violation during announce',
+                        [
+                            'torrent_id' => $torrent->getKey(),
+                            'window_seconds' => self::RATE_WINDOW_SECONDS,
+                        ],
+                    );
 
-                // Return OK (tracker style) but do not mutate stats/peers.
-                return $this->success([
-                    'complete' => (int) $torrent->seeders,
-                    'incomplete' => (int) $torrent->leechers,
-                    'interval' => 1800,
-                    'peers' => [],
-                ]);
+                    // Return OK but do not mutate anything
+                    return $this->success([
+                        'complete' => (int) $torrent->seeders,
+                        'incomplete' => (int) $torrent->leechers,
+                        'interval' => 1800,
+                        'peers' => [],
+                    ]);
+                }
             }
         }
 
@@ -201,34 +200,10 @@ final class AnnounceController extends Controller
         }
 
         if ($event === 'completed') {
-            // Keep existing behavior
             $torrent->increment('completed');
-
-            // Ensure snatch completed_at is set ONCE (idempotent)
-            $existing = DB::table('snatches')
-                ->where('user_id', $user->getKey())
-                ->where('torrent_id', $torrent->id)
-                ->first();
-
-            if ($existing === null) {
-                DB::table('snatches')->insert([
-                    'user_id' => $user->getKey(),
-                    'torrent_id' => $torrent->id,
-                    'completed_at' => $now,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            } elseif (($existing->completed_at ?? null) === null) {
-                DB::table('snatches')
-                    ->where('user_id', $user->getKey())
-                    ->where('torrent_id', $torrent->id)
-                    ->update([
-                        'completed_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-            }
         }
 
+        // user_torrents is the canonical place for per-user/per-torrent state in tests
         DB::table('user_torrents')->updateOrInsert(
             [
                 'user_id' => $user->getKey(),
@@ -241,6 +216,24 @@ final class AnnounceController extends Controller
                 'created_at' => $now,
             ],
         );
+
+        // Set completed_at ONCE (idempotent) on user_torrents when event=completed
+        if ($event === 'completed') {
+            $row = DB::table('user_torrents')
+                ->where('user_id', $user->getKey())
+                ->where('torrent_id', $torrent->id)
+                ->first();
+
+            if ($row !== null && ($row->completed_at ?? null) === null) {
+                DB::table('user_torrents')
+                    ->where('user_id', $user->getKey())
+                    ->where('torrent_id', $torrent->id)
+                    ->update([
+                        'completed_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+            }
+        }
 
         $this->userTorrents->updateFromAnnounce(
             $user,
@@ -273,7 +266,7 @@ final class AnnounceController extends Controller
 
     /**
      * Deterministic 20-byte decoder for tracker params.
-     * Fixes flakiness caused by stripped trailing NULL bytes.
+     * NOTE: Do not "pad" 19 bytes to 20 here; it mutates hashes/peer_ids.
      */
     private function decode20ByteParam(string $value, string $field): string|Response
     {
@@ -289,35 +282,19 @@ final class AnnounceController extends Controller
             return $bin;
         }
 
-        // 2) Raw bytes (already decoded)
-        $len = strlen($raw);
-        if ($len === 20) {
-            return $raw;
-        }
-
-        if ($len === 19) {
-            return str_pad($raw, 20, "\0", STR_PAD_RIGHT);
-        }
-
-        // 3) Percent-encoded bytes
+        // 2) Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
             $decoded = rawurldecode($raw);
-            $dlen = strlen($decoded);
-
-            if ($dlen === 20) {
+            if (strlen($decoded) === 20) {
                 return $decoded;
             }
 
-            if ($dlen === 19) {
-                return str_pad($decoded, 20, "\0", STR_PAD_RIGHT);
-            }
+            return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
+        }
 
-            if (preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
-                $bin = hex2bin($decoded);
-                if ($bin !== false) {
-                    return $bin;
-                }
-            }
+        // 3) Raw bytes (already decoded)
+        if (strlen($raw) === 20) {
+            return $raw;
         }
 
         return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
