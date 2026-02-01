@@ -35,4 +35,14 @@ class Topic extends Model
     {
         return $this->hasMany(Post::class);
     }
+public function createForTopic(Topic $topic, array $attributes): Post
+{
+    /** @var Post $post */
+    $post = $topic->posts()->create($attributes);
+
+    /** @var Post $fresh */
+    $fresh = $post->fresh(['author.role']);
+
+    return $fresh;
+}
 }
