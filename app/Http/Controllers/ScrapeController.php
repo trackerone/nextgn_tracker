@@ -18,106 +18,86 @@ final class ScrapeController extends Controller
 
     public function __invoke(Request $request): Response
     {
-        $raw = $request->query('info_hash');
+        $hashes = $request->query('info_hash');
 
-        $hashes = [];
-        if (is_array($raw)) {
-            $hashes = $raw;
-        } elseif (is_string($raw) && $raw !== '') {
-            $hashes = [$raw];
-        }
-
-        if ($hashes === []) {
-            return $this->failure('At least one info_hash parameter is required.');
+        // Normalize to array
+        if ($hashes === null) {
+            $list = [];
+        } elseif (is_array($hashes)) {
+            $list = $hashes;
+        } else {
+            $list = [$hashes];
         }
 
         $files = [];
 
-        foreach ($hashes as $hash) {
-            if (! is_string($hash) || $hash === '') {
+        foreach ($list as $h) {
+            if (! is_string($h)) {
                 continue;
             }
 
-            $hex40 = strtoupper($this->decodeInfoHashToHex40($hash));
+            $keyHex = $this->toInfoHashHexKey($h);
+            if ($keyHex === null) {
+                continue;
+            }
 
-            $torrent = $this->torrents->findByInfoHash($hex40);
+            $torrent = $this->torrents->findByInfoHash(strtolower($keyHex))
+                ?? $this->torrents->findByInfoHash(strtoupper($keyHex));
 
             if ($torrent === null) {
-                $files[$hex40] = [
+                $files[$keyHex] = [
                     'complete' => 0,
                     'downloaded' => 0,
                     'incomplete' => 0,
                 ];
-
                 continue;
             }
 
-            $files[$hex40] = [
-                'complete' => (int) ($torrent->seeders ?? 0),
-                'downloaded' => (int) ($torrent->completed ?? 0),
-                'incomplete' => (int) ($torrent->leechers ?? 0),
+            $files[$keyHex] = [
+                'complete' => (int) $torrent->seeders,
+                'downloaded' => (int) $torrent->completed,
+                'incomplete' => (int) $torrent->leechers,
             ];
         }
 
-        return $this->success(['files' => $files]);
-    }
-
-    private function decodeInfoHashToHex40(string $value): string
-    {
-        // Already hex?
-        if (preg_match('/^[a-f0-9]{40}$/i', $value) === 1) {
-            return $value;
-        }
-
-        // Try treat as already-decoded raw bytes first.
-        $decoded = $value;
-
-        // If percent-encoded, decode once.
-        if (str_contains($decoded, '%')) {
-            $decoded = rawurldecode($decoded);
-        }
-
-        // Symfony/Laravel can strip null bytes from query values.
-        // If we received 19 bytes, pad back to 20 bytes (adds trailing 00 in hex).
-        if (strlen($decoded) === 19) {
-            $decoded .= "\0";
-        }
-
-        if (strlen($decoded) === 20) {
-            return bin2hex($decoded);
-        }
-
-        // Last resort: decode again and re-check
-        $decoded2 = rawurldecode($value);
-        if (strlen($decoded2) === 19) {
-            $decoded2 .= "\0";
-        }
-        if (strlen($decoded2) === 20) {
-            return bin2hex($decoded2);
-        }
-
-        // Deterministic fallback (should not be hit by tests)
-        $padded = str_pad(substr($decoded2, 0, 20), 20, "\0", STR_PAD_RIGHT);
-
-        return bin2hex($padded);
-    }
-
-    private function success(array $payload): Response
-    {
-        return $this->bencodedResponse($payload);
-    }
-
-    private function failure(string $reason): Response
-    {
-        return $this->bencodedResponse(['failure reason' => $reason]);
-    }
-
-    private function bencodedResponse(array $payload): Response
-    {
         return response(
-            $this->bencode->encode($payload),
+            $this->bencode->encode(['files' => $files]),
             200,
-            ['Content-Type' => 'text/plain; charset=utf-8']
+            ['Content-Type' => 'text/plain; charset=utf-8'],
         );
+    }
+
+    /**
+     * Return a 40-char UPPERCASE hex string to be used as the dictionary key.
+     * Supports:
+     * - 40-char hex
+     * - percent-encoded raw 20 bytes
+     * - raw 20 bytes
+     *
+     * IMPORTANT: Never pad/truncate; must not mutate hashes.
+     */
+    private function toInfoHashHexKey(string $value): ?string
+    {
+        // Already 40 hex
+        if (preg_match('/\A[0-9a-fA-F]{40}\z/', $value) === 1) {
+            return strtoupper($value);
+        }
+
+        // Percent-encoded bytes
+        if (preg_match('/%[0-9A-Fa-f]{2}/', $value) === 1) {
+            $decoded = rawurldecode($value);
+            if (strlen($decoded) !== 20) {
+                return null;
+            }
+
+            return strtoupper(bin2hex($decoded));
+        }
+
+        // Raw bytes
+        if (strlen($value) === 20) {
+            return strtoupper(bin2hex($value));
+        }
+
+        return null;
     }
 }
