@@ -165,7 +165,7 @@ class User extends Authenticatable implements MustVerifyEmail
                 return true;
             }
 
-            if ($roleRelation->level !== null && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
+            if ($roleRelation->level !== && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
                 return true;
             }
         }
@@ -348,7 +348,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $roleRelation = $this->getRelationValue('role');
 
         if ($roleRelation instanceof Role) {
-            if (is_string($roleRelation->slug) && $roleRelation->slug !== '') {
+            if (($roleRelation->slug) && $roleRelation->slug !== '') {
                 return $roleRelation->slug;
             }
 
