@@ -29,22 +29,21 @@ class Message extends Model
         'read_at' => 'datetime',
     ];
 
-   /**
-    * @return BelongsTo<Conversation, Message>
-    */
+    /**
+     * @return BelongsTo<\App\Models\Conversation, \App\Models\Message>
+     */
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);
     }
 
     /**
-     * @return BelongsTo<User, Message>
+     * @return BelongsTo<\App\Models\User, \App\Models\Message>
      */
     public function sender(): BelongsTo
     {
-    return $this->belongsTo(User::class, 'sender_id');
+        return $this->belongsTo(User::class, 'sender_id');
     }
-
 
     protected static function newFactory(): Factory
     {
