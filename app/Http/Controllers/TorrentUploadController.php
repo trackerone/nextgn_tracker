@@ -187,9 +187,9 @@ class TorrentUploadController extends Controller
         }
 
         $collection = Collection::make($tags)
-            ->filter(fn ($tag) => is_string() && trim($tag) !== '')
-            ->map(fn (string $tag) => $this->sanitizer->sanitizeString($tag))
-            ->filter(fn (string $tag) => $tag !== '')
+            ->filter(fn ($tag): bool => is_string($tag) && trim($tag) !== '')
+            ->map(fn (string $tag): string => $this->sanitizer->sanitizeString($tag))
+            ->filter(fn (string $tag): bool => $tag !== '')
             ->unique()
             ->values();
 
@@ -209,7 +209,7 @@ class TorrentUploadController extends Controller
         $clean = [];
 
         foreach ($codecs as $key => $value) {
-            if (! is_string() || ! is_string()) {
+            if (! is_string($key) || ! is_string($value)) {
                 continue;
             }
 
