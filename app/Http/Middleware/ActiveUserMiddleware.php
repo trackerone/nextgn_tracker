@@ -20,13 +20,13 @@ final class ActiveUserMiddleware
         }
 
         // Prefer model methods if they exist, otherwise fall back to common columns.
-        $isBanned = method_exists($user, 'isBanned')
+        $isBanned = method_exists($user)
             ? (bool) $user->isBanned()
             : ((bool) ($user->is_banned ?? false))
                 || (($user->banned_at ?? null) !== null)
                 || (($user->status ?? null) === 'banned');
 
-        $isDisabled = method_exists($user, 'isDisabled')
+        $isDisabled = method_exists($user)
             ? (bool) $user->isDisabled()
             : ((bool) ($user->is_disabled ?? false))
                 || (($user->disabled_at ?? null) !== null)
