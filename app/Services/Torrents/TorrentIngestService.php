@@ -183,7 +183,7 @@ final class TorrentIngestService
         $cleaned = [];
 
         foreach ($tags as $tag) {
-            if (! is_string($tag)) {
+            if (! ($tag)) {
                 continue;
             }
 
@@ -212,7 +212,7 @@ final class TorrentIngestService
         $cleaned = [];
 
         foreach ($codecs as $key => $value) {
-            if (! is_string($key) || $value === null) {
+            if (! ($key) || $value === null) {
                 continue;
             }
 
