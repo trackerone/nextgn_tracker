@@ -63,7 +63,7 @@ final class ScrapeController extends Controller
      */
     private function allInfoHashParams(Request $request): array
     {
-        $qs = (string) $request->getQueryString();
+        $qs = (string) $request->server('QUERY_STRING', '');
         if ($qs === '') {
             return [];
         }
@@ -71,11 +71,6 @@ final class ScrapeController extends Controller
         $out = [];
 
         // Match both info_hash=... and info_hash[]=...
-        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $m) === 1) {
-            // preg_match_all returns 1+ only if pattern found;
-            // but in PHP it returns number of matches, so handle below:
-        }
-
         if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
             foreach ($matches[2] as $rawVal) {
                 $out[] = rawurldecode((string) $rawVal);
