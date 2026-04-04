@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTorrentRequest;
-use App\Models\Torrent;
+use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +24,8 @@ final class UploadSubmissionController extends Controller
 
     public function store(StoreTorrentRequest $request): JsonResponse
     {
+        /** @var User $user */
+        $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
         if (! $torrentFile instanceof UploadedFile) {
@@ -35,7 +37,7 @@ final class UploadSubmissionController extends Controller
         $data = $request->validated();
 
         try {
-            $torrent = $this->ingestService->ingest($request->user(), $torrentFile, [
+            $torrent = $this->ingestService->ingest($user, $torrentFile, [
                 'name' => $this->sanitizer->sanitizeString((string) $data['name']),
                 'category_id' => $data['category_id'] ?? null,
                 'type' => $data['type'],

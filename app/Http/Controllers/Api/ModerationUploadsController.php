@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Torrent;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -14,7 +15,9 @@ final class ModerationUploadsController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless($request->user()?->isStaff(), 403);
+        /** @var User $user */
+        $user = $request->user();
+        abort_unless($user->isStaff(), 403);
 
         $status = (string) $request->query('status', Torrent::STATUS_PENDING);
 
@@ -40,7 +43,9 @@ final class ModerationUploadsController extends Controller
 
     public function approve(Request $request, Torrent $torrent): JsonResponse
     {
-        abort_unless($request->user()?->isStaff(), 403);
+        /** @var User $user */
+        $user = $request->user();
+        abort_unless($user->isStaff(), 403);
 
         if (! $torrent->canBeModerated()) {
             return response()->json(['message' => 'Invalid status transition.'], 422);
@@ -50,7 +55,7 @@ final class ModerationUploadsController extends Controller
             'status' => Torrent::STATUS_PUBLISHED,
             'is_approved' => true,
             'published_at' => Carbon::now(),
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
             'moderated_at' => Carbon::now(),
             'moderated_reason' => null,
         ])->save();
@@ -60,7 +65,9 @@ final class ModerationUploadsController extends Controller
 
     public function reject(Request $request, Torrent $torrent): JsonResponse
     {
-        abort_unless($request->user()?->isStaff(), 403);
+        /** @var User $user */
+        $user = $request->user();
+        abort_unless($user->isStaff(), 403);
 
         if (! $torrent->canBeModerated()) {
             return response()->json(['message' => 'Invalid status transition.'], 422);
@@ -74,7 +81,7 @@ final class ModerationUploadsController extends Controller
             'status' => Torrent::STATUS_REJECTED,
             'is_approved' => false,
             'published_at' => null,
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
             'moderated_at' => Carbon::now(),
             'moderated_reason' => $data['reason'] ?? null,
         ])->save();

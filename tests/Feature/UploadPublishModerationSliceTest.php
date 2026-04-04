@@ -135,6 +135,39 @@ final class UploadPublishModerationSliceTest extends TestCase
         $this->actingAs($member)->get(route('torrents.show', $torrent))->assertNotFound();
     }
 
+    public function test_moderation_invalid_transition_is_rejected_for_already_moderated_upload(): void
+    {
+        $staff = $this->createStaffUser();
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PUBLISHED,
+            'is_approved' => true,
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($staff)
+            ->postJson(route('api.moderation.uploads.reject', $torrent), ['reason' => 'Late reject'])
+            ->assertUnprocessable()
+            ->assertJsonFragment(['message' => 'Invalid status transition.']);
+    }
+
+    public function test_uploader_sees_rejection_reason_in_my_uploads(): void
+    {
+        $uploader = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'user_id' => $uploader->id,
+            'name' => 'Rejected Upload',
+            'status' => Torrent::STATUS_REJECTED,
+            'is_approved' => false,
+            'moderated_reason' => 'Bad metadata',
+        ]);
+
+        $this->actingAs($uploader)
+            ->get(route('my.uploads'))
+            ->assertOk()
+            ->assertSee($torrent->name)
+            ->assertSee('Bad metadata');
+    }
+
     public function test_non_moderator_cannot_approve_or_reject(): void
     {
         $member = User::factory()->create();
