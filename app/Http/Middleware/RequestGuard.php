@@ -17,7 +17,6 @@ final class RequestGuard
     private const MALICIOUS_PATTERNS = [
         'javascript\\s*:',
         'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
-        'PHNjcmlwdD4',
         '"__proto__"\\s*:',
         '(\\{|\\[)\\s*\\"(?:__proto__|constructor)\\"',
     ];
