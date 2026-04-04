@@ -69,14 +69,16 @@ final class RequestGuard
             }
 
             if (is_string($value)) {
-                if ($this->containsMaliciousPayload($value)) {
+                $cleanValue = $this->sanitizer->sanitizeString($value);
+
+                if ($this->containsMaliciousPayload($value) && $cleanValue === $value) {
                     $incidents[] = [
                         'key' => (string) $key,
                         'value' => $this->truncateForLog($value),
                     ];
                 }
 
-                $sanitized[$key] = $this->sanitizer->sanitizeString($value);
+                $sanitized[$key] = $cleanValue;
 
                 continue;
             }

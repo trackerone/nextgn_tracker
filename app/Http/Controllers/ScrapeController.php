@@ -63,32 +63,57 @@ final class ScrapeController extends Controller
      */
     private function allInfoHashParams(Request $request): array
     {
+<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
+        $qs = (string) (
+            $request->server('QUERY_STRING')
+            ?? parse_url((string) $request->getRequestUri(), PHP_URL_QUERY)
+            ?? $request->getQueryString()
+            ?? ''
+        );
+=======
         $qs = (string) $request->server('QUERY_STRING', '');
+>>>>>> main
         if ($qs === '') {
             return [];
         }
 
         $out = [];
 
+<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
+        // Match info_hash=..., info_hash[]=..., and indexed keys like info_hash[0]=...
+        if (preg_match_all('/(?:^|&)info_hash(?:%5B(?:%5D|[0-9]+%5D)|\[(?:\]|[0-9]+)\])?=([^&]*)/i', $qs, $matches) > 0) {
+            /** @var array<int, string> $rawValues */
+            $rawValues = $matches[1];
+
+            foreach ($rawValues as $rawVal) {
+                $decoded = rawurldecode((string) $rawVal);
+
+                if (strlen($decoded) === 20 || preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
+                    $out[] = $decoded;
+                }
+=======
         // Match both info_hash=... and info_hash[]=...
         if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
             foreach ($matches[2] as $rawVal) {
                 $out[] = rawurldecode((string) $rawVal);
+>>>>>> main
             }
         }
 
-        // Fallback (if no duplicates): use Laravel’s normal parsing
-        if ($out === []) {
-            $v = $request->query('info_hash');
-            if (is_array($v)) {
-                foreach ($v as $vv) {
-                    if (is_string($vv)) {
-                        $out[] = $vv;
-                    }
+        if ($out !== []) {
+            return $out;
+        }
+
+        // Fallback: use Laravel's parsed query values when raw extraction found nothing useful.
+        $v = $request->query('info_hash');
+        if (is_array($v)) {
+            foreach ($v as $vv) {
+                if (is_string($vv)) {
+                    $out[] = $vv;
                 }
-            } elseif (is_string($v)) {
-                $out[] = $v;
             }
+        } elseif (is_string($v)) {
+            $out[] = $v;
         }
 
         return $out;

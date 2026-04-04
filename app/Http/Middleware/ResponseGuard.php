@@ -26,6 +26,8 @@ final class ResponseGuard
         $response = $next($request);
 
         if ($this->shouldBypass($request, $response)) {
+            $response->headers->remove('X-Frame-Options');
+
             return $response;
         }
 
