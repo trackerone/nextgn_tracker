@@ -46,11 +46,19 @@ class TorrentModerationController extends Controller
             abort(403);
         }
 
+        if (! $torrent->canBeModerated()) {
+            return redirect()
+                ->route('staff.torrents.moderation.index')
+                ->with('status', 'Only pending uploads can be approved.');
+        }
+
         $torrent->forceFill([
-            'status' => Torrent::STATUS_APPROVED,
+            'status' => Torrent::STATUS_PUBLISHED,
+            'is_approved' => true,
             'moderated_by' => $request->user()?->id,
             'moderated_at' => Carbon::now(),
             'moderated_reason' => null,
+            'published_at' => Carbon::now(),
         ])->save();
 
         $this->auditLogger->log('torrent.approved', $torrent, [
@@ -73,15 +81,23 @@ class TorrentModerationController extends Controller
             abort(403);
         }
 
+        if (! $torrent->canBeModerated()) {
+            return redirect()
+                ->route('staff.torrents.moderation.index')
+                ->with('status', 'Only pending uploads can be rejected.');
+        }
+
         $data = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
         $torrent->forceFill([
             'status' => Torrent::STATUS_REJECTED,
+            'is_approved' => false,
             'moderated_by' => $request->user()?->id,
             'moderated_at' => Carbon::now(),
             'moderated_reason' => $data['reason'],
+            'published_at' => null,
         ])->save();
 
         $this->auditLogger->log('torrent.rejected', $torrent, [

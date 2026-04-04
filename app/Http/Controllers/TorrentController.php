@@ -68,10 +68,8 @@ final class TorrentController extends Controller
             ->firstOrFail();
 
         $user = $request->user();
-        $isStaff = $user instanceof User && $user->isStaff();
 
-        // Visible for everyone; non-visible only for staff
-        if (! $model->isVisible() && ! $isStaff) {
+        if (! $user instanceof User || ! $user->can('view', $model)) {
             abort(404);
         }
 
