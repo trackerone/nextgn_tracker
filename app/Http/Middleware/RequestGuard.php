@@ -15,8 +15,6 @@ use Symfony\Component\HttpFoundation\Response;
 final class RequestGuard
 {
     private const MALICIOUS_PATTERNS = [
-        '(?:%3C|<)script',
-        '\\s<script',
         'javascript\\s*:',
         'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
         'PHNjcmlwdD4',
