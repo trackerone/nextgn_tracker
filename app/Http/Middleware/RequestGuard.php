@@ -53,14 +53,15 @@ final class RequestGuard
         $incidents = [];
 
         foreach ($payload as $key => $value) {
+
             if ($value instanceof UploadedFile) {
                 $sanitized[$key] = $value;
-
                 continue;
             }
 
             if (is_array($value)) {
                 [$childSanitized, $childIncidents] = $this->sanitizePayload($value);
+
                 $sanitized[$key] = $childSanitized;
                 $incidents = array_merge($incidents, $childIncidents);
 
@@ -68,9 +69,11 @@ final class RequestGuard
             }
 
             if (is_string($value)) {
+
                 $cleanValue = $this->sanitizer->sanitizeString($value);
 
-                if ($this->containsMaliciousPayload($value) && $cleanValue === $value) {
+                // Block clearly malicious protocol payloads
+                if ($this->containsMaliciousPayload($value)) {
                     $incidents[] = [
                         'key' => (string) $key,
                         'value' => $this->truncateForLog($value),
