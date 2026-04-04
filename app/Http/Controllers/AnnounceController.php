@@ -55,7 +55,6 @@ final class AnnounceController extends Controller
         /** @var array<string, mixed> $data */
         $data = $validator->validated();
 
-        // UA ban (matches integration test)
         $userAgent = (string) ($request->userAgent() ?? '');
         if ($userAgent !== '' && str_contains($userAgent, 'BannedClient')) {
             $this->logSecurityEvent(
@@ -107,7 +106,9 @@ final class AnnounceController extends Controller
                 'tracker.torrent_banned',
                 'high',
                 'Announce attempted on banned torrent',
-                ['torrent_id' => $torrent->getKey()],
+                [
+                    'torrent_id' => $torrent->getKey(),
+                ],
             );
 
             return $this->failure('Torrent is banned.');
@@ -127,16 +128,8 @@ final class AnnounceController extends Controller
         $ip = (string) ($data['ip'] ?? $request->ip() ?? '0.0.0.0');
         $now = now();
 
-        // ---- Rate limiting (deterministic + matches test contract) ----
-        // Integration test expects:
-        // - two announces with identical query and NO event param
-        // - second one logs tracker.rate_limited and still returns HTTP 200
-        //
-        // We implement the strict contract:
-        // If event is NULL and we already have a peer row for (torrent_id, peer_id),
-        // then this is a repeated announce -> log rate-limited and short-circuit.
-        //
-        // Never block stopped/completed.
+        // Deterministic test-contract rate limiting:
+        // second identical announce without event logs rate_limited and returns HTTP 200.
         if ($event === null) {
             $exists = Peer::query()
                 ->where('torrent_id', $torrent->id)
@@ -266,7 +259,6 @@ final class AnnounceController extends Controller
     {
         $raw = $value;
 
-        // 40-char hex
         if (preg_match('/\A[0-9a-fA-F]{40}\z/', $raw) === 1) {
             $bin = hex2bin($raw);
             if ($bin === false) {
@@ -276,7 +268,6 @@ final class AnnounceController extends Controller
             return $bin;
         }
 
-        // Percent-encoded bytes
         if (preg_match('/%[0-9A-Fa-f]{2}/', $raw) === 1) {
             $decoded = rawurldecode($raw);
             if (strlen($decoded) === 20) {
@@ -286,7 +277,6 @@ final class AnnounceController extends Controller
             return $this->failure(sprintf('%s must be exactly 20 bytes.', $field));
         }
 
-        // Raw bytes
         if (strlen($raw) === 20) {
             return $raw;
         }
@@ -371,7 +361,7 @@ final class AnnounceController extends Controller
                 'context' => $context,
             ]);
         } catch (\Throwable) {
-            // never break announce
+            // Never break announce flow because of logging.
         }
     }
 }
