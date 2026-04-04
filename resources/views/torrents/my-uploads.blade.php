@@ -25,21 +25,38 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800 text-slate-100">
                     @forelse ($uploads as $torrent)
+                        @php
+                            $statusClasses = match ($torrent->status) {
+                                \App\Models\Torrent::STATUS_PUBLISHED => 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200',
+                                \App\Models\Torrent::STATUS_REJECTED => 'border-rose-500/50 bg-rose-500/10 text-rose-200',
+                                default => 'border-amber-500/50 bg-amber-500/10 text-amber-200',
+                            };
+                        @endphp
                         <tr class="hover:bg-slate-800/50">
                             <td class="px-4 py-3">
                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="rounded-full border border-slate-700 px-2 py-0.5 text-xs uppercase tracking-wide">
+                                <span class="rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide {{ $statusClasses }}">
                                     {{ str_replace('_', ' ', $torrent->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-slate-300">{{ $torrent->moderated_reason ?? '—' }}</td>
-                            <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->created_at)->toDateTimeString() ?? '—' }}</td>
+                            <td class="px-4 py-3 text-slate-300">
+                                @if ($torrent->moderated_reason)
+                                    {{ $torrent->moderated_reason }}
+                                @elseif ($torrent->status === \App\Models\Torrent::STATUS_PENDING)
+                                    Awaiting moderator review
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploaded_at ?? $torrent->created_at)->toDateTimeString() ?? '—' }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-6 text-center text-slate-400">No uploads yet.</td>
+                            <td colspan="4" class="px-4 py-8 text-center text-slate-400">
+                                You have not uploaded anything yet. Submit your first torrent to start the moderation flow.
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

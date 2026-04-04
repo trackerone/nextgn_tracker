@@ -42,7 +42,7 @@
                                     </form>
                                     <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-col gap-2">
                                         @csrf
-                                        <input type="text" name="reason" required placeholder="Reason" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-2 py-1 text-xs text-white">
+                                        <input type="text" name="reason" required placeholder="Rejection reason (required)" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-2 py-1 text-xs text-white">
                                         <button type="submit" class="w-full rounded-xl bg-rose-500 px-3 py-1 text-xs font-semibold text-white">Reject</button>
                                     </form>
                                     <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}">
@@ -54,7 +54,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-6 text-center text-slate-400">No pending torrents.</td>
+                            <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                                No pending uploads right now. New user submissions will appear here for moderation.
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -71,7 +73,7 @@
                         <div class="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-200">
                             <div class="flex flex-wrap justify-between gap-2">
                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
-                                <span class="text-xs uppercase tracking-wide text-slate-400">{{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</span>
+                                <span class="rounded-full border border-slate-700 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</span>
                             </div>
                             <p class="text-xs text-slate-400">By {{ $torrent->moderator?->name ?? 'Unknown' }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() ?? 'recently' }}</p>
                             @if ($torrent->moderated_reason)
