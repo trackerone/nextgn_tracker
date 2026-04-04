@@ -63,37 +63,46 @@ final class ScrapeController extends Controller
      */
     private function allInfoHashParams(Request $request): array
     {
-        $qs = (string) $request->getQueryString();
+        $qs = (string) (
+            $request->server('QUERY_STRING')
+            ?? parse_url((string) $request->getRequestUri(), PHP_URL_QUERY)
+            ?? $request->getQueryString()
+            ?? ''
+        );
         if ($qs === '') {
             return [];
         }
 
         $out = [];
 
-        // Match both info_hash=... and info_hash[]=...
-        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $m) === 1) {
-            // preg_match_all returns 1+ only if pattern found;
-            // but in PHP it returns number of matches, so handle below:
-        }
+        // Match info_hash=..., info_hash[]=..., and indexed keys like info_hash[0]=...
+        if (preg_match_all('/(?:^|&)info_hash(?:%5B(?:%5D|[0-9]+%5D)|\[(?:\]|[0-9]+)\])?=([^&]*)/i', $qs, $matches) > 0) {
+            /** @var array<int, string> $rawValues */
+            $rawValues = $matches[1];
 
-        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
-            foreach ($matches[2] as $rawVal) {
-                $out[] = rawurldecode((string) $rawVal);
-            }
-        }
+            foreach ($rawValues as $rawVal) {
+                $decoded = rawurldecode((string) $rawVal);
 
-        // Fallback (if no duplicates): use Laravel’s normal parsing
-        if ($out === []) {
-            $v = $request->query('info_hash');
-            if (is_array($v)) {
-                foreach ($v as $vv) {
-                    if (is_string($vv)) {
-                        $out[] = $vv;
-                    }
+                if (strlen($decoded) === 20 || preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
+                    $out[] = $decoded;
                 }
-            } elseif (is_string($v)) {
-                $out[] = $v;
             }
+        }
+
+        if ($out !== []) {
+            return $out;
+        }
+
+        // Fallback: use Laravel's parsed query values when raw extraction found nothing useful.
+        $v = $request->query('info_hash');
+        if (is_array($v)) {
+            foreach ($v as $vv) {
+                if (is_string($vv)) {
+                    $out[] = $vv;
+                }
+            }
+        } elseif (is_string($v)) {
+            $out[] = $v;
         }
 
         return $out;

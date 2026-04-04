@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SecurityHeadersMiddleware
 {
@@ -16,6 +19,19 @@ class SecurityHeadersMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
+
+        if ($response instanceof JsonResponse || $response instanceof BinaryFileResponse || $response instanceof StreamedResponse) {
+            return $response;
+        }
+
+        $contentType = $response->headers->get('Content-Type', '');
+        if (is_string($contentType) && str_contains(strtolower($contentType), 'application/json')) {
+            return $response;
+        }
+
+        if ($request->expectsJson() || $request->wantsJson() || $request->isJson()) {
+            return $response;
+        }
 
         $headers = [
             'X-Frame-Options' => 'DENY',
