@@ -29,10 +29,13 @@ class SecurityHeadersMiddleware
             return $response;
         }
 
+<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
         if ($request->expectsJson() || $request->wantsJson() || $request->isJson()) {
             return $response;
         }
 
+=======
+>>>>>> main
         $headers = [
             'X-Frame-Options' => 'DENY',
             'X-Content-Type-Options' => 'nosniff',
