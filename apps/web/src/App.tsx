@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, Film, Gamepad2, Globe, Headphones, Package, Search, SlidersHorizontal, Tv } from 'lucide-react';
 import type { BrowseCategory, BrowseFacetGroup, TorrentKind } from '@nextgn/api-contract';
 import { apiClient, resolveApiUrl } from './api/client';
@@ -127,24 +127,6 @@ const FacetContent = ({
     <p className="text-xs text-slate-500">No filters available.</p>
   );
 
-const resolveCategory = (item: TorrentListItem): BrowseCategory => {
-  const slug = item.category?.slug;
-  if (slug === 'movies' || slug === 'tv_shows' || slug === 'music' || slug === 'games' || slug === 'software') {
-    return slug;
-  }
-
-  const typeMap: Record<TorrentKind, BrowseCategory> = {
-    movie: 'movies',
-    tv: 'tv_shows',
-    music: 'music',
-    game: 'games',
-    software: 'software',
-    other: 'all',
-  };
-
-  return typeMap[item.type] ?? 'all';
-};
-
 const usePath = (): [string, (to: string) => void] => {
   const [path, setPath] = useState(window.location.pathname);
 
@@ -163,12 +145,36 @@ const usePath = (): [string, (to: string) => void] => {
   return [path, navigate];
 };
 
+const typeByCategory: Partial<Record<BrowseCategory, TorrentKind>> = {
+  movies: 'movie',
+  tv_shows: 'tv',
+  music: 'music',
+  games: 'game',
+  software: 'software',
+};
+
+const readBrowseStateFromUrl = (): { category: BrowseCategory; q: string; page: number } => {
+  const search = new URLSearchParams(window.location.search);
+  const category = search.get('category');
+  const q = search.get('q')?.trim() ?? '';
+  const page = Number.parseInt(search.get('page') ?? '1', 10);
+
+  const safeCategory = categories.some((entry) => entry.value === category) ? (category as BrowseCategory) : 'movies';
+
+  return {
+    category: safeCategory,
+    q,
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+  };
+};
+
 const BrowsePage = ({ onOpenDetails }: { onOpenDetails: (torrent: string) => void }) => {
-  const [activeCategory, setActiveCategory] = useState<BrowseCategory>('movies');
+  const initialBrowseState = readBrowseStateFromUrl();
+  const [activeCategory, setActiveCategory] = useState<BrowseCategory>(initialBrowseState.category);
   const [showFacets, setShowFacets] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState(initialBrowseState.q);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialBrowseState.q);
+  const [page, setPage] = useState(initialBrowseState.page);
   const [rows, setRows] = useState<TorrentListItem[]>([]);
   const [meta, setMeta] = useState<TorrentListResponse['meta'] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -195,6 +201,10 @@ const BrowsePage = ({ onOpenDetails }: { onOpenDetails: (torrent: string) => voi
         if (debouncedQuery !== '') {
           query.set('q', debouncedQuery);
         }
+        const type = typeByCategory[activeCategory];
+        if (type !== undefined) {
+          query.set('type', type);
+        }
 
         const response = await apiClient<TorrentListResponse>(`/api/torrents?${query.toString()}`);
 
@@ -220,15 +230,32 @@ const BrowsePage = ({ onOpenDetails }: { onOpenDetails: (torrent: string) => voi
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, page]);
+  }, [activeCategory, debouncedQuery, page]);
 
-  const filteredRows = useMemo(() => {
-    if (activeCategory === 'all') {
-      return rows;
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (activeCategory === 'movies') {
+      params.delete('category');
+    } else {
+      params.set('category', activeCategory);
     }
 
-    return rows.filter((row) => resolveCategory(row) === activeCategory);
-  }, [activeCategory, rows]);
+    if (debouncedQuery === '') {
+      params.delete('q');
+    } else {
+      params.set('q', debouncedQuery);
+    }
+
+    if (page <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(page));
+    }
+
+    const next = `${window.location.pathname}${params.toString() === '' ? '' : `?${params.toString()}`}`;
+    window.history.replaceState({}, '', next);
+  }, [activeCategory, debouncedQuery, page]);
 
   const facetGroups = browseFacetGroups[activeCategory];
   const showAudioSubtitle = activeCategory === 'movies' || activeCategory === 'tv_shows';
@@ -326,14 +353,14 @@ const BrowsePage = ({ onOpenDetails }: { onOpenDetails: (torrent: string) => voi
                       Loading torrents...
                     </td>
                   </tr>
-                ) : filteredRows.length === 0 ? (
+                ) : rows.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
                       No torrents found.
                     </td>
                   </tr>
                 ) : (
-                  filteredRows.map((row) => (
+                  rows.map((row) => (
                     <tr key={row.id} className="hover:bg-slate-900/80">
                       <td className="px-3 py-2">
                         <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-800">{iconMap[row.type] ?? iconMap.other}</div>
@@ -500,6 +527,10 @@ const DetailsPage = ({ torrent, onBack }: { torrent: string; onBack: () => void 
             </div>
           </div>
         )}
+
+        {!loading && !error && details === null && (
+          <div className="rounded border border-slate-800 bg-slate-900/40 px-3 py-2 text-sm text-slate-400">Torrent details are not available.</div>
+        )}
       </main>
     </div>
   );
@@ -507,10 +538,23 @@ const DetailsPage = ({ torrent, onBack }: { torrent: string; onBack: () => void 
 
 export default function App() {
   const [path, navigate] = usePath();
-  const detailMatch = path.match(/^\/torrents\/([^/]+)$/);
+  const pathname = path.split('?')[0];
+  const detailMatch = pathname.match(/^\/torrents\/([^/]+)$/);
 
   if (detailMatch?.[1] !== undefined) {
-    return <DetailsPage torrent={decodeURIComponent(detailMatch[1])} onBack={() => navigate('/')} />;
+    return (
+      <DetailsPage
+        torrent={decodeURIComponent(detailMatch[1])}
+        onBack={() => {
+          if (window.history.length > 1) {
+            window.history.back();
+            return;
+          }
+
+          navigate('/');
+        }}
+      />
+    );
   }
 
   return <BrowsePage onOpenDetails={(torrent) => navigate(`/torrents/${encodeURIComponent(torrent)}`)} />;
