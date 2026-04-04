@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Film, Gamepad2, Globe, Headphones, Package, Search, SlidersHorizontal, Tv } from 'lucide-react';
-import type { BrowseCategory, BrowseFacetGroup, TorrentRow } from '@nextgn/api-contract';
-import { browseFacetGroups, browseRows } from './data/browseMock';
+import type { BrowseCategory, BrowseFacetGroup, TorrentKind } from '@nextgn/api-contract';
+import { apiClient, resolveApiUrl } from './api/client';
+
 const categories: { label: string; value: BrowseCategory }[] = [
   { label: 'Movies', value: 'movies' },
   { label: 'TV shows', value: 'tv_shows' },
@@ -10,7 +11,72 @@ const categories: { label: string; value: BrowseCategory }[] = [
   { label: 'Software', value: 'software' },
   { label: 'All', value: 'all' },
 ];
-const iconMap: Record<TorrentRow['kind'], JSX.Element> = {
+
+const browseFacetGroups: Record<BrowseCategory, BrowseFacetGroup[]> = {
+  movies: [
+    {
+      id: 'quality',
+      label: 'Quality',
+      options: [
+        { id: 'sd', label: 'SD' },
+        { id: '720p', label: '720p' },
+        { id: '1080p', label: '1080p' },
+        { id: '2160p', label: '2160p' },
+      ],
+    },
+  ],
+  tv_shows: [
+    {
+      id: 'quality',
+      label: 'Quality',
+      options: [
+        { id: 'sd', label: 'SD' },
+        { id: '720p', label: '720p' },
+        { id: '1080p', label: '1080p' },
+        { id: '2160p', label: '2160p' },
+      ],
+    },
+  ],
+  games: [],
+  music: [],
+  software: [],
+  all: [],
+};
+
+type TorrentListItem = {
+  id: number;
+  slug: string;
+  name: string;
+  category: { id: number; name: string; slug: string } | null;
+  type: TorrentKind;
+  size_human: string;
+  seeders: number;
+  leechers: number;
+  completed: number;
+  uploaded_at_human: string | null;
+};
+
+type TorrentDetails = TorrentListItem & {
+  uploader: { id: number; name: string } | null;
+  download_url: string;
+  magnet_url: string;
+};
+
+type TorrentListResponse = {
+  data: TorrentListItem[];
+  meta: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+};
+
+type TorrentDetailsResponse = {
+  data: TorrentDetails;
+};
+
+const iconMap: Record<TorrentKind, JSX.Element> = {
   movie: <Film className="h-4 w-4 text-amber-300" />,
   tv: <Tv className="h-4 w-4 text-sky-300" />,
   music: <Headphones className="h-4 w-4 text-emerald-300" />,
@@ -18,6 +84,7 @@ const iconMap: Record<TorrentRow['kind'], JSX.Element> = {
   software: <Package className="h-4 w-4 text-slate-300" />,
   other: <Globe className="h-4 w-4 text-slate-300" />,
 };
+
 const audioSubtitleBlock = (
   <div className="space-y-3">
     <div className="text-xs uppercase tracking-wide text-slate-400">Audio & subtitles</div>
@@ -31,6 +98,7 @@ const audioSubtitleBlock = (
     </div>
   </div>
 );
+
 const FacetContent = ({
   facetGroups,
   showAudioSubtitle,
@@ -58,34 +126,113 @@ const FacetContent = ({
   ) : (
     <p className="text-xs text-slate-500">No filters available.</p>
   );
-export default function App() {
+
+const resolveCategory = (item: TorrentListItem): BrowseCategory => {
+  const slug = item.category?.slug;
+  if (slug === 'movies' || slug === 'tv_shows' || slug === 'music' || slug === 'games' || slug === 'software') {
+    return slug;
+  }
+
+  const typeMap: Record<TorrentKind, BrowseCategory> = {
+    movie: 'movies',
+    tv: 'tv_shows',
+    music: 'music',
+    game: 'games',
+    software: 'software',
+    other: 'all',
+  };
+
+  return typeMap[item.type] ?? 'all';
+};
+
+const usePath = (): [string, (to: string) => void] => {
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const onPopState = () => setPath(window.location.pathname);
+    window.addEventListener('popstate', onPopState);
+
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const navigate = (to: string) => {
+    window.history.pushState({}, '', to);
+    setPath(to);
+  };
+
+  return [path, navigate];
+};
+
+const BrowsePage = ({ onOpenDetails }: { onOpenDetails: (torrent: string) => void }) => {
   const [activeCategory, setActiveCategory] = useState<BrowseCategory>('movies');
   const [showFacets, setShowFacets] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<TorrentListItem[]>([]);
+  const [meta, setMeta] = useState<TorrentListResponse['meta'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const handle = window.setTimeout(() => {
       setDebouncedQuery(searchQuery.trim());
+      setPage(1);
     }, 180);
+
     return () => window.clearTimeout(handle);
   }, [searchQuery]);
-  const normalizedQuery = debouncedQuery.toLowerCase();
-  const filteredRows = useMemo(
-    () =>
-      browseRows.filter((row) => {
-        if (activeCategory !== 'all' && row.category !== activeCategory) {
-          return false;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRows = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const query = new URLSearchParams({ page: String(page), per_page: '25' });
+        if (debouncedQuery !== '') {
+          query.set('q', debouncedQuery);
         }
-        if (!normalizedQuery) {
-          return true;
+
+        const response = await apiClient<TorrentListResponse>(`/api/torrents?${query.toString()}`);
+
+        if (!cancelled) {
+          setRows(response.data);
+          setMeta(response.meta);
         }
-        const tagsMatch = row.tags?.some((tag) => tag.toLowerCase().includes(normalizedQuery));
-        return row.title.toLowerCase().includes(normalizedQuery) || Boolean(tagsMatch);
-      }),
-    [activeCategory, normalizedQuery],
-  );
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(requestError instanceof Error ? requestError.message : 'Failed to load torrents.');
+          setRows([]);
+          setMeta(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchRows();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, page]);
+
+  const filteredRows = useMemo(() => {
+    if (activeCategory === 'all') {
+      return rows;
+    }
+
+    return rows.filter((row) => resolveCategory(row) === activeCategory);
+  }, [activeCategory, rows]);
+
   const facetGroups = browseFacetGroups[activeCategory];
   const showAudioSubtitle = activeCategory === 'movies' || activeCategory === 'tv_shows';
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <header className="border-b border-slate-800 bg-slate-950/80 px-6 py-4">
@@ -156,6 +303,9 @@ export default function App() {
               </button>
             </div>
           </div>
+
+          {error && <div className="rounded border border-rose-700 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">{error}</div>}
+
           <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-900/40">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-slate-800 bg-slate-900/80 text-slate-400">
@@ -170,48 +320,72 @@ export default function App() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {filteredRows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-900/80">
-                    <td className="px-3 py-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-800">
-                        {iconMap[row.kind]}
-                      </div>
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
+                      Loading torrents...
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-100">{row.title}</span>
-                          {row.freeleech && (
-                            <span className="rounded border border-emerald-400/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-200">
-                              F2L
-                            </span>
-                          )}
-                        </div>
-                        <button type="button" className="rounded border border-slate-700 p-1 text-slate-300 hover:border-slate-500">
-                          <Download className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-slate-300">{row.when}</td>
-                    <td className="px-3 py-2 text-slate-300">{row.size}</td>
-                    <td className="px-3 py-2 text-right text-amber-300">{row.downloads}</td>
-                    <td className="px-3 py-2 text-right text-slate-200">{row.seeders}</td>
-                    <td className="px-3 py-2 text-right text-slate-400">{row.leechers}</td>
                   </tr>
-                ))}
+                ) : filteredRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
+                      No torrents found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRows.map((row) => (
+                    <tr key={row.id} className="hover:bg-slate-900/80">
+                      <td className="px-3 py-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-800">{iconMap[row.type] ?? iconMap.other}</div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center gap-3">
+                          <button type="button" onClick={() => onOpenDetails(row.slug || String(row.id))} className="text-left text-sm text-slate-100 hover:text-emerald-200">
+                            {row.name}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-slate-300">{row.uploaded_at_human ?? '-'}</td>
+                      <td className="px-3 py-2 text-slate-300">{row.size_human}</td>
+                      <td className="px-3 py-2 text-right text-amber-300">{row.completed}</td>
+                      <td className="px-3 py-2 text-right text-slate-200">{row.seeders}</td>
+                      <td className="px-3 py-2 text-right text-slate-400">{row.leechers}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-slate-400">
+            <span>
+              Page {meta?.current_page ?? page}
+              {meta ? ` / ${meta.last_page}` : ''}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                disabled={page <= 1 || loading}
+                className="rounded border border-slate-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((current) => current + 1)}
+                disabled={loading || (meta !== null && page >= meta.last_page)}
+                className="rounded border border-slate-700 px-3 py-1 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </section>
       </main>
       {showFacets && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          <button
-            type="button"
-            onClick={() => setShowFacets(false)}
-            className="absolute inset-0 bg-black/60"
-            aria-label="Close filters"
-          />
+          <button type="button" onClick={() => setShowFacets(false)} className="absolute inset-0 bg-black/60" aria-label="Close filters" />
           <div className="relative ml-auto h-full w-72 bg-slate-950 p-4">
             <div className="mb-4 flex items-center justify-between">
               <p className="text-xs uppercase tracking-wide text-slate-400">Filters</p>
@@ -227,4 +401,117 @@ export default function App() {
       )}
     </div>
   );
+};
+
+const DetailsPage = ({ torrent, onBack }: { torrent: string; onBack: () => void }) => {
+  const [details, setDetails] = useState<TorrentDetails | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchDetails = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiClient<TorrentDetailsResponse>(`/api/torrents/${encodeURIComponent(torrent)}`);
+        if (!cancelled) {
+          setDetails(response.data);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(requestError instanceof Error ? requestError.message : 'Failed to load torrent details.');
+          setDetails(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void fetchDetails();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [torrent]);
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <header className="border-b border-slate-800 bg-slate-950/80 px-6 py-4">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
+          <button type="button" onClick={onBack} className="text-sm text-slate-300 hover:text-slate-100">
+            ← Back to browse
+          </button>
+        </div>
+      </header>
+      <main className="mx-auto max-w-4xl space-y-4 px-6 py-6">
+        {loading && <p className="text-sm text-slate-400">Loading details...</p>}
+        {error && <div className="rounded border border-rose-700 bg-rose-950/40 px-3 py-2 text-sm text-rose-200">{error}</div>}
+
+        {details && (
+          <div className="space-y-4 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
+            <h1 className="text-xl font-semibold text-slate-100">{details.name}</h1>
+            <dl className="grid grid-cols-1 gap-3 text-sm text-slate-300 sm:grid-cols-2">
+              <div>
+                <dt className="text-slate-500">Category</dt>
+                <dd>{details.category?.name ?? '-'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Type</dt>
+                <dd>{details.type}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Size</dt>
+                <dd>{details.size_human}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Seeders</dt>
+                <dd>{details.seeders}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Leechers</dt>
+                <dd>{details.leechers}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Completed</dt>
+                <dd>{details.completed}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Uploaded</dt>
+                <dd>{details.uploaded_at_human ?? '-'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Uploader</dt>
+                <dd>{details.uploader?.name ?? '-'}</dd>
+              </div>
+            </dl>
+            <div className="flex gap-3">
+              <a href={resolveApiUrl(details.download_url)} className="inline-flex items-center gap-2 rounded border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500">
+                <Download className="h-4 w-4" />
+                Download
+              </a>
+              <a href={details.magnet_url} className="inline-flex items-center gap-2 rounded border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-slate-500">
+                Magnet
+              </a>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+export default function App() {
+  const [path, navigate] = usePath();
+  const detailMatch = path.match(/^\/torrents\/([^/]+)$/);
+
+  if (detailMatch?.[1] !== undefined) {
+    return <DetailsPage torrent={decodeURIComponent(detailMatch[1])} onBack={() => navigate('/')} />;
+  }
+
+  return <BrowsePage onOpenDetails={(torrent) => navigate(`/torrents/${encodeURIComponent(torrent)}`)} />;
 }
