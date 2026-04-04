@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Torrent;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 final class TorrentDetailsController extends Controller
 {
-    public function show(string $torrent): JsonResponse
+    public function show(Request $request, string $torrent): JsonResponse
     {
         $model = Torrent::query()
             ->visible()
@@ -20,6 +22,7 @@ final class TorrentDetailsController extends Controller
                 $query->where('id', $torrent)->orWhere('slug', $torrent);
             })
             ->firstOrFail();
+        $user = $request->user();
 
         [$files, $fileCount] = $this->resolveFiles($model);
 
@@ -50,10 +53,30 @@ final class TorrentDetailsController extends Controller
                 'info_hash' => strtolower((string) $model->info_hash),
                 'file_count' => $fileCount,
                 'files' => $files,
-                'magnet_url' => 'magnet:?xt=urn:btih:'.strtolower((string) $model->info_hash),
-                'download_url' => '/api/torrents/'.$model->id.'/download',
+                'magnet_url' => $this->buildMagnetUrl($model, $user instanceof User ? $user : null),
+                'download_url' => route('api.torrents.download', ['torrent' => $model->id], false),
             ],
         ]);
+    }
+
+    private function buildMagnetUrl(Torrent $torrent, ?User $user): string
+    {
+        $params = [
+            'xt=urn:btih:'.strtoupper((string) $torrent->info_hash),
+            'dn='.rawurlencode((string) $torrent->name),
+        ];
+
+        if ($user instanceof User) {
+            $params[] = 'tr='.rawurlencode($user->announce_url);
+        }
+
+        foreach ((array) config('tracker.additional_trackers', []) as $tracker) {
+            if (is_string($tracker) && $tracker !== '') {
+                $params[] = 'tr='.rawurlencode($tracker);
+            }
+        }
+
+        return 'magnet:?'.implode('&', $params);
     }
 
     /**

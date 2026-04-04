@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\TorrentBrowseController;
 use App\Http\Controllers\Api\TorrentDetailsController;
+use App\Http\Controllers\Api\TorrentDownloadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -20,4 +21,5 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])->name('api.torrents.index');
     Route::get('/torrents/{torrent}', [TorrentDetailsController::class, 'show'])->name('api.torrents.show');
+    Route::get('/torrents/{torrent}/download', TorrentDownloadController::class)->name('api.torrents.download');
 });
