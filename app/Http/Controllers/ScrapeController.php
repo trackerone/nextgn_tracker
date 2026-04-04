@@ -63,7 +63,7 @@ final class ScrapeController extends Controller
      */
     private function allInfoHashParams(Request $request): array
     {
-<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
+<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
         $qs = (string) (
             $request->server('QUERY_STRING')
             ?? parse_url((string) $request->getRequestUri(), PHP_URL_QUERY)
@@ -72,14 +72,14 @@ final class ScrapeController extends Controller
         );
 =======
         $qs = (string) $request->server('QUERY_STRING', '');
->>>>>> main
+>>>>> main
         if ($qs === '') {
             return [];
         }
 
         $out = [];
 
-<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
+<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
         // Match info_hash=..., info_hash[]=..., and indexed keys like info_hash[0]=...
         if (preg_match_all('/(?:^|&)info_hash(?:%5B(?:%5D|[0-9]+%5D)|\[(?:\]|[0-9]+)\])?=([^&]*)/i', $qs, $matches) > 0) {
             /** @var array<int, string> $rawValues */
@@ -96,7 +96,7 @@ final class ScrapeController extends Controller
         if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
             foreach ($matches[2] as $rawVal) {
                 $out[] = rawurldecode((string) $rawVal);
->>>>>> main
+>>>>> main
             }
         }
 
