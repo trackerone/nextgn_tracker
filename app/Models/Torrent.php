@@ -19,7 +19,9 @@ class Torrent extends Model
 
     public const STATUS_PENDING = 'pending';
 
-    public const STATUS_APPROVED = 'approved';
+    public const STATUS_PUBLISHED = 'published';
+
+    public const STATUS_APPROVED = self::STATUS_PUBLISHED;
 
     public const STATUS_REJECTED = 'rejected';
 
@@ -54,6 +56,7 @@ class Torrent extends Model
         'ban_reason',
         'freeleech',
         'status',
+        'published_at',
         'moderated_by',
         'moderated_at',
         'moderated_reason',
@@ -80,6 +83,7 @@ class Torrent extends Model
         'codecs' => 'array',
         'tags' => 'array',
         'uploaded_at' => 'datetime',
+        'published_at' => 'datetime',
         'moderated_at' => 'datetime',
     ];
 
@@ -134,11 +138,11 @@ class Torrent extends Model
         $hasIsApprovedColumn = Schema::hasColumn($this->getTable(), 'is_approved');
 
         if ($hasIsApprovedColumn) {
-            return (bool) $this->is_approved && $this->status === self::STATUS_APPROVED;
+            return (bool) $this->is_approved && $this->status === self::STATUS_PUBLISHED;
         }
 
         // Fallback hvis kolonnen ikke findes (fx ældre schema/test setup)
-        return $this->status === self::STATUS_APPROVED;
+        return $this->status === self::STATUS_PUBLISHED;
     }
 
     public function isRejected(): bool
@@ -173,7 +177,7 @@ class Torrent extends Model
     public function scopeVisible(Builder $query): Builder
     {
         $query = $query
-            ->where('status', self::STATUS_APPROVED)
+            ->where('status', self::STATUS_PUBLISHED)
             ->where('is_banned', false);
 
         if (Schema::hasColumn($this->getTable(), 'is_approved')) {
@@ -191,6 +195,11 @@ class Torrent extends Model
     public function scopeModerated(Builder $query): Builder
     {
         return $query->where('status', '!=', self::STATUS_PENDING);
+    }
+
+    public function canBeModerated(): bool
+    {
+        return $this->isPending();
     }
 
     public function peers(): HasMany

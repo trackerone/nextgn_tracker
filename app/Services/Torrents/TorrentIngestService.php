@@ -75,6 +75,8 @@ final class TorrentIngestService
             'tmdb_id' => $this->normalizeNumericId($attributes['tmdb_id'] ?? null),
             'original_filename' => $this->sanitizeOptionalString($torrentFile->getClientOriginalName()),
             'is_approved' => false,
+            'status' => Torrent::STATUS_PENDING,
+            'published_at' => null,
             'uploaded_at' => Carbon::now(),
             'storage_path' => $storagePath,
         ]);

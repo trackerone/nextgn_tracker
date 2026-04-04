@@ -14,7 +14,7 @@ final class TorrentDownloadController extends Controller
 {
     public function download(Request $request, string $torrent): StreamedResponse
     {
-        $model = $this->resolveTorrent($torrent);
+        $model = $this->resolveTorrent($request, $torrent);
 
         $disk = (string) config('upload.torrents.disk', 'torrents');
         $path = $model->torrentStoragePath();
@@ -32,7 +32,7 @@ final class TorrentDownloadController extends Controller
 
     public function magnet(Request $request, string $torrent): JsonResponse
     {
-        $model = $this->resolveTorrent($torrent);
+        $model = $this->resolveTorrent($request, $torrent);
 
         $announceUrl = (string) config('tracker.announce_url', '');
         $additional = (array) config('tracker.additional_trackers', []);
@@ -61,11 +61,17 @@ final class TorrentDownloadController extends Controller
         ]);
     }
 
-    private function resolveTorrent(string $torrent): Torrent
+    private function resolveTorrent(Request $request, string $torrent): Torrent
     {
-        return Torrent::query()
+        $model = Torrent::query()
             ->where('id', $torrent)
             ->orWhere('slug', $torrent)
             ->firstOrFail();
+
+        if (! $request->user()?->can('download', $model)) {
+            abort(404);
+        }
+
+        return $model;
     }
 }

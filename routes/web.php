@@ -16,6 +16,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\MyUploadsController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ScrapeController;
@@ -204,10 +205,14 @@ Route::middleware('auth')->group(function () use ($searchThrottle): void {
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
+    Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
+
+Route::middleware(['auth', 'staff'])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
+    ->name('moderation.uploads');
 
 /*
 |--------------------------------------------------------------------------

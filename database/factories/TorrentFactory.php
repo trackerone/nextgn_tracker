@@ -56,7 +56,7 @@ class TorrentFactory extends Factory
             'is_banned' => false,
             'ban_reason' => null,
             'freeleech' => false,
-            'status' => Torrent::STATUS_APPROVED,
+            'status' => Torrent::STATUS_PUBLISHED,
 
             'moderated_by' => null,
             'moderated_at' => null,
@@ -78,7 +78,7 @@ class TorrentFactory extends Factory
     {
         return $this->state(fn (): array => [
             'is_approved' => true,
-            'status' => Torrent::STATUS_APPROVED,
+            'status' => Torrent::STATUS_PUBLISHED,
         ]);
     }
 

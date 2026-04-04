@@ -1,0 +1,67 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Api;
+
+use App\Exceptions\TorrentAlreadyExistsException;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreTorrentRequest;
+use App\Models\Torrent;
+use App\Services\Security\SanitizationService;
+use App\Services\Torrents\TorrentIngestService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+
+final class UploadSubmissionController extends Controller
+{
+    public function __construct(
+        private readonly TorrentIngestService $ingestService,
+        private readonly SanitizationService $sanitizer,
+    ) {}
+
+    public function store(StoreTorrentRequest $request): JsonResponse
+    {
+        $torrentFile = $request->file('torrent_file');
+
+        if (! $torrentFile instanceof UploadedFile) {
+            throw ValidationException::withMessages([
+                'torrent_file' => 'A valid .torrent file is required.',
+            ]);
+        }
+
+        $data = $request->validated();
+
+        try {
+            $torrent = $this->ingestService->ingest($request->user(), $torrentFile, [
+                'name' => $this->sanitizer->sanitizeString((string) $data['name']),
+                'category_id' => $data['category_id'] ?? null,
+                'type' => $data['type'],
+                'description' => $data['description'] ?? null,
+                'tags' => $data['tags'] ?? null,
+                'source' => $data['source'] ?? null,
+                'resolution' => $data['resolution'] ?? null,
+                'codecs' => $data['codecs'] ?? null,
+                'imdb_id' => $data['imdb_id'] ?? null,
+                'tmdb_id' => $data['tmdb_id'] ?? null,
+            ]);
+        } catch (TorrentAlreadyExistsException) {
+            return response()->json(['message' => 'Torrent already exists.'], 409);
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages([
+                'torrent_file' => $exception->getMessage(),
+            ]);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $torrent->id,
+                'slug' => $torrent->slug,
+                'name' => $torrent->name,
+                'status' => $torrent->status,
+            ],
+        ], 201);
+    }
+}

@@ -18,6 +18,19 @@
                     <a href="{{ route('torrents.index') }}" class="text-sm font-medium text-slate-300 hover:text-white">
                         Torrents
                     </a>
+                    @auth
+                        <a href="{{ route('torrents.upload') }}" class="text-sm font-medium text-slate-300 hover:text-white">
+                            Upload
+                        </a>
+                        <a href="{{ route('my.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
+                            My Uploads
+                        </a>
+                        @if (auth()->user()?->isStaff())
+                            <a href="{{ route('moderation.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
+                                Moderation
+                            </a>
+                        @endif
+                    @endauth
                 </div>
                 @auth
                     <div class="flex items-center gap-2 text-sm text-slate-300">
