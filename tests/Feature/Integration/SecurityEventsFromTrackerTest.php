@@ -39,7 +39,9 @@ it('logs banned clients attempting to announce', function (): void {
 it('logs rate limit violations for repeated announces', function (): void {
     $user = User::factory()->create();
 
-    Torrent::factory()->create();
+    Torrent::factory()->create([
+        'info_hash' => strtolower(bin2hex(str_repeat('a', 20))),
+    ]);
 
     $query = http_build_query([
         'info_hash' => str_repeat('a', 20),
@@ -50,10 +52,7 @@ it('logs rate limit violations for repeated announces', function (): void {
         'left' => 1,
     ]);
 
-    // First announce: allowed
     $this->get('/announce/'.$user->passkey.'?'.$query)->assertOk();
-
-    // Second announce within rate-window: should be rate-limited + logged
     $this->get('/announce/'.$user->passkey.'?'.$query)->assertOk();
 
     expect(SecurityEvent::where('event_type', 'tracker.rate_limited')->count())->toBe(1);

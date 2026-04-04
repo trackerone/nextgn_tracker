@@ -11,16 +11,20 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class SecurityHeadersMiddleware
+final class SecurityHeadersMiddleware
 {
     /**
-     * @param  Closure(Request):Response  $next
+     * @param  Closure(Request): Response  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
 
-        if ($response instanceof JsonResponse || $response instanceof BinaryFileResponse || $response instanceof StreamedResponse) {
+        if (
+            $response instanceof JsonResponse
+            || $response instanceof BinaryFileResponse
+            || $response instanceof StreamedResponse
+        ) {
             return $response;
         }
 
@@ -29,13 +33,10 @@ class SecurityHeadersMiddleware
             return $response;
         }
 
-<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
         if ($request->expectsJson() || $request->wantsJson() || $request->isJson()) {
             return $response;
         }
 
-=======
->>>>>> main
         $headers = [
             'X-Frame-Options' => 'DENY',
             'X-Content-Type-Options' => 'nosniff',

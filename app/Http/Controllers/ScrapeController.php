@@ -23,8 +23,8 @@ final class ScrapeController extends Controller
         /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */
         $files = [];
 
-        foreach ($hashes as $h) {
-            $keyHex = $this->toInfoHashHexKey($h);
+        foreach ($hashes as $hash) {
+            $keyHex = $this->toInfoHashHexKey($hash);
             if ($keyHex === null) {
                 continue;
             }
@@ -38,6 +38,7 @@ final class ScrapeController extends Controller
                     'downloaded' => 0,
                     'incomplete' => 0,
                 ];
+
                 continue;
             }
 
@@ -56,67 +57,46 @@ final class ScrapeController extends Controller
     }
 
     /**
-     * Return ALL occurrences of info_hash in the raw query string:
-     * supports:
-     * - ?info_hash=AAA&info_hash=BBB
-     * - ?info_hash[]=AAA&info_hash[]=BBB
+     * Return every info_hash query value, including indexed array parameters.
      */
     private function allInfoHashParams(Request $request): array
     {
-<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
-        $qs = (string) (
+        $queryString = (string) (
             $request->server('QUERY_STRING')
             ?? parse_url((string) $request->getRequestUri(), PHP_URL_QUERY)
             ?? $request->getQueryString()
             ?? ''
         );
-=======
-        $qs = (string) $request->server('QUERY_STRING', '');
->>>>>> main
-        if ($qs === '') {
+
+        if ($queryString === '') {
             return [];
         }
 
-        $out = [];
+        $hashes = [];
 
-<<<<<< codex/fix-failing-tests-in-recovery-branch-m4yjqz
-        // Match info_hash=..., info_hash[]=..., and indexed keys like info_hash[0]=...
-        if (preg_match_all('/(?:^|&)info_hash(?:%5B(?:%5D|[0-9]+%5D)|\[(?:\]|[0-9]+)\])?=([^&]*)/i', $qs, $matches) > 0) {
-            /** @var array<int, string> $rawValues */
-            $rawValues = $matches[1];
-
-            foreach ($rawValues as $rawVal) {
-                $decoded = rawurldecode((string) $rawVal);
+        if (preg_match_all('/(?:^|&)info_hash(?:%5B[^&=]*%5D|\[[^&=]*\])?=([^&]*)/i', $queryString, $matches) > 0) {
+            foreach ($matches[1] as $rawValue) {
+                $decoded = rawurldecode((string) $rawValue);
 
                 if (strlen($decoded) === 20 || preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
-                    $out[] = $decoded;
-                }
-=======
-        // Match both info_hash=... and info_hash[]=...
-        if (preg_match_all('/(?:^|&)(info_hash(?:%5B%5D|\[\])?)=([^&]*)/i', $qs, $matches) > 0) {
-            foreach ($matches[2] as $rawVal) {
-                $out[] = rawurldecode((string) $rawVal);
->>>>>> main
-            }
-        }
-
-        if ($out !== []) {
-            return $out;
-        }
-
-        // Fallback: use Laravel's parsed query values when raw extraction found nothing useful.
-        $v = $request->query('info_hash');
-        if (is_array($v)) {
-            foreach ($v as $vv) {
-                if (is_string($vv)) {
-                    $out[] = $vv;
+                    $hashes[] = $decoded;
                 }
             }
-        } elseif (is_string($v)) {
-            $out[] = $v;
         }
 
-        return $out;
+        if ($hashes !== []) {
+            return $hashes;
+        }
+
+        $parsedValue = $request->query('info_hash');
+
+        if (is_array($parsedValue)) {
+            return array_values(
+                array_filter($parsedValue, static fn (mixed $value): bool => is_string($value))
+            );
+        }
+
+        return is_string($parsedValue) ? [$parsedValue] : [];
     }
 
     /**
