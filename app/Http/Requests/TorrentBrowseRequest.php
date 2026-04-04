@@ -9,7 +9,7 @@ use Illuminate\Validation\Rule;
 
 class TorrentBrowseRequest extends FormRequest
 {
-    private const ORDER_OPTIONS = ['created', 'size', 'seeders', 'leechers', 'completed'];
+    private const ORDER_OPTIONS = ['created', 'size', 'uploaded_at', 'size_bytes', 'seeders', 'leechers', 'completed'];
 
     private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
 
@@ -28,7 +28,9 @@ class TorrentBrowseRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(self::TYPES)],
+            'category' => ['nullable', 'integer', 'exists:categories,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'sort' => ['nullable', Rule::in(self::ORDER_OPTIONS)],
             'order' => ['nullable', Rule::in(self::ORDER_OPTIONS)],
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.$maxPerPage],

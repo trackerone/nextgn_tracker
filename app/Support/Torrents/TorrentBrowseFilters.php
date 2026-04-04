@@ -20,10 +20,12 @@ final class TorrentBrowseFilters
     {
         $q = trim((string) $request->query('q', ''));
         $type = trim((string) $request->query('type', ''));
-        $order = trim((string) $request->query('order', ''));
+
+        $sort = trim((string) $request->query('sort', ''));
+        $order = trim((string) $request->query('order', $sort));
         $direction = strtolower(trim((string) $request->query('direction', 'desc')));
 
-        $categoryRaw = $request->query('category_id');
+        $categoryRaw = $request->query('category', $request->query('category_id'));
         $categoryId = null;
 
         if ($categoryRaw !== null && $categoryRaw !== '') {
