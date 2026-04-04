@@ -61,7 +61,12 @@ final class ScrapeController extends Controller
      */
     private function allInfoHashParams(Request $request): array
     {
-        $queryString = (string) $request->getQueryString();
+        $queryString = (string) (
+            $request->server('QUERY_STRING')
+            ?? parse_url((string) $request->getRequestUri(), PHP_URL_QUERY)
+            ?? $request->getQueryString()
+            ?? ''
+        );
 
         if ($queryString === '') {
             return [];
@@ -71,7 +76,11 @@ final class ScrapeController extends Controller
 
         if (preg_match_all('/(?:^|&)info_hash(?:%5B[^&=]*%5D|\[[^&=]*\])?=([^&]*)/i', $queryString, $matches) > 0) {
             foreach ($matches[1] as $rawValue) {
-                $hashes[] = rawurldecode((string) $rawValue);
+                $decoded = rawurldecode((string) $rawValue);
+
+                if (strlen($decoded) === 20 || preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
+                    $hashes[] = $decoded;
+                }
             }
         }
 
@@ -82,7 +91,9 @@ final class ScrapeController extends Controller
         $parsedValue = $request->query('info_hash');
 
         if (is_array($parsedValue)) {
-            return array_values(array_filter($parsedValue, static fn (mixed $value): bool => is_string($value)));
+            return array_values(
+                array_filter($parsedValue, static fn (mixed $value): bool => is_string($value))
+            );
         }
 
         return is_string($parsedValue) ? [$parsedValue] : [];
