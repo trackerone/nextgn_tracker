@@ -3,10 +3,19 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\ActiveUserMiddleware;
+use App\Http\Middleware\ApiKeyHmacMiddleware;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
+use App\Http\Middleware\LockdownModeMiddleware;
+use App\Http\Middleware\RequestGuard;
+use App\Http\Middleware\RequireRoleLevel;
+use App\Http\Middleware\ResponseGuard;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\Tracker\PassThroughAnnounceValidation;
+use App\Providers\AppServiceProvider;
 use App\Providers\AuthServiceProvider;
+use App\Providers\EventServiceProvider;
+use App\Providers\RepositoryServiceProvider;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,28 +32,36 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([
         FilesystemServiceProvider::class,
         ViewServiceProvider::class,
+        AppServiceProvider::class,
         AuthServiceProvider::class,
+        EventServiceProvider::class,
+        RepositoryServiceProvider::class,
     ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
             'staff' => EnsureUserIsStaff::class,
-            'api.hmac' => \App\Http\Middleware\ApiKeyHmacMiddleware::class,
-            'role.level' => \App\Http\Middleware\RequireRoleLevel::class,
-
-            // Tracker
-            // IMPORTANT:
-            // Validation + SecurityEvent logging happens in AnnounceController.
-            // This middleware must not short-circuit announce requests.
+            'api.hmac' => ApiKeyHmacMiddleware::class,
+            'role.level' => RequireRoleLevel::class,
+            'lockdown' => LockdownModeMiddleware::class,
             'tracker.validate-announce' => PassThroughAnnounceValidation::class,
         ]);
 
-        // IMPORTANT: actually run the middleware for all web routes (incl. torrents.show)
+        $middleware->append([
+            SecurityHeadersMiddleware::class,
+            RequestGuard::class,
+            ResponseGuard::class,
+            LockdownModeMiddleware::class,
+        ]);
+
         $middleware->web(append: [
             ActiveUserMiddleware::class,
         ]);
 
-        // Optional but recommended if you want the same behavior for API routes:
+        $middleware->api(prepend: [
+            sprintf('throttle:%s', config('security.api.default_rate_limit', '60,1')),
+        ]);
+
         $middleware->api(append: [
             ActiveUserMiddleware::class,
         ]);
