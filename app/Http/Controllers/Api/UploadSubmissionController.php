@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTorrentRequest;
+use App\Http\Resources\UploadSubmissionResource;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
@@ -58,12 +59,7 @@ final class UploadSubmissionController extends Controller
         }
 
         return response()->json([
-            'data' => [
-                'id' => $torrent->id,
-                'slug' => $torrent->slug,
-                'name' => $torrent->name,
-                'status' => $torrent->status->value,
-            ],
+            'data' => (new UploadSubmissionResource($torrent))->resolve(),
         ], 201);
     }
 }

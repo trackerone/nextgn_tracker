@@ -64,7 +64,12 @@ final class TorrentDetailsApiTest extends TestCase
         $response->assertJsonPath('data.freeleech', false);
         $response->assertJsonPath('data.uploader.id', $uploader->id);
         $response->assertJsonPath('data.uploader.name', 'trackerone');
+        $response->assertJsonPath('data.status', Torrent::STATUS_PUBLISHED);
+        $this->assertIsString($response->json('data.status'));
         $response->assertJsonPath('data.info_hash', strtolower($torrent->info_hash));
+        $response->assertJsonMissingPath('data.storage_path');
+        $response->assertJsonMissingPath('data.user_id');
+        $response->assertJsonMissingPath('data.moderated_by');
         $response->assertJsonPath('data.file_count', 0);
         $response->assertJsonPath('data.files', []);
         $response->assertJsonPath('data.download_url', '/api/torrents/'.$torrent->id.'/download');
