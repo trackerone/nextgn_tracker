@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Models\Torrent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ final class TorrentDownloadController extends Controller
 {
     public function download(Request $request, string $torrent): StreamedResponse
     {
-        $model = $this->resolveTorrent($request, $torrent);
+        $model = $this->resolveTorrent($torrent);
 
         $disk = (string) config('upload.torrents.disk', 'torrents');
         $path = $model->torrentStoragePath();
@@ -32,7 +33,7 @@ final class TorrentDownloadController extends Controller
 
     public function magnet(Request $request, string $torrent): JsonResponse
     {
-        $model = $this->resolveTorrent($request, $torrent);
+        $model = $this->resolveTorrent($torrent);
 
         $announceUrl = (string) config('tracker.announce_url', '');
         $additional = (array) config('tracker.additional_trackers', []);
@@ -61,15 +62,8 @@ final class TorrentDownloadController extends Controller
         ]);
     }
 
-    private function resolveTorrent(Request $request, string $torrent): Torrent
+    private function resolveTorrent(string $torrent): Torrent
     {
-        $model = Torrent::query()
-            ->where('id', $torrent)
-            ->orWhere('slug', $torrent)
-            ->firstOrFail();
-
-        $this->authorize('download', $model);
-
-        return $model;
+        return app(ResolveTorrentAccessAction::class)->execute($torrent, 'download');
     }
 }

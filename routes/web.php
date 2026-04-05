@@ -29,6 +29,10 @@ use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
 $searchThrottle = sprintf('throttle:%s', config('security.rate_limits.search', '30,1'));
+$torrentBrowseThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_browse', '60,1'));
+$torrentDetailsThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_details', '90,1'));
+$torrentDownloadThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_download', '45,1'));
+$moderationThrottle = sprintf('throttle:%s', config('security.rate_limits.moderation', '60,1'));
 
 /*
 |--------------------------------------------------------------------------
@@ -112,7 +116,7 @@ Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(funct
 | STAFF TORRENT MODERATION
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'staff'])->prefix('staff')->name('staff.')->group(function (): void {
+Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name('staff.')->group(function (): void {
     Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
         ->name('torrents.moderation.index');
 
@@ -182,18 +186,21 @@ Route::middleware(['auth', 'role.min:1'])->group(function (): void {
 | TORRENTS
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth')->group(function () use ($searchThrottle): void {
+Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrowseThrottle, $torrentDetailsThrottle, $torrentDownloadThrottle): void {
     Route::get('/torrents', [TorrentController::class, 'index'])
-        ->middleware($searchThrottle)
+        ->middleware([$searchThrottle, $torrentBrowseThrottle])
         ->name('torrents.index');
 
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
+        ->middleware($torrentDetailsThrottle)
         ->name('torrents.show');
 
     Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
+        ->middleware($torrentDownloadThrottle)
         ->name('torrents.download');
 
     Route::get('/torrents/{torrent}/magnet', [TorrentDownloadController::class, 'magnet'])
+        ->middleware($torrentDownloadThrottle)
         ->name('torrents.magnet');
 });
 
@@ -211,7 +218,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
 });
 
-Route::middleware(['auth', 'staff'])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
+Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
     ->name('moderation.uploads');
 
 /*
