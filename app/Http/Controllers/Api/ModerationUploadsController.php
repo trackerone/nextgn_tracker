@@ -8,6 +8,8 @@ use App\Actions\Torrents\PublishTorrentAction;
 use App\Actions\Torrents\RejectTorrentAction;
 use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ApiModerateTorrentRequest;
+use App\Http\Requests\ModerationUploadsIndexRequest;
 use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -21,11 +23,11 @@ final class ModerationUploadsController extends Controller
         private readonly RejectTorrentAction $rejectTorrentAction,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(ModerationUploadsIndexRequest $request): JsonResponse
     {
         $this->authorize('viewModerationListings', Torrent::class);
 
-        $status = (string) $request->query('status', Torrent::STATUS_PENDING);
+        $status = (string) ($request->validated('status') ?? Torrent::STATUS_PENDING);
 
         $query = Torrent::query()
             ->with('uploader')
@@ -74,16 +76,14 @@ final class ModerationUploadsController extends Controller
         ]);
     }
 
-    public function reject(Request $request, Torrent $torrent): JsonResponse
+    public function reject(ApiModerateTorrentRequest $request, Torrent $torrent): JsonResponse
     {
         $this->authorize('reject', $torrent);
 
         /** @var User $user */
         $user = $request->user();
 
-        $data = $request->validate([
-            'reason' => ['nullable', 'string', 'max:500'],
-        ]);
+        $data = $request->validated();
 
         try {
             $this->rejectTorrentAction->execute($torrent, $user, $data['reason'] ?? null);

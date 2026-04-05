@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BrowseTorrentsRequest;
 use App\Models\Category;
 use App\Models\Torrent;
-use App\Support\Torrents\TorrentBrowseFilters;
 use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,9 +21,9 @@ final class TorrentController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request): Response|JsonResponse
+    public function index(BrowseTorrentsRequest $request): Response|JsonResponse
     {
-        $filters = TorrentBrowseFilters::fromRequest($request);
+        $filters = $request->filters();
         $query = (new TorrentBrowseQuery)->apply(Torrent::query()->visible(), $filters);
 
         if ($request->expectsJson()) {
