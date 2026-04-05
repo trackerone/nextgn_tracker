@@ -9,13 +9,13 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\TorrentDownloadService;
 use RuntimeException;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TorrentDownloadController extends Controller
 {
     public function __construct(private readonly TorrentDownloadService $downloads) {}
 
-    public function __invoke(string $torrent): Response
+    public function __invoke(string $torrent): StreamedResponse
     {
         $user = auth()->user();
 
@@ -38,9 +38,14 @@ final class TorrentDownloadController extends Controller
 
         $filename = ($model->slug ?: (string) $model->getKey()).'.torrent';
 
-        return response($payload, 200, [
-            'Content-Type' => 'application/x-bittorrent',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-        ]);
+        return response()->streamDownload(
+            static function () use ($payload): void {
+                echo $payload;
+            },
+            $filename,
+            [
+                'Content-Type' => 'application/x-bittorrent',
+            ]
+        );
     }
 }
