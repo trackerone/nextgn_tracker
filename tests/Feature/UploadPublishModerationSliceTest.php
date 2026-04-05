@@ -114,6 +114,34 @@ final class UploadPublishModerationSliceTest extends TestCase
         $this->actingAs($member)->get(route('torrents.show', $torrent))->assertOk();
     }
 
+
+
+    public function test_invalid_moderation_payload_is_rejected_predictably(): void
+    {
+        $staff = $this->createStaffUser();
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PENDING,
+            'is_approved' => false,
+        ]);
+
+        $this->actingAs($staff)
+            ->postJson(route('api.moderation.uploads.reject', $torrent), [
+                'reason' => str_repeat('x', 501),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['reason']);
+    }
+
+    public function test_invalid_moderation_status_filter_is_rejected_predictably(): void
+    {
+        $staff = $this->createStaffUser();
+
+        $this->actingAs($staff)
+            ->getJson(route('api.moderation.uploads.index', ['status' => 'unknown']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status']);
+    }
+
     public function test_moderator_can_reject_and_rejected_stays_hidden_from_public(): void
     {
         $staff = $this->createStaffUser();

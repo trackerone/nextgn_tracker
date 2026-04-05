@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\Torrents\PublishTorrentAction;
 use App\Actions\Torrents\RejectTorrentAction;
 use App\Exceptions\InvalidTorrentStatusTransitionException;
+use App\Http\Requests\ModerateTorrentRequest;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
@@ -72,15 +73,13 @@ class TorrentModerationController extends Controller
         return redirect()->route('staff.torrents.moderation.index')->with('status', 'Torrent approved.');
     }
 
-    public function reject(Request $request, Torrent $torrent): RedirectResponse
+    public function reject(ModerateTorrentRequest $request, Torrent $torrent): RedirectResponse
     {
         $this->authorize('reject', $torrent);
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $data = $request->validate([
-            'reason' => ['required', 'string', 'max:500'],
-        ]);
+        $data = $request->validated();
 
         try {
             $this->rejectTorrentAction->execute($torrent, $user, $data['reason']);

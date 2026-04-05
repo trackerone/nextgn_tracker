@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Support\Torrents;
 
-use Illuminate\Http\Request;
-
 final class TorrentBrowseFilters
 {
     public function __construct(
@@ -16,19 +14,22 @@ final class TorrentBrowseFilters
         public readonly string $direction,
     ) {}
 
-    public static function fromRequest(Request $request): self
+    /**
+     * @param  array<string, mixed>  $input
+     */
+    public static function fromInput(array $input): self
     {
-        $q = trim((string) $request->query('q', ''));
-        $type = trim((string) $request->query('type', ''));
+        $q = trim((string) ($input['q'] ?? ''));
+        $type = trim((string) ($input['type'] ?? ''));
 
-        $sort = trim((string) $request->query('sort', ''));
-        $order = trim((string) $request->query('order', $sort));
-        $direction = strtolower(trim((string) $request->query('direction', 'desc')));
+        $sort = trim((string) ($input['sort'] ?? ''));
+        $order = trim((string) ($input['order'] ?? $sort));
+        $direction = strtolower(trim((string) ($input['direction'] ?? 'desc')));
 
-        $categoryRaw = $request->query('category', $request->query('category_id'));
+        $categoryRaw = $input['category'] ?? $input['category_id'] ?? null;
         $categoryId = null;
 
-        if ($categoryRaw !== null && $categoryRaw !== '' && ctype_digit((string) $categoryRaw)) {
+        if ($categoryRaw !== null && $categoryRaw !== '' && is_numeric($categoryRaw)) {
             $categoryId = (int) $categoryRaw;
         }
 
@@ -43,6 +44,9 @@ final class TorrentBrowseFilters
         return new self($q, $type, $categoryId, $order, $direction);
     }
 
+    /**
+     * @return array<string, int|string|null>
+     */
     public function toArray(): array
     {
         return [
@@ -54,6 +58,9 @@ final class TorrentBrowseFilters
         ];
     }
 
+    /**
+     * @return array<string, int|string>
+     */
     public function queryParams(): array
     {
         $params = [];

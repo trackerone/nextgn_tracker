@@ -5,27 +5,26 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BrowseTorrentsRequest;
 use App\Models\Torrent;
-use App\Support\Torrents\TorrentBrowseFilters;
 use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 final class TorrentBrowseController extends Controller
 {
-    public function index(Request $request, TorrentBrowseQuery $browseQuery): JsonResponse
+    public function index(BrowseTorrentsRequest $request, TorrentBrowseQuery $browseQuery): JsonResponse
     {
         $query = Torrent::query()
             ->visible()
             ->with(['category', 'uploader']);
 
-        $filters = TorrentBrowseFilters::fromRequest($request);
+        $filters = $request->filters();
 
         $query = $browseQuery->apply($query, $filters);
 
-        $perPage = max(1, min(100, (int) $request->query('per_page', 25)));
+        $perPage = $request->perPage(25);
 
         /** @var LengthAwarePaginator<int, Torrent> $paginator */
         $paginator = $query->paginate($perPage)->withQueryString();

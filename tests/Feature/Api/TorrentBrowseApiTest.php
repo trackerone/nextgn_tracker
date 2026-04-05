@@ -75,6 +75,38 @@ final class TorrentBrowseApiTest extends TestCase
         $this->assertNotNull($response->json('data.0.uploaded_at_human'));
     }
 
+
+
+    public function test_invalid_sort_field_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson('/api/torrents?sort=not_allowed')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['sort']);
+    }
+
+    public function test_invalid_sort_direction_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson('/api/torrents?direction=sideways')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['direction']);
+    }
+
+    public function test_excessive_per_page_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson('/api/torrents?per_page=9999')
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['per_page']);
+    }
+
     public function test_filters_and_sort_are_applied(): void
     {
         $user = User::factory()->create();
