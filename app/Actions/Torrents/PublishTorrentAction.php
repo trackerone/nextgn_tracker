@@ -23,13 +23,18 @@ final class PublishTorrentAction
 
         $now = Carbon::now();
 
-        $torrent->forceFill([
+        $attributes = [
             'status' => TorrentStatus::Published,
             'is_approved' => true,
-            'published_at' => $torrent->published_at ?? $now,
             'moderated_by' => $moderator->id,
             'moderated_at' => $now,
-        ])->save();
+        ];
+
+        if ($torrent->published_at === null) {
+            $attributes['published_at'] = $now;
+        }
+
+        $torrent->forceFill($attributes)->save();
 
         return $torrent;
     }

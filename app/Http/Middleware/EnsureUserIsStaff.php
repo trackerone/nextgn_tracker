@@ -89,7 +89,12 @@ final class EnsureUserIsStaff
     {
         $routeName = (string) ($request->route()?->getName() ?? '');
 
+<<< fix/post-merge-ci-recovery-slice2
+        if (
+            ! str_starts_with($routeName, 'staff.torrents.')
+=======
         if (! str_starts_with($routeName, 'staff.torrents.')
+>>> main
             && ! str_starts_with($routeName, 'api.moderation.uploads.')
             && $routeName !== 'moderation.uploads'
         ) {

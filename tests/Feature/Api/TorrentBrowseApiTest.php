@@ -80,8 +80,6 @@ final class TorrentBrowseApiTest extends TestCase
         $this->assertNotNull($response->json('data.0.uploaded_at_human'));
     }
 
-
-
     public function test_invalid_sort_field_is_rejected(): void
     {
         $user = User::factory()->create();

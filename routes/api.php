@@ -11,6 +11,8 @@ use App\Http\Controllers\Api\UploadSubmissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+<<< fix/post-merge-ci-recovery-slice2
+=======
 $torrentBrowseThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_browse', '60,1'));
 $torrentDetailsThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_details', '90,1'));
 $moderationThrottle = sprintf(
@@ -18,6 +20,7 @@ $moderationThrottle = sprintf(
     config('security.rate_limits.torrent_moderation', config('security.rate_limits.moderation', '60,1'))
 );
 
+>>> main
 Route::middleware(['api', 'api.hmac'])->group(function (): void {
     Route::get('/user', static function (Request $request) {
         return response()->json([
@@ -28,27 +31,38 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
     })->name('api.user');
 });
 
+<<< fix/post-merge-ci-recovery-slice2
+Route::middleware(['api', 'auth'])->group(function (): void {
+=======
 Route::middleware(['api', 'auth'])->group(function () use ($torrentBrowseThrottle, $torrentDetailsThrottle, $moderationThrottle): void {
+>>> main
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
-        ->middleware($torrentBrowseThrottle)
+        ->middleware('throttle:torrent-browse')
         ->name('api.torrents.index');
+
     Route::get('/torrents/{torrent}', [TorrentDetailsController::class, 'show'])
-        ->middleware($torrentDetailsThrottle)
+        ->middleware('throttle:torrent-details')
         ->name('api.torrents.show');
+
     Route::get('/torrents/{torrent}/download', TorrentDownloadController::class)
         ->middleware('throttle:torrent-download')
         ->name('api.torrents.download');
 
-    Route::post('/uploads', [UploadSubmissionController::class, 'store'])->name('api.uploads.store');
-    Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('api.my.uploads');
+    Route::post('/uploads', [UploadSubmissionController::class, 'store'])
+        ->name('api.uploads.store');
+
+    Route::get('/my/uploads', [MyUploadsController::class, 'index'])
+        ->name('api.my.uploads');
 
     Route::get('/moderation/uploads', [ModerationUploadsController::class, 'index'])
-        ->middleware($moderationThrottle)
+        ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.index');
+
     Route::post('/moderation/uploads/{torrent}/approve', [ModerationUploadsController::class, 'approve'])
-        ->middleware($moderationThrottle)
+        ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.approve');
+
     Route::post('/moderation/uploads/{torrent}/reject', [ModerationUploadsController::class, 'reject'])
-        ->middleware($moderationThrottle)
+        ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.reject');
 });

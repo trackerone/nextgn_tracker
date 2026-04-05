@@ -16,6 +16,7 @@ use App\Http\Resources\TorrentStatusResource;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,7 +52,19 @@ final class ModerationUploadsController extends Controller
 
     public function approve(Request $request, Torrent $torrent): JsonResponse
     {
-        $this->authorize('publish', $torrent);
+        /** @var User|null $user */
+        $user = $request->user();
+
+        try {
+            $this->authorize('publish', $torrent);
+        } catch (AuthorizationException $exception) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.unauthorized', [
+                'route' => (string) ($request->route()?->getName() ?? ''),
+                'torrent' => (string) $torrent->getKey(),
+            ]);
+
+            throw $exception;
+        }
 
         /** @var User $user */
         $user = $request->user();
@@ -75,7 +88,19 @@ final class ModerationUploadsController extends Controller
 
     public function reject(ApiModerateTorrentRequest $request, Torrent $torrent): JsonResponse
     {
-        $this->authorize('reject', $torrent);
+        /** @var User|null $user */
+        $user = $request->user();
+
+        try {
+            $this->authorize('reject', $torrent);
+        } catch (AuthorizationException $exception) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.unauthorized', [
+                'route' => (string) ($request->route()?->getName() ?? ''),
+                'torrent' => (string) $torrent->getKey(),
+            ]);
+
+            throw $exception;
+        }
 
         /** @var User $user */
         $user = $request->user();
