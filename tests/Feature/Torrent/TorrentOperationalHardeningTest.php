@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Torrent;
 
 use App\Enums\TorrentStatus;
-use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;

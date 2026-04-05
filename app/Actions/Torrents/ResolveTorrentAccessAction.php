@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\Torrents;
 
+use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Gate;
 
@@ -31,8 +33,39 @@ final class ResolveTorrentAccessAction
             })
             ->firstOrFail();
 
-        Gate::authorize($ability, $torrent);
+        try {
+            Gate::authorize($ability, $torrent);
+        } catch (AuthorizationException $exception) {
+            $this->logDeniedAccess($ability, $torrent);
+
+            throw $exception;
+        }
 
         return $torrent;
+    }
+
+    private function logDeniedAccess(string $ability, Torrent $torrent): void
+    {
+        $action = match ($ability) {
+            'view' => 'torrent.access.denied_details',
+            'download' => 'torrent.access.denied_download',
+            default => null,
+        };
+
+        if ($action === null) {
+            return;
+        }
+
+        $user = request()->user();
+
+        SecurityAuditLog::logAndWarn(
+            $user instanceof User ? $user : null,
+            $action,
+            [
+                'torrent_id' => $torrent->id,
+                'route' => (string) (request()->route()?->getName() ?? ''),
+                'ability' => $ability,
+            ]
+        );
     }
 }

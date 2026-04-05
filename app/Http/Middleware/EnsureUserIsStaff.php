@@ -89,7 +89,9 @@ final class EnsureUserIsStaff
     {
         $routeName = (string) ($request->route()?->getName() ?? '');
 
-        if (! str_starts_with($routeName, 'staff.torrents.')
+        if (
+            ! str_starts_with($routeName, 'staff.torrents.')
+            && ! str_starts_with($routeName, 'api.moderation.uploads.')
             && $routeName !== 'moderation.uploads'
         ) {
             return;

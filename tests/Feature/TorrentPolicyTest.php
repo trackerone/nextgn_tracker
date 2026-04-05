@@ -39,12 +39,12 @@ final class TorrentPolicyTest extends TestCase
             'status' => Torrent::STATUS_REJECTED,
         ]);
 
-        $this->assertTrue($this->policy->view($otherUser, $approved));
-        $this->assertFalse($this->policy->view($otherUser, $pending));
-        $this->assertFalse($this->policy->view($otherUser, $rejected));
-        $this->assertTrue($this->policy->view($uploader, $pending));
-        $this->assertTrue($this->policy->view($uploader, $rejected));
-        $this->assertTrue($this->policy->view($staff, $pending));
+        $this->assertTrue($this->policy->view($otherUser, $approved)->allowed());
+        $this->assertTrue($this->policy->view($otherUser, $pending)->denied());
+        $this->assertTrue($this->policy->view($otherUser, $rejected)->denied());
+        $this->assertTrue($this->policy->view($uploader, $pending)->allowed());
+        $this->assertTrue($this->policy->view($uploader, $rejected)->allowed());
+        $this->assertTrue($this->policy->view($staff, $pending)->allowed());
     }
 
     public function test_download_policy(): void
@@ -63,11 +63,11 @@ final class TorrentPolicyTest extends TestCase
             'status' => Torrent::STATUS_REJECTED,
         ]);
 
-        $this->assertTrue($this->policy->download($otherUser, $approved));
-        $this->assertFalse($this->policy->download($otherUser, $pending));
-        $this->assertFalse($this->policy->download($otherUser, $rejected));
-        $this->assertTrue($this->policy->download($uploader, $pending));
-        $this->assertTrue($this->policy->download($staff, $pending));
+        $this->assertTrue($this->policy->download($otherUser, $approved)->allowed());
+        $this->assertTrue($this->policy->download($otherUser, $pending)->denied());
+        $this->assertTrue($this->policy->download($otherUser, $rejected)->denied());
+        $this->assertTrue($this->policy->download($uploader, $pending)->allowed());
+        $this->assertTrue($this->policy->download($staff, $pending)->allowed());
     }
 
     public function test_moderation_policy_methods(): void
