@@ -25,23 +25,18 @@ final class EnsureUserIsStaff
             abort(403, 'Staff only area.');
         }
 
-        // 1) Explicit staff flag (fast path)
         if ((bool) ($user->is_staff ?? false)) {
             return $next($request);
         }
 
-        // 2) Normalized/legacy role attribute (tests often set this directly)
         $roleAttr = $user->getAttribute('role');
         if (is_string($roleAttr) && $roleAttr !== '') {
             $roleAttr = strtolower(trim($roleAttr));
 
             $staffRoleSlugs = [
-                // Normalized roles
                 User::ROLE_MODERATOR,
                 User::ROLE_ADMIN,
                 User::ROLE_SYSOP,
-
-                // Legacy slugs
                 'mod1',
                 'mod2',
                 'admin1',
@@ -54,7 +49,6 @@ final class EnsureUserIsStaff
             }
         }
 
-        // 3) Role relation / role_id (if present)
         $roleRelation = $user->getRelationValue('role');
         if ($roleRelation instanceof Role) {
             if ((bool) ($roleRelation->is_staff ?? false)) {
@@ -76,7 +70,6 @@ final class EnsureUserIsStaff
             }
         }
 
-        // 4) Fallback to model method
         if ((bool) $user->isStaff()) {
             return $next($request);
         }
@@ -89,12 +82,8 @@ final class EnsureUserIsStaff
     {
         $routeName = (string) ($request->route()?->getName() ?? '');
 
-<<< fix/post-merge-ci-recovery-slice2
         if (
             ! str_starts_with($routeName, 'staff.torrents.')
-=======
-        if (! str_starts_with($routeName, 'staff.torrents.')
->>> main
             && ! str_starts_with($routeName, 'api.moderation.uploads.')
             && $routeName !== 'moderation.uploads'
         ) {
