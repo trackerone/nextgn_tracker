@@ -18,6 +18,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('torrent-download', static function (Request $request): Limit {
+            [$maxAttempts, $decayMinutes] = array_pad(
+                array_map('intval', explode(',', (string) config('security.rate_limits.torrent_download', '45,1'), 2)),
+                2,
+                1
+            );
+
+            return Limit::perMinutes(max($decayMinutes, 1), max($maxAttempts, 1))
+                ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
         if (app()->environment('production')) {
             config(['app.debug' => false]);
         }

@@ -33,6 +33,7 @@ final class ResolveTorrentAccessAction
             })
             ->firstOrFail();
 
+<<< fix/post-merge-ci-recovery-slice2
         try {
             Gate::authorize($ability, $torrent);
         } catch (AuthorizationException $exception) {
@@ -40,6 +41,30 @@ final class ResolveTorrentAccessAction
 
             throw $exception;
         }
+=======
+        $response = Gate::inspect($ability, $torrent);
+
+        if ($response->denied()) {
+            $action = match ($ability) {
+                'download' => 'torrent.access.denied_download',
+                'view' => 'torrent.access.denied_details',
+                default => null,
+            };
+
+            if ($action !== null) {
+                SecurityAuditLog::logAndWarn(
+                    auth()->user(),
+                    $action,
+                    [
+                        'ability' => $ability,
+                        'torrent' => $torrent->getKey(),
+                    ]
+                );
+            }
+        }
+
+        $response->authorize();
+>>> main
 
         return $torrent;
     }
