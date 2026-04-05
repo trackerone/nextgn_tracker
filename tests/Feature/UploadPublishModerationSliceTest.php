@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\TorrentStatus;
 use App\Models\Category;
 use App\Models\Role;
 use App\Models\Torrent;
@@ -40,7 +41,7 @@ final class UploadPublishModerationSliceTest extends TestCase
         ])->assertRedirect();
 
         $torrent = Torrent::query()->firstOrFail();
-        $this->assertSame(Torrent::STATUS_PENDING, $torrent->status);
+        $this->assertSame(TorrentStatus::Pending, $torrent->status);
         $this->assertFalse((bool) $torrent->is_approved);
     }
 
@@ -104,7 +105,7 @@ final class UploadPublishModerationSliceTest extends TestCase
 
         $torrent->refresh();
 
-        $this->assertSame(Torrent::STATUS_PUBLISHED, $torrent->status);
+        $this->assertSame(TorrentStatus::Published, $torrent->status);
         $this->assertNotNull($torrent->published_at);
         $this->assertNotNull($torrent->moderated_at);
         $this->assertNotNull($torrent->moderated_by);
@@ -128,7 +129,7 @@ final class UploadPublishModerationSliceTest extends TestCase
 
         $torrent->refresh();
 
-        $this->assertSame(Torrent::STATUS_REJECTED, $torrent->status);
+        $this->assertSame(TorrentStatus::Rejected, $torrent->status);
         $this->assertSame('Invalid metadata', $torrent->moderated_reason);
 
         $this->actingAs($member)->get(route('torrents.index'))->assertDontSee($torrent->name);
@@ -146,6 +147,36 @@ final class UploadPublishModerationSliceTest extends TestCase
 
         $this->actingAs($staff)
             ->postJson(route('api.moderation.uploads.reject', $torrent), ['reason' => 'Late reject'])
+            ->assertUnprocessable()
+            ->assertJsonFragment(['message' => 'Invalid status transition.']);
+    }
+
+    public function test_published_cannot_be_published_again(): void
+    {
+        $staff = $this->createStaffUser();
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PUBLISHED,
+            'is_approved' => true,
+            'published_at' => now()->subHour(),
+        ]);
+
+        $this->actingAs($staff)
+            ->postJson(route('api.moderation.uploads.approve', $torrent))
+            ->assertUnprocessable()
+            ->assertJsonFragment(['message' => 'Invalid status transition.']);
+    }
+
+    public function test_rejected_cannot_be_rejected_again(): void
+    {
+        $staff = $this->createStaffUser();
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_REJECTED,
+            'is_approved' => false,
+            'moderated_reason' => 'Initial rejection',
+        ]);
+
+        $this->actingAs($staff)
+            ->postJson(route('api.moderation.uploads.reject', $torrent), ['reason' => 'Second rejection'])
             ->assertUnprocessable()
             ->assertJsonFragment(['message' => 'Invalid status transition.']);
     }

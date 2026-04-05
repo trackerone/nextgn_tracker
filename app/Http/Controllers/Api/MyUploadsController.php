@@ -27,7 +27,7 @@ final class MyUploadsController extends Controller
                 'id' => $torrent->id,
                 'slug' => $torrent->slug,
                 'name' => $torrent->name,
-                'status' => $torrent->status,
+                'status' => $torrent->status->value,
                 'moderation_reason' => $torrent->moderated_reason,
                 'published_at' => $torrent->published_at?->toISOString(),
                 'created_at' => $torrent->created_at?->toISOString(),

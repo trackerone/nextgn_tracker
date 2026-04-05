@@ -62,7 +62,7 @@ final class UploadSubmissionController extends Controller
                 'id' => $torrent->id,
                 'slug' => $torrent->slug,
                 'name' => $torrent->name,
-                'status' => $torrent->status,
+                'status' => $torrent->status->value,
             ],
         ], 201);
     }
