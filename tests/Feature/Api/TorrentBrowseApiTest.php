@@ -71,6 +71,11 @@ final class TorrentBrowseApiTest extends TestCase
         $response->assertJsonPath('data.0.uploader.id', $uploader->id);
         $response->assertJsonPath('data.0.uploader.name', 'trackerone');
 
+        $this->assertIsString($response->json('data.0.type'));
+        $response->assertJsonMissingPath('data.0.info_hash');
+        $response->assertJsonMissingPath('data.0.storage_path');
+        $response->assertJsonMissingPath('data.0.user_id');
+
         $this->assertNotNull($response->json('data.0.uploaded_at'));
         $this->assertNotNull($response->json('data.0.uploaded_at_human'));
     }

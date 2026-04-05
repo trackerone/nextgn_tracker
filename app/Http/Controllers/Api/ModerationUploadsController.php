@@ -10,6 +10,8 @@ use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiModerateTorrentRequest;
 use App\Http\Requests\ModerationUploadsIndexRequest;
+use App\Http\Resources\ModerationTorrentResource;
+use App\Http\Resources\TorrentStatusResource;
 use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -41,17 +43,7 @@ final class ModerationUploadsController extends Controller
         $uploads = $query->get();
 
         return response()->json([
-            'data' => $uploads->map(static function ($torrent): array {
-                /** @var Torrent $torrent */
-                return [
-                    'id' => $torrent->id,
-                    'slug' => $torrent->slug,
-                    'name' => $torrent->name,
-                    'status' => $torrent->status->value,
-                    'uploader' => $torrent->uploader?->name,
-                    'created_at' => $torrent->created_at?->toISOString(),
-                ];
-            })->all(),
+            'data' => ModerationTorrentResource::collection($uploads)->resolve(),
         ]);
     }
 
@@ -69,10 +61,7 @@ final class ModerationUploadsController extends Controller
         }
 
         return response()->json([
-            'data' => [
-                'id' => $torrent->id,
-                'status' => $torrent->status->value,
-            ],
+            'data' => (new TorrentStatusResource($torrent))->resolve(),
         ]);
     }
 
@@ -92,10 +81,7 @@ final class ModerationUploadsController extends Controller
         }
 
         return response()->json([
-            'data' => [
-                'id' => $torrent->id,
-                'status' => $torrent->status->value,
-            ],
+            'data' => (new TorrentStatusResource($torrent))->resolve(),
         ]);
     }
 }
