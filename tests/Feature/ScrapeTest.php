@@ -62,9 +62,7 @@ class ScrapeTest extends TestCase
         $this->assertIsString($firstBinary);
         $this->assertIsString($secondBinary);
 
-        $query = http_build_query([
-            'info_hash' => [$firstBinary, $secondBinary],
-        ]);
+        $query = 'info_hash='.rawurlencode($firstBinary).'&info_hash='.rawurlencode($secondBinary);
 
         $response = $this->get('/scrape?'.$query);
 
