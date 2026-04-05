@@ -56,6 +56,7 @@ final class RequestGuard
 
             if ($value instanceof UploadedFile) {
                 $sanitized[$key] = $value;
+
                 continue;
             }
 

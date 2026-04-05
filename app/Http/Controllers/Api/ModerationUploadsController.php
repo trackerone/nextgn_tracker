@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Torrent;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -21,23 +22,29 @@ final class ModerationUploadsController extends Controller
 
         $status = (string) $request->query('status', Torrent::STATUS_PENDING);
 
-        $query = Torrent::query()->with('uploader')->latest('created_at');
+        $query = Torrent::query()
+            ->with('uploader')
+            ->latest('created_at');
 
         if ($status !== '') {
             $query->where('status', $status);
         }
 
+        /** @var EloquentCollection<int, Torrent> $uploads */
         $uploads = $query->get();
 
         return response()->json([
-            'data' => $uploads->map(static fn (Torrent $torrent): array => [
-                'id' => $torrent->id,
-                'slug' => $torrent->slug,
-                'name' => $torrent->name,
-                'status' => $torrent->status,
-                'uploader' => $torrent->uploader?->name,
-                'created_at' => $torrent->created_at?->toISOString(),
-            ])->all(),
+            'data' => $uploads->map(static function ($torrent): array {
+                /** @var Torrent $torrent */
+                return [
+                    'id' => $torrent->id,
+                    'slug' => $torrent->slug,
+                    'name' => $torrent->name,
+                    'status' => $torrent->status,
+                    'uploader' => $torrent->uploader?->name,
+                    'created_at' => $torrent->created_at?->toISOString(),
+                ];
+            })->all(),
         ]);
     }
 
@@ -60,7 +67,12 @@ final class ModerationUploadsController extends Controller
             'moderated_reason' => null,
         ])->save();
 
-        return response()->json(['data' => ['id' => $torrent->id, 'status' => $torrent->status]]);
+        return response()->json([
+            'data' => [
+                'id' => $torrent->id,
+                'status' => $torrent->status,
+            ],
+        ]);
     }
 
     public function reject(Request $request, Torrent $torrent): JsonResponse
@@ -86,6 +98,11 @@ final class ModerationUploadsController extends Controller
             'moderated_reason' => $data['reason'] ?? null,
         ])->save();
 
-        return response()->json(['data' => ['id' => $torrent->id, 'status' => $torrent->status]]);
+        return response()->json([
+            'data' => [
+                'id' => $torrent->id,
+                'status' => $torrent->status,
+            ],
+        ]);
     }
 }

@@ -12,8 +12,8 @@ class ApiKey extends Model
 {
     use HasFactory;
 
-    /** @var list<string> 
-    */
+    /** @var list<string>
+     */
     protected $fillable = [
         'user_id',
         'key',
