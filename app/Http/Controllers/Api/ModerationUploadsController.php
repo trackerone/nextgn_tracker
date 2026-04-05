@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Torrents\PublishTorrentAction;
 use App\Actions\Torrents\RejectTorrentAction;
+use App\Enums\TorrentStatus;
 use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiModerateTorrentRequest;
@@ -30,7 +31,7 @@ final class ModerationUploadsController extends Controller
     {
         $this->authorize('viewModerationListings', Torrent::class);
 
-        $status = (string) ($request->validated('status') ?? Torrent::STATUS_PENDING);
+        $status = (string) ($request->validated('status') ?? TorrentStatus::Pending->value);
 
         $query = Torrent::query()
             ->with('uploader')
