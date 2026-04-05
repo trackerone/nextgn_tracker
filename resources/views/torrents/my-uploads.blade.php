@@ -26,7 +26,7 @@
                 <tbody class="divide-y divide-slate-800 text-slate-100">
                     @forelse ($uploads as $torrent)
                         @php
-                            $statusClasses = match ($torrent->status) {
+                            $statusClasses = match ($torrent->status->value) {
                                 \App\Models\Torrent::STATUS_PUBLISHED => 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200',
                                 \App\Models\Torrent::STATUS_REJECTED => 'border-rose-500/50 bg-rose-500/10 text-rose-200',
                                 default => 'border-amber-500/50 bg-amber-500/10 text-amber-200',
@@ -38,13 +38,13 @@
                             </td>
                             <td class="px-4 py-3">
                                 <span class="rounded-full border px-2 py-0.5 text-xs uppercase tracking-wide {{ $statusClasses }}">
-                                    {{ str_replace('_', ' ', $torrent->status) }}
+                                    {{ str_replace('_', ' ', $torrent->status->value) }}
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-slate-300">
                                 @if ($torrent->moderated_reason)
                                     {{ $torrent->moderated_reason }}
-                                @elseif ($torrent->status === \App\Models\Torrent::STATUS_PENDING)
+                                @elseif ($torrent->status === \App\Enums\TorrentStatus::Pending)
                                     Awaiting moderator review
                                 @else
                                     —

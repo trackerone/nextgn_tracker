@@ -52,7 +52,7 @@
             @can('moderate', $torrent)
                 <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                     <div class="flex flex-col gap-2 text-sm text-slate-200">
-                        <p><span class="font-semibold">Status:</span> {{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</p>
+                        <p><span class="font-semibold">Status:</span> {{ ucfirst(str_replace('_', ' ', $torrent->status->value)) }}</p>
                         @if ($torrent->moderator)
                             <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
                         @endif

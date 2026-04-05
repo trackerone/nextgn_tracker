@@ -54,7 +54,7 @@ final class TorrentDetailsController extends Controller
                 'leechers' => (int) ($torrentModel->leechers ?? 0),
                 'completed' => (int) ($torrentModel->completed ?? 0),
                 'freeleech' => (bool) ($torrentModel->freeleech ?? false),
-                'status' => $torrentModel->status,
+                'status' => $torrentModel->status->value,
                 'uploaded_at' => $torrentModel->uploadedAtForDisplay()?->toISOString(),
                 'uploaded_at_human' => $torrentModel->uploadedAtForDisplay()?->diffForHumans(),
                 'file_count' => 0,

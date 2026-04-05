@@ -73,7 +73,7 @@
                         <div class="rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-200">
                             <div class="flex flex-wrap justify-between gap-2">
                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
-                                <span class="rounded-full border border-slate-700 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ ucfirst(str_replace('_', ' ', $torrent->status)) }}</span>
+                                <span class="rounded-full border border-slate-700 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ ucfirst(str_replace('_', ' ', $torrent->status->value)) }}</span>
                             </div>
                             <p class="text-xs text-slate-400">By {{ $torrent->moderator?->name ?? 'Unknown' }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() ?? 'recently' }}</p>
                             @if ($torrent->moderated_reason)

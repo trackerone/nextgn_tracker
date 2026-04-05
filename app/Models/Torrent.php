@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TorrentStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $leechers
  * @property int|null $times_completed
  * @property bool|null $freeleech
- * @property string $status
+ * @property \App\Enums\TorrentStatus $status
  * @property bool $is_approved
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -36,15 +37,15 @@ class Torrent extends Model
 {
     use HasFactory;
 
-    public const STATUS_PENDING = 'pending';
+    public const STATUS_PENDING = TorrentStatus::Pending->value;
 
-    public const STATUS_PUBLISHED = 'published';
+    public const STATUS_PUBLISHED = TorrentStatus::Published->value;
 
     public const STATUS_APPROVED = self::STATUS_PUBLISHED;
 
-    public const STATUS_REJECTED = 'rejected';
+    public const STATUS_REJECTED = TorrentStatus::Rejected->value;
 
-    public const STATUS_SOFT_DELETED = 'soft_deleted';
+    public const STATUS_SOFT_DELETED = TorrentStatus::SoftDeleted->value;
 
     protected $fillable = [
         'user_id',
@@ -84,7 +85,7 @@ class Torrent extends Model
     ];
 
     protected $attributes = [
-        'status' => self::STATUS_PENDING,
+        'status' => TorrentStatus::Pending->value,
     ];
 
     protected $casts = [
@@ -102,6 +103,7 @@ class Torrent extends Model
         'codecs' => 'array',
         'tags' => 'array',
         'uploaded_at' => 'datetime',
+        'status' => TorrentStatus::class,
         'published_at' => 'datetime',
         'moderated_at' => 'datetime',
     ];
@@ -147,7 +149,7 @@ class Torrent extends Model
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === TorrentStatus::Pending;
     }
 
     public function isApproved(): bool
@@ -157,21 +159,21 @@ class Torrent extends Model
         $hasIsApprovedColumn = Schema::hasColumn($this->getTable(), 'is_approved');
 
         if ($hasIsApprovedColumn) {
-            return (bool) $this->is_approved && $this->status === self::STATUS_PUBLISHED;
+            return (bool) $this->is_approved && $this->status === TorrentStatus::Published;
         }
 
         // Fallback hvis kolonnen ikke findes (fx ældre schema/test setup)
-        return $this->status === self::STATUS_PUBLISHED;
+        return $this->status === TorrentStatus::Published;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === self::STATUS_REJECTED;
+        return $this->status === TorrentStatus::Rejected;
     }
 
     public function isSoftDeleted(): bool
     {
-        return $this->status === self::STATUS_SOFT_DELETED;
+        return $this->status === TorrentStatus::SoftDeleted;
     }
 
     public function isBanned(): bool
@@ -196,7 +198,7 @@ class Torrent extends Model
     public function scopeVisible(Builder $query): Builder
     {
         $query = $query
-            ->where('status', self::STATUS_PUBLISHED)
+            ->where('status', TorrentStatus::Published->value)
             ->where('is_banned', false);
 
         if (Schema::hasColumn($this->getTable(), 'is_approved')) {
@@ -208,17 +210,17 @@ class Torrent extends Model
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', TorrentStatus::Pending->value);
     }
 
     public function scopeModerated(Builder $query): Builder
     {
-        return $query->where('status', '!=', self::STATUS_PENDING);
+        return $query->where('status', '!=', TorrentStatus::Pending->value);
     }
 
     public function canBeModerated(): bool
     {
-        return $this->isPending();
+        return $this->status->isModeratable();
     }
 
     public function peers(): HasMany

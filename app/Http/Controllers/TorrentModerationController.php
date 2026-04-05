@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Torrents\PublishTorrentAction;
+use App\Actions\Torrents\RejectTorrentAction;
+use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
@@ -15,7 +18,11 @@ use Illuminate\Support\Carbon;
 
 class TorrentModerationController extends Controller
 {
-    public function __construct(private readonly AuditLogger $auditLogger) {}
+    public function __construct(
+        private readonly AuditLogger $auditLogger,
+        private readonly PublishTorrentAction $publishTorrentAction,
+        private readonly RejectTorrentAction $rejectTorrentAction,
+    ) {}
 
     public function index(): View
     {
@@ -41,31 +48,26 @@ class TorrentModerationController extends Controller
     public function approve(Request $request, Torrent $torrent): RedirectResponse
     {
         $this->authorize('moderate', $torrent);
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
-        if (! PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
+        if (! PermissionService::allow($user, 'torrent.edit', $torrent)) {
             abort(403);
         }
 
-        if (! $torrent->canBeModerated()) {
+        try {
+            $this->publishTorrentAction->execute($torrent, $user);
+        } catch (InvalidTorrentStatusTransitionException) {
             return redirect()
                 ->route('staff.torrents.moderation.index')
                 ->with('status', 'Only pending uploads can be approved.');
         }
 
-        $torrent->forceFill([
-            'status' => Torrent::STATUS_PUBLISHED,
-            'is_approved' => true,
-            'moderated_by' => $request->user()?->id,
-            'moderated_at' => Carbon::now(),
-            'moderated_reason' => null,
-            'published_at' => Carbon::now(),
-        ])->save();
-
         $this->auditLogger->log('torrent.approved', $torrent, [
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
         ]);
 
-        SecurityAuditLog::log($request->user(), 'torrent.edit', [
+        SecurityAuditLog::log($user, 'torrent.edit', [
             'torrent_id' => $torrent->getKey(),
             'action' => 'approve',
         ]);
@@ -76,36 +78,31 @@ class TorrentModerationController extends Controller
     public function reject(Request $request, Torrent $torrent): RedirectResponse
     {
         $this->authorize('moderate', $torrent);
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
-        if (! PermissionService::allow($request->user(), 'torrent.edit', $torrent)) {
+        if (! PermissionService::allow($user, 'torrent.edit', $torrent)) {
             abort(403);
-        }
-
-        if (! $torrent->canBeModerated()) {
-            return redirect()
-                ->route('staff.torrents.moderation.index')
-                ->with('status', 'Only pending uploads can be rejected.');
         }
 
         $data = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
         ]);
 
-        $torrent->forceFill([
-            'status' => Torrent::STATUS_REJECTED,
-            'is_approved' => false,
-            'moderated_by' => $request->user()?->id,
-            'moderated_at' => Carbon::now(),
-            'moderated_reason' => $data['reason'],
-            'published_at' => null,
-        ])->save();
+        try {
+            $this->rejectTorrentAction->execute($torrent, $user, $data['reason']);
+        } catch (InvalidTorrentStatusTransitionException) {
+            return redirect()
+                ->route('staff.torrents.moderation.index')
+                ->with('status', 'Only pending uploads can be rejected.');
+        }
 
         $this->auditLogger->log('torrent.rejected', $torrent, [
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
             'reason' => $data['reason'],
         ]);
 
-        SecurityAuditLog::log($request->user(), 'torrent.edit', [
+        SecurityAuditLog::log($user, 'torrent.edit', [
             'torrent_id' => $torrent->getKey(),
             'action' => 'reject',
             'reason' => $data['reason'],
@@ -117,22 +114,24 @@ class TorrentModerationController extends Controller
     public function softDelete(Request $request, Torrent $torrent): RedirectResponse
     {
         $this->authorize('moderate', $torrent);
+        /** @var \App\Models\User $user */
+        $user = $request->user();
 
-        if (! PermissionService::allow($request->user(), 'torrent.delete', $torrent)) {
+        if (! PermissionService::allow($user, 'torrent.delete', $torrent)) {
             abort(403);
         }
 
         $torrent->forceFill([
             'status' => Torrent::STATUS_SOFT_DELETED,
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
             'moderated_at' => Carbon::now(),
         ])->save();
 
         $this->auditLogger->log('torrent.soft_deleted', $torrent, [
-            'moderated_by' => $request->user()?->id,
+            'moderated_by' => $user->id,
         ]);
 
-        SecurityAuditLog::log($request->user(), 'torrent.delete', [
+        SecurityAuditLog::log($user, 'torrent.delete', [
             'torrent_id' => $torrent->getKey(),
             'action' => 'soft_delete',
         ]);
