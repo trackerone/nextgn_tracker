@@ -7,7 +7,6 @@ namespace App\Actions\Torrents;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
-use Illuminate\Auth\Access\Response as AccessResponse;
 use Illuminate\Support\Facades\Gate;
 
 final class ResolveTorrentAccessAction
