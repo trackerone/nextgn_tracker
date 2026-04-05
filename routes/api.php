@@ -11,16 +11,6 @@ use App\Http\Controllers\Api\UploadSubmissionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-<<< fix/post-merge-ci-recovery-slice2
-=======
-$torrentBrowseThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_browse', '60,1'));
-$torrentDetailsThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_details', '90,1'));
-$moderationThrottle = sprintf(
-    'throttle:%s',
-    config('security.rate_limits.torrent_moderation', config('security.rate_limits.moderation', '60,1'))
-);
-
->>> main
 Route::middleware(['api', 'api.hmac'])->group(function (): void {
     Route::get('/user', static function (Request $request) {
         return response()->json([
@@ -31,11 +21,7 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
     })->name('api.user');
 });
 
-<<< fix/post-merge-ci-recovery-slice2
 Route::middleware(['api', 'auth'])->group(function (): void {
-=======
-Route::middleware(['api', 'auth'])->group(function () use ($torrentBrowseThrottle, $torrentDetailsThrottle, $moderationThrottle): void {
->>> main
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
         ->name('api.torrents.index');
