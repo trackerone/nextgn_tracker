@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Controllers\Controller;
-use App\Models\Torrent;
 use App\Models\User;
 use App\Services\TorrentDownloadService;
 use RuntimeException;
@@ -23,13 +23,7 @@ final class TorrentDownloadController extends Controller
             abort(401);
         }
 
-        $model = Torrent::query()
-            ->where(static function ($query) use ($torrent): void {
-                $query->where('id', $torrent)->orWhere('slug', $torrent);
-            })
-            ->firstOrFail();
-
-        $this->authorize('download', $model);
+        $model = app(ResolveTorrentAccessAction::class)->execute($torrent, 'download');
 
         try {
             $payload = $this->downloads->buildPersonalizedPayload($model, $user);

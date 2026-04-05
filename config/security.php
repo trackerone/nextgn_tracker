@@ -92,6 +92,10 @@ return [
         'api' => '60,1',
         'admin' => '30,1',
         'search' => '30,1',
+        'torrent_browse' => '60,1',
+        'torrent_details' => '90,1',
+        'torrent_download' => '45,1',
+        'moderation' => '60,1',
     ],
 
     'api' => [

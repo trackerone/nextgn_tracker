@@ -6,16 +6,21 @@ namespace App\Policies;
 
 use App\Models\Torrent;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class TorrentPolicy
 {
-    public function view(User $user, Torrent $torrent): bool
+    public function view(User $user, Torrent $torrent): Response
     {
         if ($torrent->isApproved()) {
-            return true;
+            return Response::allow();
         }
 
-        return $this->canAccessModeration($user) || $torrent->user_id === $user->id;
+        if ($this->canAccessModeration($user) || $torrent->user_id === $user->id) {
+            return Response::allow();
+        }
+
+        return Response::denyAsNotFound();
     }
 
     public function viewModerationListings(User $user): bool
@@ -38,18 +43,22 @@ class TorrentPolicy
         return $this->canAccessModeration($user);
     }
 
-    public function download(User $user, Torrent $torrent): bool
+    public function download(User $user, Torrent $torrent): Response
     {
         if ($torrent->isApproved()) {
-            return true;
+            return Response::allow();
         }
 
         if ($torrent->user_id === $user->id) {
             // Uploaders may download their own torrents while waiting for moderation.
-            return true;
+            return Response::allow();
         }
 
-        return $this->canAccessModeration($user);
+        if ($this->canAccessModeration($user)) {
+            return Response::allow();
+        }
+
+        return Response::denyAsNotFound();
     }
 
     public function create(User $user): bool

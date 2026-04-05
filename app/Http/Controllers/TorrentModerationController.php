@@ -56,6 +56,12 @@ class TorrentModerationController extends Controller
         try {
             $this->publishTorrentAction->execute($torrent, $user);
         } catch (InvalidTorrentStatusTransitionException) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.invalid_transition', [
+                'torrent_id' => $torrent->getKey(),
+                'action' => 'approve',
+                'current_status' => $torrent->status->value,
+            ]);
+
             return redirect()
                 ->route('staff.torrents.moderation.index')
                 ->with('status', 'Only pending uploads can be approved.');
@@ -84,6 +90,12 @@ class TorrentModerationController extends Controller
         try {
             $this->rejectTorrentAction->execute($torrent, $user, $data['reason']);
         } catch (InvalidTorrentStatusTransitionException) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.invalid_transition', [
+                'torrent_id' => $torrent->getKey(),
+                'action' => 'reject',
+                'current_status' => $torrent->status->value,
+            ]);
+
             return redirect()
                 ->route('staff.torrents.moderation.index')
                 ->with('status', 'Only pending uploads can be rejected.');

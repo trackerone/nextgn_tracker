@@ -12,6 +12,7 @@ use App\Http\Requests\ApiModerateTorrentRequest;
 use App\Http\Requests\ModerationUploadsIndexRequest;
 use App\Http\Resources\ModerationTorrentResource;
 use App\Http\Resources\TorrentStatusResource;
+use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
@@ -57,6 +58,12 @@ final class ModerationUploadsController extends Controller
         try {
             $this->publishTorrentAction->execute($torrent, $user);
         } catch (InvalidTorrentStatusTransitionException) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.invalid_transition', [
+                'torrent_id' => $torrent->getKey(),
+                'action' => 'approve',
+                'current_status' => $torrent->status->value,
+            ]);
+
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 
@@ -77,6 +84,12 @@ final class ModerationUploadsController extends Controller
         try {
             $this->rejectTorrentAction->execute($torrent, $user, $data['reason'] ?? null);
         } catch (InvalidTorrentStatusTransitionException) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.moderation.invalid_transition', [
+                'torrent_id' => $torrent->getKey(),
+                'action' => 'reject',
+                'current_status' => $torrent->status->value,
+            ]);
+
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 

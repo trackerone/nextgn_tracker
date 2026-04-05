@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TorrentDetailsResource;
-use App\Models\Torrent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,11 +17,7 @@ final class TorrentDetailsController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401);
 
-        $torrentModel = Torrent::query()
-            ->with(['category', 'uploader'])
-            ->findOrFail($torrent);
-
-        $this->authorize('view', $torrentModel);
+        $torrentModel = app(ResolveTorrentAccessAction::class)->execute($torrent, 'view', ['category', 'uploader']);
 
         return response()->json([
             'data' => (new TorrentDetailsResource($torrentModel, $user->passkey))->resolve(),

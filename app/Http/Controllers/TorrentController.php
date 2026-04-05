@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Requests\BrowseTorrentsRequest;
 use App\Models\Category;
 use App\Models\Torrent;
@@ -61,12 +62,7 @@ final class TorrentController extends Controller
 
     public function show(Request $request, string $torrent): Response|JsonResponse
     {
-        $model = Torrent::query()
-            ->where('id', $torrent)
-            ->orWhere('slug', $torrent)
-            ->firstOrFail();
-
-        $this->authorize('view', $model);
+        $model = app(ResolveTorrentAccessAction::class)->execute($torrent, 'view');
 
         if ($request->expectsJson()) {
             return response()->json($model);
