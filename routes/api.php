@@ -14,7 +14,10 @@ use Illuminate\Support\Facades\Route;
 $torrentBrowseThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_browse', '60,1'));
 $torrentDetailsThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_details', '90,1'));
 $torrentDownloadThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_download', '45,1'));
-$moderationThrottle = sprintf('throttle:%s', config('security.rate_limits.moderation', '60,1'));
+$moderationThrottle = sprintf(
+    'throttle:%s',
+    config('security.rate_limits.torrent_moderation', config('security.rate_limits.moderation', '60,1'))
+);
 
 Route::middleware(['api', 'api.hmac'])->group(function (): void {
     Route::get('/user', static function (Request $request) {

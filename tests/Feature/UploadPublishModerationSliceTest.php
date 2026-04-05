@@ -53,7 +53,7 @@ final class UploadPublishModerationSliceTest extends TestCase
 
         $torrent = Torrent::factory()->create([
             'user_id' => $uploader->id,
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 
@@ -69,7 +69,7 @@ final class UploadPublishModerationSliceTest extends TestCase
         $torrent = Torrent::factory()->create([
             'user_id' => $uploader->id,
             'name' => 'Own Pending',
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 
@@ -77,7 +77,7 @@ final class UploadPublishModerationSliceTest extends TestCase
             ->get(route('my.uploads'))
             ->assertOk()
             ->assertSee($torrent->name)
-            ->assertSee(Torrent::STATUS_PENDING);
+            ->assertSee(TorrentStatus::Pending->value);
     }
 
     public function test_moderator_can_list_pending_and_approve_then_public_can_see_it(): void
@@ -85,7 +85,7 @@ final class UploadPublishModerationSliceTest extends TestCase
         $staff = $this->createStaffUser();
         $member = User::factory()->create();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 
@@ -95,7 +95,7 @@ final class UploadPublishModerationSliceTest extends TestCase
             ->assertSee($torrent->name);
 
         $this->actingAs($staff)
-            ->getJson(route('api.moderation.uploads.index', ['status' => Torrent::STATUS_PENDING]))
+            ->getJson(route('api.moderation.uploads.index', ['status' => TorrentStatus::Pending->value]))
             ->assertOk()
             ->assertJsonFragment(['id' => $torrent->id]);
 
@@ -114,13 +114,11 @@ final class UploadPublishModerationSliceTest extends TestCase
         $this->actingAs($member)->get(route('torrents.show', $torrent))->assertOk();
     }
 
-
-
     public function test_invalid_moderation_payload_is_rejected_predictably(): void
     {
         $staff = $this->createStaffUser();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 
@@ -147,7 +145,7 @@ final class UploadPublishModerationSliceTest extends TestCase
         $staff = $this->createStaffUser();
         $member = User::factory()->create();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 
@@ -168,7 +166,7 @@ final class UploadPublishModerationSliceTest extends TestCase
     {
         $staff = $this->createStaffUser();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PUBLISHED,
+            'status' => TorrentStatus::Published->value,
             'is_approved' => true,
             'published_at' => now(),
         ]);
@@ -183,7 +181,7 @@ final class UploadPublishModerationSliceTest extends TestCase
     {
         $staff = $this->createStaffUser();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PUBLISHED,
+            'status' => TorrentStatus::Published->value,
             'is_approved' => true,
             'published_at' => now()->subHour(),
         ]);
@@ -198,7 +196,7 @@ final class UploadPublishModerationSliceTest extends TestCase
     {
         $staff = $this->createStaffUser();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_REJECTED,
+            'status' => TorrentStatus::Rejected->value,
             'is_approved' => false,
             'moderated_reason' => 'Initial rejection',
         ]);
@@ -215,7 +213,7 @@ final class UploadPublishModerationSliceTest extends TestCase
         $torrent = Torrent::factory()->create([
             'user_id' => $uploader->id,
             'name' => 'Rejected Upload',
-            'status' => Torrent::STATUS_REJECTED,
+            'status' => TorrentStatus::Rejected->value,
             'is_approved' => false,
             'moderated_reason' => 'Bad metadata',
         ]);
@@ -231,7 +229,7 @@ final class UploadPublishModerationSliceTest extends TestCase
     {
         $member = User::factory()->create();
         $torrent = Torrent::factory()->create([
-            'status' => Torrent::STATUS_PENDING,
+            'status' => TorrentStatus::Pending->value,
             'is_approved' => false,
         ]);
 

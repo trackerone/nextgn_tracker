@@ -96,6 +96,7 @@ return [
         'torrent_details' => '90,1',
         'torrent_download' => '45,1',
         'moderation' => '60,1',
+        'torrent_moderation' => env('SECURITY_RATE_LIMIT_TORRENT_MODERATION', env('SECURITY_RATE_LIMIT_MODERATION', '60,1')),
     ],
 
     'api' => [
