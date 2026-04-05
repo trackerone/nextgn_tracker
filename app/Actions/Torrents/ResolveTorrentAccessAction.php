@@ -7,15 +7,13 @@ namespace App\Actions\Torrents;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\Access\Response as AccessResponse;
 use Illuminate\Support\Facades\Gate;
 
 final class ResolveTorrentAccessAction
 {
     /**
      * @param  array<int, string>  $with
-     *
-     * @throws AuthorizationException
      */
     public function execute(string|int $identifier, string $ability, array $with = []): Torrent
     {
@@ -33,12 +31,11 @@ final class ResolveTorrentAccessAction
             })
             ->firstOrFail();
 
-        try {
-            Gate::authorize($ability, $torrent);
-        } catch (AuthorizationException $exception) {
-            $this->logDeniedAccess($ability, $torrent);
+        $authorization = Gate::inspect($ability, $torrent);
 
-            throw $exception;
+        if ($authorization->denied()) {
+            $this->logDeniedAccess($ability, $torrent);
+            $authorization->authorize();
         }
 
         return $torrent;
