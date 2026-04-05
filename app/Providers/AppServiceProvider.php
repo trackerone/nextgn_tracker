@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,6 +18,17 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        RateLimiter::for('torrent-download', static function (Request $request): Limit {
+            [$maxAttempts, $decayMinutes] = array_pad(
+                array_map('intval', explode(',', (string) config('security.rate_limits.torrent_download', '45,1'), 2)),
+                2,
+                1
+            );
+
+            return Limit::perMinutes(max($decayMinutes, 1), max($maxAttempts, 1))
+                ->by((string) ($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
         if (app()->environment('production')) {
             config(['app.debug' => false]);
         }

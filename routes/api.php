@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Route;
 
 $torrentBrowseThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_browse', '60,1'));
 $torrentDetailsThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_details', '90,1'));
-$torrentDownloadThrottle = sprintf('throttle:%s', config('security.rate_limits.torrent_download', '45,1'));
 $moderationThrottle = sprintf(
     'throttle:%s',
     config('security.rate_limits.torrent_moderation', config('security.rate_limits.moderation', '60,1'))
@@ -29,7 +28,7 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
     })->name('api.user');
 });
 
-Route::middleware(['api', 'auth'])->group(function () use ($torrentBrowseThrottle, $torrentDetailsThrottle, $torrentDownloadThrottle, $moderationThrottle): void {
+Route::middleware(['api', 'auth'])->group(function () use ($torrentBrowseThrottle, $torrentDetailsThrottle, $moderationThrottle): void {
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware($torrentBrowseThrottle)
         ->name('api.torrents.index');
@@ -37,7 +36,7 @@ Route::middleware(['api', 'auth'])->group(function () use ($torrentBrowseThrottl
         ->middleware($torrentDetailsThrottle)
         ->name('api.torrents.show');
     Route::get('/torrents/{torrent}/download', TorrentDownloadController::class)
-        ->middleware($torrentDownloadThrottle)
+        ->middleware('throttle:torrent-download')
         ->name('api.torrents.download');
 
     Route::post('/uploads', [UploadSubmissionController::class, 'store'])->name('api.uploads.store');
