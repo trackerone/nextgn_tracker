@@ -13,6 +13,25 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property string $type
+ * @property int|float|string $size
+ * @property int|null $seeders
+ * @property int|null $leechers
+ * @property int|null $times_completed
+ * @property bool|null $freeleech
+ * @property string $status
+ * @property bool $is_approved
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $published_at
+ * @property \App\Models\User|null $uploader
+ * @property \App\Models\Category|null $category
+ */
 class Torrent extends Model
 {
     use HasFactory;

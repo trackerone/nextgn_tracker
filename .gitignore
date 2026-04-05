@@ -45,3 +45,7 @@ phpstan.neon.cache
 Thumbs.db
 .idea/
 .vscode/
+
+/var/
+
+/var/

@@ -28,8 +28,12 @@ final class TorrentBrowseFilters
         $categoryRaw = $request->query('category', $request->query('category_id'));
         $categoryId = null;
 
-        if ($categoryRaw !== null && $categoryRaw !== '') {
+        if ($categoryRaw !== null && $categoryRaw !== '' && ctype_digit((string) $categoryRaw)) {
             $categoryId = (int) $categoryRaw;
+        }
+
+        if ($order === '') {
+            $order = 'uploaded_at';
         }
 
         if (! in_array($direction, ['asc', 'desc'], true)) {
@@ -39,9 +43,6 @@ final class TorrentBrowseFilters
         return new self($q, $type, $categoryId, $order, $direction);
     }
 
-    /**
-     * For views.
-     */
     public function toArray(): array
     {
         return [
@@ -53,9 +54,6 @@ final class TorrentBrowseFilters
         ];
     }
 
-    /**
-     * For pagination links. Only includes non-empty params.
-     */
     public function queryParams(): array
     {
         $params = [];
@@ -72,7 +70,7 @@ final class TorrentBrowseFilters
             $params['category_id'] = $this->categoryId;
         }
 
-        if ($this->order !== '') {
+        if ($this->order !== '' && $this->order !== 'uploaded_at') {
             $params['order'] = $this->order;
         }
 

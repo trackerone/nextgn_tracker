@@ -6,120 +6,80 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Torrent;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 final class TorrentDetailsController extends Controller
 {
-    public function show(Request $request, string $torrent): JsonResponse
+    public function show(Request $request, int $torrent): JsonResponse
     {
-        $model = Torrent::query()
-            ->visible()
-            ->with(['category', 'uploader'])
-            ->where(static function ($query) use ($torrent): void {
-                $query->where('id', $torrent)->orWhere('slug', $torrent);
-            })
-            ->firstOrFail();
         $user = $request->user();
+        abort_unless($user !== null, 401);
 
-        [$files, $fileCount] = $this->resolveFiles($model);
+        $torrentModel = Torrent::query()
+            ->with(['category', 'uploader'])
+            ->findOrFail($torrent);
+
+        abort_unless($user->can('view', $torrentModel), 404);
+
+        $uploader = $torrentModel->uploader;
+        $category = $torrentModel->category;
+
+        $rawFiles = data_get($torrentModel, 'files', []);
+        $files = $rawFiles instanceof Collection ? $rawFiles : collect($rawFiles);
+
+        $magnetUrl = sprintf(
+            'magnet:?xt=urn:btih:%s&dn=%s&tr=%s&tr=%s',
+            strtoupper((string) $torrentModel->info_hash),
+            rawurlencode((string) $torrentModel->name),
+            rawurlencode(sprintf(
+                (string) config('tracker.announce_url', 'https://tracker.example/announce/%s'),
+                $user->passkey
+            )),
+            rawurlencode((string) config('tracker.backup_announce_url', 'https://backup.example/announce'))
+        );
 
         return response()->json([
             'data' => [
-                'id' => $model->id,
-                'slug' => $model->slug,
-                'name' => $model->name,
-                'description' => (string) ($model->description ?? ''),
-                'category' => $model->category === null ? null : [
-                    'id' => $model->category->id,
-                    'name' => $model->category->name,
-                    'slug' => $model->category->slug,
-                ],
-                'type' => $model->type,
-                'size_bytes' => (int) $model->size_bytes,
-                'size_human' => $model->formatted_size,
-                'seeders' => (int) $model->seeders,
-                'leechers' => (int) $model->leechers,
-                'completed' => (int) $model->completed,
-                'freeleech' => (bool) $model->freeleech,
-                'uploaded_at' => $model->uploadedAtForDisplay()?->toISOString(),
-                'uploaded_at_human' => $model->uploadedAtForDisplay()?->diffForHumans(),
-                'uploader' => $model->uploader === null ? null : [
-                    'id' => $model->uploader->id,
-                    'name' => $model->uploader->name,
-                ],
-                'info_hash' => strtolower((string) $model->info_hash),
-                'file_count' => $fileCount,
-                'files' => $files,
-                'magnet_url' => $this->buildMagnetUrl($model, $user instanceof User ? $user : null),
-                'download_url' => route('api.torrents.download', ['torrent' => $model->id], false),
+                'id' => $torrentModel->id,
+                'slug' => $torrentModel->slug,
+                'name' => $torrentModel->name,
+                'description' => $torrentModel->description,
+                'type' => $torrentModel->type,
+                'info_hash' => strtolower((string) $torrentModel->info_hash),
+                'size_bytes' => (int) ($torrentModel->size_bytes ?? 0),
+                'size_human' => $torrentModel->formatted_size,
+                'seeders' => (int) ($torrentModel->seeders ?? 0),
+                'leechers' => (int) ($torrentModel->leechers ?? 0),
+                'completed' => (int) ($torrentModel->completed ?? 0),
+                'freeleech' => (bool) ($torrentModel->freeleech ?? false),
+                'status' => $torrentModel->status,
+                'uploaded_at' => $torrentModel->uploadedAtForDisplay()?->toISOString(),
+                'uploaded_at_human' => $torrentModel->uploadedAtForDisplay()?->diffForHumans(),
+                'file_count' => 0,
+                'category' => $category
+                    ? [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                    ]
+                    : null,
+                'uploader' => $uploader
+                    ? [
+                        'id' => $uploader->id,
+                        'name' => $uploader->name,
+                    ]
+                    : null,
+                'files' => $files->map(static function ($file): array {
+                    return [
+                        'path' => (string) data_get($file, 'path', ''),
+                        'size_bytes' => (int) data_get($file, 'size', 0),
+                    ];
+                })->values()->all(),
+                'download_url' => '/api/torrents/'.$torrentModel->id.'/download',
+                'magnet_url' => $magnetUrl,
             ],
         ]);
-    }
-
-    private function buildMagnetUrl(Torrent $torrent, ?User $user): string
-    {
-        $params = [
-            'xt=urn:btih:'.strtoupper((string) $torrent->info_hash),
-            'dn='.rawurlencode((string) $torrent->name),
-        ];
-
-        if ($user instanceof User) {
-            $params[] = 'tr='.rawurlencode($user->announce_url);
-        }
-
-        foreach ((array) config('tracker.additional_trackers', []) as $tracker) {
-            if (is_string($tracker) && $tracker !== '') {
-                $params[] = 'tr='.rawurlencode($tracker);
-            }
-        }
-
-        return 'magnet:?'.implode('&', $params);
-    }
-
-    /**
-     * @return array{0: array<int, array{path: string, size_bytes: int, size_human: string}>, 1: int}
-     */
-    private function resolveFiles(Torrent $torrent): array
-    {
-        if (! method_exists($torrent, 'files')) {
-            return [[], 0];
-        }
-
-        $files = $torrent->files;
-
-        if (! $files instanceof Collection) {
-            return [[], 0];
-        }
-
-        $mapped = $files->map(function (mixed $file): array {
-            $sizeBytes = (int) (data_get($file, 'size_bytes', 0));
-
-            return [
-                'path' => (string) data_get($file, 'path', ''),
-                'size_bytes' => $sizeBytes,
-                'size_human' => $this->formatBytes($sizeBytes),
-            ];
-        })->values()->all();
-
-        return [$mapped, count($mapped)];
-    }
-
-    private function formatBytes(int $bytes): string
-    {
-        $size = max(0, $bytes);
-        $units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'];
-        $unitIndex = 0;
-
-        while ($size >= 1024 && $unitIndex < count($units) - 1) {
-            $size /= 1024;
-            $unitIndex++;
-        }
-
-        $precision = $unitIndex === 0 ? 0 : 2;
-
-        return number_format($size, $precision).' '.$units[$unitIndex];
     }
 }

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\ModerationUploadsController;
+use App\Http\Controllers\Api\MyUploadsController;
 use App\Http\Controllers\Api\TorrentBrowseController;
 use App\Http\Controllers\Api\TorrentDetailsController;
 use App\Http\Controllers\Api\TorrentDownloadController;
 use App\Http\Controllers\Api\UploadSubmissionController;
-use App\Http\Controllers\Api\MyUploadsController;
-use App\Http\Controllers\Api\ModerationUploadsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
