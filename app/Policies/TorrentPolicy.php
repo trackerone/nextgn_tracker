@@ -11,9 +11,31 @@ class TorrentPolicy
 {
     public function view(User $user, Torrent $torrent): bool
     {
-        return $torrent->isApproved()
-            || $torrent->user_id === $user->id
-            || $user->isStaff();
+        if ($torrent->isApproved()) {
+            return true;
+        }
+
+        return $this->canAccessModeration($user) || $torrent->user_id === $user->id;
+    }
+
+    public function viewModerationListings(User $user): bool
+    {
+        return $this->canAccessModeration($user);
+    }
+
+    public function viewModerationItem(User $user, Torrent $torrent): bool
+    {
+        return $this->canAccessModeration($user);
+    }
+
+    public function publish(User $user, Torrent $torrent): bool
+    {
+        return $this->canAccessModeration($user);
+    }
+
+    public function reject(User $user, Torrent $torrent): bool
+    {
+        return $this->canAccessModeration($user);
     }
 
     public function download(User $user, Torrent $torrent): bool
@@ -27,7 +49,7 @@ class TorrentPolicy
             return true;
         }
 
-        return $user->isStaff();
+        return $this->canAccessModeration($user);
     }
 
     public function create(User $user): bool
@@ -37,7 +59,7 @@ class TorrentPolicy
 
     public function update(User $user, Torrent $torrent): bool
     {
-        if ($user->isStaff()) {
+        if ($this->canAccessModeration($user)) {
             return true;
         }
 
@@ -46,10 +68,15 @@ class TorrentPolicy
 
     public function delete(User $user, Torrent $torrent): bool
     {
-        return $user->isStaff();
+        return $this->canAccessModeration($user);
     }
 
     public function moderate(User $user, Torrent $torrent): bool
+    {
+        return $this->canAccessModeration($user);
+    }
+
+    private function canAccessModeration(User $user): bool
     {
         return $user->isStaff();
     }

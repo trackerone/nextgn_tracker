@@ -48,10 +48,18 @@ final class TorrentDownloadApiTest extends TestCase
         $this->assertSame(sprintf('https://tracker.example/announce/%s', $user->passkey), $decoded['announce'] ?? null);
     }
 
-    public function test_invisible_torrent_returns_404(): void
+    public function test_pending_torrent_returns_404_for_regular_user(): void
     {
         $user = User::factory()->create();
         $torrent = Torrent::factory()->unapproved()->create();
+
+        $this->actingAs($user)->getJson('/api/torrents/'.$torrent->id.'/download')->assertNotFound();
+    }
+
+    public function test_rejected_torrent_returns_404_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->rejected()->create();
 
         $this->actingAs($user)->getJson('/api/torrents/'.$torrent->id.'/download')->assertNotFound();
     }

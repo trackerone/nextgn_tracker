@@ -21,7 +21,7 @@ final class TorrentDetailsController extends Controller
             ->with(['category', 'uploader'])
             ->findOrFail($torrent);
 
-        abort_unless($user->can('view', $torrentModel), 404);
+        $this->authorize('view', $torrentModel);
 
         $uploader = $torrentModel->uploader;
         $category = $torrentModel->category;

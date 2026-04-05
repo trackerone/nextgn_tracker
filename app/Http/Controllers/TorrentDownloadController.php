@@ -68,9 +68,7 @@ final class TorrentDownloadController extends Controller
             ->orWhere('slug', $torrent)
             ->firstOrFail();
 
-        if (! $request->user()?->can('download', $model)) {
-            abort(404);
-        }
+        $this->authorize('download', $model);
 
         return $model;
     }

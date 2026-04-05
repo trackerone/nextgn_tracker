@@ -10,7 +10,6 @@ use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
-use App\Services\PermissionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +25,8 @@ class TorrentModerationController extends Controller
 
     public function index(): View
     {
+        $this->authorize('viewModerationListings', Torrent::class);
+
         $pending = Torrent::query()
             ->with(['uploader'])
             ->pending()
@@ -47,13 +48,9 @@ class TorrentModerationController extends Controller
 
     public function approve(Request $request, Torrent $torrent): RedirectResponse
     {
-        $this->authorize('moderate', $torrent);
+        $this->authorize('publish', $torrent);
         /** @var \App\Models\User $user */
         $user = $request->user();
-
-        if (! PermissionService::allow($user, 'torrent.edit', $torrent)) {
-            abort(403);
-        }
 
         try {
             $this->publishTorrentAction->execute($torrent, $user);
@@ -77,13 +74,9 @@ class TorrentModerationController extends Controller
 
     public function reject(Request $request, Torrent $torrent): RedirectResponse
     {
-        $this->authorize('moderate', $torrent);
+        $this->authorize('reject', $torrent);
         /** @var \App\Models\User $user */
         $user = $request->user();
-
-        if (! PermissionService::allow($user, 'torrent.edit', $torrent)) {
-            abort(403);
-        }
 
         $data = $request->validate([
             'reason' => ['required', 'string', 'max:500'],
@@ -116,10 +109,6 @@ class TorrentModerationController extends Controller
         $this->authorize('moderate', $torrent);
         /** @var \App\Models\User $user */
         $user = $request->user();
-
-        if (! PermissionService::allow($user, 'torrent.delete', $torrent)) {
-            abort(403);
-        }
 
         $torrent->forceFill([
             'status' => Torrent::STATUS_SOFT_DELETED,
