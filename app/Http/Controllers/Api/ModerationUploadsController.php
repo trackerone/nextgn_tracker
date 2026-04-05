@@ -23,9 +23,7 @@ final class ModerationUploadsController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        /** @var User $user */
-        $user = $request->user();
-        abort_unless($user->isStaff(), 403);
+        $this->authorize('viewModerationListings', Torrent::class);
 
         $status = (string) $request->query('status', Torrent::STATUS_PENDING);
 
@@ -57,9 +55,10 @@ final class ModerationUploadsController extends Controller
 
     public function approve(Request $request, Torrent $torrent): JsonResponse
     {
+        $this->authorize('publish', $torrent);
+
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->isStaff(), 403);
 
         try {
             $this->publishTorrentAction->execute($torrent, $user);
@@ -77,9 +76,10 @@ final class ModerationUploadsController extends Controller
 
     public function reject(Request $request, Torrent $torrent): JsonResponse
     {
+        $this->authorize('reject', $torrent);
+
         /** @var User $user */
         $user = $request->user();
-        abort_unless($user->isStaff(), 403);
 
         $data = $request->validate([
             'reason' => ['nullable', 'string', 'max:500'],

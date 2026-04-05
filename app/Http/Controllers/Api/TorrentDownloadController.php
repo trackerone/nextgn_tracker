@@ -24,11 +24,12 @@ final class TorrentDownloadController extends Controller
         }
 
         $model = Torrent::query()
-            ->visible()
             ->where(static function ($query) use ($torrent): void {
                 $query->where('id', $torrent)->orWhere('slug', $torrent);
             })
             ->firstOrFail();
+
+        $this->authorize('download', $model);
 
         try {
             $payload = $this->downloads->buildPersonalizedPayload($model, $user);

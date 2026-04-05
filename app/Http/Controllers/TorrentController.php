@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use App\Models\Torrent;
-use App\Models\User;
 use App\Support\Torrents\TorrentBrowseFilters;
 use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
@@ -67,11 +66,7 @@ final class TorrentController extends Controller
             ->orWhere('slug', $torrent)
             ->firstOrFail();
 
-        $user = $request->user();
-
-        if (! $user instanceof User || ! $user->can('view', $model)) {
-            abort(404);
-        }
+        $this->authorize('view', $model);
 
         if ($request->expectsJson()) {
             return response()->json($model);

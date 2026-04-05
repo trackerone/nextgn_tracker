@@ -80,12 +80,20 @@ final class TorrentDetailsApiTest extends TestCase
         $this->assertNotNull($response->json('data.uploaded_at_human'));
     }
 
-    public function test_invisible_torrent_returns_404(): void
+    public function test_pending_torrent_returns_404_for_regular_user(): void
     {
         $user = User::factory()->create();
-        $hidden = Torrent::factory()->unapproved()->create();
+        $pending = Torrent::factory()->unapproved()->create();
 
-        $this->actingAs($user)->getJson('/api/torrents/'.$hidden->id)->assertNotFound();
+        $this->actingAs($user)->getJson('/api/torrents/'.$pending->id)->assertNotFound();
+    }
+
+    public function test_rejected_torrent_returns_404_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $rejected = Torrent::factory()->rejected()->create();
+
+        $this->actingAs($user)->getJson('/api/torrents/'.$rejected->id)->assertNotFound();
     }
 
     public function test_files_fallback_is_stable_when_no_file_relation_exists(): void

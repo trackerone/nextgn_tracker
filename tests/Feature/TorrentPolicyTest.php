@@ -41,6 +41,7 @@ final class TorrentPolicyTest extends TestCase
 
         $this->assertTrue($this->policy->view($otherUser, $approved));
         $this->assertFalse($this->policy->view($otherUser, $pending));
+        $this->assertFalse($this->policy->view($otherUser, $rejected));
         $this->assertTrue($this->policy->view($uploader, $pending));
         $this->assertTrue($this->policy->view($uploader, $rejected));
         $this->assertTrue($this->policy->view($staff, $pending));
@@ -57,11 +58,36 @@ final class TorrentPolicyTest extends TestCase
             'user_id' => $uploader->id,
             'status' => Torrent::STATUS_PENDING,
         ]);
+        $rejected = Torrent::factory()->create([
+            'user_id' => $uploader->id,
+            'status' => Torrent::STATUS_REJECTED,
+        ]);
 
         $this->assertTrue($this->policy->download($otherUser, $approved));
         $this->assertFalse($this->policy->download($otherUser, $pending));
+        $this->assertFalse($this->policy->download($otherUser, $rejected));
         $this->assertTrue($this->policy->download($uploader, $pending));
         $this->assertTrue($this->policy->download($staff, $pending));
+    }
+
+    public function test_moderation_policy_methods(): void
+    {
+        $member = User::factory()->create();
+        $staff = User::factory()->create(['role' => User::ROLE_MODERATOR]);
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PENDING,
+            'is_approved' => false,
+        ]);
+
+        $this->assertFalse($this->policy->viewModerationListings($member));
+        $this->assertFalse($this->policy->viewModerationItem($member, $torrent));
+        $this->assertFalse($this->policy->publish($member, $torrent));
+        $this->assertFalse($this->policy->reject($member, $torrent));
+
+        $this->assertTrue($this->policy->viewModerationListings($staff));
+        $this->assertTrue($this->policy->viewModerationItem($staff, $torrent));
+        $this->assertTrue($this->policy->publish($staff, $torrent));
+        $this->assertTrue($this->policy->reject($staff, $torrent));
     }
 
     public function test_update_delete_and_moderate_policy(): void
