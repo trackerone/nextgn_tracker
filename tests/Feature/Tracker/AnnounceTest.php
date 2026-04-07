@@ -429,6 +429,59 @@ class AnnounceTest extends TestCase
         $this->assertCount(50, $payload['peers']);
     }
 
+    public function test_exact_duplicate_no_event_announce_short_circuits_without_hidden_side_effects(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-duplicate-no-event');
+        $requesterPeerIdHex = $this->makePeerIdHex('peer-duplicate-owner');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $requesterPeerIdHex,
+            'event' => 'started',
+            'uploaded' => 123,
+            'downloaded' => 456,
+            'left' => 10,
+            'ip' => '10.2.0.1',
+        ])->assertOk();
+
+        $this->announce($otherUser, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-duplicate-other'),
+            'event' => 'started',
+            'left' => 0,
+            'ip' => '10.2.0.2',
+        ])->assertOk();
+
+        $userTorrentBefore = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->firstOrFail();
+        $peerBefore = $torrent->peers()
+            ->where('peer_id', hex2bin($requesterPeerIdHex))
+            ->firstOrFail();
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => $requesterPeerIdHex,
+            'uploaded' => 123,
+            'downloaded' => 456,
+            'left' => 10,
+            'ip' => '10.2.0.1',
+            'numwant' => 10,
+        ]);
+
+        $response->assertOk();
+        $payload = $this->decodeAnnouncePayload($response);
+        $this->assertSame([], $payload['peers']);
+
+        $peerAfter = $peerBefore->fresh();
+        $this->assertNotNull($peerAfter);
+        $this->assertSame($peerBefore->updated_at?->toDateTimeString(), $peerAfter->updated_at?->toDateTimeString());
+
+        $userTorrentAfter = $userTorrentBefore->fresh();
+        $this->assertNotNull($userTorrentAfter);
+        $this->assertSame($userTorrentBefore->last_announce_at?->toDateTimeString(), $userTorrentAfter->last_announce_at?->toDateTimeString());
+    }
+
     public function test_default_peer_list_order_is_deterministic_when_announces_share_timestamp(): void
     {
         $user = User::factory()->create();
@@ -520,6 +573,116 @@ class AnnounceTest extends TestCase
         $this->assertNotNull($snatch->completed_at);
 
         $torrent->refresh();
+        $this->assertSame(1, $torrent->completed);
+    }
+
+    public function test_stopped_removes_only_target_peer_and_preserves_user_torrent_history(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-stopped-targeted');
+        $firstPeerIdHex = $this->makePeerIdHex('peer-stopped-target-1');
+        $secondPeerIdHex = $this->makePeerIdHex('peer-stopped-target-2');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $firstPeerIdHex,
+            'event' => 'started',
+            'uploaded' => 200,
+            'downloaded' => 400,
+            'left' => 20,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $secondPeerIdHex,
+            'event' => 'started',
+            'uploaded' => 350,
+            'downloaded' => 700,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $firstPeerIdHex,
+            'event' => 'stopped',
+            'uploaded' => 50,
+            'downloaded' => 60,
+            'left' => 20,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($firstPeerIdHex),
+        ]);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($secondPeerIdHex),
+            'is_seeder' => true,
+        ]);
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 350,
+            'downloaded' => 700,
+        ]);
+    }
+
+    public function test_mixed_lifecycle_and_duplicates_keep_counters_coherent_across_multiple_peers(): void
+    {
+        $leecher = User::factory()->create();
+        $seeder = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-mixed-invariants');
+        $leecherPeerIdHex = $this->makePeerIdHex('peer-mixed-leecher');
+        $seederPeerIdHex = $this->makePeerIdHex('peer-mixed-seeder');
+
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 20,
+            'ip' => '10.3.0.1',
+        ])->assertOk();
+        $this->announce($seeder, $infoHashHex, [
+            'peer_id' => $seederPeerIdHex,
+            'event' => 'started',
+            'left' => 0,
+            'ip' => '10.3.0.2',
+        ])->assertOk();
+
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 20,
+            'ip' => '10.3.0.1',
+        ])->assertOk();
+
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'completed',
+            'uploaded' => 250,
+            'downloaded' => 500,
+            'left' => 0,
+        ])->assertOk();
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'stopped',
+            'uploaded' => 249,
+            'downloaded' => 499,
+            'left' => 0,
+        ])->assertOk();
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+        $this->assertSame(2, $torrent->seeders);
+        $this->assertSame(0, $torrent->leechers);
         $this->assertSame(1, $torrent->completed);
     }
 
