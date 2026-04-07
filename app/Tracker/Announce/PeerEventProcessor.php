@@ -31,7 +31,7 @@ final class PeerEventProcessor
             return AnnounceResult::failure('peer_id must be exactly 20 bytes.');
         }
 
-        if ($data->event === null && $this->isDuplicateAnnounce($torrent, $peerId)) {
+        if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $torrent, $data, $peerId)) {
             $this->securityLogger->log(
                 request: $request,
                 user: $user,
@@ -64,6 +64,10 @@ final class PeerEventProcessor
     {
         $now = now();
         $ip = (string) ($data->ip ?? $request->ip() ?? '0.0.0.0');
+        $existingPeer = Peer::query()
+            ->where('torrent_id', $torrent->getKey())
+            ->where('peer_id', $peerId)
+            ->first();
 
         if ($data->event === 'stopped') {
             Peer::query()
@@ -83,8 +87,8 @@ final class PeerEventProcessor
                 'user_id' => $user->getKey(),
                 'ip' => $ip,
                 'port' => $data->port,
-                'uploaded' => $data->uploaded,
-                'downloaded' => $data->downloaded,
+                'uploaded' => max((int) ($existingPeer?->uploaded ?? 0), $data->uploaded),
+                'downloaded' => max((int) ($existingPeer?->downloaded ?? 0), $data->downloaded),
                 'left' => $data->left,
                 'is_seeder' => $data->left === 0,
                 'last_announce_at' => $now,
@@ -100,36 +104,6 @@ final class PeerEventProcessor
     {
         $now = now();
 
-        DB::table('user_torrents')->updateOrInsert(
-            [
-                'user_id' => $user->getKey(),
-                'torrent_id' => $torrent->getKey(),
-            ],
-            [
-                'uploaded' => $data->uploaded,
-                'downloaded' => $data->downloaded,
-                'updated_at' => $now,
-                'created_at' => $now,
-            ],
-        );
-
-        if ($data->event === 'completed') {
-            $row = DB::table('user_torrents')
-                ->where('user_id', $user->getKey())
-                ->where('torrent_id', $torrent->getKey())
-                ->first();
-
-            if ($row !== null && ($row->completed_at ?? null) === null) {
-                DB::table('user_torrents')
-                    ->where('user_id', $user->getKey())
-                    ->where('torrent_id', $torrent->getKey())
-                    ->update([
-                        'completed_at' => $now,
-                        'updated_at' => $now,
-                    ]);
-            }
-        }
-
         $this->userTorrents->updateFromAnnounce(
             $user,
             $torrent,
@@ -140,12 +114,24 @@ final class PeerEventProcessor
         );
     }
 
-    private function isDuplicateAnnounce(Torrent $torrent, string $peerId): bool
+    private function shouldShortCircuitDuplicateAnnounce(Request $request, Torrent $torrent, AnnounceRequestData $data, string $peerId): bool
     {
-        return Peer::query()
+        $peer = Peer::query()
             ->where('torrent_id', $torrent->getKey())
             ->where('peer_id', $peerId)
-            ->exists();
+            ->first();
+
+        if ($peer === null) {
+            return false;
+        }
+
+        $ip = (string) ($data->ip ?? $request->ip() ?? '0.0.0.0');
+
+        return (int) $peer->port === $data->port
+            && (int) $peer->uploaded === $data->uploaded
+            && (int) $peer->downloaded === $data->downloaded
+            && (int) $peer->left === $data->left
+            && (string) $peer->ip === $ip;
     }
 
     private function shouldIncrementCompletedCounter(User $user, Torrent $torrent): bool

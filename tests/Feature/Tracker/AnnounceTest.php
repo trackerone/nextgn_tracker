@@ -523,6 +523,131 @@ class AnnounceTest extends TestCase
         $this->assertSame(1, $torrent->completed);
     }
 
+    public function test_started_then_no_event_updates_existing_peer_state(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-started-no-event-update');
+        $peerIdHex = $this->makePeerIdHex('peer-started-no-event-update');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 10,
+            'downloaded' => 20,
+            'left' => 200,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 30,
+            'downloaded' => 40,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($peerIdHex),
+            'uploaded' => 30,
+            'downloaded' => 40,
+            'left' => 0,
+            'is_seeder' => true,
+        ]);
+    }
+
+    public function test_uploaded_and_downloaded_are_monotonic_when_announces_send_lower_values(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-monotonic-traffic');
+        $peerIdHex = $this->makePeerIdHex('peer-monotonic-traffic');
+        $peerIdBinary = hex2bin($peerIdHex);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 500,
+            'downloaded' => 700,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'uploaded' => 50,
+            'downloaded' => 70,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 500,
+            'downloaded' => 700,
+            'left' => 0,
+            'is_seeder' => true,
+        ]);
+
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 500,
+            'downloaded' => 700,
+        ]);
+    }
+
+    public function test_lifecycle_started_completed_stopped_keeps_counters_and_completion_consistent(): void
+    {
+        $leecher = User::factory()->create();
+        $seeder = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-lifecycle-consistency');
+        $leecherPeerIdHex = $this->makePeerIdHex('peer-lifecycle-leecher');
+        $seederPeerIdHex = $this->makePeerIdHex('peer-lifecycle-seeder');
+
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'started',
+            'left' => 50,
+        ])->assertOk();
+        $this->announce($seeder, $infoHashHex, [
+            'peer_id' => $seederPeerIdHex,
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+        $this->announce($leecher, $infoHashHex, [
+            'peer_id' => $leecherPeerIdHex,
+            'event' => 'stopped',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($leecherPeerIdHex),
+        ]);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($seederPeerIdHex),
+            'is_seeder' => true,
+        ]);
+
+        $snatch = UserTorrent::query()
+            ->where('user_id', $leecher->id)
+            ->where('torrent_id', $torrent->id)
+            ->first();
+
+        $this->assertNotNull($snatch);
+        $this->assertNotNull($snatch->completed_at);
+
+        $torrent->refresh();
+        $this->assertSame(1, $torrent->seeders);
+        $this->assertSame(0, $torrent->leechers);
+        $this->assertSame(1, $torrent->completed);
+    }
+
     /**
      * @return array<string, mixed>
      */
