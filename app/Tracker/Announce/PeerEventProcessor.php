@@ -1,0 +1,164 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tracker\Announce;
+
+use App\Contracts\TorrentRepositoryInterface;
+use App\Models\Peer;
+use App\Models\Torrent;
+use App\Models\User;
+use App\Services\UserTorrentService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+final class PeerEventProcessor
+{
+    private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
+
+    public function __construct(
+        private readonly UserTorrentService $userTorrents,
+        private readonly TorrentRepositoryInterface $torrents,
+        private readonly AnnounceSecurityLogger $securityLogger,
+        private readonly AnnounceResponseBuilder $responseBuilder,
+        private readonly TwentyByteParamDecoder $decoder,
+    ) {}
+
+    public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
+    {
+        $peerId = $this->decoder->decode($data->peerId);
+        if ($peerId === null) {
+            return AnnounceResult::failure('peer_id must be exactly 20 bytes.');
+        }
+
+        if ($data->event === null && $this->isDuplicateAnnounce($torrent, $peerId)) {
+            $this->securityLogger->log(
+                request: $request,
+                user: $user,
+                eventType: 'tracker.rate_limited',
+                severity: 'medium',
+                message: 'Rate limit violation during announce',
+                context: ['torrent_id' => $torrent->getKey()],
+            );
+
+            return $this->responseBuilder->successWithoutPeers($torrent);
+        }
+
+        if ($data->event === 'started' && $data->left > 0 && ! $this->isStaff($user)) {
+            $ratio = $user->ratio();
+
+            if ($ratio !== null && $ratio < self::MIN_RATIO_FOR_NEW_DOWNLOAD) {
+                return AnnounceResult::failure('Your ratio is too low to start new downloads.');
+            }
+        }
+
+        $this->persistPeerState($request, $user, $torrent, $data, $peerId);
+        $this->persistUserTorrentState($user, $torrent, $data);
+
+        $this->torrents->refreshPeerStats($torrent);
+
+        return $this->responseBuilder->successWithPeers($torrent, $peerId, $data->numwant);
+    }
+
+    private function persistPeerState(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data, string $peerId): void
+    {
+        $now = now();
+        $ip = (string) ($data->ip ?? $request->ip() ?? '0.0.0.0');
+
+        if ($data->event === 'stopped') {
+            Peer::query()
+                ->where('torrent_id', $torrent->getKey())
+                ->where('peer_id', $peerId)
+                ->delete();
+
+            return;
+        }
+
+        Peer::query()->updateOrCreate(
+            [
+                'torrent_id' => $torrent->getKey(),
+                'peer_id' => $peerId,
+            ],
+            [
+                'user_id' => $user->getKey(),
+                'ip' => $ip,
+                'port' => $data->port,
+                'uploaded' => $data->uploaded,
+                'downloaded' => $data->downloaded,
+                'left' => $data->left,
+                'is_seeder' => $data->left === 0,
+                'last_announce_at' => $now,
+            ],
+        );
+
+        if ($data->event === 'completed') {
+            $torrent->increment('completed');
+        }
+    }
+
+    private function persistUserTorrentState(User $user, Torrent $torrent, AnnounceRequestData $data): void
+    {
+        $now = now();
+
+        DB::table('user_torrents')->updateOrInsert(
+            [
+                'user_id' => $user->getKey(),
+                'torrent_id' => $torrent->getKey(),
+            ],
+            [
+                'uploaded' => $data->uploaded,
+                'downloaded' => $data->downloaded,
+                'updated_at' => $now,
+                'created_at' => $now,
+            ],
+        );
+
+        if ($data->event === 'completed') {
+            $row = DB::table('user_torrents')
+                ->where('user_id', $user->getKey())
+                ->where('torrent_id', $torrent->getKey())
+                ->first();
+
+            if ($row !== null && ($row->completed_at ?? null) === null) {
+                DB::table('user_torrents')
+                    ->where('user_id', $user->getKey())
+                    ->where('torrent_id', $torrent->getKey())
+                    ->update([
+                        'completed_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+            }
+        }
+
+        $this->userTorrents->updateFromAnnounce(
+            $user,
+            $torrent,
+            $data->uploaded,
+            $data->downloaded,
+            $data->event,
+            $now,
+        );
+    }
+
+    private function isDuplicateAnnounce(Torrent $torrent, string $peerId): bool
+    {
+        return Peer::query()
+            ->where('torrent_id', $torrent->getKey())
+            ->where('peer_id', $peerId)
+            ->exists();
+    }
+
+    private function isStaff(User $user): bool
+    {
+        return $user->isStaff()
+            || in_array((string) ($user->role ?? ''), [
+                'moderator',
+                'admin',
+                'sysop',
+                'mod1',
+                'mod2',
+                'admin1',
+                'admin2',
+            ], true);
+    }
+}
