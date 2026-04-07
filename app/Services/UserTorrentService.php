@@ -25,8 +25,8 @@ class UserTorrentService
         ]);
 
         $userTorrent->fill([
-            'uploaded' => $uploaded,
-            'downloaded' => $downloaded,
+            'uploaded' => max((int) ($userTorrent->uploaded ?? 0), $uploaded),
+            'downloaded' => max((int) ($userTorrent->downloaded ?? 0), $downloaded),
             'last_announce_at' => $announcedAt,
         ]);
 
