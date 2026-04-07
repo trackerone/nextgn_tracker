@@ -372,6 +372,168 @@ class AnnounceTest extends TestCase
         $this->assertStringNotContainsString('must not be greater than 200', (string) $response->getContent());
     }
 
+    public function test_numwant_zero_returns_success_with_no_peers(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-numwant-zero');
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-numwant-zero'),
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        $otherUser = User::factory()->create();
+        $this->announce($otherUser, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-numwant-zero'),
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-numwant-zero'),
+            'numwant' => 0,
+        ]);
+
+        $response->assertOk();
+
+        $payload = $this->decodeAnnouncePayload($response);
+        $this->assertSame([], $payload['peers']);
+    }
+
+    public function test_numwant_missing_uses_default_cap_of_fifty(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-numwant-default');
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-numwant-default'),
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        for ($i = 0; $i < 75; $i++) {
+            $otherUser = User::factory()->create();
+            $this->announce($otherUser, $infoHashHex, [
+                'peer_id' => $this->makePeerIdHex('peer-numwant-default-'.$i),
+                'event' => 'started',
+                'left' => 0,
+            ])->assertOk();
+        }
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-numwant-default'),
+        ]);
+
+        $response->assertOk();
+
+        $payload = $this->decodeAnnouncePayload($response);
+        $this->assertCount(50, $payload['peers']);
+    }
+
+    public function test_default_peer_list_order_is_deterministic_when_announces_share_timestamp(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-deterministic-order');
+        $requesterPeerId = $this->makePeerIdHex('owner-deterministic-order');
+        $firstPeerId = $this->makePeerIdHex('peer-a-deterministic-order');
+        $secondPeerId = $this->makePeerIdHex('peer-b-deterministic-order');
+
+        $this->travelTo(now()->startOfSecond());
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $requesterPeerId,
+            'event' => 'started',
+            'left' => 0,
+            'ip' => '10.0.0.1',
+        ])->assertOk();
+
+        $firstUser = User::factory()->create();
+        $this->announce($firstUser, $infoHashHex, [
+            'peer_id' => $firstPeerId,
+            'event' => 'started',
+            'left' => 0,
+            'ip' => '10.0.0.2',
+        ])->assertOk();
+
+        $secondUser = User::factory()->create();
+        $this->announce($secondUser, $infoHashHex, [
+            'peer_id' => $secondPeerId,
+            'event' => 'started',
+            'left' => 0,
+            'ip' => '10.0.0.3',
+        ])->assertOk();
+
+        $firstResponse = $this->announce($user, $infoHashHex, [
+            'peer_id' => $requesterPeerId,
+            'numwant' => 2,
+        ]);
+        $secondResponse = $this->announce($user, $infoHashHex, [
+            'peer_id' => $requesterPeerId,
+            'numwant' => 2,
+        ]);
+
+        $this->travelBack();
+
+        $firstResponse->assertOk();
+        $secondResponse->assertOk();
+
+        $firstPayload = $this->decodeAnnouncePayload($firstResponse);
+        $secondPayload = $this->decodeAnnouncePayload($secondResponse);
+
+        $this->assertSame($firstPayload['peers'], $secondPayload['peers']);
+    }
+
+    public function test_stopped_after_completed_keeps_completion_idempotent_and_removes_peer(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-stop-after-complete');
+        $peerIdHex = $this->makePeerIdHex('peer-stop-after-complete');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 10,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'stopped',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => hex2bin($peerIdHex),
+        ]);
+
+        $snatch = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->first();
+
+        $this->assertNotNull($snatch);
+        $this->assertNotNull($snatch->completed_at);
+
+        $torrent->refresh();
+        $this->assertSame(1, $torrent->completed);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeAnnouncePayload(TestResponse $response): array
+    {
+        /** @var array<string, mixed> $payload */
+        $payload = app(BencodeService::class)->decode((string) $response->getContent());
+
+        return $payload;
+    }
+
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse
     {
         $params = array_merge([
