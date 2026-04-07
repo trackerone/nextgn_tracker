@@ -209,6 +209,169 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_stopped_event_on_missing_peer_returns_success_without_creating_peer(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-stopped-missing');
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('missing-stopped-peer'),
+            'event' => 'stopped',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $response->getContent());
+        $this->assertDatabaseCount('peers', 0);
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+        ]);
+    }
+
+    public function test_announce_without_event_updates_existing_peer_and_left_zero_sets_seeder(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-no-event-update');
+        $peerIdHex = $this->makePeerIdHex('peer-no-event');
+        $peerIdBinary = hex2bin($peerIdHex);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 5,
+            'downloaded' => 10,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 50,
+            'downloaded' => 100,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 50,
+            'downloaded' => 100,
+            'left' => 0,
+            'is_seeder' => true,
+        ]);
+
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 50,
+            'downloaded' => 100,
+        ]);
+    }
+
+    public function test_completed_event_does_not_double_increment_torrent_completed_counter(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-completed-counter-once');
+        $peerIdHex = $this->makePeerIdHex('peer-completed-counter');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 50,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+
+        $this->assertSame(1, $torrent->completed);
+    }
+
+    public function test_malformed_info_hash_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->announce($user, 'abcd', [
+            'info_hash' => 'short',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('info_hash must be exactly 20 bytes', (string) $response->getContent());
+    }
+
+    public function test_malformed_peer_id_is_rejected(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-malformed-peer-id');
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => 'short-peer-id',
+        ]);
+
+        $response->assertOk();
+        $this->assertStringContainsString('peer_id must be exactly 20 bytes', (string) $response->getContent());
+    }
+
+    public function test_banned_client_is_rejected_with_expected_failure_reason(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-banned-client');
+
+        $response = $this->withHeader('User-Agent', 'BannedClient/1.0')
+            ->get(sprintf(
+                '/announce/%s?%s',
+                $user->ensurePasskey(),
+                http_build_query([
+                    'info_hash' => strtolower($infoHashHex),
+                    'peer_id' => $this->makePeerIdHex('banned-client-peer'),
+                    'port' => 6881,
+                    'uploaded' => 0,
+                    'downloaded' => 0,
+                    'left' => 100,
+                ], '', '&', PHP_QUERY_RFC3986)
+            ));
+
+        $response->assertOk();
+        $this->assertStringContainsString('Client is banned', (string) $response->getContent());
+    }
+
+    public function test_numwant_above_limit_is_clamped_instead_of_rejected(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-numwant-clamp');
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-peer'),
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        for ($i = 0; $i < 210; $i++) {
+            $otherUser = User::factory()->create();
+            $this->announce($otherUser, $infoHashHex, [
+                'peer_id' => $this->makePeerIdHex('peer-'.$i),
+                'event' => 'started',
+                'left' => 0,
+            ])->assertOk();
+        }
+
+        $response = $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('owner-peer'),
+            'numwant' => 500,
+        ]);
+
+        $response->assertOk();
+        $this->assertStringNotContainsString('must not be greater than 200', (string) $response->getContent());
+    }
+
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse
     {
         $params = array_merge([
