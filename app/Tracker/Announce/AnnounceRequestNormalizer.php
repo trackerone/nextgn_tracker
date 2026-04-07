@@ -19,7 +19,7 @@ final class AnnounceRequestNormalizer
             'downloaded' => 'required|integer|min:0',
             'left' => 'required|integer|min:0',
             'event' => 'sometimes|string|in:started,stopped,completed',
-            'numwant' => 'sometimes|integer|min:1',
+            'numwant' => 'sometimes|integer|min:0',
             'ip' => 'sometimes|ip',
         ]);
 
@@ -40,7 +40,7 @@ final class AnnounceRequestNormalizer
             downloaded: (int) $data['downloaded'],
             left: (int) $data['left'],
             event: isset($data['event']) ? (string) $data['event'] : null,
-            numwant: max(1, min($numwant, 200)),
+            numwant: max(0, min($numwant, 200)),
             ip: isset($data['ip']) ? (string) $data['ip'] : null,
         );
     }

@@ -42,6 +42,7 @@ final class AnnounceResponseBuilder
             ->where('peer_id', '!=', $excludingPeer)
             ->where('last_announce_at', '>=', $activeSince)
             ->orderByDesc('last_announce_at')
+            ->orderBy('id')
             ->limit($limit)
             ->get(['ip', 'port'])
             ->map(static fn (Peer $peer): array => [
