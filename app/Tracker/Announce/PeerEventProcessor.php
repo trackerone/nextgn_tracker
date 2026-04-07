@@ -91,7 +91,7 @@ final class PeerEventProcessor
             ],
         );
 
-        if ($data->event === 'completed') {
+        if ($data->event === 'completed' && $this->shouldIncrementCompletedCounter($user, $torrent)) {
             $torrent->increment('completed');
         }
     }
@@ -146,6 +146,16 @@ final class PeerEventProcessor
             ->where('torrent_id', $torrent->getKey())
             ->where('peer_id', $peerId)
             ->exists();
+    }
+
+    private function shouldIncrementCompletedCounter(User $user, Torrent $torrent): bool
+    {
+        $completedAt = DB::table('user_torrents')
+            ->where('user_id', $user->getKey())
+            ->where('torrent_id', $torrent->getKey())
+            ->value('completed_at');
+
+        return $completedAt === null;
     }
 
     private function isStaff(User $user): bool

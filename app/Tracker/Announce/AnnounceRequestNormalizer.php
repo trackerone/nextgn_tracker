@@ -19,7 +19,7 @@ final class AnnounceRequestNormalizer
             'downloaded' => 'required|integer|min:0',
             'left' => 'required|integer|min:0',
             'event' => 'sometimes|string|in:started,stopped,completed',
-            'numwant' => 'sometimes|integer|min:1|max:200',
+            'numwant' => 'sometimes|integer|min:1',
             'ip' => 'sometimes|ip',
         ]);
 
