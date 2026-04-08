@@ -40,7 +40,7 @@ class ScrapeTest extends TestCase
 
         $this->assertSame(
             app(BencodeService::class)->encode($expected),
-            $response->getContent()
+            $response->getContent(),
         );
     }
 
@@ -85,7 +85,7 @@ class ScrapeTest extends TestCase
 
         $this->assertSame(
             app(BencodeService::class)->encode($expected),
-            $response->getContent()
+            $response->getContent(),
         );
     }
 
@@ -114,7 +114,7 @@ class ScrapeTest extends TestCase
 
         $this->assertSame(
             app(BencodeService::class)->encode($expected),
-            $response->getContent()
+            $response->getContent(),
         );
     }
 }
