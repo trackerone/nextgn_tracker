@@ -8,11 +8,15 @@ use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\DownloadEligibilityService;
+use App\Services\Torrents\UploadEligibilityService;
 use Illuminate\Auth\Access\Response;
 
 class TorrentPolicy
 {
-    public function __construct(private readonly DownloadEligibilityService $downloadEligibility) {}
+    public function __construct(
+        private readonly DownloadEligibilityService $downloadEligibility,
+        private readonly UploadEligibilityService $uploadEligibility,
+    ) {}
 
     public function view(User $user, Torrent $torrent): Response
     {
@@ -68,7 +72,7 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        return ! $user->isBanned() && ! $user->isDisabled();
+        return $this->uploadEligibility->canUpload($user);
     }
 
     public function update(User $user, Torrent $torrent): bool

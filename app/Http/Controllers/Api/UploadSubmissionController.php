@@ -8,6 +8,7 @@ use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTorrentRequest;
 use App\Http\Resources\UploadSubmissionResource;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
@@ -25,6 +26,8 @@ final class UploadSubmissionController extends Controller
 
     public function store(StoreTorrentRequest $request): JsonResponse
     {
+        $this->authorize('create', Torrent::class);
+
         /** @var User $user */
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');

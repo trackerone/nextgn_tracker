@@ -48,8 +48,7 @@ class TorrentUploadController extends Controller
 
     public function store(StoreTorrentRequest $request): RedirectResponse
     {
-        // Auth-middleware sørger for at brugeren er logget ind.
-        // Vi har policy-check i create(), så vi gentager det ikke her for at undgå 403 i tests.
+        $this->authorize('create', Torrent::class);
 
         $data = $request->validated();
 
