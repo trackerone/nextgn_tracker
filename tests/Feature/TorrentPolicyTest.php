@@ -76,13 +76,15 @@ final class TorrentPolicyTest extends TestCase
             'action' => 'torrent.download.eligibility',
         ]);
 
+        $eligibilityLog = SecurityAuditLog::query()
+            ->where('user_id', $otherUser->id)
+            ->where('action', 'torrent.download.eligibility')
+            ->latest('id')
+            ->firstOrFail();
+
         $this->assertSame(
             DownloadEligibilityDecision::REASON_NOT_ELIGIBLE,
-            (string) SecurityAuditLog::query()
-                ->where('user_id', $otherUser->id)
-                ->where('action', 'torrent.download.eligibility')
-                ->latest('id')
-                ->value('context.reason')
+            $eligibilityLog->context['reason'] ?? null
         );
     }
 

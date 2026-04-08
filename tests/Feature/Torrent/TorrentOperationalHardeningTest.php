@@ -50,21 +50,24 @@ final class TorrentOperationalHardeningTest extends TestCase
             'action' => 'torrent.download.eligibility',
         ]);
 
-        $eligibilityReason = SecurityAuditLog::query()
+        $eligibilityLog = SecurityAuditLog::query()
             ->where('user_id', $viewer->id)
             ->where('action', 'torrent.download.eligibility')
             ->latest('id')
-            ->value('context.reason');
+            ->firstOrFail();
 
-        $this->assertSame(DownloadEligibilityDecision::REASON_NOT_ELIGIBLE, $eligibilityReason);
+        $this->assertSame(
+            DownloadEligibilityDecision::REASON_NOT_ELIGIBLE,
+            $eligibilityLog->context['reason'] ?? null
+        );
 
-        $gateAuditScope = SecurityAuditLog::query()
+        $gateDenialLog = SecurityAuditLog::query()
             ->where('user_id', $viewer->id)
             ->where('action', 'torrent.access.denied_download')
             ->latest('id')
-            ->value('context.audit_scope');
+            ->firstOrFail();
 
-        $this->assertSame('gate_denial', $gateAuditScope);
+        $this->assertSame('gate_denial', $gateDenialLog->context['audit_scope'] ?? null);
     }
 
     public function test_unauthorized_moderation_attempt_is_logged(): void
