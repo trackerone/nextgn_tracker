@@ -6,7 +6,9 @@ namespace Tests\Feature;
 
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\SecurityAuditLog;
 use App\Policies\TorrentPolicy;
+use App\Services\Torrents\DownloadEligibilityDecision;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -68,6 +70,37 @@ final class TorrentPolicyTest extends TestCase
         $this->assertTrue($this->policy->download($otherUser, $rejected)->denied());
         $this->assertTrue($this->policy->download($uploader, $pending)->allowed());
         $this->assertTrue($this->policy->download($staff, $pending)->allowed());
+
+        $this->assertDatabaseHas('security_audit_logs', [
+            'user_id' => $otherUser->id,
+            'action' => 'torrent.download.eligibility',
+        ]);
+
+        $this->assertSame(
+            DownloadEligibilityDecision::REASON_NOT_ELIGIBLE,
+            (string) SecurityAuditLog::query()
+                ->where('user_id', $otherUser->id)
+                ->where('action', 'torrent.download.eligibility')
+                ->latest('id')
+                ->value('context.reason')
+        );
+    }
+
+    public function test_download_policy_telemetry_is_not_emitted_for_allowed_paths(): void
+    {
+        $uploader = User::factory()->create();
+        $staff = User::factory()->create(['role' => User::ROLE_MODERATOR]);
+        $approved = Torrent::factory()->create();
+        $pending = Torrent::factory()->create([
+            'user_id' => $uploader->id,
+            'status' => Torrent::STATUS_PENDING,
+        ]);
+
+        $this->assertTrue($this->policy->download($uploader, $pending)->allowed());
+        $this->assertTrue($this->policy->download($staff, $pending)->allowed());
+        $this->assertTrue($this->policy->download(User::factory()->create(), $approved)->allowed());
+
+        $this->assertDatabaseCount('security_audit_logs', 0);
     }
 
     public function test_moderation_policy_methods(): void
