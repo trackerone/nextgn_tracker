@@ -1,6 +1,7 @@
 name: CI Backend
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - app/**
@@ -30,6 +31,9 @@ on:
       - phpunit.xml.dist
       - .github/workflows/ci-backend.yml
 
+permissions:
+  contents: read
+
 jobs:
   feature-tests:
     runs-on: ubuntu-latest
@@ -47,18 +51,22 @@ jobs:
           coverage: none
           extensions: mbstring, bcmath, pdo_sqlite, sqlite3, gd
 
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
       - name: Cache Composer
         uses: actions/cache@v4
         with:
-          path: ~/.composer/cache
+          path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-backend-composer-php83-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-backend-composer-php83-
 
+      - name: Configure Composer GitHub OAuth
+        run: composer config --global github-oauth.github.com "${{ github.token }}"
+
       - name: Install composer dependencies
-        env:
-          COMPOSER_AUTH: >-
-            {"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}
         run: composer install --prefer-dist --no-progress
 
       - name: Prepare Laravel environment
