@@ -94,14 +94,17 @@ class ScrapeTest extends TestCase
         $unknown = strtoupper(bin2hex(random_bytes(20)));
         $binary = hex2bin($unknown);
         $this->assertIsString($binary);
+        $encoded = urlencode($binary);
+        $requestedBinary = rawurldecode($encoded);
+        $requestedHex = strtoupper(bin2hex($requestedBinary));
 
-        $response = $this->get('/scrape?info_hash='.urlencode($binary));
+        $response = $this->get('/scrape?info_hash='.$encoded);
 
         $response->assertOk();
 
         $expected = [
             'files' => [
-                $unknown => [
+                $requestedHex => [
                     'complete' => 0,
                     'incomplete' => 0,
                     'downloaded' => 0,
