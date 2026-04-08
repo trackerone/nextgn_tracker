@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\Torrent;
 use App\Models\SecurityAuditLog;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Policies\TorrentPolicy;
 use App\Services\Torrents\DownloadEligibilityDecision;
