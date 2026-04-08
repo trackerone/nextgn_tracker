@@ -7,8 +7,11 @@ namespace App\Services\Torrents;
 final readonly class DownloadEligibilityDecision
 {
     public const REASON_APPROVED_TORRENT = 'approved_torrent';
+
     public const REASON_UPLOADER_OWNERSHIP = 'uploader_ownership';
+
     public const REASON_STAFF_BYPASS = 'staff_bypass';
+
     public const REASON_NOT_ELIGIBLE = 'not_eligible';
 
     private function __construct(
