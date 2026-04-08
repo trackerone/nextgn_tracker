@@ -73,6 +73,22 @@ class UserFactory extends Factory
         });
     }
 
+    public function banned(): self
+    {
+        return $this->state(fn (): array => [
+            'is_banned' => true,
+            'is_disabled' => false,
+        ]);
+    }
+
+    public function disabled(): self
+    {
+        return $this->state(fn (): array => [
+            'is_banned' => false,
+            'is_disabled' => true,
+        ]);
+    }
+
     private function syncStaffFlags(User $user): void
     {
         // If is_staff is already explicitly true/false via state/override, respect it.
