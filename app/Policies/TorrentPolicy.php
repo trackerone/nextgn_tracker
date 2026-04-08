@@ -55,10 +55,12 @@ class TorrentPolicy
             return Response::allow();
         }
 
+        // Domain telemetry for why eligibility rejected this download attempt.
         SecurityAuditLog::logAndWarn($user, 'torrent.download.eligibility', [
             'torrent_id' => (int) $torrent->getKey(),
             'allowed' => false,
             'reason' => $decision->reason,
+            'telemetry_scope' => 'eligibility_decision',
         ]);
 
         return Response::denyAsNotFound();

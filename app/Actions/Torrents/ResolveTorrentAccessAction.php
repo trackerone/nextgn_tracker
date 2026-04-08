@@ -61,6 +61,8 @@ final class ResolveTorrentAccessAction
                 'torrent_id' => $torrent->id,
                 'route' => (string) (request()->route()?->getName() ?? ''),
                 'ability' => $ability,
+                // Application-flow audit for denied gate authorization at request level.
+                'audit_scope' => 'gate_denial',
             ]
         );
     }
