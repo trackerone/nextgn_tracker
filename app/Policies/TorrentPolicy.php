@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\DownloadEligibilityService;
@@ -53,6 +54,12 @@ class TorrentPolicy
         if ($decision->allowed) {
             return Response::allow();
         }
+
+        SecurityAuditLog::logAndWarn($user, 'torrent.download.eligibility', [
+            'torrent_id' => (int) $torrent->getKey(),
+            'allowed' => false,
+            'reason' => $decision->reason,
+        ]);
 
         return Response::denyAsNotFound();
     }
