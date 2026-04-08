@@ -76,7 +76,7 @@ final class ScrapeController extends Controller
 
         if (preg_match_all('/(?:^|&)info_hash(?:%5B[^&=]*%5D|\[[^&=]*\])?=([^&]*)/i', $queryString, $matches) > 0) {
             foreach ($matches[1] as $rawValue) {
-                $decoded = rawurldecode((string) $rawValue);
+                $decoded = urldecode((string) $rawValue);
 
                 if (strlen($decoded) === 20 || preg_match('/\A[0-9a-fA-F]{40}\z/', $decoded) === 1) {
                     $hashes[] = $decoded;

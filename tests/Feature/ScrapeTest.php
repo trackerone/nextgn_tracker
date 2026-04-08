@@ -95,7 +95,7 @@ class ScrapeTest extends TestCase
         $binary = hex2bin($unknown);
         $this->assertIsString($binary);
         $encoded = urlencode($binary);
-        $requestedBinary = rawurldecode($encoded);
+        $requestedBinary = urldecode($encoded);
         $requestedHex = strtoupper(bin2hex($requestedBinary));
 
         $response = $this->get('/scrape?info_hash='.$encoded);
