@@ -33,6 +33,8 @@ on:
 jobs:
   feature-tests:
     runs-on: ubuntu-latest
+    env:
+      COMPOSER_NO_INTERACTION: 1
 
     steps:
       - name: Checkout
@@ -45,8 +47,19 @@ jobs:
           coverage: none
           extensions: mbstring, bcmath, pdo_sqlite, sqlite3, gd
 
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: ${{ runner.os }}-backend-composer-php83-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-backend-composer-php83-
+
       - name: Install composer dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+        env:
+          COMPOSER_AUTH: >-
+            {"github-oauth":{"github.com":"${{ secrets.GITHUB_TOKEN }}"}}
+        run: composer install --prefer-dist --no-progress
 
       - name: Prepare Laravel environment
         run: |
