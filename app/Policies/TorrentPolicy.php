@@ -48,7 +48,9 @@ class TorrentPolicy
 
     public function download(User $user, Torrent $torrent): Response
     {
-        if ($this->downloadEligibility->canDownload($user, $torrent)) {
+        $decision = $this->downloadEligibility->decide($user, $torrent);
+
+        if ($decision->allowed) {
             return Response::allow();
         }
 
