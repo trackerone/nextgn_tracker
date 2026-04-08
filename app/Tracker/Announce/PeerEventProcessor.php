@@ -78,6 +78,9 @@ final class PeerEventProcessor
             return;
         }
 
+        $existingUploaded = $existingPeer instanceof Peer ? (int) $existingPeer->uploaded : 0;
+        $existingDownloaded = $existingPeer instanceof Peer ? (int) $existingPeer->downloaded : 0;
+
         Peer::query()->updateOrCreate(
             [
                 'torrent_id' => $torrent->getKey(),
@@ -87,8 +90,8 @@ final class PeerEventProcessor
                 'user_id' => $user->getKey(),
                 'ip' => $ip,
                 'port' => $data->port,
-                'uploaded' => max((int) ($existingPeer?->uploaded ?? 0), $data->uploaded),
-                'downloaded' => max((int) ($existingPeer?->downloaded ?? 0), $data->downloaded),
+                'uploaded' => max($existingUploaded, $data->uploaded),
+                'downloaded' => max($existingDownloaded, $data->downloaded),
                 'left' => $data->left,
                 'is_seeder' => $data->left === 0,
                 'last_announce_at' => $now,
