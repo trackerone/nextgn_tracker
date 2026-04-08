@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature\Torrent;
 
 use App\Enums\TorrentStatus;
+use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Torrents\DownloadEligibilityDecision;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -42,6 +44,27 @@ final class TorrentOperationalHardeningTest extends TestCase
             'user_id' => $viewer->id,
             'action' => 'torrent.access.denied_download',
         ]);
+
+        $this->assertDatabaseHas('security_audit_logs', [
+            'user_id' => $viewer->id,
+            'action' => 'torrent.download.eligibility',
+        ]);
+
+        $eligibilityReason = SecurityAuditLog::query()
+            ->where('user_id', $viewer->id)
+            ->where('action', 'torrent.download.eligibility')
+            ->latest('id')
+            ->value('context.reason');
+
+        $this->assertSame(DownloadEligibilityDecision::REASON_NOT_ELIGIBLE, $eligibilityReason);
+
+        $gateAuditScope = SecurityAuditLog::query()
+            ->where('user_id', $viewer->id)
+            ->where('action', 'torrent.access.denied_download')
+            ->latest('id')
+            ->value('context.audit_scope');
+
+        $this->assertSame('gate_denial', $gateAuditScope);
     }
 
     public function test_unauthorized_moderation_attempt_is_logged(): void
