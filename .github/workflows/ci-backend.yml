@@ -33,6 +33,7 @@ on:
 jobs:
   feature-tests:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,9 +43,26 @@ jobs:
         with:
           php-version: '8.3'
           coverage: none
+          extensions: mbstring, bcmath, pdo_sqlite, sqlite3, gd
 
       - name: Install composer dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
       - name: Run feature tests
-        run: php artisan test --testsuite=Feature
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+          CACHE_DRIVER: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: array
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+          php artisan test --testsuite=Feature
