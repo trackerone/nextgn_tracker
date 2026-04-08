@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-
 use Tests\TestCase;
 
 final class UploadEligibilityEnforcementTest extends TestCase
@@ -64,8 +63,8 @@ final class UploadEligibilityEnforcementTest extends TestCase
     private function ineligibleUsers(): array
     {
         return [
-            User::factory()->create(['is_banned' => true]),
-            User::factory()->create(['is_disabled' => true]),
+            User::factory()->banned()->create(),
+            User::factory()->disabled()->create(),
         ];
     }
 
