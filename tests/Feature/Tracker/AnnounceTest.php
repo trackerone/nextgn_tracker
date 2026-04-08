@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Tracker;
 
+use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -355,12 +356,18 @@ class AnnounceTest extends TestCase
         ])->assertOk();
 
         for ($i = 0; $i < 210; $i++) {
-            $otherUser = User::factory()->create();
-            $this->announce($otherUser, $infoHashHex, [
-                'peer_id' => $this->makePeerIdHex('peer-'.$i),
-                'event' => 'started',
+            Peer::query()->create([
+                'torrent_id' => $torrent->id,
+                'user_id' => User::factory()->create()->id,
+                'peer_id' => hex2bin($this->makePeerIdHex('peer-'.$i)),
+                'ip' => sprintf('10.10.%d.%d', intdiv($i, 250), ($i % 250) + 1),
+                'port' => 7000 + $i,
+                'uploaded' => 0,
+                'downloaded' => 0,
                 'left' => 0,
-            ])->assertOk();
+                'is_seeder' => true,
+                'last_announce_at' => now(),
+            ]);
         }
 
         $response = $this->announce($user, $infoHashHex, [
@@ -521,6 +528,7 @@ class AnnounceTest extends TestCase
         ]);
         $secondResponse = $this->announce($user, $infoHashHex, [
             'peer_id' => $requesterPeerId,
+            'uploaded' => 1,
             'numwant' => 2,
         ]);
 
