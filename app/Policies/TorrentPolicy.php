@@ -6,10 +6,13 @@ namespace App\Policies;
 
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Torrents\DownloadEligibilityService;
 use Illuminate\Auth\Access\Response;
 
 class TorrentPolicy
 {
+    public function __construct(private readonly DownloadEligibilityService $downloadEligibility) {}
+
     public function view(User $user, Torrent $torrent): Response
     {
         if ($torrent->isApproved()) {
@@ -45,16 +48,7 @@ class TorrentPolicy
 
     public function download(User $user, Torrent $torrent): Response
     {
-        if ($torrent->isApproved()) {
-            return Response::allow();
-        }
-
-        if ($torrent->user_id === $user->id) {
-            // Uploaders may download their own torrents while waiting for moderation.
-            return Response::allow();
-        }
-
-        if ($this->canAccessModeration($user)) {
+        if ($this->downloadEligibility->canDownload($user, $torrent)) {
             return Response::allow();
         }
 
