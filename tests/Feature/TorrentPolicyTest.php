@@ -9,6 +9,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Policies\TorrentPolicy;
 use App\Services\Torrents\DownloadEligibilityDecision;
+use App\Services\Torrents\UploadEligibilityDecision;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -103,6 +104,68 @@ final class TorrentPolicyTest extends TestCase
         $this->assertTrue($this->policy->download(User::factory()->create(), $approved)->allowed());
 
         $this->assertDatabaseCount('security_audit_logs', 0);
+    }
+
+    public function test_create_policy_logs_upload_eligibility_telemetry_for_banned_user(): void
+    {
+        $user = User::factory()->banned()->create();
+
+        $this->assertFalse($this->policy->create($user));
+
+        $this->assertDatabaseHas('security_audit_logs', [
+            'user_id' => $user->id,
+            'action' => 'torrent.upload.eligibility',
+        ]);
+
+        $eligibilityLog = SecurityAuditLog::query()
+            ->where('user_id', $user->id)
+            ->where('action', 'torrent.upload.eligibility')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertSame(false, $eligibilityLog->context['allowed'] ?? null);
+        $this->assertSame(
+            UploadEligibilityDecision::REASON_USER_BANNED,
+            $eligibilityLog->context['reason'] ?? null
+        );
+        $this->assertSame('eligibility_decision', $eligibilityLog->context['telemetry_scope'] ?? null);
+    }
+
+    public function test_create_policy_logs_upload_eligibility_telemetry_for_disabled_user(): void
+    {
+        $user = User::factory()->disabled()->create();
+
+        $this->assertFalse($this->policy->create($user));
+
+        $this->assertDatabaseHas('security_audit_logs', [
+            'user_id' => $user->id,
+            'action' => 'torrent.upload.eligibility',
+        ]);
+
+        $eligibilityLog = SecurityAuditLog::query()
+            ->where('user_id', $user->id)
+            ->where('action', 'torrent.upload.eligibility')
+            ->latest('id')
+            ->firstOrFail();
+
+        $this->assertSame(false, $eligibilityLog->context['allowed'] ?? null);
+        $this->assertSame(
+            UploadEligibilityDecision::REASON_USER_DISABLED,
+            $eligibilityLog->context['reason'] ?? null
+        );
+        $this->assertSame('eligibility_decision', $eligibilityLog->context['telemetry_scope'] ?? null);
+    }
+
+    public function test_create_policy_does_not_emit_upload_eligibility_telemetry_for_allowed_user(): void
+    {
+        $user = User::factory()->create();
+
+        $this->assertTrue($this->policy->create($user));
+
+        $this->assertDatabaseMissing('security_audit_logs', [
+            'user_id' => $user->id,
+            'action' => 'torrent.upload.eligibility',
+        ]);
     }
 
     public function test_moderation_policy_methods(): void
