@@ -72,7 +72,7 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        return $this->uploadEligibility->decide($user)->allowed;
+        return $this->uploadEligibility->evaluate($user)->allowed;
     }
 
     public function update(User $user, Torrent $torrent): bool

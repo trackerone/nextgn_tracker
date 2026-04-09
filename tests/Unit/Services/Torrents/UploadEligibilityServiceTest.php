@@ -26,11 +26,11 @@ final class UploadEligibilityServiceTest extends TestCase
         $this->service = app(UploadEligibilityService::class);
     }
 
-    public function test_records_telemetry_for_allowed_upload_decision(): void
+    public function test_evaluate_records_telemetry_for_allowed_upload_decision(): void
     {
         $user = User::factory()->create();
 
-        $decision = $this->service->decide($user, [
+        $decision = $this->service->evaluate($user, [
             'type' => 'movie',
             'resolution' => '1080p',
             'scene' => false,
@@ -38,12 +38,12 @@ final class UploadEligibilityServiceTest extends TestCase
         ]);
 
         $this->assertTrue($decision->allowed);
-        $this->assertSame(UploadEligibilityReason::Allowed, $decision->reason);
+        $this->assertNull($decision->reason);
 
         $this->assertDatabaseHas('upload_eligibility_events', [
             'user_id' => $user->id,
             'allowed' => true,
-            'reason' => UploadEligibilityReason::Allowed->value,
+            'reason' => null,
         ]);
 
         $event = UploadEligibilityEvent::query()->latest('id')->firstOrFail();
@@ -57,16 +57,16 @@ final class UploadEligibilityServiceTest extends TestCase
             \Mockery::subset([
                 'user_id' => $user->id,
                 'allowed' => true,
-                'reason' => UploadEligibilityReason::Allowed->value,
+                'reason' => null,
             ])
         );
     }
 
-    public function test_records_telemetry_for_denied_upload_decision(): void
+    public function test_evaluate_records_telemetry_for_denied_upload_decision(): void
     {
         $user = User::factory()->create(['is_banned' => true]);
 
-        $decision = $this->service->decide($user, [
+        $decision = $this->service->evaluate($user, [
             'type' => 'movie',
             'duplicate' => true,
             'category' => 'Movies',
@@ -94,6 +94,20 @@ final class UploadEligibilityServiceTest extends TestCase
                 'reason' => UploadEligibilityReason::UserBanned->value,
             ])
         );
+    }
+
+    public function test_decide_is_pure_and_does_not_record_telemetry(): void
+    {
+        $user = User::factory()->create();
+
+        $decision = $this->service->decide($user, [
+            'type' => 'movie',
+        ]);
+
+        $this->assertTrue($decision->allowed);
+        $this->assertNull($decision->reason);
+        $this->assertDatabaseCount('upload_eligibility_events', 0);
+        Log::shouldNotHaveReceived('info');
     }
 
     public function test_can_upload_remains_compatible_with_decision_allowed_flag(): void

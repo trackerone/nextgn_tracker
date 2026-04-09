@@ -14,7 +14,7 @@ final class UploadEligibilityTelemetryService
         $payload = [
             'user_id' => (int) $user->getKey(),
             'allowed' => $decision->allowed,
-            'reason' => $decision->reason->value,
+            'reason' => $decision->reason?->value,
             'context' => $decision->context,
         ];
 
