@@ -6,24 +6,28 @@ namespace App\Services\Torrents;
 
 final readonly class UploadEligibilityDecision
 {
-    public const REASON_ELIGIBLE = 'eligible';
-
-    public const REASON_USER_BANNED = 'user_banned';
-
-    public const REASON_USER_DISABLED = 'user_disabled';
-
+    /**
+     * @param  array<string, mixed>  $context
+     */
     private function __construct(
         public bool $allowed,
-        public string $reason,
+        public UploadEligibilityReason $reason,
+        public array $context,
     ) {}
 
-    public static function allow(string $reason): self
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public static function allow(UploadEligibilityReason $reason = UploadEligibilityReason::Allowed, array $context = []): self
     {
-        return new self(true, $reason);
+        return new self(true, $reason, $context);
     }
 
-    public static function deny(string $reason): self
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public static function deny(UploadEligibilityReason $reason, array $context = []): self
     {
-        return new self(false, $reason);
+        return new self(false, $reason, $context);
     }
 }

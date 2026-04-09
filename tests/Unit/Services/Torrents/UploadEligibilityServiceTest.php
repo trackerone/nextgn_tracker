@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Torrents;
 
+use App\Models\UploadEligibilityEvent;
 use App\Models\User;
-use App\Services\Torrents\UploadEligibilityDecision;
+use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 final class UploadEligibilityServiceTest extends TestCase
@@ -20,37 +22,78 @@ final class UploadEligibilityServiceTest extends TestCase
     {
         parent::setUp();
 
+        Log::spy();
         $this->service = app(UploadEligibilityService::class);
     }
 
-    public function test_allows_eligible_user_with_reason_code(): void
+    public function test_records_telemetry_for_allowed_upload_decision(): void
     {
         $user = User::factory()->create();
 
-        $decision = $this->service->decide($user);
+        $decision = $this->service->decide($user, [
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'scene' => false,
+            'size' => 2_048,
+        ]);
 
         $this->assertTrue($decision->allowed);
-        $this->assertSame(UploadEligibilityDecision::REASON_ELIGIBLE, $decision->reason);
+        $this->assertSame(UploadEligibilityReason::Allowed, $decision->reason);
+
+        $this->assertDatabaseHas('upload_eligibility_events', [
+            'user_id' => $user->id,
+            'allowed' => true,
+            'reason' => UploadEligibilityReason::Allowed->value,
+        ]);
+
+        $event = UploadEligibilityEvent::query()->latest('id')->firstOrFail();
+        $this->assertSame('movie', $event->context['type'] ?? null);
+        $this->assertSame('1080p', $event->context['resolution'] ?? null);
+        $this->assertSame(false, $event->context['scene'] ?? null);
+        $this->assertSame(2_048, $event->context['size'] ?? null);
+
+        Log::shouldHaveReceived('info')->once()->with(
+            'tracker.upload.allowed',
+            \Mockery::subset([
+                'user_id' => $user->id,
+                'allowed' => true,
+                'reason' => UploadEligibilityReason::Allowed->value,
+            ])
+        );
     }
 
-    public function test_denies_banned_user_with_reason_code(): void
+    public function test_records_telemetry_for_denied_upload_decision(): void
     {
         $user = User::factory()->create(['is_banned' => true]);
 
-        $decision = $this->service->decide($user);
+        $decision = $this->service->decide($user, [
+            'type' => 'movie',
+            'duplicate' => true,
+            'category' => 'Movies',
+        ]);
 
         $this->assertFalse($decision->allowed);
-        $this->assertSame(UploadEligibilityDecision::REASON_USER_BANNED, $decision->reason);
-    }
+        $this->assertSame(UploadEligibilityReason::UserBanned, $decision->reason);
 
-    public function test_denies_disabled_user_with_reason_code(): void
-    {
-        $user = User::factory()->create(['is_disabled' => true]);
+        $this->assertDatabaseHas('upload_eligibility_events', [
+            'user_id' => $user->id,
+            'allowed' => false,
+            'reason' => UploadEligibilityReason::UserBanned->value,
+        ]);
 
-        $decision = $this->service->decide($user);
+        $event = UploadEligibilityEvent::query()->latest('id')->firstOrFail();
+        $this->assertSame(true, $event->context['duplicate'] ?? null);
+        $this->assertSame('Movies', $event->context['category'] ?? null);
+        $this->assertSame(true, $event->context['is_banned'] ?? null);
 
-        $this->assertFalse($decision->allowed);
-        $this->assertSame(UploadEligibilityDecision::REASON_USER_DISABLED, $decision->reason);
+        Log::shouldHaveReceived('info')->once()->with(
+            'tracker.upload.denied',
+            \Mockery::subset([
+                'user_id' => $user->id,
+                'allowed' => false,
+                'reason' => UploadEligibilityReason::UserBanned->value,
+            ])
+        );
     }
 
     public function test_can_upload_remains_compatible_with_decision_allowed_flag(): void

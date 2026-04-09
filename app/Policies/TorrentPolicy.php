@@ -72,17 +72,7 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        $decision = $this->uploadEligibility->decide($user);
-
-        if (! $decision->allowed) {
-            SecurityAuditLog::logAndWarn($user, 'torrent.upload.eligibility', [
-                'allowed' => false,
-                'reason' => $decision->reason,
-                'telemetry_scope' => 'eligibility_decision',
-            ]);
-        }
-
-        return $decision->allowed;
+        return $this->uploadEligibility->decide($user)->allowed;
     }
 
     public function update(User $user, Torrent $torrent): bool
