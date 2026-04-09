@@ -11,16 +11,16 @@ final readonly class UploadEligibilityDecision
      */
     private function __construct(
         public bool $allowed,
-        public UploadEligibilityReason $reason,
+        public ?UploadEligibilityReason $reason,
         public array $context,
     ) {}
 
     /**
      * @param  array<string, mixed>  $context
      */
-    public static function allow(UploadEligibilityReason $reason = UploadEligibilityReason::Allowed, array $context = []): self
+    public static function allow(array $context = []): self
     {
-        return new self(true, $reason, $context);
+        return new self(true, null, $context);
     }
 
     /**

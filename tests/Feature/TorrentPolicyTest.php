@@ -128,7 +128,7 @@ final class TorrentPolicyTest extends TestCase
         $this->assertDatabaseHas('upload_eligibility_events', [
             'user_id' => $user->id,
             'allowed' => true,
-            'reason' => UploadEligibilityReason::Allowed->value,
+            'reason' => null,
         ]);
     }
 

@@ -6,7 +6,6 @@ namespace App\Services\Torrents;
 
 enum UploadEligibilityReason: string
 {
-    case Allowed = 'allowed';
     case DuplicateTorrent = 'duplicate_torrent';
     case RatioTooLow = 'ratio_too_low';
     case CategoryBlocked = 'category_blocked';

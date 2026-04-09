@@ -23,28 +23,27 @@ final class UploadEligibilityService
     /**
      * @param  array<string, mixed>  $context
      */
+    public function evaluate(User $user, array $context = []): UploadEligibilityDecision
+    {
+        return $this->record($user, $this->decide($user, $context));
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
     public function decide(User $user, array $context = []): UploadEligibilityDecision
     {
         $decisionContext = $this->buildDecisionContext($user, $context);
 
         if ($user->isBanned()) {
-            return $this->record(
-                $user,
-                UploadEligibilityDecision::deny(UploadEligibilityReason::UserBanned, $decisionContext),
-            );
+            return UploadEligibilityDecision::deny(UploadEligibilityReason::UserBanned, $decisionContext);
         }
 
         if ($user->isDisabled()) {
-            return $this->record(
-                $user,
-                UploadEligibilityDecision::deny(UploadEligibilityReason::UserDisabled, $decisionContext),
-            );
+            return UploadEligibilityDecision::deny(UploadEligibilityReason::UserDisabled, $decisionContext);
         }
 
-        return $this->record(
-            $user,
-            UploadEligibilityDecision::allow(UploadEligibilityReason::Allowed, $decisionContext),
-        );
+        return UploadEligibilityDecision::allow($decisionContext);
     }
 
     /**
@@ -53,7 +52,7 @@ final class UploadEligibilityService
      */
     private function buildDecisionContext(User $user, array $context): array
     {
-        return array_merge([
+        return array_filter([
             'category' => $this->asStringOrNull($context['category'] ?? null),
             'type' => $this->asStringOrNull($context['type'] ?? null),
             'resolution' => $this->asStringOrNull($context['resolution'] ?? null),
@@ -62,7 +61,7 @@ final class UploadEligibilityService
             'size' => $this->asIntOrNull($context['size'] ?? null),
             'is_banned' => $user->isBanned(),
             'is_disabled' => $user->isDisabled(),
-        ], $context);
+        ], static fn (mixed $value): bool => $value !== null);
     }
 
     private function asStringOrNull(mixed $value): ?string
