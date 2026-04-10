@@ -33,7 +33,8 @@ class TorrentUploadController extends Controller
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
         private readonly UploadEligibilityService $uploadEligibility,
-    ) {}
+    ) {
+    }
 
     public function create(): View
     {
@@ -62,7 +63,7 @@ class TorrentUploadController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (!$torrentFile instanceof UploadedFile) {
+        if (! $torrentFile instanceof UploadedFile) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
@@ -73,7 +74,7 @@ class TorrentUploadController extends Controller
             'resolution' => $data['resolution'] ?? null,
         ]);
 
-        if (!$eligibilityDecision->allowed) {
+        if (! $eligibilityDecision->allowed) {
             return $this->handleDeniedUploadDecision($eligibilityDecision->reason, $eligibilityDecision->context);
         }
 
@@ -251,7 +252,7 @@ class TorrentUploadController extends Controller
         $clean = [];
 
         foreach ($codecs as $key => $value) {
-            if (!is_string($key) || !is_string($value)) {
+            if (! is_string($key) || ! is_string($value)) {
                 continue;
             }
 
