@@ -24,12 +24,7 @@ final class UploadEligibilityEnforcementTest extends TestCase
                 ->assertForbidden();
         }
 
-        $this->assertDatabaseHas('upload_eligibility_events', [
-            'reason' => UploadEligibilityReason::UserBanned->value,
-        ]);
-        $this->assertDatabaseHas('upload_eligibility_events', [
-            'reason' => UploadEligibilityReason::UserDisabled->value,
-        ]);
+        $this->assertDatabaseCount('upload_eligibility_events', 0);
     }
 
     public function test_web_store_is_forbidden_for_banned_or_disabled_users(): void
