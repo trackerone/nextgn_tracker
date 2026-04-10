@@ -154,7 +154,16 @@ final class UploadEligibilityServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $decision = $this->service->evaluateForPayload($user, 'not-a-torrent');
+        $payload = app(BencodeService::class)->encode([
+            'announce' => 'http://localhost/announce',
+            'info' => [
+                'name' => 'missing-size-metadata',
+                'piece length' => 16384,
+                'pieces' => str_repeat('a', 20),
+            ],
+        ]);
+
+        $decision = $this->service->evaluateForPayload($user, $payload);
 
         $this->assertFalse($decision->allowed);
         $this->assertSame(UploadEligibilityReason::MissingMetadata, $decision->reason);
