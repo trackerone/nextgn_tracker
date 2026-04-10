@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\UploadEligibilityEvent;
 use App\Services\BencodeService;
+use App\Services\Torrents\UploadEligibilityReason;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -21,6 +23,13 @@ final class UploadEligibilityEnforcementTest extends TestCase
                 ->get(route('torrents.upload'))
                 ->assertForbidden();
         }
+
+        $this->assertDatabaseHas('upload_eligibility_events', [
+            'reason' => UploadEligibilityReason::UserBanned->value,
+        ]);
+        $this->assertDatabaseHas('upload_eligibility_events', [
+            'reason' => UploadEligibilityReason::UserDisabled->value,
+        ]);
     }
 
     public function test_web_store_is_forbidden_for_banned_or_disabled_users(): void
@@ -55,6 +64,39 @@ final class UploadEligibilityEnforcementTest extends TestCase
                 ])
                 ->assertForbidden();
         }
+    }
+
+    public function test_api_store_records_duplicate_reason_from_service_boundary(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = $this->sampleTorrentPayload();
+
+        $this->actingAs($user)->postJson(route('api.uploads.store'), [
+            'name' => 'existing-upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'existing.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertCreated();
+
+        $this->actingAs($user)->postJson(route('api.uploads.store'), [
+            'name' => 'duplicate-upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'duplicate.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertStatus(409);
+
+        /** @var UploadEligibilityEvent|null $event */
+        $event = UploadEligibilityEvent::query()->latest('id')->first();
+        $this->assertNotNull($event);
+        $this->assertSame(UploadEligibilityReason::DuplicateTorrent->value, $event->reason);
+        $this->assertSame(true, $event->context['duplicate'] ?? null);
     }
 
     /**

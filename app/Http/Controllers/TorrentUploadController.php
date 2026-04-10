@@ -12,6 +12,8 @@ use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
+use App\Services\Torrents\UploadEligibilityReason;
+use App\Services\Torrents\UploadEligibilityService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Uploads\NfoStorageService;
 use Illuminate\Contracts\View\View;
@@ -30,11 +32,17 @@ class TorrentUploadController extends Controller
         private readonly NfoParser $nfoParser,
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
+        private readonly UploadEligibilityService $uploadEligibility,
     ) {}
 
     public function create(): View
     {
-        $this->authorize('create', Torrent::class);
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        abort_unless($user !== null, 403);
+
+        $decision = $this->uploadEligibility->evaluate($user);
+        abort_unless($decision->allowed, 403);
 
         $categories = Category::query()
             ->orderBy('position')
@@ -48,8 +56,6 @@ class TorrentUploadController extends Controller
 
     public function store(StoreTorrentRequest $request): RedirectResponse
     {
-        $this->authorize('create', Torrent::class);
-
         $data = $request->validated();
 
         /** @var \App\Models\User $user */
@@ -60,6 +66,15 @@ class TorrentUploadController extends Controller
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
+        }
+
+        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+            'type' => $data['type'] ?? null,
+            'resolution' => $data['resolution'] ?? null,
+        ]);
+
+        if (! $eligibilityDecision->allowed) {
+            return $this->handleDeniedUploadDecision($eligibilityDecision->reason, $eligibilityDecision->context);
         }
 
         $nfoPayload = $this->resolveNfoText($request, $data);
@@ -134,6 +149,34 @@ class TorrentUploadController extends Controller
         return redirect()
             ->route('torrents.show', $torrent->slug)
             ->with('status', 'Torrent uploaded and awaiting approval.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function handleDeniedUploadDecision(?UploadEligibilityReason $reason, array $context): RedirectResponse
+    {
+        if ($reason === UploadEligibilityReason::DuplicateTorrent) {
+            $existingTorrentId = $context['existing_torrent_id'] ?? null;
+
+            if (is_int($existingTorrentId)) {
+                $existingTorrent = Torrent::query()->find($existingTorrentId);
+
+                if ($existingTorrent instanceof Torrent) {
+                    return redirect()
+                        ->route('torrents.show', $existingTorrent->slug)
+                        ->with('status', 'Torrent already exists – redirected to the existing entry.');
+                }
+            }
+        }
+
+        if ($reason === UploadEligibilityReason::MissingMetadata) {
+            throw ValidationException::withMessages([
+                'torrent_file' => 'Invalid torrent payload: missing required metadata.',
+            ]);
+        }
+
+        abort(403);
     }
 
     private function resolveNfoText(StoreTorrentRequest $request, array $data): ?string
