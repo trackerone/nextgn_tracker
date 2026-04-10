@@ -32,7 +32,7 @@ final class UploadSubmissionController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (! $torrentFile instanceof UploadedFile) {
+        if (!$torrentFile instanceof UploadedFile) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
@@ -45,7 +45,7 @@ final class UploadSubmissionController extends Controller
             'resolution' => $data['resolution'] ?? null,
         ]);
 
-        if (! $decision->allowed) {
+        if (!$decision->allowed) {
             if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
                 return response()->json(['message' => 'Torrent already exists.'], 409);
             }
