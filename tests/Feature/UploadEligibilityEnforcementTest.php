@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\UploadEligibilityEvent;
+use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Torrents\UploadEligibilityReason;
 use Illuminate\Foundation\Testing\RefreshDatabase;
