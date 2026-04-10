@@ -63,7 +63,7 @@ class TorrentUploadController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (! $torrentFile instanceof UploadedFile) {
+        if (! ($torrentFile instanceof UploadedFile)) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
