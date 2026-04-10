@@ -9,7 +9,6 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Policies\TorrentPolicy;
 use App\Services\Torrents\DownloadEligibilityDecision;
-use App\Services\Torrents\UploadEligibilityReason;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -106,30 +105,13 @@ final class TorrentPolicyTest extends TestCase
         $this->assertDatabaseCount('security_audit_logs', 0);
     }
 
-    public function test_create_policy_records_upload_eligibility_event_for_banned_user(): void
+    public function test_create_policy_decides_without_recording_upload_telemetry(): void
     {
         $user = User::factory()->banned()->create();
 
         $this->assertFalse($this->policy->create($user));
 
-        $this->assertDatabaseHas('upload_eligibility_events', [
-            'user_id' => $user->id,
-            'allowed' => false,
-            'reason' => UploadEligibilityReason::UserBanned->value,
-        ]);
-    }
-
-    public function test_create_policy_records_upload_eligibility_event_for_allowed_user(): void
-    {
-        $user = User::factory()->create();
-
-        $this->assertTrue($this->policy->create($user));
-
-        $this->assertDatabaseHas('upload_eligibility_events', [
-            'user_id' => $user->id,
-            'allowed' => true,
-            'reason' => null,
-        ]);
+        $this->assertDatabaseCount('upload_eligibility_events', 0);
     }
 
     public function test_create_policy_does_not_duplicate_upload_telemetry_in_security_audit_log(): void

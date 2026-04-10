@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Torrents;
 
 use App\Models\UploadEligibilityEvent;
+use App\Models\Torrent;
 use App\Models\User;
+use App\Services\BencodeService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,5 +120,44 @@ final class UploadEligibilityServiceTest extends TestCase
             $this->service->decide($user)->allowed,
             $this->service->canUpload($user),
         );
+    }
+
+    public function test_evaluate_for_payload_denies_duplicate_torrent_with_explicit_reason(): void
+    {
+        $user = User::factory()->create();
+        $existingTorrent = Torrent::factory()->create();
+
+        $payload = app(BencodeService::class)->encode([
+            'announce' => 'http://localhost/announce',
+            'info' => [
+                'name' => 'duplicate-payload',
+                'piece length' => 16384,
+                'length' => 1024,
+                'pieces' => str_repeat('a', 20),
+            ],
+        ]);
+
+        $info = app(BencodeService::class)->decode($payload)['info'];
+        $existingTorrent->forceFill([
+            'info_hash' => strtoupper(sha1(app(BencodeService::class)->encode($info))),
+        ])->save();
+
+        $decision = $this->service->evaluateForPayload($user, $payload, ['type' => 'movie']);
+
+        $this->assertFalse($decision->allowed);
+        $this->assertSame(UploadEligibilityReason::DuplicateTorrent, $decision->reason);
+        $this->assertSame(true, $decision->context['duplicate'] ?? null);
+        $this->assertSame($existingTorrent->getKey(), $decision->context['existing_torrent_id'] ?? null);
+    }
+
+    public function test_evaluate_for_payload_denies_missing_metadata_with_explicit_reason(): void
+    {
+        $user = User::factory()->create();
+
+        $decision = $this->service->evaluateForPayload($user, 'not-a-torrent');
+
+        $this->assertFalse($decision->allowed);
+        $this->assertSame(UploadEligibilityReason::MissingMetadata, $decision->reason);
+        $this->assertSame(false, $decision->context['metadata_complete'] ?? null);
     }
 }

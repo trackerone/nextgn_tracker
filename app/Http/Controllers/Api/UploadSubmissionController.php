@@ -8,9 +8,10 @@ use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTorrentRequest;
 use App\Http\Resources\UploadSubmissionResource;
-use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
+use App\Services\Torrents\UploadEligibilityReason;
+use App\Services\Torrents\UploadEligibilityService;
 use App\Services\Torrents\TorrentIngestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
@@ -22,12 +23,11 @@ final class UploadSubmissionController extends Controller
     public function __construct(
         private readonly TorrentIngestService $ingestService,
         private readonly SanitizationService $sanitizer,
+        private readonly UploadEligibilityService $uploadEligibility,
     ) {}
 
     public function store(StoreTorrentRequest $request): JsonResponse
     {
-        $this->authorize('create', Torrent::class);
-
         /** @var User $user */
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
@@ -39,6 +39,25 @@ final class UploadSubmissionController extends Controller
         }
 
         $data = $request->validated();
+
+        $decision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+            'type' => $data['type'] ?? null,
+            'resolution' => $data['resolution'] ?? null,
+        ]);
+
+        if (! $decision->allowed) {
+            if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
+                return response()->json(['message' => 'Torrent already exists.'], 409);
+            }
+
+            if ($decision->reason === UploadEligibilityReason::MissingMetadata) {
+                throw ValidationException::withMessages([
+                    'torrent_file' => 'Invalid torrent payload: missing required metadata.',
+                ]);
+            }
+
+            abort(403);
+        }
 
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
