@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Torrents;
 
-use App\Models\Torrent;
 use App\Models\UploadEligibilityEvent;
 use App\Models\User;
-use App\Services\BencodeService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
+use App\Services\Torrents\UploadPreflightContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
@@ -32,12 +31,19 @@ final class UploadEligibilityServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $decision = $this->service->evaluate($user, [
-            'type' => 'movie',
-            'resolution' => '1080p',
-            'scene' => false,
-            'size' => 2_048,
-        ]);
+        $decision = $this->service->evaluate($user, new UploadPreflightContext(
+            category: null,
+            type: 'movie',
+            resolution: '1080p',
+            scene: false,
+            duplicate: null,
+            size: 2_048,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: null,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
 
         $this->assertTrue($decision->allowed);
         $this->assertNull($decision->reason);
@@ -68,11 +74,19 @@ final class UploadEligibilityServiceTest extends TestCase
     {
         $user = User::factory()->create(['is_banned' => true]);
 
-        $decision = $this->service->evaluate($user, [
-            'type' => 'movie',
-            'duplicate' => true,
-            'category' => 'Movies',
-        ]);
+        $decision = $this->service->evaluate($user, new UploadPreflightContext(
+            category: 'Movies',
+            type: 'movie',
+            resolution: null,
+            scene: null,
+            duplicate: true,
+            size: null,
+            isBanned: true,
+            isDisabled: false,
+            metadataComplete: null,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
 
         $this->assertFalse($decision->allowed);
         $this->assertSame(UploadEligibilityReason::UserBanned, $decision->reason);
@@ -100,11 +114,19 @@ final class UploadEligibilityServiceTest extends TestCase
 
     public function test_decide_is_pure_and_does_not_record_telemetry(): void
     {
-        $user = User::factory()->create();
-
-        $decision = $this->service->decide($user, [
-            'type' => 'movie',
-        ]);
+        $decision = $this->service->decide(new UploadPreflightContext(
+            category: null,
+            type: 'movie',
+            resolution: null,
+            scene: null,
+            duplicate: null,
+            size: null,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: null,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
 
         $this->assertTrue($decision->allowed);
         $this->assertNull($decision->reason);
@@ -114,56 +136,63 @@ final class UploadEligibilityServiceTest extends TestCase
 
     public function test_can_upload_remains_compatible_with_decision_allowed_flag(): void
     {
-        $user = User::factory()->create();
+        $context = new UploadPreflightContext(
+            category: null,
+            type: null,
+            resolution: null,
+            scene: null,
+            duplicate: false,
+            size: null,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: true,
+            infoHash: null,
+            existingTorrentId: null,
+        );
 
         $this->assertSame(
-            $this->service->decide($user)->allowed,
-            $this->service->canUpload($user),
+            $this->service->decide($context)->allowed,
+            $this->service->canUpload($context),
         );
     }
 
-    public function test_evaluate_for_payload_denies_duplicate_torrent_with_explicit_reason(): void
+    public function test_decide_denies_duplicate_torrent_with_explicit_reason(): void
     {
-        $user = User::factory()->create();
-        $existingTorrent = Torrent::factory()->create();
-
-        $payload = app(BencodeService::class)->encode([
-            'announce' => 'http://localhost/announce',
-            'info' => [
-                'name' => 'duplicate-payload',
-                'piece length' => 16384,
-                'length' => 1024,
-                'pieces' => str_repeat('a', 20),
-            ],
-        ]);
-
-        $info = app(BencodeService::class)->decode($payload)['info'];
-        $existingTorrent->forceFill([
-            'info_hash' => strtoupper(sha1(app(BencodeService::class)->encode($info))),
-        ])->save();
-
-        $decision = $this->service->evaluateForPayload($user, $payload, ['type' => 'movie']);
+        $decision = $this->service->decide(new UploadPreflightContext(
+            category: null,
+            type: 'movie',
+            resolution: null,
+            scene: null,
+            duplicate: true,
+            size: 1_024,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: true,
+            infoHash: 'ABC123',
+            existingTorrentId: 10,
+        ));
 
         $this->assertFalse($decision->allowed);
         $this->assertSame(UploadEligibilityReason::DuplicateTorrent, $decision->reason);
         $this->assertSame(true, $decision->context['duplicate'] ?? null);
-        $this->assertSame($existingTorrent->getKey(), $decision->context['existing_torrent_id'] ?? null);
+        $this->assertSame(10, $decision->context['existing_torrent_id'] ?? null);
     }
 
-    public function test_evaluate_for_payload_denies_missing_metadata_with_explicit_reason(): void
+    public function test_decide_denies_missing_metadata_with_explicit_reason(): void
     {
-        $user = User::factory()->create();
-
-        $payload = app(BencodeService::class)->encode([
-            'announce' => 'http://localhost/announce',
-            'info' => [
-                'name' => 'missing-size-metadata',
-                'piece length' => 16384,
-                'pieces' => str_repeat('a', 20),
-            ],
-        ]);
-
-        $decision = $this->service->evaluateForPayload($user, $payload);
+        $decision = $this->service->decide(new UploadPreflightContext(
+            category: null,
+            type: null,
+            resolution: null,
+            scene: null,
+            duplicate: null,
+            size: null,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: false,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
 
         $this->assertFalse($decision->allowed);
         $this->assertSame(UploadEligibilityReason::MissingMetadata, $decision->reason);

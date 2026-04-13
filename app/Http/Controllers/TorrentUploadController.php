@@ -15,6 +15,7 @@ use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
+use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Uploads\NfoStorageService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -33,6 +34,7 @@ class TorrentUploadController extends Controller
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
         private readonly UploadEligibilityService $uploadEligibility,
+        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
     ) {}
 
     public function create(): View
@@ -41,7 +43,8 @@ class TorrentUploadController extends Controller
         $user = auth()->user();
         abort_unless($user !== null, 403);
 
-        $decision = $this->uploadEligibility->evaluate($user);
+        $context = $this->preflightContextBuilder->forUser($user);
+        $decision = $this->uploadEligibility->evaluate($user, $context);
         abort_unless($decision->allowed, 403);
 
         $categories = Category::query()
@@ -68,10 +71,12 @@ class TorrentUploadController extends Controller
             ]);
         }
 
-        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, strval($torrentFile->get()), [
+        $context = $this->preflightContextBuilder->forPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
+
+        $eligibilityDecision = $this->uploadEligibility->evaluate($user, $context);
 
         if ($eligibilityDecision->allowed === false) {
             return $this->handleDeniedUploadDecision($eligibilityDecision->reason, $eligibilityDecision->context);

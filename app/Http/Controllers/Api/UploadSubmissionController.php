@@ -13,6 +13,7 @@ use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
+use App\Services\Torrents\UploadPreflightContextBuilder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,7 @@ final class UploadSubmissionController extends Controller
         private readonly TorrentIngestService $ingestService,
         private readonly SanitizationService $sanitizer,
         private readonly UploadEligibilityService $uploadEligibility,
+        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
     ) {}
 
     public function store(StoreTorrentRequest $request): JsonResponse
@@ -40,10 +42,12 @@ final class UploadSubmissionController extends Controller
 
         $data = $request->validated();
 
-        $decision = $this->uploadEligibility->evaluateForPayload($user, strval($torrentFile->get()), [
+        $context = $this->preflightContextBuilder->forPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
+
+        $decision = $this->uploadEligibility->evaluate($user, $context);
 
         if ($decision->allowed === false) {
             if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
