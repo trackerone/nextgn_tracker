@@ -156,7 +156,6 @@ final class UploadEligibilityServiceTest extends TestCase
         );
     }
 
-
     public function test_decide_prioritizes_user_disabled_before_other_failures(): void
     {
         $decision = $this->service->decide(new UploadPreflightContext(
@@ -196,6 +195,7 @@ final class UploadEligibilityServiceTest extends TestCase
         $this->assertFalse($decision->allowed);
         $this->assertSame(UploadEligibilityReason::MissingMetadata, $decision->reason);
     }
+
     public function test_decide_denies_duplicate_torrent_with_explicit_reason(): void
     {
         $decision = $this->service->decide(new UploadPreflightContext(
