@@ -6,6 +6,4 @@ namespace App\Http\Requests\Web;
 
 use App\Http\Requests\StoreTorrentRequest;
 
-final class TorrentUploadStoreRequest extends StoreTorrentRequest
-{
-}
+final class TorrentUploadStoreRequest extends StoreTorrentRequest {}
