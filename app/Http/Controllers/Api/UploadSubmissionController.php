@@ -41,7 +41,7 @@ final class UploadSubmissionController extends Controller
 
         $data = $request->validated();
 
-        $decision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+        $decision = $this->uploadEligibility->evaluateForPayload($user, (string)$torrentFile->get(), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
@@ -62,7 +62,7 @@ final class UploadSubmissionController extends Controller
 
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
-                'name' => $this->sanitizer->sanitizeString((string) $data['name']),
+                'name' => $this->sanitizer->sanitizeString((string)$data['name']),
                 'category_id' => $data['category_id'] ?? null,
                 'type' => $data['type'],
                 'description' => $data['description'] ?? null,

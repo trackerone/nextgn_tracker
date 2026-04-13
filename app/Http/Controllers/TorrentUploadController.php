@@ -69,7 +69,7 @@ class TorrentUploadController extends Controller
             ]);
         }
 
-        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string)$torrentFile->get(), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
@@ -185,7 +185,7 @@ class TorrentUploadController extends Controller
         $file = $request->file('nfo_file');
 
         if ($file instanceof UploadedFile) {
-            return (string) $file->get();
+            return (string)$file->get();
         }
 
         $text = $data['nfo_text'] ?? null;
