@@ -13,7 +13,7 @@ final class UserRestrictionUploadEligibilityRuleTest extends TestCase
 {
     public function test_evaluate_denies_banned_user(): void
     {
-        $rule = new UserRestrictionUploadEligibilityRule();
+        $rule = new UserRestrictionUploadEligibilityRule;
 
         $reason = $rule->evaluate($this->context(isBanned: true, isDisabled: false));
 
@@ -22,7 +22,7 @@ final class UserRestrictionUploadEligibilityRuleTest extends TestCase
 
     public function test_evaluate_denies_disabled_user_when_not_banned(): void
     {
-        $rule = new UserRestrictionUploadEligibilityRule();
+        $rule = new UserRestrictionUploadEligibilityRule;
 
         $reason = $rule->evaluate($this->context(isBanned: false, isDisabled: true));
 
@@ -31,7 +31,7 @@ final class UserRestrictionUploadEligibilityRuleTest extends TestCase
 
     public function test_evaluate_allows_when_user_has_no_restrictions(): void
     {
-        $rule = new UserRestrictionUploadEligibilityRule();
+        $rule = new UserRestrictionUploadEligibilityRule;
 
         $reason = $rule->evaluate($this->context(isBanned: false, isDisabled: false));
 

@@ -13,7 +13,7 @@ final class MissingMetadataUploadEligibilityRuleTest extends TestCase
 {
     public function test_evaluate_denies_when_metadata_is_incomplete(): void
     {
-        $rule = new MissingMetadataUploadEligibilityRule();
+        $rule = new MissingMetadataUploadEligibilityRule;
 
         $reason = $rule->evaluate($this->context(false));
 
@@ -22,7 +22,7 @@ final class MissingMetadataUploadEligibilityRuleTest extends TestCase
 
     public function test_evaluate_allows_when_metadata_is_complete_or_unknown(): void
     {
-        $rule = new MissingMetadataUploadEligibilityRule();
+        $rule = new MissingMetadataUploadEligibilityRule;
 
         $this->assertNull($rule->evaluate($this->context(true)));
         $this->assertNull($rule->evaluate($this->context(null)));

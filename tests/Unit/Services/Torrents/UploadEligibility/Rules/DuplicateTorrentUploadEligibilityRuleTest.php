@@ -13,7 +13,7 @@ final class DuplicateTorrentUploadEligibilityRuleTest extends TestCase
 {
     public function test_evaluate_denies_when_torrent_is_duplicate(): void
     {
-        $rule = new DuplicateTorrentUploadEligibilityRule();
+        $rule = new DuplicateTorrentUploadEligibilityRule;
 
         $reason = $rule->evaluate($this->context(true));
 
@@ -22,7 +22,7 @@ final class DuplicateTorrentUploadEligibilityRuleTest extends TestCase
 
     public function test_evaluate_allows_when_duplicate_status_is_false_or_unknown(): void
     {
-        $rule = new DuplicateTorrentUploadEligibilityRule();
+        $rule = new DuplicateTorrentUploadEligibilityRule;
 
         $this->assertNull($rule->evaluate($this->context(false)));
         $this->assertNull($rule->evaluate($this->context(null)));
