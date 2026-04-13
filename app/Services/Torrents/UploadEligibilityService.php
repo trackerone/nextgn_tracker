@@ -5,12 +5,29 @@ declare(strict_types=1);
 namespace App\Services\Torrents;
 
 use App\Models\User;
+use App\Services\Torrents\UploadEligibility\Rules\DuplicateTorrentUploadEligibilityRule;
+use App\Services\Torrents\UploadEligibility\Rules\MissingMetadataUploadEligibilityRule;
+use App\Services\Torrents\UploadEligibility\Rules\UserRestrictionUploadEligibilityRule;
 
 final class UploadEligibilityService
 {
+    /**
+     * @var list<UserRestrictionUploadEligibilityRule|MissingMetadataUploadEligibilityRule|DuplicateTorrentUploadEligibilityRule>
+     */
+    private array $rules;
+
     public function __construct(
         private readonly UploadEligibilityTelemetryService $telemetry,
-    ) {}
+        UserRestrictionUploadEligibilityRule $userRestrictionRule,
+        MissingMetadataUploadEligibilityRule $missingMetadataRule,
+        DuplicateTorrentUploadEligibilityRule $duplicateTorrentRule,
+    ) {
+        $this->rules = [
+            $userRestrictionRule,
+            $missingMetadataRule,
+            $duplicateTorrentRule,
+        ];
+    }
 
     public function canUpload(UploadPreflightContext $context): bool
     {
@@ -26,33 +43,11 @@ final class UploadEligibilityService
     {
         $decisionContext = $context->toArray();
 
-        $userDecision = $this->applyUserRestrictions($context, $decisionContext);
-        if (! $userDecision->allowed) {
-            return $userDecision;
-        }
-
-        if ($context->metadataComplete === false) {
-            return UploadEligibilityDecision::deny(UploadEligibilityReason::MissingMetadata, $decisionContext);
-        }
-
-        if ($context->duplicate === true) {
-            return UploadEligibilityDecision::deny(UploadEligibilityReason::DuplicateTorrent, $decisionContext);
-        }
-
-        return UploadEligibilityDecision::allow($decisionContext);
-    }
-
-    /**
-     * @param  array<string, mixed>  $decisionContext
-     */
-    private function applyUserRestrictions(UploadPreflightContext $context, array $decisionContext): UploadEligibilityDecision
-    {
-        if ($context->isBanned) {
-            return UploadEligibilityDecision::deny(UploadEligibilityReason::UserBanned, $decisionContext);
-        }
-
-        if ($context->isDisabled) {
-            return UploadEligibilityDecision::deny(UploadEligibilityReason::UserDisabled, $decisionContext);
+        foreach ($this->rules as $rule) {
+            $reason = $rule->evaluate($context);
+            if ($reason !== null) {
+                return UploadEligibilityDecision::deny($reason, $decisionContext);
+            }
         }
 
         return UploadEligibilityDecision::allow($decisionContext);

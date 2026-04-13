@@ -156,6 +156,46 @@ final class UploadEligibilityServiceTest extends TestCase
         );
     }
 
+
+    public function test_decide_prioritizes_user_disabled_before_other_failures(): void
+    {
+        $decision = $this->service->decide(new UploadPreflightContext(
+            category: null,
+            type: null,
+            resolution: null,
+            scene: null,
+            duplicate: true,
+            size: null,
+            isBanned: false,
+            isDisabled: true,
+            metadataComplete: false,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
+
+        $this->assertFalse($decision->allowed);
+        $this->assertSame(UploadEligibilityReason::UserDisabled, $decision->reason);
+    }
+
+    public function test_decide_prioritizes_missing_metadata_before_duplicate(): void
+    {
+        $decision = $this->service->decide(new UploadPreflightContext(
+            category: null,
+            type: null,
+            resolution: null,
+            scene: null,
+            duplicate: true,
+            size: null,
+            isBanned: false,
+            isDisabled: false,
+            metadataComplete: false,
+            infoHash: null,
+            existingTorrentId: null,
+        ));
+
+        $this->assertFalse($decision->allowed);
+        $this->assertSame(UploadEligibilityReason::MissingMetadata, $decision->reason);
+    }
     public function test_decide_denies_duplicate_torrent_with_explicit_reason(): void
     {
         $decision = $this->service->decide(new UploadPreflightContext(
