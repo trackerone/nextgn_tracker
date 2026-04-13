@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTorrentRequest;
+use App\Http\Requests\Api\UploadSubmissionRequest;
 use App\Http\Resources\UploadSubmissionResource;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
@@ -28,7 +28,7 @@ final class UploadSubmissionController extends Controller
         private readonly UploadPreflightContextBuilder $preflightContextBuilder,
     ) {}
 
-    public function store(StoreTorrentRequest $request): JsonResponse
+    public function store(UploadSubmissionRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
