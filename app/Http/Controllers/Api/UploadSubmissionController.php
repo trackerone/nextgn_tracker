@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
+use App\Services\Torrents\UploadEligibilityDecision;
 use App\Services\Torrents\UploadEligibilityService;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use Illuminate\Http\JsonResponse;
@@ -50,17 +51,7 @@ final class UploadSubmissionController extends Controller
         $decision = $this->uploadEligibility->evaluate($user, $context);
 
         if ($decision->allowed === false) {
-            if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
-                return response()->json(['message' => 'Torrent already exists.'], 409);
-            }
-
-            if ($decision->reason === UploadEligibilityReason::MissingMetadata) {
-                throw ValidationException::withMessages([
-                    'torrent_file' => 'Invalid torrent payload: missing required metadata.',
-                ]);
-            }
-
-            abort(403);
+            return $this->mapDeniedEligibilityToApiResponse($decision);
         }
 
         try {
@@ -77,7 +68,7 @@ final class UploadSubmissionController extends Controller
                 'tmdb_id' => $data['tmdb_id'] ?? null,
             ]);
         } catch (TorrentAlreadyExistsException) {
-            return response()->json(['message' => 'Torrent already exists.'], 409);
+            return $this->duplicateConflictResponse();
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
                 'torrent_file' => $exception->getMessage(),
@@ -87,5 +78,28 @@ final class UploadSubmissionController extends Controller
         return response()->json([
             'data' => (new UploadSubmissionResource($torrent))->resolve(),
         ], 201);
+    }
+
+    private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse
+    {
+        if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
+            return $this->duplicateConflictResponse();
+        }
+
+        if ($decision->reason === UploadEligibilityReason::MissingMetadata) {
+            throw ValidationException::withMessages([
+                'torrent_file' => 'Invalid torrent payload: missing required metadata.',
+            ]);
+        }
+
+        abort(403);
+    }
+
+    private function duplicateConflictResponse(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'Torrent already exists.',
+            'error' => 'duplicate_torrent',
+        ], 409);
     }
 }

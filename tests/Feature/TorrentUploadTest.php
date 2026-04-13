@@ -86,6 +86,7 @@ class TorrentUploadTest extends TestCase
         ]);
 
         $response->assertRedirect(route('torrents.show', $existing->slug));
+        $response->assertSessionHas('status', 'Torrent already exists – redirected to the existing entry.');
     }
 
     public function test_validation_errors_are_reported(): void
