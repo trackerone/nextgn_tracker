@@ -41,12 +41,12 @@ final class UploadSubmissionController extends Controller
 
         $data = $request->validated();
 
-        $decision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+        $decision = $this->uploadEligibility->evaluateForPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
 
-        if (! $decision->allowed) {
+        if ($decision->allowed === false) {
             if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
                 return response()->json(['message' => 'Torrent already exists.'], 409);
             }
@@ -62,7 +62,7 @@ final class UploadSubmissionController extends Controller
 
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
-                'name' => $this->sanitizer->sanitizeString((string) $data['name']),
+                'name' => $this->sanitizer->sanitizeString(strval($data['name'])),
                 'category_id' => $data['category_id'] ?? null,
                 'type' => $data['type'],
                 'description' => $data['description'] ?? null,
