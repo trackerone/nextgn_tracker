@@ -12,9 +12,9 @@ use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\NfoParser;
+use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
-use App\Services\Torrents\TorrentIngestService;
 use App\Services\Uploads\NfoStorageService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -63,13 +63,13 @@ class TorrentUploadController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (! ($torrentFile instanceof UploadedFile)) {
+        if (($torrentFile instanceof UploadedFile) === false) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
         }
 
-        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string)$torrentFile->get(), [
+        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
@@ -185,7 +185,7 @@ class TorrentUploadController extends Controller
         $file = $request->file('nfo_file');
 
         if ($file instanceof UploadedFile) {
-            return (string)$file->get();
+            return (string) $file->get();
         }
 
         $text = $data['nfo_text'] ?? null;
