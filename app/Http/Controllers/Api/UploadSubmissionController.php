@@ -10,9 +10,9 @@ use App\Http\Requests\StoreTorrentRequest;
 use App\Http\Resources\UploadSubmissionResource;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
+use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
-use App\Services\Torrents\TorrentIngestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +33,7 @@ final class UploadSubmissionController extends Controller
         $user = $request->user();
         $torrentFile = $request->file('torrent_file');
 
-        if (! ($torrentFile instanceof UploadedFile)) {
+        if (($torrentFile instanceof UploadedFile) === false) {
             throw ValidationException::withMessages([
                 'torrent_file' => 'A valid .torrent file is required.',
             ]);
@@ -41,7 +41,7 @@ final class UploadSubmissionController extends Controller
 
         $data = $request->validated();
 
-        $decision = $this->uploadEligibility->evaluateForPayload($user, (string)$torrentFile->get(), [
+        $decision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
@@ -62,7 +62,7 @@ final class UploadSubmissionController extends Controller
 
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
-                'name' => $this->sanitizer->sanitizeString((string)$data['name']),
+                'name' => $this->sanitizer->sanitizeString((string) $data['name']),
                 'category_id' => $data['category_id'] ?? null,
                 'type' => $data['type'],
                 'description' => $data['description'] ?? null,
