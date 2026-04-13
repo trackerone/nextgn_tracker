@@ -68,6 +68,38 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonMissingPath('data.0.user_id');
     }
 
+    public function test_duplicate_upload_returns_conflict_with_machine_readable_error_payload(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload();
+
+        $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-upload.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertCreated();
+
+        $response = $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Upload Duplicate',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-upload-duplicate.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('message', 'Torrent already exists.');
+        $response->assertJsonPath('error', 'duplicate_torrent');
+    }
+
     private function sampleTorrentPayload(): string
     {
         return app(BencodeService::class)->encode([

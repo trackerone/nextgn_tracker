@@ -125,9 +125,7 @@ class TorrentUploadController extends Controller
                 'info_hash' => $exception->torrent->info_hash,
             ]);
 
-            return redirect()
-                ->route('torrents.show', $exception->torrent->slug)
-                ->with('status', 'Torrent already exists – redirected to the existing entry.');
+            return $this->redirectToExistingTorrent($exception->torrent);
         } catch (InvalidArgumentException $exception) {
             SecurityAuditLog::log($user, 'torrent.upload.rejected', [
                 'reason' => $exception->getMessage(),
@@ -168,9 +166,7 @@ class TorrentUploadController extends Controller
                 $existingTorrent = Torrent::query()->find($existingTorrentId);
 
                 if ($existingTorrent instanceof Torrent) {
-                    return redirect()
-                        ->route('torrents.show', $existingTorrent->slug)
-                        ->with('status', 'Torrent already exists – redirected to the existing entry.');
+                    return $this->redirectToExistingTorrent($existingTorrent);
                 }
             }
         }
@@ -182,6 +178,13 @@ class TorrentUploadController extends Controller
         }
 
         abort(403);
+    }
+
+    private function redirectToExistingTorrent(Torrent $torrent): RedirectResponse
+    {
+        return redirect()
+            ->route('torrents.show', $torrent->slug)
+            ->with('status', 'Torrent already exists – redirected to the existing entry.');
     }
 
     private function resolveNfoText(TorrentUploadStoreRequest $request, array $data): ?string
