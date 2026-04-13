@@ -24,8 +24,7 @@ final class UploadSubmissionController extends Controller
         private readonly TorrentIngestService $ingestService,
         private readonly SanitizationService $sanitizer,
         private readonly UploadEligibilityService $uploadEligibility,
-    ) {
-    }
+    ) {}
 
     public function store(StoreTorrentRequest $request): JsonResponse
     {
