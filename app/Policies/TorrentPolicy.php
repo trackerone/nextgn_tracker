@@ -9,6 +9,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Torrents\UploadEligibilityService;
+use App\Services\Torrents\UploadPreflightContextBuilder;
 use Illuminate\Auth\Access\Response;
 
 class TorrentPolicy
@@ -16,6 +17,7 @@ class TorrentPolicy
     public function __construct(
         private readonly DownloadEligibilityService $downloadEligibility,
         private readonly UploadEligibilityService $uploadEligibility,
+        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
     ) {}
 
     public function view(User $user, Torrent $torrent): Response
@@ -72,7 +74,7 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        return $this->uploadEligibility->decide($user)->allowed;
+        return $this->uploadEligibility->decide($this->preflightContextBuilder->forUser($user))->allowed;
     }
 
     public function update(User $user, Torrent $torrent): bool
