@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Exceptions\TorrentAlreadyExistsException;
-use App\Http\Requests\StoreTorrentRequest;
+use App\Http\Requests\Web\TorrentUploadStoreRequest;
 use App\Models\Category;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
@@ -57,7 +57,7 @@ class TorrentUploadController extends Controller
         ]);
     }
 
-    public function store(StoreTorrentRequest $request): RedirectResponse
+    public function store(TorrentUploadStoreRequest $request): RedirectResponse
     {
         $data = $request->validated();
 
@@ -184,7 +184,7 @@ class TorrentUploadController extends Controller
         abort(403);
     }
 
-    private function resolveNfoText(StoreTorrentRequest $request, array $data): ?string
+    private function resolveNfoText(TorrentUploadStoreRequest $request, array $data): ?string
     {
         $file = $request->file('nfo_file');
 
@@ -197,7 +197,7 @@ class TorrentUploadController extends Controller
         return is_string($text) && trim($text) !== '' ? $text : null;
     }
 
-    private function resolveNfoSize(StoreTorrentRequest $request, ?string $payload): ?int
+    private function resolveNfoSize(TorrentUploadStoreRequest $request, ?string $payload): ?int
     {
         $file = $request->file('nfo_file');
 
