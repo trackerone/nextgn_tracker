@@ -69,12 +69,12 @@ class TorrentUploadController extends Controller
             ]);
         }
 
-        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, (string) $torrentFile->get(), [
+        $eligibilityDecision = $this->uploadEligibility->evaluateForPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
         ]);
 
-        if (! $eligibilityDecision->allowed) {
+        if ($eligibilityDecision->allowed === false) {
             return $this->handleDeniedUploadDecision($eligibilityDecision->reason, $eligibilityDecision->context);
         }
 
@@ -185,7 +185,7 @@ class TorrentUploadController extends Controller
         $file = $request->file('nfo_file');
 
         if ($file instanceof UploadedFile) {
-            return (string) $file->get();
+            return strval($file->get());
         }
 
         $text = $data['nfo_text'] ?? null;
@@ -252,7 +252,7 @@ class TorrentUploadController extends Controller
         $clean = [];
 
         foreach ($codecs as $key => $value) {
-            if (! is_string($key) || ! is_string($value)) {
+            if (is_string($key) === false || is_string($value) === false) {
                 continue;
             }
 
