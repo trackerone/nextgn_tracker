@@ -20,6 +20,7 @@ final readonly class UploadPreflightContext
         public ?int $existingTorrentId,
         public TorrentExtractedMetadata $extractedMetadata = new TorrentExtractedMetadata(
             title: null,
+            year: null,
             resolution: null,
             source: null,
             releaseGroup: null,
@@ -28,6 +29,8 @@ final readonly class UploadPreflightContext
             tmdbId: null,
             tmdbUrl: null,
             rawNfo: null,
+            rawName: null,
+            parsedName: null,
         ),
     ) {}
 

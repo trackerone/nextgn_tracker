@@ -11,6 +11,8 @@ use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
 use App\Services\Security\SanitizationService;
+use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\PersistTorrentMetadataService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
@@ -30,6 +32,7 @@ class TorrentUploadController extends Controller
         private readonly SanitizationService $sanitizer,
         private readonly TorrentIngestService $ingestService,
         private readonly NfoStorageService $nfoStorage,
+        private readonly PersistTorrentMetadataService $metadataPersistence,
         private readonly AuditLogger $auditLogger,
         private readonly UploadEligibilityService $uploadEligibility,
         private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
@@ -132,6 +135,11 @@ class TorrentUploadController extends Controller
                 'torrent_file' => $exception->getMessage(),
             ]);
         }
+
+        $this->metadataPersistence->persist(
+            $torrent,
+            CanonicalTorrentMetadata::fromExtractedMetadata($metadata, $data['type'] ?? null),
+        );
 
         $this->auditLogger->log('torrent.created', $torrent, [
             'uploader_id' => $user->getKey(),
