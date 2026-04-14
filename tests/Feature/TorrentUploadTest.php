@@ -7,8 +7,8 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\User;
-use App\Services\Torrents\UploadEligibilityDecision;
-use App\Services\Torrents\UploadEligibilityService;
+use App\Services\Torrents\UploadPreflightContext;
+use App\Services\Torrents\UploadPreflightContextBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -107,8 +107,20 @@ class TorrentUploadTest extends TestCase
 
         $existing = Torrent::query()->firstOrFail();
 
-        $this->mock(UploadEligibilityService::class, function ($mock): void {
-            $mock->shouldReceive('evaluate')->andReturn(UploadEligibilityDecision::allow());
+        $this->mock(UploadPreflightContextBuilder::class, function ($mock): void {
+            $mock->shouldReceive('forPayload')->andReturn(new UploadPreflightContext(
+                category: null,
+                type: 'movie',
+                resolution: null,
+                scene: null,
+                duplicate: false,
+                size: 4096,
+                isBanned: false,
+                isDisabled: false,
+                metadataComplete: true,
+                infoHash: null,
+                existingTorrentId: null,
+            ));
         });
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
