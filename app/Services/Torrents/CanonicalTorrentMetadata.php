@@ -55,13 +55,15 @@ final readonly class CanonicalTorrentMetadata
     public static function fromExtractedMetadata(
         TorrentExtractedMetadata $metadata,
         ?string $type = null,
+        ?string $resolution = null,
+        ?string $source = null,
     ): self {
         return self::fromArray([
             'title' => $metadata->title,
             'year' => $metadata->year,
             'type' => $type,
-            'resolution' => $metadata->resolution,
-            'source' => $metadata->source,
+            'resolution' => $metadata->resolution ?? $resolution,
+            'source' => $metadata->source ?? $source,
             'release_group' => $metadata->releaseGroup,
             'imdb_id' => $metadata->imdbId,
             'tmdb_id' => $metadata->tmdbId,

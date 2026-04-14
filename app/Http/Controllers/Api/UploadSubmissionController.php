@@ -85,7 +85,12 @@ final class UploadSubmissionController extends Controller
 
         $this->metadataPersistence->persist(
             $torrent,
-            CanonicalTorrentMetadata::fromExtractedMetadata($metadata, $data['type'] ?? null),
+            CanonicalTorrentMetadata::fromExtractedMetadata(
+                $metadata,
+                $data['type'] ?? null,
+                $data['resolution'] ?? null,
+                $data['source'] ?? null,
+            ),
         );
 
         return $this->successfulUploadResponse($torrent);
