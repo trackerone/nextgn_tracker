@@ -28,7 +28,7 @@ final class TorrentMetadataExtractorTest extends TestCase
 
         $this->assertSame('Movie Title', $metadata->title);
         $this->assertSame('1080p', $metadata->resolution);
-        $this->assertSame('WEBDL', $metadata->source);
+        $this->assertSame('WEB-DL', $metadata->source);
         $this->assertSame('GRP', $metadata->releaseGroup);
         $this->assertSame('tt1234567', $metadata->imdbId);
         $this->assertSame('https://www.imdb.com/title/tt1234567/', $metadata->imdbUrl);
