@@ -158,15 +158,15 @@ class TorrentUploadController extends Controller
     private function handleDeniedUploadDecision(?UploadEligibilityReason $reason, array $context): RedirectResponse
     {
         if ($reason === UploadEligibilityReason::DuplicateTorrent) {
-            $existingTorrentId = $context['existing_torrent_id'] ?? null;
+            $existingTorrent = $this->resolveDuplicateTorrentFromContext($context);
 
-            if (is_int($existingTorrentId)) {
-                $existingTorrent = Torrent::query()->find($existingTorrentId);
-
-                if ($existingTorrent instanceof Torrent) {
-                    return $this->redirectToExistingTorrent($existingTorrent);
-                }
+            if ($existingTorrent instanceof Torrent) {
+                return $this->redirectToExistingTorrent($existingTorrent);
             }
+
+            throw ValidationException::withMessages([
+                'torrent_file' => 'Torrent already exists.',
+            ]);
         }
 
         if ($reason === UploadEligibilityReason::MissingMetadata) {
@@ -176,6 +176,32 @@ class TorrentUploadController extends Controller
         }
 
         abort(403);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function resolveDuplicateTorrentFromContext(array $context): ?Torrent
+    {
+        $existingTorrentId = $context['existing_torrent_id'] ?? null;
+
+        if (is_int($existingTorrentId)) {
+            $torrent = Torrent::query()->find($existingTorrentId);
+            if ($torrent instanceof Torrent) {
+                return $torrent;
+            }
+        }
+
+        $infoHash = $context['info_hash'] ?? null;
+
+        if (is_string($infoHash) && $infoHash !== '') {
+            $torrent = Torrent::query()->where('info_hash', $infoHash)->first();
+            if ($torrent instanceof Torrent) {
+                return $torrent;
+            }
+        }
+
+        return null;
     }
 
     private function redirectToExistingTorrent(Torrent $torrent): RedirectResponse
