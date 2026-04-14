@@ -11,7 +11,6 @@ use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
 use App\Services\Security\SanitizationService;
-use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
@@ -30,7 +29,6 @@ class TorrentUploadController extends Controller
     public function __construct(
         private readonly SanitizationService $sanitizer,
         private readonly TorrentIngestService $ingestService,
-        private readonly NfoParser $nfoParser,
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
         private readonly UploadEligibilityService $uploadEligibility,
@@ -71,9 +69,12 @@ class TorrentUploadController extends Controller
             ]);
         }
 
+        $nfoPayload = $this->resolveNfoText($request, $data);
+
         $context = $this->preflightContextBuilder->forPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
+            'nfo_text' => $nfoPayload,
         ]);
 
         $eligibilityDecision = $this->uploadEligibility->evaluate($user, $context);
@@ -82,17 +83,13 @@ class TorrentUploadController extends Controller
             return $this->handleDeniedUploadDecision($eligibilityDecision->reason, $eligibilityDecision->context);
         }
 
-        $nfoPayload = $this->resolveNfoText($request, $data);
-
-        $nfoResult = $nfoPayload !== null
-            ? $this->nfoParser->parse($nfoPayload)
-            : ['sanitized_text' => null, 'imdb_id' => null, 'tmdb_id' => null];
+        $metadata = $context->extractedMetadata;
 
         $torrentSizeBytes = $torrentFile->getSize();
         $torrentMime = $torrentFile->getClientMimeType();
 
         try {
-            $nfoStoragePath = $this->nfoStorage->store($nfoResult['sanitized_text']);
+            $nfoStoragePath = $this->nfoStorage->store($metadata->rawNfo);
         } catch (RuntimeException) {
             SecurityAuditLog::log($user, 'torrent.upload.rejected', [
                 'reason' => 'nfo_storage_failed',
@@ -110,13 +107,13 @@ class TorrentUploadController extends Controller
                 'type' => $data['type'],
                 'description' => $this->sanitizeNullable($data['description'] ?? null),
                 'tags' => $this->normalizeTags($data['tags'] ?? null),
-                'source' => $this->sanitizeNullable($data['source'] ?? null),
-                'resolution' => $this->sanitizeNullable($data['resolution'] ?? null),
+                'source' => $this->sanitizeNullable($data['source'] ?? $metadata->source),
+                'resolution' => $this->sanitizeNullable($data['resolution'] ?? $metadata->resolution),
                 'codecs' => $this->sanitizeCodecs($data['codecs'] ?? null),
-                'nfo_text' => $nfoResult['sanitized_text'],
+                'nfo_text' => $metadata->rawNfo,
                 'nfo_storage_path' => $nfoStoragePath,
-                'imdb_id' => $nfoResult['imdb_id'],
-                'tmdb_id' => $nfoResult['tmdb_id'],
+                'imdb_id' => $metadata->imdbId,
+                'tmdb_id' => $metadata->tmdbId,
                 'status' => Torrent::STATUS_PENDING,
             ]);
         } catch (TorrentAlreadyExistsException $exception) {

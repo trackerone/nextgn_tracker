@@ -18,6 +18,17 @@ final readonly class UploadPreflightContext
         public ?bool $metadataComplete,
         public ?string $infoHash,
         public ?int $existingTorrentId,
+        public TorrentExtractedMetadata $extractedMetadata = new TorrentExtractedMetadata(
+            title: null,
+            resolution: null,
+            source: null,
+            releaseGroup: null,
+            imdbId: null,
+            imdbUrl: null,
+            tmdbId: null,
+            tmdbUrl: null,
+            rawNfo: null,
+        ),
     ) {}
 
     /**
@@ -37,6 +48,7 @@ final readonly class UploadPreflightContext
             'metadata_complete' => $this->metadataComplete,
             'info_hash' => $this->infoHash,
             'existing_torrent_id' => $this->existingTorrentId,
+            'extracted_metadata' => $this->extractedMetadata->toArray() === [] ? null : $this->extractedMetadata->toArray(),
         ], static fn (mixed $value): bool => $value !== null);
     }
 }
