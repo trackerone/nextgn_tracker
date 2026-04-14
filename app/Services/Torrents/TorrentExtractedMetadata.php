@@ -8,6 +8,7 @@ final readonly class TorrentExtractedMetadata
 {
     public function __construct(
         public ?string $title,
+        public ?string $year,
         public ?string $resolution,
         public ?string $source,
         public ?string $releaseGroup,
@@ -16,12 +17,15 @@ final readonly class TorrentExtractedMetadata
         public ?string $tmdbId,
         public ?string $tmdbUrl,
         public ?string $rawNfo,
+        public ?string $rawName = null,
+        public ?string $parsedName = null,
     ) {}
 
     public static function empty(): self
     {
         return new self(
             title: null,
+            year: null,
             resolution: null,
             source: null,
             releaseGroup: null,
@@ -30,6 +34,8 @@ final readonly class TorrentExtractedMetadata
             tmdbId: null,
             tmdbUrl: null,
             rawNfo: null,
+            rawName: null,
+            parsedName: null,
         );
     }
 
@@ -45,6 +51,7 @@ final readonly class TorrentExtractedMetadata
     {
         return array_filter([
             'title' => $this->title,
+            'year' => $this->year,
             'resolution' => $this->resolution,
             'source' => $this->source,
             'release_group' => $this->releaseGroup,
@@ -53,6 +60,8 @@ final readonly class TorrentExtractedMetadata
             'tmdb_id' => $this->tmdbId,
             'tmdb_url' => $this->tmdbUrl,
             'raw_nfo' => $this->rawNfo,
+            'raw_name' => $this->rawName,
+            'parsed_name' => $this->parsedName,
         ], static fn (?string $value): bool => $value !== null);
     }
 }

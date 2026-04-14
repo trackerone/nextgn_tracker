@@ -11,6 +11,8 @@ use App\Http\Resources\UploadSubmissionResource;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
+use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\PersistTorrentMetadataService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityDecision;
 use App\Services\Torrents\UploadEligibilityReason;
@@ -26,6 +28,7 @@ final class UploadSubmissionController extends Controller
     public function __construct(
         private readonly TorrentIngestService $ingestService,
         private readonly SanitizationService $sanitizer,
+        private readonly PersistTorrentMetadataService $metadataPersistence,
         private readonly UploadEligibilityService $uploadEligibility,
         private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
     ) {}
@@ -79,6 +82,11 @@ final class UploadSubmissionController extends Controller
                 'torrent_file' => $exception->getMessage(),
             ]);
         }
+
+        $this->metadataPersistence->persist(
+            $torrent,
+            CanonicalTorrentMetadata::fromExtractedMetadata($metadata, $data['type'] ?? null),
+        );
 
         return $this->successfulUploadResponse($torrent);
     }

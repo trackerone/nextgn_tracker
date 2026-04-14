@@ -27,10 +27,12 @@ final class TorrentMetadataExtractor
 
         $normalizedNfo = $this->normalizeNfo($rawNfo);
         $titleFromName = $this->extractTitleFromReleaseName($infoName);
+        $year = $this->extractYear($normalizedNfo) ?? $this->extractYear($infoName);
 
         if ($normalizedNfo === null) {
             return new TorrentExtractedMetadata(
                 title: $titleFromName,
+                year: $year,
                 resolution: $this->extractResolution($infoName),
                 source: $this->extractSource($infoName),
                 releaseGroup: $this->extractReleaseGroup($infoName),
@@ -39,14 +41,18 @@ final class TorrentMetadataExtractor
                 tmdbId: null,
                 tmdbUrl: null,
                 rawNfo: null,
+                rawName: $infoName,
+                parsedName: $titleFromName,
             );
         }
 
         $imdbId = $this->extractImdbId($normalizedNfo);
         $tmdbId = $this->extractTmdbId($normalizedNfo);
+        $title = $this->extractTitle($normalizedNfo) ?? $titleFromName;
 
         return new TorrentExtractedMetadata(
-            title: $this->extractTitle($normalizedNfo) ?? $titleFromName,
+            title: $title,
+            year: $year,
             resolution: $this->extractResolution($normalizedNfo) ?? $this->extractResolution($infoName),
             source: $this->extractSource($normalizedNfo) ?? $this->extractSource($infoName),
             releaseGroup: $this->extractReleaseGroup($normalizedNfo) ?? $this->extractReleaseGroup($infoName),
@@ -55,6 +61,8 @@ final class TorrentMetadataExtractor
             tmdbId: $tmdbId,
             tmdbUrl: $tmdbId !== null ? sprintf('https://www.themoviedb.org/movie/%s', $tmdbId) : null,
             rawNfo: $normalizedNfo,
+            rawName: $infoName,
+            parsedName: $title,
         );
     }
 
@@ -158,6 +166,19 @@ final class TorrentMetadataExtractor
             $value = trim($matches[1]);
 
             return $value === '' ? null : $value;
+        }
+
+        return null;
+    }
+
+    private function extractYear(?string $text): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        if (preg_match('/\b((?:19|20)\d{2})\b/', $text, $matches) === 1) {
+            return $matches[1];
         }
 
         return null;

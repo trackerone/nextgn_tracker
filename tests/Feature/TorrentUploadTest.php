@@ -62,6 +62,15 @@ class TorrentUploadTest extends TestCase
         $this->assertSame(9988, $torrent->tmdb_id);
         $this->assertSame(2048, $torrent->size_bytes);
         $this->assertSame(1, $torrent->file_count);
+
+        $this->assertDatabaseHas('torrent_metadata', [
+            'torrent_id' => $torrent->id,
+            'type' => 'movie',
+            'imdb_id' => 'tt1234567',
+            'tmdb_id' => 9988,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
         $this->assertNotNull($torrent->nfoStoragePath());
         Storage::disk('nfo')->assertExists($torrent->nfoStoragePath());

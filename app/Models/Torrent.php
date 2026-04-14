@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -221,6 +222,11 @@ class Torrent extends Model
     public function canBeModerated(): bool
     {
         return $this->status->isModeratable();
+    }
+
+    public function metadata(): HasOne
+    {
+        return $this->hasOne(TorrentMetadata::class);
     }
 
     public function peers(): HasMany
