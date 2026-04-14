@@ -34,6 +34,15 @@ final class TorrentUploadApiResourceTest extends TestCase
         ]);
 
         $response->assertCreated();
+        $response->assertJsonStructure([
+            'data' => ['id', 'slug', 'name', 'status'],
+        ]);
+        $data = $response->json('data');
+        $this->assertIsArray($data);
+        $this->assertSame(
+            ['id', 'slug', 'name', 'status'],
+            array_keys($data)
+        );
         $response->assertJsonPath('data.name', 'API Upload');
         $response->assertJsonPath('data.status', TorrentStatus::Pending->value);
         $this->assertIsString($response->json('data.status'));

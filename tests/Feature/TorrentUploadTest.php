@@ -49,10 +49,11 @@ class TorrentUploadTest extends TestCase
             'nfo_text' => "IMDB: tt1234567\nhttps://www.themoviedb.org/movie/9988",
         ]);
 
-        $response->assertRedirect();
         $torrent = Torrent::query()->first();
 
         $this->assertNotNull($torrent);
+        $response->assertRedirect(route('torrents.show', $torrent->slug));
+        $response->assertSessionHas('status', 'Torrent uploaded and awaiting approval.');
         $this->assertSame('movie', $torrent->type);
         $this->assertSame($category->id, $torrent->category_id);
         $this->assertSame('tt1234567', $torrent->imdb_id);
