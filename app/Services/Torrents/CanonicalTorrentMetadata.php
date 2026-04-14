@@ -58,12 +58,15 @@ final readonly class CanonicalTorrentMetadata
         ?string $resolution = null,
         ?string $source = null,
     ): self {
+        $resolvedResolution = self::firstNonEmptyString($metadata->resolution, $resolution);
+        $resolvedSource = self::firstNonEmptyString($metadata->source, $source);
+
         return self::fromArray([
             'title' => $metadata->title,
             'year' => $metadata->year,
             'type' => $type,
-            'resolution' => $metadata->resolution ?? $resolution,
-            'source' => $metadata->source ?? $source,
+            'resolution' => $resolvedResolution,
+            'source' => $resolvedSource,
             'release_group' => $metadata->releaseGroup,
             'imdb_id' => $metadata->imdbId,
             'tmdb_id' => $metadata->tmdbId,
@@ -106,6 +109,11 @@ final readonly class CanonicalTorrentMetadata
         $normalized = trim($value);
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private static function firstNonEmptyString(?string $preferred, ?string $fallback): ?string
+    {
+        return self::normalizeString($preferred) ?? self::normalizeString($fallback);
     }
 
     private static function normalizeImdbId(?string $value): ?string
