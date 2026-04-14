@@ -8,6 +8,8 @@ use App\Enums\TorrentStatus;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Torrents\UploadEligibilityDecision;
+use App\Services\Torrents\UploadEligibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -103,10 +105,55 @@ final class TorrentUploadApiResourceTest extends TestCase
                 'application/x-bittorrent'
             ),
         ]);
+        $existing = Torrent::query()->firstOrFail();
 
         $response->assertStatus(409);
         $response->assertJsonPath('message', 'Torrent already exists.');
         $response->assertJsonPath('error', 'duplicate_torrent');
+        $response->assertJsonPath('duplicate', true);
+        $response->assertJsonPath('existing_torrent.id', $existing->getKey());
+        $response->assertJsonPath('existing_torrent.slug', $existing->slug);
+    }
+
+    public function test_ingest_duplicate_conflict_uses_same_api_contract_as_preflight_duplicate(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload();
+
+        $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-upload.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertCreated();
+
+        $this->mock(UploadEligibilityService::class, function ($mock): void {
+            $mock->shouldReceive('evaluate')->andReturn(UploadEligibilityDecision::allow());
+        });
+
+        $response = $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Upload Duplicate',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-upload-duplicate.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $existing = Torrent::query()->firstOrFail();
+
+        $response->assertStatus(409);
+        $response->assertJsonPath('message', 'Torrent already exists.');
+        $response->assertJsonPath('error', 'duplicate_torrent');
+        $response->assertJsonPath('duplicate', true);
+        $response->assertJsonPath('existing_torrent.id', $existing->getKey());
+        $response->assertJsonPath('existing_torrent.slug', $existing->slug);
     }
 
     private function sampleTorrentPayload(): string

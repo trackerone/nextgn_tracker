@@ -68,8 +68,8 @@ final class UploadSubmissionController extends Controller
                 'imdb_id' => $data['imdb_id'] ?? null,
                 'tmdb_id' => $data['tmdb_id'] ?? null,
             ]);
-        } catch (TorrentAlreadyExistsException) {
-            return $this->duplicateConflictResponse();
+        } catch (TorrentAlreadyExistsException $exception) {
+            return $this->duplicateConflictResponse($exception->torrent);
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages([
                 'torrent_file' => $exception->getMessage(),
@@ -82,7 +82,7 @@ final class UploadSubmissionController extends Controller
     private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse
     {
         if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
-            return $this->duplicateConflictResponse();
+            return $this->duplicateConflictResponse($this->resolveDuplicateTorrentFromContext($decision->context));
         }
 
         if ($decision->reason === UploadEligibilityReason::MissingMetadata) {
@@ -94,12 +94,47 @@ final class UploadSubmissionController extends Controller
         abort(403);
     }
 
-    private function duplicateConflictResponse(): JsonResponse
+    private function duplicateConflictResponse(?Torrent $existingTorrent = null): JsonResponse
     {
-        return response()->json([
+        $payload = [
             'message' => 'Torrent already exists.',
             'error' => 'duplicate_torrent',
-        ], 409);
+            'duplicate' => true,
+        ];
+
+        if ($existingTorrent instanceof Torrent) {
+            $payload['existing_torrent'] = [
+                'id' => $existingTorrent->getKey(),
+                'slug' => $existingTorrent->slug,
+            ];
+        }
+
+        return response()->json($payload, 409);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function resolveDuplicateTorrentFromContext(array $context): ?Torrent
+    {
+        $existingTorrentId = $context['existing_torrent_id'] ?? null;
+
+        if (is_int($existingTorrentId)) {
+            $torrent = Torrent::query()->find($existingTorrentId);
+            if ($torrent instanceof Torrent) {
+                return $torrent;
+            }
+        }
+
+        $infoHash = $context['info_hash'] ?? null;
+        if (is_string($infoHash) && $infoHash !== '') {
+            $torrent = Torrent::query()->where('info_hash', $infoHash)->first();
+            if ($torrent instanceof Torrent) {
+                return $torrent;
+            }
+        }
+
+        return null;
     }
 
     private function successfulUploadResponse(Torrent $torrent): JsonResponse

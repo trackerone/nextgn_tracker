@@ -7,6 +7,8 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Torrents\UploadEligibilityDecision;
+use App\Services\Torrents\UploadEligibilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -79,6 +81,35 @@ class TorrentUploadTest extends TestCase
         ])->assertRedirect();
 
         $existing = Torrent::query()->firstOrFail();
+
+        $response = $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Duplicate Upload 2',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent('dup2.torrent', $payload, 'application/x-bittorrent'),
+        ]);
+
+        $response->assertRedirect(route('torrents.show', $existing->slug));
+        $response->assertSessionHas('status', 'Torrent already exists – redirected to the existing entry.');
+    }
+
+    public function test_ingest_duplicate_conflict_redirects_with_same_feedback_as_preflight_duplicate(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Duplicate Upload', 4096);
+
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Duplicate Upload',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent('dup.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
+
+        $existing = Torrent::query()->firstOrFail();
+
+        $this->mock(UploadEligibilityService::class, function ($mock): void {
+            $mock->shouldReceive('evaluate')->andReturn(UploadEligibilityDecision::allow());
+        });
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
             'name' => 'Duplicate Upload 2',
