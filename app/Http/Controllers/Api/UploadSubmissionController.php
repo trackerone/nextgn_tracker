@@ -8,6 +8,7 @@ use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UploadSubmissionRequest;
 use App\Http\Resources\UploadSubmissionResource;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\TorrentIngestService;
@@ -75,9 +76,7 @@ final class UploadSubmissionController extends Controller
             ]);
         }
 
-        return response()->json([
-            'data' => (new UploadSubmissionResource($torrent))->resolve(),
-        ], 201);
+        return $this->successfulUploadResponse($torrent);
     }
 
     private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse
@@ -101,5 +100,12 @@ final class UploadSubmissionController extends Controller
             'message' => 'Torrent already exists.',
             'error' => 'duplicate_torrent',
         ], 409);
+    }
+
+    private function successfulUploadResponse(Torrent $torrent): JsonResponse
+    {
+        return response()->json([
+            'data' => (new UploadSubmissionResource($torrent))->resolve(),
+        ], 201);
     }
 }

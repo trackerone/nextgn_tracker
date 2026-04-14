@@ -149,9 +149,7 @@ class TorrentUploadController extends Controller
             'nfo_bytes' => $this->resolveNfoSize($request, $nfoPayload),
         ]);
 
-        return redirect()
-            ->route('torrents.show', $torrent->slug)
-            ->with('status', 'Torrent uploaded and awaiting approval.');
+        return $this->successfulUploadResponse($torrent);
     }
 
     /**
@@ -185,6 +183,13 @@ class TorrentUploadController extends Controller
         return redirect()
             ->route('torrents.show', $torrent->slug)
             ->with('status', 'Torrent already exists – redirected to the existing entry.');
+    }
+
+    private function successfulUploadResponse(Torrent $torrent): RedirectResponse
+    {
+        return redirect()
+            ->route('torrents.show', $torrent->slug)
+            ->with('status', 'Torrent uploaded and awaiting approval.');
     }
 
     private function resolveNfoText(TorrentUploadStoreRequest $request, array $data): ?string
