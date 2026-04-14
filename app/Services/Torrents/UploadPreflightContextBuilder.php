@@ -9,7 +9,7 @@ use App\Models\User;
 use App\Services\BencodeService;
 use Illuminate\Support\Str;
 
-final class UploadPreflightContextBuilder
+class UploadPreflightContextBuilder
 {
     public function __construct(
         private readonly BencodeService $bencode,
