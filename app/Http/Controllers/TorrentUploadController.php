@@ -15,7 +15,7 @@ use App\Services\Torrents\NfoParser;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
-use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use App\Services\Uploads\NfoStorageService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +34,7 @@ class TorrentUploadController extends Controller
         private readonly NfoStorageService $nfoStorage,
         private readonly AuditLogger $auditLogger,
         private readonly UploadEligibilityService $uploadEligibility,
-        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
+        private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
     ) {}
 
     public function create(): View

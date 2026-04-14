@@ -15,7 +15,7 @@ use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityDecision;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
-use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +27,7 @@ final class UploadSubmissionController extends Controller
         private readonly TorrentIngestService $ingestService,
         private readonly SanitizationService $sanitizer,
         private readonly UploadEligibilityService $uploadEligibility,
-        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
+        private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
     ) {}
 
     public function store(UploadSubmissionRequest $request): JsonResponse
