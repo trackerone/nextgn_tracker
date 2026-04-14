@@ -9,7 +9,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Torrents\UploadEligibilityService;
-use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Auth\Access\Response;
 
 class TorrentPolicy
@@ -17,7 +17,7 @@ class TorrentPolicy
     public function __construct(
         private readonly DownloadEligibilityService $downloadEligibility,
         private readonly UploadEligibilityService $uploadEligibility,
-        private readonly UploadPreflightContextBuilder $preflightContextBuilder,
+        private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
     ) {}
 
     public function view(User $user, Torrent $torrent): Response

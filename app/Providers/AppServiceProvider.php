@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,7 +15,10 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Registrér bindings her hvis du får brug for det.
+        $this->app->bind(
+            UploadPreflightContextBuilderContract::class,
+            UploadPreflightContextBuilder::class
+        );
     }
 
     public function boot(): void

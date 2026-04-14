@@ -8,7 +8,7 @@ use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\UploadPreflightContext;
-use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -107,7 +107,7 @@ class TorrentUploadTest extends TestCase
 
         $existing = Torrent::query()->firstOrFail();
 
-        $this->mock(UploadPreflightContextBuilder::class, function ($mock): void {
+        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
             $mock->shouldReceive('forPayload')->andReturn(new UploadPreflightContext(
                 category: null,
                 type: 'movie',
