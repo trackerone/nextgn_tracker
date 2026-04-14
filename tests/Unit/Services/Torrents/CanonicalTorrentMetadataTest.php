@@ -84,4 +84,32 @@ final class CanonicalTorrentMetadataTest extends TestCase
         $this->assertSame('1080p', $metadata->resolution);
         $this->assertSame('WEB-DL', $metadata->source);
     }
+
+    public function test_it_prefers_extracted_source_over_fallback_source(): void
+    {
+        $extracted = new TorrentExtractedMetadata(
+            title: 'Movie Title',
+            year: '2025',
+            resolution: '1080p',
+            source: 'WEB-DL',
+            releaseGroup: null,
+            imdbId: null,
+            imdbUrl: null,
+            tmdbId: null,
+            tmdbUrl: null,
+            rawNfo: 'NFO',
+            rawName: 'Movie.Title',
+            parsedName: 'Movie Title',
+        );
+
+        $metadata = CanonicalTorrentMetadata::fromExtractedMetadata(
+            $extracted,
+            type: 'movie',
+            resolution: '2160p',
+            source: 'bluray',
+        );
+
+        $this->assertSame('1080p', $metadata->resolution);
+        $this->assertSame('WEB-DL', $metadata->source);
+    }
 }
