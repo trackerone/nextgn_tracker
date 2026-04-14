@@ -13,6 +13,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
 {
     public function __construct(
         private readonly BencodeService $bencode,
+        private readonly TorrentMetadataExtractor $metadataExtractor,
     ) {}
 
     public function forUser(User $user, array $input = []): UploadPreflightContext
@@ -22,7 +23,9 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
 
     public function forPayload(User $user, string $torrentPayload, array $input = []): UploadPreflightContext
     {
-        return $this->makeContext($user, $input, $this->buildPayloadContext($torrentPayload));
+        $rawNfo = is_string($input['nfo_text'] ?? null) ? $input['nfo_text'] : null;
+
+        return $this->makeContext($user, $input, $this->buildPayloadContext($torrentPayload, $rawNfo));
     }
 
     /**
@@ -43,27 +46,39 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             metadataComplete: $this->asBoolOrNull($payloadContext['metadata_complete'] ?? null),
             infoHash: $this->asStringOrNull($payloadContext['info_hash'] ?? null),
             existingTorrentId: $this->asIntOrNull($payloadContext['existing_torrent_id'] ?? null),
+            extractedMetadata: $payloadContext['extracted_metadata'] ?? TorrentExtractedMetadata::empty(),
         );
     }
 
     /**
      * @return array<string, mixed>
      */
-    private function buildPayloadContext(string $torrentPayload): array
+    private function buildPayloadContext(string $torrentPayload, ?string $rawNfo = null): array
     {
         $decoded = $this->bencode->decode($torrentPayload);
+        $extractedMetadata = $this->metadataExtractor->extract($torrentPayload, $rawNfo);
+
         if (! is_array($decoded)) {
-            return ['metadata_complete' => false];
+            return [
+                'metadata_complete' => false,
+                'extracted_metadata' => $extractedMetadata,
+            ];
         }
 
         $info = $decoded['info'] ?? null;
         if (! is_array($info)) {
-            return ['metadata_complete' => false];
+            return [
+                'metadata_complete' => false,
+                'extracted_metadata' => $extractedMetadata,
+            ];
         }
 
         $sizeBytes = $this->extractSizeBytes($info);
         if ($sizeBytes === null) {
-            return ['metadata_complete' => false];
+            return [
+                'metadata_complete' => false,
+                'extracted_metadata' => $extractedMetadata,
+            ];
         }
 
         $infoHash = Str::upper(sha1($this->bencode->encode($info)));
@@ -78,6 +93,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             'info_hash' => $infoHash,
             'duplicate' => $existingTorrent !== null,
             'existing_torrent_id' => $existingTorrent?->getKey(),
+            'extracted_metadata' => $extractedMetadata,
         ], static fn (mixed $value): bool => $value !== null);
     }
 

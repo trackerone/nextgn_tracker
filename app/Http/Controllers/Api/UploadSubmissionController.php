@@ -47,6 +47,7 @@ final class UploadSubmissionController extends Controller
         $context = $this->preflightContextBuilder->forPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,
             'resolution' => $data['resolution'] ?? null,
+            'nfo_text' => $data['nfo_text'] ?? null,
         ]);
 
         $decision = $this->uploadEligibility->evaluate($user, $context);
@@ -55,6 +56,8 @@ final class UploadSubmissionController extends Controller
             return $this->mapDeniedEligibilityToApiResponse($decision);
         }
 
+        $metadata = $context->extractedMetadata;
+
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
                 'name' => $this->sanitizer->sanitizeString(strval($data['name'])),
@@ -62,11 +65,12 @@ final class UploadSubmissionController extends Controller
                 'type' => $data['type'],
                 'description' => $data['description'] ?? null,
                 'tags' => $data['tags'] ?? null,
-                'source' => $data['source'] ?? null,
-                'resolution' => $data['resolution'] ?? null,
+                'source' => $data['source'] ?? $metadata->source,
+                'resolution' => $data['resolution'] ?? $metadata->resolution,
                 'codecs' => $data['codecs'] ?? null,
-                'imdb_id' => $data['imdb_id'] ?? null,
-                'tmdb_id' => $data['tmdb_id'] ?? null,
+                'nfo_text' => $metadata->rawNfo,
+                'imdb_id' => $data['imdb_id'] ?? $metadata->imdbId,
+                'tmdb_id' => $data['tmdb_id'] ?? $metadata->tmdbId,
             ]);
         } catch (TorrentAlreadyExistsException $exception) {
             return $this->duplicateConflictResponse($exception->torrent);

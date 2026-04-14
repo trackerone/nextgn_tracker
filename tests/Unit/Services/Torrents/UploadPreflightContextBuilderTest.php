@@ -52,6 +52,7 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $this->assertNull($context->metadataComplete);
         $this->assertNull($context->infoHash);
         $this->assertNull($context->existingTorrentId);
+        $this->assertTrue($context->extractedMetadata->isEmpty());
     }
 
     public function test_for_payload_marks_metadata_incomplete_when_size_metadata_is_missing(): void
@@ -70,6 +71,7 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $context = $this->builder->forPayload($user, $payload, [
             'type' => 'movie',
             'resolution' => '2160p',
+            'nfo_text' => "Title: Sample Title\nIMDb: tt1234567",
         ]);
 
         $this->assertSame('movie', $context->type);
@@ -78,6 +80,8 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $this->assertNull($context->size);
         $this->assertNull($context->infoHash);
         $this->assertNull($context->existingTorrentId);
+        $this->assertSame('Sample Title', $context->extractedMetadata->title);
+        $this->assertSame('tt1234567', $context->extractedMetadata->imdbId);
     }
 
     public function test_for_payload_resolves_duplicate_and_existing_torrent_id(): void
@@ -107,5 +111,6 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $this->assertSame(true, $context->duplicate);
         $this->assertNotNull($context->infoHash);
         $this->assertSame($existingTorrent->getKey(), $context->existingTorrentId);
+        $this->assertSame('duplicate payload', strtolower((string) $context->extractedMetadata->title));
     }
 }
