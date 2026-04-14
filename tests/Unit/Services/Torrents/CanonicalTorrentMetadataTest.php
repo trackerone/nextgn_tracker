@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Torrents;
 
 use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\TorrentExtractedMetadata;
 use PHPUnit\Framework\TestCase;
 
 final class CanonicalTorrentMetadataTest extends TestCase
@@ -53,5 +54,34 @@ final class CanonicalTorrentMetadataTest extends TestCase
         $this->assertNull($metadata->tmdbId);
         $this->assertNull($metadata->tmdbUrl);
         $this->assertNull($metadata->year);
+    }
+
+    public function test_it_falls_back_to_explicit_resolution_and_source_when_extracted_values_are_missing(): void
+    {
+        $extracted = new TorrentExtractedMetadata(
+            title: 'Movie Title',
+            year: '2025',
+            resolution: null,
+            source: null,
+            releaseGroup: null,
+            imdbId: 'tt1234567',
+            imdbUrl: null,
+            tmdbId: '9988',
+            tmdbUrl: null,
+            rawNfo: 'NFO',
+            rawName: 'Movie.Title',
+            parsedName: 'Movie Title',
+        );
+
+        $metadata = CanonicalTorrentMetadata::fromExtractedMetadata(
+            $extracted,
+            type: 'movie',
+            resolution: '1080p',
+            source: 'WEB-DL',
+        );
+
+        $this->assertSame('movie', $metadata->type);
+        $this->assertSame('1080p', $metadata->resolution);
+        $this->assertSame('WEB-DL', $metadata->source);
     }
 }

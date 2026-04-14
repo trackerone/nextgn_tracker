@@ -138,7 +138,12 @@ class TorrentUploadController extends Controller
 
         $this->metadataPersistence->persist(
             $torrent,
-            CanonicalTorrentMetadata::fromExtractedMetadata($metadata, $data['type'] ?? null),
+            CanonicalTorrentMetadata::fromExtractedMetadata(
+                $metadata,
+                $data['type'] ?? null,
+                $data['resolution'] ?? null,
+                $data['source'] ?? null,
+            ),
         );
 
         $this->auditLogger->log('torrent.created', $torrent, [
