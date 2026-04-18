@@ -9,6 +9,7 @@
 @section('content')
     @php
         $torrentMetadata = $torrentMetadata ?? [];
+        $moderationMetadataReview = $moderationMetadataReview ?? [];
     @endphp
     <div class="space-y-8">
         <div>
@@ -22,6 +23,7 @@
                         <th class="px-4 py-3 text-left">Name</th>
                         <th class="px-4 py-3 text-left">Uploader</th>
                         <th class="px-4 py-3 text-left">Type</th>
+                        <th class="px-4 py-3 text-left">Metadata review</th>
                         <th class="px-4 py-3 text-right">Size</th>
                         <th class="px-4 py-3 text-right">Uploaded</th>
                         <th class="px-4 py-3 text-left">Actions</th>
@@ -32,6 +34,7 @@
                         @php
                             $metadata = $torrentMetadata[$torrent->id] ?? [];
                             $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
+                            $review = $moderationMetadataReview[$torrent->id] ?? ['needs_review' => false, 'labels' => []];
                         @endphp
                         <tr>
                             <td class="px-4 py-3">
@@ -46,6 +49,22 @@
                             </td>
                             <td class="px-4 py-3">{{ $torrent->uploader?->name ?? 'Unknown' }}</td>
                             <td class="px-4 py-3">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                @if (($review['needs_review'] ?? false) === true)
+                                    <span class="rounded-full border border-amber-600/60 bg-amber-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-200">
+                                        Needs metadata review
+                                    </span>
+                                    @if (($review['labels'] ?? []) !== [])
+                                        <div class="mt-1 text-xs text-amber-200/90">
+                                            {{ implode(', ', $review['labels']) }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="rounded-full border border-emerald-600/60 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-200">
+                                        Metadata OK
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
                             <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
                             <td class="px-4 py-3">
@@ -68,7 +87,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-slate-400">
+                            <td colspan="7" class="px-4 py-8 text-center text-slate-400">
                                 No pending uploads right now. New user submissions will appear here for moderation.
                             </td>
                         </tr>

@@ -137,7 +137,9 @@ final class TorrentModerationFlowTest extends TestCase
             ->get(route('staff.torrents.moderation.index'))
             ->assertOk()
             ->assertSee($torrent->name)
-            ->assertSee('Tv');
+            ->assertSee('Tv')
+            ->assertSee('Needs metadata review')
+            ->assertSee('Missing season/episode');
 
         $this->actingAs($staff)
             ->post(route('staff.torrents.approve', $torrent))
@@ -201,5 +203,31 @@ final class TorrentModerationFlowTest extends TestCase
             ->get(route('torrents.show', $torrent))
             ->assertOk()
             ->assertSee('Invalid proof');
+    }
+
+    public function test_moderation_listing_marks_complete_metadata_as_ok(): void
+    {
+        $staff = $this->createStaffUser();
+
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PENDING,
+            'name' => 'Complete Metadata Movie',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Complete Metadata Movie',
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'year' => 2026,
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.torrents.moderation.index'))
+            ->assertOk()
+            ->assertSee($torrent->name)
+            ->assertSee('Metadata OK')
+            ->assertDontSee('Needs metadata review');
     }
 }
