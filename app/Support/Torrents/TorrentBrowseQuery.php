@@ -11,10 +11,20 @@ final class TorrentBrowseQuery
     public function apply(Builder $query, TorrentBrowseFilters $filters): Builder
     {
         if ($filters->q !== '') {
-            $search = mb_strtolower($filters->q);
-            $query->where(function (Builder $inner) use ($search): void {
-                $inner->whereRaw('LOWER(name) LIKE ?', ['%'.$search.'%']);
-            });
+            $searchExpression = TorrentSearchExpression::fromQuery($filters->q);
+
+            $searchText = $searchExpression->hasMetadataDirectives()
+                ? $searchExpression->text
+                : $filters->q;
+
+            if ($searchText !== '') {
+                $search = mb_strtolower($searchText);
+                $query->where(function (Builder $inner) use ($search): void {
+                    $inner->whereRaw('LOWER(name) LIKE ?', ['%'.$search.'%']);
+                });
+            }
+
+            $this->applySearchMetadataDirectives($query, $searchExpression);
         }
 
         if ($filters->type !== '') {
@@ -51,6 +61,29 @@ final class TorrentBrowseQuery
         return $query
             ->orderBy($orderColumn, $filters->direction)
             ->orderByDesc('id');
+    }
+
+    private function applySearchMetadataDirectives(Builder $query, TorrentSearchExpression $searchExpression): void
+    {
+        if ($searchExpression->releaseGroup !== null) {
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($searchExpression): void {
+                $metadataQuery->whereRaw('LOWER(release_group) = ?', [mb_strtolower($searchExpression->releaseGroup)]);
+            });
+        }
+
+        if ($searchExpression->source !== null) {
+            $this->applyMetadataFilter($query, 'source', $searchExpression->source);
+        }
+
+        if ($searchExpression->resolution !== null) {
+            $this->applyMetadataFilter($query, 'resolution', $searchExpression->resolution);
+        }
+
+        if ($searchExpression->year !== null) {
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($searchExpression): void {
+                $metadataQuery->where('year', $searchExpression->year);
+            });
+        }
     }
 
     private function applyMetadataFilter(Builder $query, string $column, string $value): void

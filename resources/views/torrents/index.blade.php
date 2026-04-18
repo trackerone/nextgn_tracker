@@ -27,8 +27,9 @@
                         name="q"
                         value="{{ $filters['q'] ?? '' }}"
                         class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                        placeholder="Name or tag"
+                        placeholder="Name or tag, e.g. rg:NTB source:BLURAY year:2024"
                     >
+                    <span class="mt-1 block text-[11px] font-normal text-slate-500">Use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for metadata-aware search.</span>
                 </label>
                 <label class="text-sm font-semibold text-slate-300">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Type</span>

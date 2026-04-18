@@ -151,6 +151,37 @@ final class TorrentBrowseApiTest extends TestCase
         $response->assertJsonPath('data.1.id', $newer->id);
     }
 
+    public function test_q_search_supports_metadata_directives_in_api_browse(): void
+    {
+        $user = User::factory()->create();
+
+        $match = Torrent::factory()->create(['name' => 'Planet Earth Pack']);
+        $miss = Torrent::factory()->create(['name' => 'Planet Earth Other']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'release_group' => 'NTB',
+            'source' => 'BLURAY',
+            'resolution' => '2160p',
+            'year' => 2024,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'release_group' => 'FLUX',
+            'source' => 'BLURAY',
+            'resolution' => '2160p',
+            'year' => 2024,
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/torrents?q=Planet rg:NTB source:BLURAY year:2024');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.id', $match->id);
+    }
+
     public function test_metadata_filters_are_applied_in_api_browse(): void
     {
         $user = User::factory()->create();

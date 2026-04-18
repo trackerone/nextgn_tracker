@@ -51,6 +51,66 @@ final class TorrentBrowseTest extends TestCase
         $response->assertDontSee($miss->name);
     }
 
+    public function test_search_supports_release_group_directive(): void
+    {
+        $user = User::factory()->create();
+
+        $match = Torrent::factory()->create(['name' => 'Planet Earth Collection']);
+        $miss = Torrent::factory()->create(['name' => 'Planet Earth Alt']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'release_group' => 'NTB',
+            'source' => 'BLURAY',
+            'resolution' => '2160p',
+            'year' => 2024,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'release_group' => 'FLUX',
+            'source' => 'BLURAY',
+            'resolution' => '2160p',
+            'year' => 2024,
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=Planet rg:NTB');
+
+        $response->assertOk();
+        $response->assertSee($match->name);
+        $response->assertDontSee($miss->name);
+    }
+
+    public function test_search_supports_combined_metadata_directives_without_text(): void
+    {
+        $user = User::factory()->create();
+
+        $match = Torrent::factory()->create(['name' => 'Directive Match']);
+        $wrongYear = Torrent::factory()->create(['name' => 'Directive Wrong Year']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'release_group' => 'NTB',
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'year' => 2023,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $wrongYear->id,
+            'release_group' => 'NTB',
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'year' => 2022,
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=rg:NTB source:WEB-DL res:1080p year:2023');
+
+        $response->assertOk();
+        $response->assertSee($match->name);
+        $response->assertDontSee($wrongYear->name);
+    }
+
     public function test_type_filter_works_with_normalized_metadata(): void
     {
         $user = User::factory()->create();
