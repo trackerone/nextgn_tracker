@@ -104,5 +104,27 @@ final class TorrentFollowFlowTest extends TestCase
         $response->assertSee($matchingTorrent->name);
         $response->assertDontSee($nonMatchingTorrent->name);
     }
-}
 
+    public function test_my_follows_matches_legacy_torrent_by_title_when_metadata_is_missing(): void
+    {
+        $user = User::factory()->create();
+        $matchingTorrent = Torrent::factory()->create(['name' => 'Legacy One 2026 Proper']);
+        $nonMatchingTorrent = Torrent::factory()->create(['name' => 'Completely Different']);
+
+        TorrentFollow::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'Legacy One',
+            'normalized_title' => 'legacy one',
+            'type' => null,
+            'resolution' => null,
+            'source' => null,
+            'year' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get('/my/follows');
+
+        $response->assertOk();
+        $response->assertSee($matchingTorrent->name);
+        $response->assertDontSee($nonMatchingTorrent->name);
+    }
+}

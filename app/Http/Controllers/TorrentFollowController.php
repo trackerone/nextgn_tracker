@@ -17,6 +17,7 @@ final class TorrentFollowController extends Controller
 {
     public function index(Request $request, TorrentFollowMatcher $matcher): View
     {
+        /** @var \Illuminate\Support\Collection<int, TorrentFollow> $follows */
         $follows = $request->user()
             ->torrentFollows()
             ->orderByDesc('created_at')
