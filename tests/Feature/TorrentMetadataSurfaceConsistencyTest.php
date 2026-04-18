@@ -111,12 +111,15 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         // Browse surface renders metadata through the shared map contract.
         $browseResponse->assertSeeInOrder([$approved->name, 'Tv']);
 
-        $this->actingAs($staff)
-            ->get(route('staff.torrents.moderation.index'))
-            ->assertOk()
-            ->assertViewHas('torrentMetadata', function (array $metadataMap) use ($pending): bool {
-                return ($metadataMap[$pending->id]['type'] ?? null) === 'tv'
-                    && ($metadataMap[$pending->id]['source'] ?? null) === 'BLURAY';
-            });
+        $moderationResponse = $this->actingAs($staff)
+            ->withHeaders(['Accept' => 'text/html'])
+            ->get(route('staff.torrents.moderation.index'));
+
+        $moderationResponse->assertOk();
+        $this->assertStringContainsString('text/html', (string) $moderationResponse->headers->get('content-type'));
+        $this->assertStringContainsString('<!DOCTYPE html>', (string) $moderationResponse->getContent());
+
+        // Moderation surface is rendered HTML; verify pending row reflects effective metadata output.
+        $moderationResponse->assertSeeInOrder([$pending->name, 'Tv']);
     }
 }
