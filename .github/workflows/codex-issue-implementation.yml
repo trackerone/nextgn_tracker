@@ -1,0 +1,86 @@
+name: Codex Issue Implementation Intake
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to prepare for Codex implementation'
+        required: true
+        type: number
+      requested_scope:
+        description: 'Optional explicit scope override'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  prepare-intake:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request == null &&
+        contains(github.event.comment.body, '/codex implement') &&
+        contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association)
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve issue context
+        id: context
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.eventName === 'workflow_dispatch'
+              ? Number(core.getInput('issue_number'))
+              : context.payload.issue.number;
+
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            const requestedScope = context.eventName === 'workflow_dispatch'
+              ? (core.getInput('requested_scope') || '').trim()
+              : 'Scope inferred from issue and /codex implement comment';
+
+            core.setOutput('issue_number', String(issueNumber));
+            core.setOutput('issue_title', issue.data.title);
+            core.setOutput('issue_url', issue.data.html_url);
+            core.setOutput('requested_scope', requestedScope || 'Not provided');
+
+      - name: Publish intake comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ steps.context.outputs.issue_number }}');
+            const body = [
+              '## 🤖 Codex implementation intake prepared',
+              '',
+              `- Issue: #${issueNumber}`,
+              `- Title: ${{ steps.context.outputs.issue_title }}`,
+              `- Scope: ${{ steps.context.outputs.requested_scope }}`,
+              '',
+              'This workflow only prepares a safe, reviewable intake for a narrow Codex run.',
+              'It does **not** bypass CI or auto-merge.',
+              '',
+              '### Next step',
+              '- Start a Codex implementation run using `.codex/templates/issue-implementation.md` and this issue context.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body,
+            });

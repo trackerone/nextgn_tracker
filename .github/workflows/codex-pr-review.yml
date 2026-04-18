@@ -1,0 +1,97 @@
+name: Codex PR Review Intake
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Pull request number to prepare for Codex review'
+        required: true
+        type: number
+      review_focus:
+        description: 'Optional review focus'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  prepare-review:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'pull_request' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        contains(github.event.comment.body, '/codex review') &&
+        contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association)
+      )
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve pull request metadata
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.eventName === 'workflow_dispatch'
+              ? Number(core.getInput('pr_number'))
+              : context.eventName === 'pull_request'
+                ? context.payload.pull_request.number
+                : context.payload.issue.number;
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              per_page: 100,
+            });
+
+            const changed = files.map((f) => `- ${f.filename}`).slice(0, 40);
+            const reviewFocus = context.eventName === 'workflow_dispatch'
+              ? (core.getInput('review_focus') || '').trim()
+              : 'Scope, safety, and quality-gate integrity';
+
+            core.setOutput('pr_number', String(prNumber));
+            core.setOutput('pr_title', pr.data.title);
+            core.setOutput('pr_url', pr.data.html_url);
+            core.setOutput('review_focus', reviewFocus || 'Not provided');
+            core.setOutput('changed_files', changed.join('\n') || '- No files reported');
+
+      - name: Publish review intake comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ steps.pr.outputs.pr_number }}');
+            const body = [
+              '## 🤖 Codex PR review intake prepared',
+              '',
+              `- PR: #${issueNumber}`,
+              `- Title: ${{ steps.pr.outputs.pr_title }}`,
+              `- Focus: ${{ steps.pr.outputs.review_focus }}`,
+              '',
+              '### Changed files snapshot',
+              '${{ steps.pr.outputs.changed_files }}',
+              '',
+              'Use `.codex/templates/pr-review.md` for a structured Codex review pass.',
+              'This workflow assists review and does **not** override required approvals or CI.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body,
+            });
