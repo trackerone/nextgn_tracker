@@ -6,6 +6,8 @@
     $sources = $sources ?? [];
     $categories = $categories ?? collect();
     $torrentMetadata = $torrentMetadata ?? [];
+    $groupedBrowse = $groupedBrowse ?? true;
+    $releaseFamilies = $releaseFamilies ?? [];
 @endphp
 
 @extends('layouts.app')
@@ -19,7 +21,7 @@
 @section('content')
     <div class="space-y-8">
         <div class="rounded-2xl bg-slate-900/70 p-6 shadow-xl shadow-slate-900/30">
-            <form method="GET" action="{{ route('torrents.index') }}" class="grid gap-4 md:grid-cols-5">
+            <form method="GET" action="{{ route('torrents.index') }}" class="grid gap-4 md:grid-cols-6">
                 <label class="text-sm font-semibold text-slate-300">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
                     <input
@@ -56,6 +58,13 @@
                         @foreach ($sources as $source)
                             <option value="{{ $source }}" @selected(($filters['source'] ?? '') === $source)>{{ $source }}</option>
                         @endforeach
+                    </select>
+                </label>
+                <label class="text-sm font-semibold text-slate-300">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">View</span>
+                    <select name="grouped" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                        <option value="1" @selected(($filters['grouped'] ?? '1') !== '0')>Grouped</option>
+                        <option value="0" @selected(($filters['grouped'] ?? '1') === '0')>Flat</option>
                     </select>
                 </label>
                 @if ($categories->isNotEmpty())
@@ -98,62 +107,106 @@
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-slate-900/30">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-800 text-sm">
-                    <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
-                        <tr>
-                            <th class="px-4 py-3 text-left">Name</th>
-                            <th class="px-4 py-3 text-left">Type</th>
-                            <th class="px-4 py-3 text-right">Size</th>
-                            <th class="px-4 py-3 text-right">Seed</th>
-                            <th class="px-4 py-3 text-right">Leech</th>
-                            <th class="px-4 py-3 text-right">Done</th>
-                            <th class="px-4 py-3 text-right">Uploaded</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-800 text-slate-100">
-                        @forelse ($torrents as $torrent)
-                            @php
-                                $metadata = $torrentMetadata[$torrent->id] ?? [];
-                                $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
-                            @endphp
-                            <tr class="hover:bg-slate-800/50">
-                                <td class="px-4 py-3">
-                                    <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">
-                                        {{ $torrent->name }}
-                                    </a>
-                                    @if ($metadataBadges !== [])
-                                        <div class="mt-2 flex flex-wrap gap-1.5">
-                                            @foreach ($metadataBadges as $badge)
-                                                <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
-                                            @endforeach
-                                        </div>
+            @if ($groupedBrowse)
+                <div class="divide-y divide-slate-800">
+                    @forelse ($releaseFamilies as $family)
+                        @php
+                            $primary = $family['primary'];
+                            $primaryMetadata = $torrentMetadata[$primary->id] ?? [];
+                            $primaryBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($primaryMetadata);
+                        @endphp
+                        <section class="p-4">
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <h3 class="text-base font-semibold text-white">
+                                    {{ $family['title'] }}
+                                    @if ($family['year'] !== null)
+                                        <span class="text-slate-400">({{ $family['year'] }})</span>
                                     @endif
-                                    @if (! empty($torrent->tags))
-                                        <div class="mt-1 flex flex-wrap gap-1 text-xs text-slate-400">
-                                            @foreach ($torrent->tags as $tag)
-                                                <span class="rounded-full border border-slate-700 px-2 py-0.5">{{ $tag }}</span>
-                                            @endforeach
+                                </h3>
+                                <span class="text-xs uppercase tracking-wide text-slate-400">{{ 1 + $family['alternatives']->count() }} versions</span>
+                            </div>
+
+                            <div class="rounded-xl border border-brand/40 bg-slate-950/50 p-3">
+                                <div class="mb-1 text-xs uppercase tracking-wide text-brand">Best version</div>
+                                <a href="{{ route('torrents.show', $primary) }}" class="font-semibold text-white hover:text-brand">{{ $primary->name }}</a>
+                                <div class="mt-1 text-xs text-slate-400">
+                                    {{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($primaryMetadata) ?? '—' }} •
+                                    {{ $primary->formatted_size }} •
+                                    {{ optional($primary->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}
+                                </div>
+                                @if ($primaryBadges !== [])
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @foreach ($primaryBadges as $badge)
+                                            <span class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if ($family['alternatives']->isNotEmpty())
+                                <div class="mt-3 space-y-2">
+                                    @foreach ($family['alternatives'] as $alternative)
+                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm">
+                                            <a href="{{ route('torrents.show', $alternative) }}" class="text-slate-200 hover:text-brand">{{ $alternative->name }}</a>
+                                            <span class="text-xs text-slate-400">{{ $alternative->formatted_size }}</span>
                                         </div>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
-                                <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
-                                <td class="px-4 py-3 text-right text-emerald-400">{{ number_format($torrent->seeders) }}</td>
-                                <td class="px-4 py-3 text-right text-amber-400">{{ number_format($torrent->leechers) }}</td>
-                                <td class="px-4 py-3 text-right text-slate-200">{{ number_format($torrent->completed) }}</td>
-                                <td class="px-4 py-3 text-right text-slate-400">
-                                    {{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}
-                                </td>
-                            </tr>
-                        @empty
+                                    @endforeach
+                                </div>
+                            @endif
+                        </section>
+                    @empty
+                        <div class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</div>
+                    @endforelse
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-800 text-sm">
+                        <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
                             <tr>
-                                <td colspan="7" class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</td>
+                                <th class="px-4 py-3 text-left">Name</th>
+                                <th class="px-4 py-3 text-left">Type</th>
+                                <th class="px-4 py-3 text-right">Size</th>
+                                <th class="px-4 py-3 text-right">Seed</th>
+                                <th class="px-4 py-3 text-right">Leech</th>
+                                <th class="px-4 py-3 text-right">Done</th>
+                                <th class="px-4 py-3 text-right">Uploaded</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-100">
+                            @forelse ($torrents as $torrent)
+                                @php
+                                    $metadata = $torrentMetadata[$torrent->id] ?? [];
+                                    $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
+                                @endphp
+                                <tr class="hover:bg-slate-800/50">
+                                    <td class="px-4 py-3">
+                                        <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">
+                                            {{ $torrent->name }}
+                                        </a>
+                                        @if ($metadataBadges !== [])
+                                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                                @foreach ($metadataBadges as $badge)
+                                                    <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
+                                    <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
+                                    <td class="px-4 py-3 text-right text-emerald-400">{{ number_format($torrent->seeders) }}</td>
+                                    <td class="px-4 py-3 text-right text-amber-400">{{ number_format($torrent->leechers) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-200">{{ number_format($torrent->completed) }}</td>
+                                    <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @endif
             <div class="border-t border-slate-800 bg-slate-900/70 px-4 py-3">
                 {{ $torrents->links() }}
             </div>
