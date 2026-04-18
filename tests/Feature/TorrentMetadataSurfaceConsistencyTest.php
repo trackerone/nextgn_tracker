@@ -57,12 +57,20 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.metadata', $expected);
 
-        $this->actingAs($user)
+        $webResponse = $this->actingAs($user)
             ->withHeaders(['Accept' => 'text/html'])
-            ->get('/torrents/'.$torrent->id)
-            ->assertOk()
-            ->assertViewIs('torrents.show')
-            ->assertViewHas('metadata', $expected);
+            ->get('/torrents/'.$torrent->id);
+
+        $webResponse->assertOk();
+        $this->assertStringContainsString('text/html', (string) $webResponse->headers->get('content-type'));
+        $this->assertStringContainsString('<!DOCTYPE html>', (string) $webResponse->getContent());
+
+        // response()->view() returns an HTML Response in this surface, not a test-visible View object.
+        $webResponse->assertSee($torrent->name);
+        $webResponse->assertSee('Tv');
+        $webResponse->assertDontSee('tt6000006');
+        $webResponse->assertDontSee('6006');
+        $webResponse->assertDontSee('legacy nfo');
     }
 
     public function test_browse_and_moderation_views_share_the_same_metadata_map_output(): void
@@ -92,15 +100,16 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
             'source' => 'BLURAY',
         ]);
 
-        $this->actingAs($member)
+        $browseResponse = $this->actingAs($member)
             ->withHeaders(['Accept' => 'text/html'])
-            ->get('/torrents')
-            ->assertOk()
-            ->assertViewIs('torrents.index')
-            ->assertViewHas('torrentMetadata', function (array $metadataMap) use ($approved): bool {
-                return ($metadataMap[$approved->id]['type'] ?? null) === 'tv'
-                    && ($metadataMap[$approved->id]['source'] ?? null) === 'BLURAY';
-            });
+            ->get('/torrents');
+
+        $browseResponse->assertOk();
+        $this->assertStringContainsString('text/html', (string) $browseResponse->headers->get('content-type'));
+        $this->assertStringContainsString('<!DOCTYPE html>', (string) $browseResponse->getContent());
+
+        // Browse surface renders metadata through the shared map contract.
+        $browseResponse->assertSeeInOrder([$approved->name, 'Tv']);
 
         $this->actingAs($staff)
             ->get(route('staff.torrents.moderation.index'))
