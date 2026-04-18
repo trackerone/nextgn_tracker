@@ -18,6 +18,10 @@
 @section('content')
     @php
         $metadataFacts = \App\Support\Torrents\TorrentMetadataPresenter::detailFacts($metadata);
+        $uploadMetadata = session('upload_metadata');
+        $uploadMetadataFacts = is_array($uploadMetadata)
+            ? \App\Support\Torrents\TorrentMetadataPresenter::detailFacts($uploadMetadata)
+            : [];
         $meta = [
             ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
             ['label' => 'Size', 'value' => $torrent->formatted_size],
@@ -35,6 +39,19 @@
         ]);
     @endphp
     <div class="space-y-8">
+        @if ($uploadMetadataFacts !== [])
+            <section class="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-emerald-200">Normalized metadata extracted</h2>
+                <dl class="mt-3 grid gap-4 md:grid-cols-3">
+                    @foreach ($uploadMetadataFacts as $item)
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-emerald-300/80">{{ $item['label'] }}</dt>
+                            <dd class="text-sm font-semibold text-emerald-100">{{ $item['value'] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </section>
+        @endif
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl shadow-slate-950/40">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>

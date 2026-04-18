@@ -76,6 +76,55 @@ class TorrentUploadTest extends TestCase
         Storage::disk('nfo')->assertExists($torrent->nfoStoragePath());
     }
 
+    public function test_successful_upload_displays_normalized_metadata_feedback_on_confirmation_page(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+        $category = Category::factory()->create();
+        $payload = $this->sampleTorrentPayload('Feedback.Release.2024.1080p.WEB-DL.x264-GRP', 3072);
+
+        $response = $this->actingAs($user)
+            ->followingRedirects()
+            ->post(route('torrents.store'), [
+                'name' => 'Feedback Release',
+                'category_id' => $category->id,
+                'type' => 'movie',
+                'torrent_file' => UploadedFile::fake()->createWithContent('feedback.torrent', $payload, 'application/x-bittorrent'),
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('Normalized metadata extracted');
+        $response->assertSee('Movie');
+        $response->assertSee('1080p');
+        $response->assertSee('WEB-DL');
+        $response->assertSee('2024');
+    }
+
+    public function test_successful_upload_feedback_hides_empty_metadata_fields(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Feedback.Partial', 1024);
+
+        $response = $this->actingAs($user)
+            ->followingRedirects()
+            ->post(route('torrents.store'), [
+                'name' => 'Feedback Partial',
+                'type' => 'movie',
+                'torrent_file' => UploadedFile::fake()->createWithContent('feedback-partial.torrent', $payload, 'application/x-bittorrent'),
+            ]);
+
+        $response->assertOk();
+        $response->assertSee('Normalized metadata extracted');
+        $response->assertSee('Movie');
+        $response->assertDontSee('Release group');
+        $response->assertDontSee('Year');
+    }
+
     public function test_upload_prefers_extracted_source_over_request_source(): void
     {
         Storage::fake('torrents');

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\TorrentAlreadyExistsException;
 use App\Http\Requests\Web\TorrentUploadStoreRequest;
+use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
@@ -223,9 +224,14 @@ class TorrentUploadController extends Controller
 
     private function successfulUploadResponse(Torrent $torrent): RedirectResponse
     {
+        $uploadMetadata = TorrentMetadataView::forTorrent(
+            $torrent->loadMissing('metadata')
+        );
+
         return redirect()
             ->route('torrents.show', $torrent->slug)
-            ->with('status', 'Torrent uploaded and awaiting approval.');
+            ->with('status', 'Torrent uploaded and awaiting approval.')
+            ->with('upload_metadata', $uploadMetadata);
     }
 
     private function resolveNfoText(TorrentUploadStoreRequest $request, array $data): ?string
