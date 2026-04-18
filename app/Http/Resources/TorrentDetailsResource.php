@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -42,6 +43,7 @@ final class TorrentDetailsResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'type' => $this->type,
+            'metadata' => TorrentMetadataView::fromTorrent($this->resource)->toArray(),
             'info_hash' => strtolower((string) $this->info_hash),
             'size_bytes' => (int) ($this->size_bytes ?? 0),
             'size_human' => $this->formatted_size,
