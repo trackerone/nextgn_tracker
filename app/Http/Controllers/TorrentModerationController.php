@@ -12,6 +12,7 @@ use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
+use App\Support\Torrents\TorrentModerationMetadataReview;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,11 @@ class TorrentModerationController extends Controller
         return view('staff.torrents.moderation.index', [
             'pendingTorrents' => $pending,
             'recentTorrents' => $recent,
-            'torrentMetadata' => TorrentMetadataView::mapByTorrentId($pending->getCollection()),
+            'torrentMetadata' => $metadata = TorrentMetadataView::mapByTorrentId($pending->getCollection()),
+            'moderationMetadataReview' => TorrentModerationMetadataReview::mapByTorrentId(
+                $pending->getCollection(),
+                $metadata
+            ),
         ]);
     }
 

@@ -51,12 +51,42 @@ final class TorrentModerationApiResourceTest extends TestCase
         $response->assertJsonPath('data.0.name', $torrent->name);
         $response->assertJsonPath('data.0.status', TorrentStatus::Pending->value);
         $response->assertJsonPath('data.0.type', 'tv');
+        $response->assertJsonPath('data.0.metadata_review.needs_review', true);
+        $response->assertJsonPath('data.0.metadata_review.issues.0', 'missing_resolution');
         $response->assertJsonPath('data.0.uploader', 'Uploader One');
         $this->assertIsString($response->json('data.0.status'));
 
         $response->assertJsonMissingPath('data.0.user_id');
         $response->assertJsonMissingPath('data.0.info_hash');
         $response->assertJsonMissingPath('data.0.storage_path');
+    }
+
+    public function test_moderation_index_metadata_review_is_false_for_complete_movie_metadata(): void
+    {
+        $staff = $this->createStaffUser();
+        $uploader = User::factory()->create();
+
+        $torrent = Torrent::factory()->create([
+            'user_id' => $uploader->id,
+            'status' => Torrent::STATUS_PENDING,
+            'is_approved' => false,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'year' => 2025,
+        ]);
+
+        $response = $this->actingAs($staff)
+            ->getJson(route('api.moderation.uploads.index', ['status' => Torrent::STATUS_PENDING]));
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.id', $torrent->id);
+        $response->assertJsonPath('data.0.metadata_review.needs_review', false);
+        $response->assertJsonPath('data.0.metadata_review.issues', []);
     }
 
     public function test_moderation_state_actions_return_string_status_only(): void
