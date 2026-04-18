@@ -24,10 +24,10 @@ class TorrentFollowFactory extends Factory
             'user_id' => User::factory(),
             'title' => $title,
             'normalized_title' => Str::of($title)->lower()->replaceMatches('/[^a-z0-9]+/i', ' ')->squish()->value(),
-            'type' => $this->faker->optional()->randomElement(['movie', 'tv']),
-            'resolution' => $this->faker->optional()->randomElement(['2160p', '1080p', '720p']),
-            'source' => $this->faker->optional()->randomElement(['WEB-DL', 'BLURAY', 'HDTV']),
-            'year' => $this->faker->optional()->numberBetween(1980, 2030),
+            'type' => null,
+            'resolution' => null,
+            'source' => null,
+            'year' => null,
         ];
     }
 }
