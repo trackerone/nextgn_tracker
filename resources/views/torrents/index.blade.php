@@ -2,6 +2,8 @@
     // Test-/view-sikkerhed: sørg for at disse altid findes, uanset controller-flow.
     $filters = $filters ?? [];
     $types = $types ?? [];
+    $resolutions = $resolutions ?? [];
+    $sources = $sources ?? [];
     $categories = $categories ?? collect();
     $torrentMetadata = $torrentMetadata ?? [];
 @endphp
@@ -17,7 +19,7 @@
 @section('content')
     <div class="space-y-8">
         <div class="rounded-2xl bg-slate-900/70 p-6 shadow-xl shadow-slate-900/30">
-            <form method="GET" action="{{ route('torrents.index') }}" class="grid gap-4 md:grid-cols-4">
+            <form method="GET" action="{{ route('torrents.index') }}" class="grid gap-4 md:grid-cols-5">
                 <label class="text-sm font-semibold text-slate-300">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
                     <input
@@ -34,6 +36,24 @@
                         <option value="">All types</option>
                         @foreach ($types as $type)
                             <option value="{{ $type }}" @selected(($filters['type'] ?? '') === $type)>{{ ucfirst($type) }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="text-sm font-semibold text-slate-300">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Resolution</span>
+                    <select name="resolution" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                        <option value="">All resolutions</option>
+                        @foreach ($resolutions as $resolution)
+                            <option value="{{ $resolution }}" @selected(($filters['resolution'] ?? '') === $resolution)>{{ $resolution }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label class="text-sm font-semibold text-slate-300">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Source</span>
+                    <select name="source" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                        <option value="">All sources</option>
+                        @foreach ($sources as $source)
+                            <option value="{{ $source }}" @selected(($filters['source'] ?? '') === $source)>{{ $source }}</option>
                         @endforeach
                     </select>
                 </label>
@@ -69,7 +89,7 @@
                         </select>
                     </label>
                 </div>
-                <div class="md:col-span-4 flex flex-wrap gap-3 pt-2">
+                <div class="md:col-span-5 flex flex-wrap gap-3 pt-2">
                     <button type="submit" class="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
                     <a href="{{ route('torrents.index') }}" class="rounded-xl border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
                 </div>

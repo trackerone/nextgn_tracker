@@ -18,7 +18,21 @@ final class TorrentBrowseQuery
         }
 
         if ($filters->type !== '') {
-            $query->where('type', $filters->type);
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
+                $metadataQuery->where('type', $filters->type);
+            });
+        }
+
+        if ($filters->resolution !== '') {
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
+                $metadataQuery->where('resolution', $filters->resolution);
+            });
+        }
+
+        if ($filters->source !== '') {
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
+                $metadataQuery->where('source', $filters->source);
+            });
         }
 
         if ($filters->categoryId !== null) {
