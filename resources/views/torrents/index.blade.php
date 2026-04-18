@@ -3,6 +3,7 @@
     $filters = $filters ?? [];
     $types = $types ?? [];
     $categories = $categories ?? collect();
+    $torrentMetadata = $torrentMetadata ?? [];
 @endphp
 
 @extends('layouts.app')
@@ -91,6 +92,9 @@
                     </thead>
                     <tbody class="divide-y divide-slate-800 text-slate-100">
                         @forelse ($torrents as $torrent)
+                            @php
+                                $metadata = $torrentMetadata[$torrent->id] ?? null;
+                            @endphp
                             <tr class="hover:bg-slate-800/50">
                                 <td class="px-4 py-3">
                                     <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">
@@ -104,7 +108,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-slate-300">{{ ucfirst($torrent->type) }}</td>
+                                <td class="px-4 py-3 text-slate-300">{{ ucfirst((string) ($metadata['type'] ?? '')) }}</td>
                                 <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
                                 <td class="px-4 py-3 text-right text-emerald-400">{{ number_format($torrent->seeders) }}</td>
                                 <td class="px-4 py-3 text-right text-amber-400">{{ number_format($torrent->leechers) }}</td>

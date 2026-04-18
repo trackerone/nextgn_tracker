@@ -1,6 +1,7 @@
 @php
     // Test-/view-sikkerhed: disse kan mangle i visse flows.
     $torrent = $torrent ?? null;
+    $metadata = $metadata ?? [];
     $descriptionHtml = $descriptionHtml ?? '';
     $nfoText = $nfoText ?? '';
     $nfoHtml = $nfoHtml ?? '';
@@ -17,11 +18,11 @@
 @section('content')
     @php
         $meta = [
-            ['label' => 'Type', 'value' => ucfirst($torrent->type)],
+            ['label' => 'Type', 'value' => ucfirst((string) ($metadata['type'] ?? ''))],
             ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
             ['label' => 'Size', 'value' => $torrent->formatted_size],
             ['label' => 'Files', 'value' => number_format($torrent->file_count)],
-            ['label' => 'Resolution', 'value' => $torrent->resolution ?? 'Unknown'],
+            ['label' => 'Resolution', 'value' => $metadata['resolution'] ?? 'Unknown'],
             ['label' => 'Codecs', 'value' => collect($torrent->codecs ?? [])->filter()->implode(' / ') ?: 'n/a'],
         ];
         $stats = [
@@ -30,8 +31,8 @@
             ['label' => 'Completed', 'value' => number_format($torrent->completed), 'class' => 'text-slate-100'],
         ];
         $links = array_filter([
-            $torrent->imdb_id ? ['label' => 'IMDb: '.$torrent->imdb_id, 'url' => 'https://www.imdb.com/title/'.$torrent->imdb_id.'/'] : null,
-            $torrent->tmdb_id ? ['label' => 'TMDB: '.$torrent->tmdb_id, 'url' => 'https://www.themoviedb.org/movie/'.$torrent->tmdb_id] : null,
+            ! empty($metadata['imdb_id']) ? ['label' => 'IMDb: '.$metadata['imdb_id'], 'url' => 'https://www.imdb.com/title/'.$metadata['imdb_id'].'/'] : null,
+            ! empty($metadata['tmdb_id']) ? ['label' => 'TMDB: '.$metadata['tmdb_id'], 'url' => 'https://www.themoviedb.org/movie/'.$metadata['tmdb_id']] : null,
         ]);
     @endphp
     <div class="space-y-8">
