@@ -7,7 +7,6 @@ namespace App\Http\Resources\Support;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 
 final class TorrentMetadataView
 {
@@ -28,9 +27,9 @@ final class TorrentMetadataView
 
     /**
      * @param  iterable<int, Model>  $torrents
-     * @return Collection<int, array<string, int|string|null>>
+     * @return array<int, array<string, int|string|null>>
      */
-    public static function mapByTorrentId(iterable $torrents): Collection
+    public static function mapByTorrentId(iterable $torrents): array
     {
         /** @var array<int, array<string, int|string|null>> $mapped */
         $mapped = [];
@@ -43,10 +42,7 @@ final class TorrentMetadataView
             $mapped[(int) $torrent->id] = self::forTorrent($torrent);
         }
 
-        /** @var Collection<int, array<string, int|string|null>> $collection */
-        $collection = collect($mapped);
-
-        return $collection;
+        return $mapped;
     }
 
     /**
