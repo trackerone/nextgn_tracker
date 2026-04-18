@@ -109,6 +109,7 @@ final class TorrentFollowMatcher
             return false;
         }
 
-        return Str::contains($candidateTitle, $followTitle);
+        return Str::contains($candidateTitle, $followTitle)
+            || Str::contains($followTitle, $candidateTitle);
     }
 }
