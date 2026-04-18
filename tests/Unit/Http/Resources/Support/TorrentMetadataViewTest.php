@@ -72,4 +72,69 @@ final class TorrentMetadataViewTest extends TestCase
         $this->assertSame('tv', $mapped[$second->id]['type']);
         $this->assertSame('HDTV', $mapped[$second->id]['source']);
     }
+
+    public function test_for_torrent_preserves_null_and_empty_values_from_persisted_metadata(): void
+    {
+        $torrent = Torrent::factory()->create([
+            'type' => 'movie',
+            'source' => 'WEB',
+            'resolution' => '1080p',
+            'imdb_id' => 'tt5000005',
+            'tmdb_id' => 5005,
+            'nfo_text' => 'legacy nfo should not leak',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => null,
+            'year' => null,
+            'type' => 'movie',
+            'source' => null,
+            'resolution' => '',
+            'release_group' => '',
+            'imdb_id' => null,
+            'tmdb_id' => null,
+            'nfo' => null,
+        ]);
+
+        $torrent->load('metadata');
+
+        $metadata = TorrentMetadataView::forTorrent($torrent);
+
+        $this->assertNull($metadata['title']);
+        $this->assertNull($metadata['year']);
+        $this->assertSame('movie', $metadata['type']);
+        $this->assertNull($metadata['source']);
+        $this->assertSame('', $metadata['resolution']);
+        $this->assertSame('', $metadata['release_group']);
+        $this->assertNull($metadata['imdb_id']);
+        $this->assertNull($metadata['tmdb_id']);
+        $this->assertNull($metadata['nfo']);
+    }
+
+    public function test_for_torrent_falls_back_when_metadata_relation_is_loaded_as_null(): void
+    {
+        $torrent = Torrent::factory()->make([
+            'id' => 4242,
+            'type' => 'tv',
+            'source' => 'HDTV',
+            'resolution' => '720p',
+            'imdb_id' => 'tt4242424',
+            'tmdb_id' => 4242,
+            'nfo_text' => 'legacy nfo fallback',
+        ]);
+        $torrent->setRelation('metadata', null);
+
+        $metadata = TorrentMetadataView::forTorrent($torrent);
+
+        $this->assertNull($metadata['title']);
+        $this->assertNull($metadata['year']);
+        $this->assertSame('tv', $metadata['type']);
+        $this->assertSame('HDTV', $metadata['source']);
+        $this->assertSame('720p', $metadata['resolution']);
+        $this->assertNull($metadata['release_group']);
+        $this->assertSame('tt4242424', $metadata['imdb_id']);
+        $this->assertSame(4242, $metadata['tmdb_id']);
+        $this->assertSame('legacy nfo fallback', $metadata['nfo']);
+    }
 }
