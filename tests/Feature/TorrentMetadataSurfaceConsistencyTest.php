@@ -58,8 +58,10 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
             ->assertJsonPath('data.metadata', $expected);
 
         $this->actingAs($user)
+            ->withHeaders(['Accept' => 'text/html'])
             ->get('/torrents/'.$torrent->id)
             ->assertOk()
+            ->assertViewIs('torrents.show')
             ->assertViewHas('metadata', $expected);
     }
 
@@ -91,8 +93,10 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         ]);
 
         $this->actingAs($member)
+            ->withHeaders(['Accept' => 'text/html'])
             ->get('/torrents')
             ->assertOk()
+            ->assertViewIs('torrents.index')
             ->assertViewHas('torrentMetadata', function (array $metadataMap) use ($approved): bool {
                 return ($metadataMap[$approved->id]['type'] ?? null) === 'tv'
                     && ($metadataMap[$approved->id]['source'] ?? null) === 'BLURAY';
