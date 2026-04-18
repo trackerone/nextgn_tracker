@@ -28,8 +28,7 @@ final class TorrentController extends Controller
         BrowseTorrentsRequest $request,
         TorrentBrowseQuery $browseQuery,
         TorrentBrowseMetadataFilterOptions $metadataFilterOptions
-    ): Response|JsonResponse
-    {
+    ): Response|JsonResponse {
         $filters = $request->filters();
         $query = $browseQuery->apply(
             Torrent::query()->visible()->with('metadata'),
