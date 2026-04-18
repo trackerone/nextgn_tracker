@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Torrent;
 use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
+use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,7 @@ final class TorrentController extends Controller
         /** @var Collection<int, Torrent> $torrentCollection */
         $torrentCollection = $torrents->getCollection();
         $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrentCollection);
+        $torrentMetadataQuality = TorrentMetadataQuality::mapByTorrentId($torrentCollection, $torrentMetadata);
         $releaseFamilies = $groupedBrowse
             ? $releaseFamilyGrouper->group($torrentCollection, $torrentMetadata)
             : [];
@@ -64,6 +66,7 @@ final class TorrentController extends Controller
         return response()->view('torrents.index', [
             'torrents' => $torrents,
             'torrentMetadata' => $torrentMetadata,
+            'torrentMetadataQuality' => $torrentMetadataQuality,
             'types' => $metadataFilterValues['types'],
             'resolutions' => $metadataFilterValues['resolutions'],
             'sources' => $metadataFilterValues['sources'],

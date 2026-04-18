@@ -6,6 +6,7 @@
     $sources = $sources ?? [];
     $categories = $categories ?? collect();
     $torrentMetadata = $torrentMetadata ?? [];
+    $torrentMetadataQuality = $torrentMetadataQuality ?? [];
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
 @endphp
@@ -114,6 +115,8 @@
                             $primary = $family['primary'];
                             $primaryMetadata = $torrentMetadata[$primary->id] ?? [];
                             $primaryBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($primaryMetadata);
+                            $primaryQuality = $torrentMetadataQuality[$primary->id] ?? [];
+                            $primaryQualityBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($primaryQuality, true);
                         @endphp
                         <section class="p-4">
                             <div class="mb-3 flex items-center justify-between gap-3">
@@ -134,6 +137,13 @@
                                     {{ $primary->formatted_size }} •
                                     {{ optional($primary->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}
                                 </div>
+                                @if ($primaryQualityBadges !== [])
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @foreach ($primaryQualityBadges as $badge)
+                                            <span class="rounded-full border border-emerald-700/60 bg-emerald-950/40 px-2 py-0.5 text-xs uppercase tracking-wide text-emerald-200">{{ $badge }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                                 @if ($primaryBadges !== [])
                                     <div class="mt-2 flex flex-wrap gap-1.5">
                                         @foreach ($primaryBadges as $badge)
@@ -146,9 +156,20 @@
                             @if ($family['alternatives']->isNotEmpty())
                                 <div class="mt-3 space-y-2">
                                     @foreach ($family['alternatives'] as $alternative)
-                                        <div class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm">
-                                            <a href="{{ route('torrents.show', $alternative) }}" class="text-slate-200 hover:text-brand">{{ $alternative->name }}</a>
-                                            <span class="text-xs text-slate-400">{{ $alternative->formatted_size }}</span>
+                                        @php
+                                            $alternativeQuality = $torrentMetadataQuality[$alternative->id] ?? [];
+                                            $alternativeBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($alternativeQuality, false);
+                                        @endphp
+                                        <div class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <a href="{{ route('torrents.show', $alternative) }}" class="text-slate-200 hover:text-brand">{{ $alternative->name }}</a>
+                                                <span class="text-xs text-slate-400">{{ $alternative->formatted_size }}</span>
+                                            </div>
+                                            <div class="mt-1 flex flex-wrap gap-1.5">
+                                                @foreach ($alternativeBadges as $badge)
+                                                    <span class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                                @endforeach
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>

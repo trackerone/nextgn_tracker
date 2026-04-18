@@ -60,7 +60,7 @@ final class TorrentBrowseTest extends TestCase
             'type' => 'movie',
             'year' => 2024,
             'resolution' => '1080p',
-            'source' => 'WEB-DL',
+            'source' => null,
         ]);
 
         $response = $this->actingAs($user)->get('/torrents');
@@ -69,7 +69,42 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Dune Part Two');
         $response->assertSee('(2024)', false);
         $response->assertSee('Best version');
+        $response->assertSee('Recommended');
+        $response->assertSee('High quality');
+        $response->assertSee('Medium quality');
         $response->assertSeeTextInOrder([$best->name, $alternative->name]);
+    }
+
+    public function test_grouped_browse_shows_incomplete_metadata_warning_for_missing_critical_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $best = Torrent::factory()->create(['name' => 'Project 1080p WEB-DL']);
+        $incomplete = Torrent::factory()->create(['name' => 'Project Unknown Source']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $best->id,
+            'title' => 'Project',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $incomplete->id,
+            'title' => 'Project',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '1080p',
+            'source' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Incomplete metadata');
+        $response->assertSeeTextInOrder([$best->name, $incomplete->name]);
     }
 
     public function test_flat_view_can_be_enabled_with_grouped_flag(): void
