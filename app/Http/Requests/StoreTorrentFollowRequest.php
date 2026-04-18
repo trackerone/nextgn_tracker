@@ -38,4 +38,3 @@ final class StoreTorrentFollowRequest extends FormRequest
         ];
     }
 }
-
