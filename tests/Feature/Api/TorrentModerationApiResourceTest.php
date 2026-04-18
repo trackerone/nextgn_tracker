@@ -7,6 +7,7 @@ namespace Tests\Feature\Api;
 use App\Enums\TorrentStatus;
 use App\Models\Role;
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Support\Roles\RoleLevel;
 use Database\Seeders\RoleSeeder;
@@ -33,6 +34,12 @@ final class TorrentModerationApiResourceTest extends TestCase
             'user_id' => $uploader->id,
             'status' => Torrent::STATUS_PENDING,
             'is_approved' => false,
+            'type' => 'movie',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'type' => 'tv',
         ]);
 
         $response = $this->actingAs($staff)
@@ -43,6 +50,7 @@ final class TorrentModerationApiResourceTest extends TestCase
         $response->assertJsonPath('data.0.slug', $torrent->slug);
         $response->assertJsonPath('data.0.name', $torrent->name);
         $response->assertJsonPath('data.0.status', TorrentStatus::Pending->value);
+        $response->assertJsonPath('data.0.type', 'tv');
         $response->assertJsonPath('data.0.uploader', 'Uploader One');
         $this->assertIsString($response->json('data.0.status'));
 

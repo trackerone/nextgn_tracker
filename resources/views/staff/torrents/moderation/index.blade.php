@@ -26,12 +26,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800 text-slate-100">
                     @forelse ($pendingTorrents as $torrent)
+                        @php($metadata = $torrentMetadata[$torrent->id] ?? [])
                         <tr>
                             <td class="px-4 py-3">
                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
                             </td>
                             <td class="px-4 py-3">{{ $torrent->uploader?->name ?? 'Unknown' }}</td>
-                            <td class="px-4 py-3">{{ ucfirst($torrent->type) }}</td>
+                            <td class="px-4 py-3">{{ ucfirst((string) ($metadata['type'] ?? '')) }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
                             <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
                             <td class="px-4 py-3">

@@ -8,6 +8,7 @@ use App\Actions\Torrents\PublishTorrentAction;
 use App\Actions\Torrents\RejectTorrentAction;
 use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Http\Requests\ModerateTorrentRequest;
+use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
@@ -29,7 +30,7 @@ class TorrentModerationController extends Controller
         $this->authorize('viewModerationListings', Torrent::class);
 
         $pending = Torrent::query()
-            ->with(['uploader'])
+            ->with(['uploader', 'metadata'])
             ->pending()
             ->orderByDesc('uploaded_at')
             ->paginate(25);
@@ -44,6 +45,7 @@ class TorrentModerationController extends Controller
         return view('staff.torrents.moderation.index', [
             'pendingTorrents' => $pending,
             'recentTorrents' => $recent,
+            'torrentMetadata' => TorrentMetadataView::mapByTorrentId($pending->getCollection()),
         ]);
     }
 

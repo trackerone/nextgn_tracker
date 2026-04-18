@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\Role;
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Support\Roles\RoleLevel;
 use Database\Seeders\RoleSeeder;
@@ -124,12 +125,19 @@ final class TorrentModerationFlowTest extends TestCase
 
         $torrent = Torrent::factory()->create([
             'status' => Torrent::STATUS_PENDING,
+            'type' => 'movie',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'type' => 'tv',
         ]);
 
         $this->actingAs($staff)
             ->get(route('staff.torrents.moderation.index'))
             ->assertOk()
-            ->assertSee($torrent->name);
+            ->assertSee($torrent->name)
+            ->assertSee('Tv');
 
         $this->actingAs($staff)
             ->post(route('staff.torrents.approve', $torrent))
