@@ -9,6 +9,8 @@ final class TorrentBrowseFilters
     public function __construct(
         public readonly string $q,
         public readonly string $type,
+        public readonly string $resolution,
+        public readonly string $source,
         public readonly ?int $categoryId,
         public readonly string $order,
         public readonly string $direction,
@@ -21,6 +23,8 @@ final class TorrentBrowseFilters
     {
         $q = trim((string) ($input['q'] ?? ''));
         $type = trim((string) ($input['type'] ?? ''));
+        $resolution = trim((string) ($input['resolution'] ?? ''));
+        $source = trim((string) ($input['source'] ?? ''));
 
         $sort = trim((string) ($input['sort'] ?? ''));
         $order = trim((string) ($input['order'] ?? $sort));
@@ -41,7 +45,7 @@ final class TorrentBrowseFilters
             $direction = 'desc';
         }
 
-        return new self($q, $type, $categoryId, $order, $direction);
+        return new self($q, $type, $resolution, $source, $categoryId, $order, $direction);
     }
 
     /**
@@ -52,6 +56,8 @@ final class TorrentBrowseFilters
         return [
             'q' => $this->q,
             'type' => $this->type,
+            'resolution' => $this->resolution,
+            'source' => $this->source,
             'category_id' => $this->categoryId,
             'order' => $this->order,
             'direction' => $this->direction,
@@ -71,6 +77,14 @@ final class TorrentBrowseFilters
 
         if ($this->type !== '') {
             $params['type'] = $this->type;
+        }
+
+        if ($this->resolution !== '') {
+            $params['resolution'] = $this->resolution;
+        }
+
+        if ($this->source !== '') {
+            $params['source'] = $this->source;
         }
 
         if ($this->categoryId !== null) {

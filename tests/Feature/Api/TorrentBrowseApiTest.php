@@ -6,6 +6,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -148,5 +149,32 @@ final class TorrentBrowseApiTest extends TestCase
         $response->assertJsonCount(2, 'data');
         $response->assertJsonPath('data.0.id', $older->id);
         $response->assertJsonPath('data.1.id', $newer->id);
+    }
+
+    public function test_metadata_filters_are_applied_in_api_browse(): void
+    {
+        $user = User::factory()->create();
+        $match = Torrent::factory()->create();
+        $nonMatch = Torrent::factory()->create();
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $nonMatch->id,
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson('/api/torrents?type=movie&resolution=2160p&source=BLURAY');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.id', $match->id);
     }
 }

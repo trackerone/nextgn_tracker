@@ -38,6 +38,8 @@ final class BrowseTorrentsRequest extends FormRequest
         $this->merge([
             'q' => is_string($this->input('q')) ? trim($this->string('q')->value()) : $this->input('q'),
             'type' => is_string($this->input('type')) ? trim($this->string('type')->value()) : $this->input('type'),
+            'resolution' => is_string($this->input('resolution')) ? trim($this->string('resolution')->value()) : $this->input('resolution'),
+            'source' => is_string($this->input('source')) ? trim($this->string('source')->value()) : $this->input('source'),
             'direction' => is_string($this->input('direction'))
                 ? strtolower(trim($this->string('direction')->value()))
                 : $this->input('direction'),
@@ -57,6 +59,8 @@ final class BrowseTorrentsRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(self::TYPES)],
+            'resolution' => ['nullable', 'string', 'max:32'],
+            'source' => ['nullable', 'string', 'max:32'],
             'category' => ['nullable', 'integer', 'exists:categories,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'sort' => ['nullable', Rule::in(self::ORDER_OPTIONS)],

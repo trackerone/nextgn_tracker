@@ -9,6 +9,7 @@ use App\Http\Requests\BrowseTorrentsRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,10 +24,14 @@ final class TorrentController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(BrowseTorrentsRequest $request): Response|JsonResponse
+    public function index(
+        BrowseTorrentsRequest $request,
+        TorrentBrowseQuery $browseQuery,
+        TorrentBrowseMetadataFilterOptions $metadataFilterOptions
+    ): Response|JsonResponse
     {
         $filters = $request->filters();
-        $query = (new TorrentBrowseQuery)->apply(
+        $query = $browseQuery->apply(
             Torrent::query()->visible()->with('metadata'),
             $filters
         );
@@ -39,13 +44,7 @@ final class TorrentController extends Controller
         $torrents = $query->paginate($perPage)->appends($filters->queryParams());
         $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrents->getCollection());
 
-        $types = Torrent::query()
-            ->select('type')
-            ->whereNotNull('type')
-            ->distinct()
-            ->orderBy('type')
-            ->pluck('type')
-            ->all();
+        $metadataFilterValues = $metadataFilterOptions->forVisibleBrowse();
 
         $categories = Category::query()
             ->orderBy('name')
@@ -54,7 +53,9 @@ final class TorrentController extends Controller
         return response()->view('torrents.index', [
             'torrents' => $torrents,
             'torrentMetadata' => $torrentMetadata,
-            'types' => $types,
+            'types' => $metadataFilterValues['types'],
+            'resolutions' => $metadataFilterValues['resolutions'],
+            'sources' => $metadataFilterValues['sources'],
             'categories' => $categories,
 
             // View-friendly (og test-neutralt)
