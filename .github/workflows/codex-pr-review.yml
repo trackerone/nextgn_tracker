@@ -1,19 +1,15 @@
-name: Codex PR Review Intake
+name: Codex PR Review
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [opened, synchronize, reopened]
   issue_comment:
     types: [created]
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'Pull request number to prepare for Codex review'
+      pull_number:
+        description: "Pull request number to process"
         required: true
-        type: number
-      review_focus:
-        description: 'Optional review focus'
-        required: false
         type: string
 
 permissions:
@@ -21,77 +17,192 @@ permissions:
   pull-requests: write
   issues: write
 
+concurrency:
+  group: codex-pr-review-${{ github.event.pull_request.number || github.event.issue.number || inputs.pull_number || github.run_id }}
+  cancel-in-progress: false
+
 jobs:
-  prepare-review:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'pull_request' ||
-      (
-        github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request != null &&
-        contains(github.event.comment.body, '/codex review') &&
-        contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association)
-      )
+  intake:
+    name: Codex PR review intake
     runs-on: ubuntu-latest
 
     steps:
-      - name: Resolve pull request metadata
+      - name: Decide whether workflow should run
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const eventName = context.eventName;
+            const payload = context.payload;
+
+            let shouldRun = false;
+            let pullNumber = null;
+            let triggerSource = '';
+            let commandText = '';
+
+            if (eventName === 'pull_request') {
+              shouldRun = true;
+              pullNumber = payload.pull_request?.number ?? null;
+              triggerSource = 'pull_request';
+              commandText = '/codex review';
+            }
+
+            if (eventName === 'issue_comment') {
+              const commentBody = payload.comment?.body || '';
+              const normalized = commentBody.trim();
+              const isPullRequestComment = !!payload.issue?.pull_request;
+
+              if (isPullRequestComment && normalized.startsWith('/codex review')) {
+                shouldRun = true;
+                pullNumber = payload.issue.number;
+                triggerSource = 'issue_comment';
+                commandText = normalized;
+              }
+            }
+
+            if (eventName === 'workflow_dispatch') {
+              const rawPullNumber = (payload.inputs?.pull_number || '').trim();
+              if (rawPullNumber) {
+                shouldRun = true;
+                pullNumber = Number(rawPullNumber);
+                triggerSource = 'workflow_dispatch';
+                commandText = '/codex review';
+              }
+            }
+
+            core.setOutput('should_run', shouldRun ? 'true' : 'false');
+            core.setOutput('pull_number', pullNumber ? String(pullNumber) : '');
+            core.setOutput('trigger_source', triggerSource);
+            core.setOutput('command_text', commandText);
+
+            core.info(`should_run=${shouldRun}`);
+            core.info(`pull_number=${pullNumber ?? ''}`);
+            core.info(`trigger_source=${triggerSource}`);
+
+      - name: Stop early when trigger does not match
+        if: steps.gate.outputs.should_run != 'true'
+        run: echo "No matching PR review trigger found. Exiting."
+
+      - name: Read pull request details
+        if: steps.gate.outputs.should_run == 'true'
         id: pr
         uses: actions/github-script@v7
+        env:
+          PULL_NUMBER: ${{ steps.gate.outputs.pull_number }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const prNumber = context.eventName === 'workflow_dispatch'
-              ? Number(core.getInput('pr_number'))
-              : context.eventName === 'pull_request'
-                ? context.payload.pull_request.number
-                : context.payload.issue.number;
+            const pullNumber = Number(process.env.PULL_NUMBER);
 
-            const pr = await github.rest.pulls.get({
+            const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: prNumber,
+              pull_number: pullNumber,
             });
 
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-              per_page: 100,
-            });
+            const changedFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pullNumber,
+                per_page: 100,
+              }
+            );
 
-            const changed = files.map((f) => `- ${f.filename}`).slice(0, 40);
-            const reviewFocus = context.eventName === 'workflow_dispatch'
-              ? (core.getInput('review_focus') || '').trim()
-              : 'Scope, safety, and quality-gate integrity';
+            const changedFileNames = changedFiles.map(file => file.filename);
+            const changedFileSummary = changedFileNames.length
+              ? changedFileNames.slice(0, 50).join('\n')
+              : '(none)';
 
-            core.setOutput('pr_number', String(prNumber));
-            core.setOutput('pr_title', pr.data.title);
-            core.setOutput('pr_url', pr.data.html_url);
-            core.setOutput('review_focus', reviewFocus || 'Not provided');
-            core.setOutput('changed_files', changed.join('\n') || '- No files reported');
+            core.setOutput('title', pr.title || '');
+            core.setOutput('author', pr.user?.login || '');
+            core.setOutput('base_ref', pr.base?.ref || '');
+            core.setOutput('head_ref', pr.head?.ref || '');
+            core.setOutput('body_b64', Buffer.from(pr.body || '', 'utf8').toString('base64'));
+            core.setOutput('changed_files_count', String(changedFileNames.length));
+            core.setOutput('changed_files_b64', Buffer.from(changedFileSummary, 'utf8').toString('base64'));
 
-      - name: Publish review intake comment
+      - name: Post structured PR review intake comment
+        if: steps.gate.outputs.should_run == 'true'
         uses: actions/github-script@v7
+        env:
+          PULL_NUMBER: ${{ steps.gate.outputs.pull_number }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          PR_AUTHOR: ${{ steps.pr.outputs.author }}
+          BASE_REF: ${{ steps.pr.outputs.base_ref }}
+          HEAD_REF: ${{ steps.pr.outputs.head_ref }}
+          PR_BODY_B64: ${{ steps.pr.outputs.body_b64 }}
+          CHANGED_FILES_COUNT: ${{ steps.pr.outputs.changed_files_count }}
+          CHANGED_FILES_B64: ${{ steps.pr.outputs.changed_files_b64 }}
+          TRIGGER_SOURCE: ${{ steps.gate.outputs.trigger_source }}
+          COMMAND_TEXT: ${{ steps.gate.outputs.command_text }}
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issueNumber = Number('${{ steps.pr.outputs.pr_number }}');
-            const body = [
-              '## 🤖 Codex PR review intake prepared',
+            const pullNumber = Number(process.env.PULL_NUMBER);
+            const prTitle = process.env.PR_TITLE || '';
+            const prAuthor = process.env.PR_AUTHOR || '';
+            const baseRef = process.env.BASE_REF || '';
+            const headRef = process.env.HEAD_REF || '';
+            const triggerSource = process.env.TRIGGER_SOURCE || '';
+            const commandText = process.env.COMMAND_TEXT || '';
+            const changedFilesCount = process.env.CHANGED_FILES_COUNT || '0';
+
+            const prBody = Buffer.from(process.env.PR_BODY_B64 || '', 'base64').toString('utf8');
+            const changedFiles = Buffer.from(process.env.CHANGED_FILES_B64 || '', 'base64').toString('utf8');
+
+            const trimmedBody = prBody.trim();
+            const excerpt = trimmedBody.length > 1200
+              ? `${trimmedBody.slice(0, 1200)}\n\n...[truncated]`
+              : trimmedBody;
+
+            const lines = [
+              '## Codex PR review intake',
               '',
-              `- PR: #${issueNumber}`,
-              `- Title: ${{ steps.pr.outputs.pr_title }}`,
-              `- Focus: ${{ steps.pr.outputs.review_focus }}`,
+              `- Trigger: \`${triggerSource}\``,
+              `- Actor: @${context.actor}`,
+              `- PR: #${pullNumber}`,
+              `- Command: \`${commandText || '/codex review'}\``,
+              '',
+              '### Snapshot',
+              `- Title: ${prTitle || '(empty)'}`,
+              `- Author: @${prAuthor || 'unknown'}`,
+              `- Base: \`${baseRef || 'unknown'}\``,
+              `- Head: \`${headRef || 'unknown'}\``,
+              `- Changed files: ${changedFilesCount}`,
+              '',
+              '### PR excerpt',
+              excerpt ? excerpt : '_No PR body provided._',
               '',
               '### Changed files snapshot',
-              '${{ steps.pr.outputs.changed_files }}',
+              changedFiles ? `\`\`\`\n${changedFiles}\n\`\`\`` : '_No changed files found._',
               '',
-              'Use `.codex/templates/pr-review.md` for a structured Codex review pass.',
-              'This workflow assists review and does **not** override required approvals or CI.',
-            ].join('\n');
+              '### Review focus',
+              '- Correctness',
+              '- Regression risk',
+              '- Missing tests',
+              '- Security concerns',
+              '- Architecture drift',
+              '- Violations of repo conventions',
+              '',
+              '### Guardrails',
+              '- No auto-merge',
+              '- No bypass of CI/review',
+              '- Review comments should stay scoped and actionable',
+            ];
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: issueNumber,
-              body,
+              issue_number: pullNumber,
+              body: lines.join('\n'),
             });
+
+      - name: Summary
+        if: steps.gate.outputs.should_run == 'true'
+        run: |
+          echo "Codex PR review intake comment posted for PR #${{ steps.gate.outputs.pull_number }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: ${{ steps.gate.outputs.trigger_source }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Actor: ${{ github.actor }}" >> "$GITHUB_STEP_SUMMARY"
