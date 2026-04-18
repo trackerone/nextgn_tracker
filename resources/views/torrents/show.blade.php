@@ -63,6 +63,10 @@
                     <div class="flex flex-wrap gap-3">
                         <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
                         <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
+                        <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400">Follow with metadata</button>
+                        </form>
                     </div>
                 @endcan
             </div>
