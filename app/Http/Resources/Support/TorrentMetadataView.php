@@ -6,6 +6,7 @@ namespace App\Http\Resources\Support;
 
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
+use Illuminate\Database\Eloquent\Model;
 
 final class TorrentMetadataView
 {
@@ -21,25 +22,26 @@ final class TorrentMetadataView
      */
     public function toArray(): array
     {
+        $metadata = $this->metadata();
+
         return [
-            'title' => $this->metadata()?->title,
-            'year' => $this->metadata()?->year,
-            'type' => $this->metadata()?->type ?? $this->torrent->type,
-            'resolution' => $this->metadata()?->resolution ?? $this->torrent->resolution,
-            'source' => $this->metadata()?->source ?? $this->torrent->source,
-            'release_group' => $this->metadata()?->release_group,
-            'imdb_id' => $this->metadata()?->imdb_id ?? $this->torrent->imdb_id,
-            'tmdb_id' => $this->metadata()?->tmdb_id ?? $this->torrent->tmdb_id,
-            'nfo' => $this->metadata()?->nfo ?? $this->torrent->nfo_text,
+            'title' => $metadata?->title,
+            'year' => $metadata?->year,
+            'type' => $metadata !== null ? $metadata->type : $this->torrent->type,
+            'resolution' => $metadata !== null ? $metadata->resolution : $this->torrent->resolution,
+            'source' => $metadata !== null ? $metadata->source : $this->torrent->source,
+            'release_group' => $metadata?->release_group,
+            'imdb_id' => $metadata !== null ? $metadata->imdb_id : $this->torrent->imdb_id,
+            'tmdb_id' => $metadata !== null ? $metadata->tmdb_id : $this->torrent->tmdb_id,
+            'nfo' => $metadata !== null ? $metadata->nfo : $this->torrent->nfo_text,
         ];
     }
 
     private function metadata(): ?TorrentMetadata
     {
-        /** @var TorrentMetadata|null $metadata */
         $metadata = $this->torrent->getRelationValue('metadata');
 
-        if ($metadata !== null) {
+        if ($metadata instanceof TorrentMetadata) {
             return $metadata;
         }
 
@@ -47,6 +49,8 @@ final class TorrentMetadataView
             return null;
         }
 
-        return $this->torrent->metadata;
+        $metadata = $this->torrent->metadata;
+
+        return $metadata instanceof TorrentMetadata ? $metadata : null;
     }
 }
