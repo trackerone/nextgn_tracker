@@ -111,6 +111,31 @@ final class TorrentFollowMatcherTest extends TestCase
         $this->assertTrue(app(TorrentFollowMatcher::class)->matchesFollow($follow, $torrent));
     }
 
+    public function test_it_falls_back_to_follow_title_when_normalized_title_is_missing(): void
+    {
+        $follow = TorrentFollow::factory()->create([
+            'title' => 'Legacy One',
+            'normalized_title' => '',
+            'type' => null,
+            'resolution' => null,
+            'source' => null,
+            'year' => null,
+        ]);
+
+        $matchingTorrent = Torrent::factory()->create([
+            'name' => 'Legacy One 2026 Proper',
+        ]);
+
+        $nonMatchingTorrent = Torrent::factory()->create([
+            'name' => 'Completely Different',
+        ]);
+
+        $matcher = app(TorrentFollowMatcher::class);
+
+        $this->assertTrue($matcher->matchesFollow($follow, $matchingTorrent));
+        $this->assertFalse($matcher->matchesFollow($follow, $nonMatchingTorrent));
+    }
+
     public function test_it_does_not_match_metadata_filters_when_torrent_has_no_metadata(): void
     {
         $follow = TorrentFollow::factory()->create([
