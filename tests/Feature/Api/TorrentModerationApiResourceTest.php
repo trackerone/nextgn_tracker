@@ -51,6 +51,8 @@ final class TorrentModerationApiResourceTest extends TestCase
         $response->assertJsonPath('data.0.name', $torrent->name);
         $response->assertJsonPath('data.0.status', TorrentStatus::Pending->value);
         $response->assertJsonPath('data.0.type', 'tv');
+        $response->assertJsonPath('data.0.metadata_quality.review_category', 'critical');
+        $response->assertJsonPath('data.0.metadata_quality.completeness', 'low');
         $response->assertJsonPath('data.0.metadata_review.needs_review', true);
         $response->assertJsonPath('data.0.metadata_review.issues.0', 'missing_resolution');
         $response->assertJsonPath('data.0.uploader', 'Uploader One');
@@ -85,6 +87,8 @@ final class TorrentModerationApiResourceTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.0.id', $torrent->id);
+        $response->assertJsonPath('data.0.metadata_quality.score', 100);
+        $response->assertJsonPath('data.0.metadata_quality.review_category', 'ok');
         $response->assertJsonPath('data.0.metadata_review.needs_review', false);
         $response->assertJsonPath('data.0.metadata_review.issues', []);
     }
