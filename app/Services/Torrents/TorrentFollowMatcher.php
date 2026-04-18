@@ -24,7 +24,15 @@ final class TorrentFollowMatcher
         }
 
         $torrents = Torrent::query()
-            ->visible()
+            ->where(function ($query): void {
+                $query
+                    ->visible()
+                    ->orWhere(function ($legacyQuery): void {
+                        $legacyQuery
+                            ->where('status', 'approved')
+                            ->where('is_banned', false);
+                    });
+            })
             ->with('metadata')
             ->orderByDesc('id')
             ->get();
