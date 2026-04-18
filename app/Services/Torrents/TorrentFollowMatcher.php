@@ -7,6 +7,7 @@ namespace App\Services\Torrents;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use App\Models\TorrentFollow;
+use App\Models\TorrentMetadata;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -42,26 +43,38 @@ final class TorrentFollowMatcher
     public function matchesFollow(TorrentFollow $follow, Torrent $torrent): bool
     {
         $metadata = TorrentMetadataView::forTorrent($torrent);
+        $hasMetadata = $torrent->getRelationValue('metadata') instanceof TorrentMetadata;
         $metadataTitle = $this->normalizedTitle((string) ($metadata['title'] ?? ''));
+        $torrentTitle = $this->normalizedTitle($torrent->name);
         $followTitle = $follow->normalized_title;
+        $titleToMatch = $metadataTitle !== '' ? $metadataTitle : $torrentTitle;
 
-        if ($metadataTitle === '' || ! Str::contains($metadataTitle, $followTitle)) {
+        if ($titleToMatch === '' || ! Str::contains($titleToMatch, $followTitle)) {
             return false;
         }
 
-        if ($follow->type !== null && Str::lower((string) ($metadata['type'] ?? '')) !== Str::lower($follow->type)) {
+        if (
+            $follow->type !== null
+            && (! $hasMetadata || Str::lower((string) ($metadata['type'] ?? '')) !== Str::lower($follow->type))
+        ) {
             return false;
         }
 
-        if ($follow->resolution !== null && Str::lower((string) ($metadata['resolution'] ?? '')) !== Str::lower($follow->resolution)) {
+        if (
+            $follow->resolution !== null
+            && (! $hasMetadata || Str::lower((string) ($metadata['resolution'] ?? '')) !== Str::lower($follow->resolution))
+        ) {
             return false;
         }
 
-        if ($follow->source !== null && Str::lower((string) ($metadata['source'] ?? '')) !== Str::lower($follow->source)) {
+        if (
+            $follow->source !== null
+            && (! $hasMetadata || Str::lower((string) ($metadata['source'] ?? '')) !== Str::lower($follow->source))
+        ) {
             return false;
         }
 
-        if ($follow->year !== null && (int) ($metadata['year'] ?? 0) !== (int) $follow->year) {
+        if ($follow->year !== null && (! $hasMetadata || (int) ($metadata['year'] ?? 0) !== (int) $follow->year)) {
             return false;
         }
 
