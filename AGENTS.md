@@ -2,6 +2,22 @@
 
 This file defines default operating rules for Codex agents in this repository.
 
+## NextGN working rules
+- Prefer the smallest correct diff
+- Never weaken lint, tests, or CI gates
+- Verify repository conventions from existing code before introducing new patterns
+- Avoid unrelated cleanup in feature or fix branches
+- Add or update tests when behavior changes
+- Keep PRs narrow and reviewable
+- Preserve existing architecture unless the task explicitly requires structural work
+- When unsure, choose the safest conservative implementation and explain the tradeoff
+
+## Definition of done
+- Code change is complete
+- Relevant tests pass
+- Linting remains green
+- Summary explains what changed, risks, and next step
+
 ## Non-negotiable torrent metadata rules
 - All metadata reads must go through `TorrentMetadataView`.
 - No fallback logic outside `TorrentMetadataView`.
