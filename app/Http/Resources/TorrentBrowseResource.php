@@ -29,7 +29,7 @@ final class TorrentBrowseResource extends JsonResource
                 ]
                 : null,
             'type' => $this->type,
-            'metadata' => TorrentMetadataView::fromTorrent($this->resource)->toArray(),
+            'metadata' => TorrentMetadataView::forTorrent($this->resource),
             'size_bytes' => (int) ($this->size_bytes ?? 0),
             'size_human' => $this->formatted_size,
             'seeders' => (int) ($this->seeders ?? 0),

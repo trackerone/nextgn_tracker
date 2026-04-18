@@ -43,7 +43,7 @@ final class TorrentDetailsResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'type' => $this->type,
-            'metadata' => TorrentMetadataView::fromTorrent($this->resource)->toArray(),
+            'metadata' => TorrentMetadataView::forTorrent($this->resource),
             'info_hash' => strtolower((string) $this->info_hash),
             'size_bytes' => (int) ($this->size_bytes ?? 0),
             'size_human' => $this->formatted_size,

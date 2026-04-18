@@ -37,15 +37,7 @@ final class TorrentController extends Controller
 
         $perPage = (int) config('torrents.per_page', 25);
         $torrents = $query->paginate($perPage)->appends($filters->queryParams());
-        $torrentMetadata = $torrents->getCollection()->mapWithKeys(
-            static function ($torrent): array {
-                assert($torrent instanceof Torrent);
-
-                return [
-                    $torrent->id => TorrentMetadataView::fromTorrent($torrent)->toArray(),
-                ];
-            }
-        );
+        $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrents->getCollection());
 
         $types = Torrent::query()
             ->select('type')
@@ -86,7 +78,7 @@ final class TorrentController extends Controller
             return response()->json($model);
         }
 
-        $metadata = TorrentMetadataView::fromTorrent($model)->toArray();
+        $metadata = TorrentMetadataView::forTorrent($model);
         $descriptionText = (string) ($model->description ?? '');
         $descriptionHtml = nl2br(e($descriptionText));
 
