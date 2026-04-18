@@ -25,6 +25,9 @@
                         <a href="{{ route('my.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
                             My Uploads
                         </a>
+                        <a href="{{ route('my.follows') }}" class="text-sm font-medium text-slate-300 hover:text-white">
+                            My Follows
+                        </a>
                         @if (auth()->user()?->isStaff())
                             <a href="{{ route('moderation.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
                                 Moderation

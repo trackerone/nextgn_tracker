@@ -23,6 +23,7 @@ use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
+use App\Http\Controllers\TorrentFollowController;
 use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
 use Illuminate\Support\Facades\Route;
@@ -215,7 +216,10 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
+    Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
+    Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
+    Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
