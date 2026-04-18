@@ -41,7 +41,7 @@
 
         @forelse ($follows as $follow)
             @php
-                $matches = $matchesByFollowId[$follow->id] ?? collect();
+                $matches = $matchesByFollowId[$follow->getKey()] ?? collect();
             @endphp
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
                 <h2 class="text-lg font-semibold text-white">{{ $follow->title }}</h2>
