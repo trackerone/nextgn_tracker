@@ -36,7 +36,7 @@ class TorrentUploadTest extends TestCase
 
         $user = User::factory()->create();
         $category = Category::factory()->create();
-        $payload = $this->sampleTorrentPayload('Feature Upload', 2048);
+        $payload = $this->sampleTorrentPayload('Feature.Upload.2024.1080p.WEB-DL.x264-GRP', 2048);
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
             'name' => 'Feature Upload',
@@ -74,6 +74,31 @@ class TorrentUploadTest extends TestCase
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
         $this->assertNotNull($torrent->nfoStoragePath());
         Storage::disk('nfo')->assertExists($torrent->nfoStoragePath());
+    }
+
+    public function test_upload_prefers_extracted_source_over_request_source(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+
+        $payload = $this->sampleTorrentPayload('Priority.Title.2024.1080p.WEB-DL.x264-GRP', 1536);
+
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Priority Title',
+            'type' => 'movie',
+            'source' => 'bluray',
+            'resolution' => '1080p',
+            'torrent_file' => UploadedFile::fake()->createWithContent('priority.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
+
+        $torrent = Torrent::query()->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('torrent_metadata', [
+            'torrent_id' => $torrent->id,
+            'source' => 'WEB-DL',
+        ]);
     }
 
     public function test_duplicate_info_hash_redirects_to_existing_record(): void
