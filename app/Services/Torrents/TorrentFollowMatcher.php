@@ -34,7 +34,7 @@ final class TorrentFollowMatcher
 
         foreach ($follows as $follow) {
             $matched = $torrents->filter(fn (Torrent $torrent): bool => $this->matchesFollow($follow, $torrent))->values();
-            $matches[(int) $follow->id] = $matched;
+            $matches[$follow->getKey()] = $matched;
         }
 
         return $matches;
