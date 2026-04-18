@@ -38,6 +38,53 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
+    public function test_grouped_browse_renders_release_families_with_best_version(): void
+    {
+        $user = User::factory()->create();
+
+        $best = Torrent::factory()->create(['name' => 'Dune 2024 2160p BluRay']);
+        $alternative = Torrent::factory()->create(['name' => 'Dune 2024 1080p WEB-DL']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $best->id,
+            'title' => 'Dune Part Two',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $alternative->id,
+            'title' => 'Dune Part Two',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Dune Part Two');
+        $response->assertSee('(2024)', false);
+        $response->assertSee('Best version');
+        $response->assertSeeTextInOrder([$best->name, $alternative->name]);
+    }
+
+    public function test_flat_view_can_be_enabled_with_grouped_flag(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents?grouped=0');
+
+        $response->assertOk();
+        $response->assertSee('Seed');
+        $response->assertSee($torrent->name);
+        $response->assertDontSee('Best version');
+    }
+
     public function test_search_filter_limits_results(): void
     {
         $user = User::factory()->create();

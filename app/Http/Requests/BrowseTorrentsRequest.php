@@ -68,6 +68,7 @@ final class BrowseTorrentsRequest extends FormRequest
             'direction' => ['nullable', Rule::in(['asc', 'desc'])],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.$maxPerPage],
             'page' => ['nullable', 'integer', 'min:1'],
+            'grouped' => ['nullable', 'boolean'],
         ];
     }
 
@@ -87,5 +88,19 @@ final class BrowseTorrentsRequest extends FormRequest
         $perPage = $validated['per_page'] ?? $default;
 
         return (int) $perPage;
+    }
+
+    public function grouped(bool $default = true): bool
+    {
+        /** @var array<string, mixed> $validated */
+        $validated = $this->validated();
+
+        $grouped = $validated['grouped'] ?? $default;
+
+        if (is_bool($grouped)) {
+            return $grouped;
+        }
+
+        return filter_var($grouped, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
     }
 }

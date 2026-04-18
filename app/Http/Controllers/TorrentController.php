@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Torrent;
 use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
+use App\Support\Torrents\TorrentReleaseFamilyGrouper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,7 +28,8 @@ final class TorrentController extends Controller
     public function index(
         BrowseTorrentsRequest $request,
         TorrentBrowseQuery $browseQuery,
-        TorrentBrowseMetadataFilterOptions $metadataFilterOptions
+        TorrentBrowseMetadataFilterOptions $metadataFilterOptions,
+        TorrentReleaseFamilyGrouper $releaseFamilyGrouper
     ): Response|JsonResponse {
         $filters = $request->filters();
         $query = $browseQuery->apply(
@@ -40,8 +42,15 @@ final class TorrentController extends Controller
         }
 
         $perPage = (int) config('torrents.per_page', 25);
-        $torrents = $query->paginate($perPage)->appends($filters->queryParams());
+        $groupedBrowse = $request->grouped();
+        $torrents = $query->paginate($perPage)->appends(array_merge(
+            $filters->queryParams(),
+            ['grouped' => $groupedBrowse ? '1' : '0']
+        ));
         $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrents->getCollection());
+        $releaseFamilies = $groupedBrowse
+            ? $releaseFamilyGrouper->group($torrents->getCollection(), $torrentMetadata)
+            : [];
 
         $metadataFilterValues = $metadataFilterOptions->forVisibleBrowse();
 
@@ -56,9 +65,11 @@ final class TorrentController extends Controller
             'resolutions' => $metadataFilterValues['resolutions'],
             'sources' => $metadataFilterValues['sources'],
             'categories' => $categories,
+            'groupedBrowse' => $groupedBrowse,
+            'releaseFamilies' => $releaseFamilies,
 
             // View-friendly (og test-neutralt)
-            'filters' => $filters->toArray(),
+            'filters' => array_merge($filters->toArray(), ['grouped' => $groupedBrowse ? '1' : '0']),
             'q' => $filters->q,
             'type' => $filters->type,
             'order' => $filters->order !== '' ? $filters->order : 'uploaded_at',
