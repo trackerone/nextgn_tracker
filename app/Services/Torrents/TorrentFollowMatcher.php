@@ -44,12 +44,8 @@ final class TorrentFollowMatcher
     {
         $metadata = TorrentMetadataView::forTorrent($torrent);
         $hasMetadata = $torrent->getRelationValue('metadata') instanceof TorrentMetadata;
-        $metadataTitle = $this->normalizedTitle((string) ($metadata['title'] ?? ''));
-        $torrentTitle = $this->normalizedTitle($torrent->name);
-        $followTitle = $follow->normalized_title;
-        $titleToMatch = $metadataTitle !== '' ? $metadataTitle : $torrentTitle;
 
-        if ($titleToMatch === '' || ! Str::contains($titleToMatch, $followTitle)) {
+        if (! $this->matchesTitle($follow, $torrent, $metadata)) {
             return false;
         }
 
@@ -88,5 +84,23 @@ final class TorrentFollowMatcher
             ->replaceMatches('/[^a-z0-9]+/i', ' ')
             ->squish()
             ->value();
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function matchesTitle(TorrentFollow $follow, Torrent $torrent, array $metadata): bool
+    {
+        $followTitle = $this->normalizedTitle((string) ($follow->normalized_title ?: $follow->title));
+        $metadataTitle = $this->normalizedTitle((string) ($metadata['title'] ?? ''));
+        $fallbackTorrentTitle = $this->normalizedTitle($torrent->name);
+
+        $candidateTitle = $metadataTitle !== '' ? $metadataTitle : $fallbackTorrentTitle;
+
+        if ($followTitle === '' || $candidateTitle === '') {
+            return false;
+        }
+
+        return Str::contains($candidateTitle, $followTitle);
     }
 }
