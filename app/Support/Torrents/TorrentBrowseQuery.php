@@ -18,21 +18,15 @@ final class TorrentBrowseQuery
         }
 
         if ($filters->type !== '') {
-            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
-                $metadataQuery->where('type', $filters->type);
-            });
+            $this->applyMetadataFilter($query, 'type', $filters->type);
         }
 
         if ($filters->resolution !== '') {
-            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
-                $metadataQuery->where('resolution', $filters->resolution);
-            });
+            $this->applyMetadataFilter($query, 'resolution', $filters->resolution);
         }
 
         if ($filters->source !== '') {
-            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
-                $metadataQuery->where('source', $filters->source);
-            });
+            $this->applyMetadataFilter($query, 'source', $filters->source);
         }
 
         if ($filters->categoryId !== null) {
@@ -57,5 +51,20 @@ final class TorrentBrowseQuery
         return $query
             ->orderBy($orderColumn, $filters->direction)
             ->orderByDesc('id');
+    }
+
+    private function applyMetadataFilter(Builder $query, string $column, string $value): void
+    {
+        $query->where(function (Builder $innerQuery) use ($column, $value): void {
+            $innerQuery
+                ->whereHas('metadata', function (Builder $metadataQuery) use ($column, $value): void {
+                    $metadataQuery->where($column, $value);
+                })
+                ->orWhere(function (Builder $fallbackQuery) use ($column, $value): void {
+                    $fallbackQuery
+                        ->whereDoesntHave('metadata')
+                        ->where("torrents.{$column}", $value);
+                });
+        });
     }
 }

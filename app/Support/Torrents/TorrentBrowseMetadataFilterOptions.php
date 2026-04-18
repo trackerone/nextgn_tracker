@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\Torrents;
 
-use App\Models\TorrentMetadata;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Torrent;
 
 final class TorrentBrowseMetadataFilterOptions
 {
@@ -26,16 +25,14 @@ final class TorrentBrowseMetadataFilterOptions
      */
     private function distinctValues(string $column): array
     {
-        return TorrentMetadata::query()
-            ->select($column)
-            ->whereHas('torrent', function (Builder $query): void {
-                $query->visible();
-            })
+        return Torrent::query()
+            ->visible()
+            ->join('torrent_metadata', 'torrent_metadata.torrent_id', '=', 'torrents.id')
             ->whereNotNull("torrent_metadata.{$column}")
             ->where("torrent_metadata.{$column}", '!=', '')
             ->distinct()
             ->orderBy("torrent_metadata.{$column}")
-            ->pluck($column)
+            ->pluck("torrent_metadata.{$column}")
             ->values()
             ->all();
     }
