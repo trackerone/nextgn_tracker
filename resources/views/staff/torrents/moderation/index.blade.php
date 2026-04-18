@@ -7,6 +7,9 @@
 @endsection
 
 @section('content')
+    @php
+        $torrentMetadata = $torrentMetadata ?? [];
+    @endphp
     <div class="space-y-8">
         <div>
             <h1 class="text-2xl font-semibold text-white">Pending torrents</h1>
@@ -26,13 +29,23 @@
                 </thead>
                 <tbody class="divide-y divide-slate-800 text-slate-100">
                     @forelse ($pendingTorrents as $torrent)
-                        @php($metadata = $torrentMetadata[$torrent->id] ?? [])
+                        @php
+                            $metadata = $torrentMetadata[$torrent->id] ?? [];
+                            $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
+                        @endphp
                         <tr>
                             <td class="px-4 py-3">
                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
+                                @if ($metadataBadges !== [])
+                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                        @foreach ($metadataBadges as $badge)
+                                            <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-4 py-3">{{ $torrent->uploader?->name ?? 'Unknown' }}</td>
-                            <td class="px-4 py-3">{{ ucfirst((string) ($metadata['type'] ?? '')) }}</td>
+                            <td class="px-4 py-3">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
                             <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
                             <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
                             <td class="px-4 py-3">

@@ -17,12 +17,11 @@
 
 @section('content')
     @php
+        $metadataFacts = \App\Support\Torrents\TorrentMetadataPresenter::detailFacts($metadata);
         $meta = [
-            ['label' => 'Type', 'value' => ucfirst((string) ($metadata['type'] ?? ''))],
             ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
             ['label' => 'Size', 'value' => $torrent->formatted_size],
             ['label' => 'Files', 'value' => number_format($torrent->file_count)],
-            ['label' => 'Resolution', 'value' => $metadata['resolution'] ?? 'Unknown'],
             ['label' => 'Codecs', 'value' => collect($torrent->codecs ?? [])->filter()->implode(' / ') ?: 'n/a'],
         ];
         $stats = [
@@ -80,6 +79,16 @@
                     </div>
                 </section>
             @endcan
+            @if ($metadataFacts !== [])
+                <dl class="mt-8 grid gap-6 md:grid-cols-3">
+                    @foreach ($metadataFacts as $item)
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
+                            <dd class="text-lg font-semibold text-white">{{ $item['value'] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            @endif
             <dl class="mt-8 grid gap-6 md:grid-cols-3">
                 @foreach ($meta as $item)
                     <div>

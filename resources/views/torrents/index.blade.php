@@ -93,13 +93,21 @@
                     <tbody class="divide-y divide-slate-800 text-slate-100">
                         @forelse ($torrents as $torrent)
                             @php
-                                $metadata = $torrentMetadata[$torrent->id] ?? null;
+                                $metadata = $torrentMetadata[$torrent->id] ?? [];
+                                $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
                             @endphp
                             <tr class="hover:bg-slate-800/50">
                                 <td class="px-4 py-3">
                                     <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">
                                         {{ $torrent->name }}
                                     </a>
+                                    @if ($metadataBadges !== [])
+                                        <div class="mt-2 flex flex-wrap gap-1.5">
+                                            @foreach ($metadataBadges as $badge)
+                                                <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                     @if (! empty($torrent->tags))
                                         <div class="mt-1 flex flex-wrap gap-1 text-xs text-slate-400">
                                             @foreach ($torrent->tags as $tag)
@@ -108,7 +116,7 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-slate-300">{{ ucfirst((string) ($metadata['type'] ?? '')) }}</td>
+                                <td class="px-4 py-3 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
                                 <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
                                 <td class="px-4 py-3 text-right text-emerald-400">{{ number_format($torrent->seeders) }}</td>
                                 <td class="px-4 py-3 text-right text-amber-400">{{ number_format($torrent->leechers) }}</td>

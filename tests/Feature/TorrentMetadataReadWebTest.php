@@ -31,6 +31,9 @@ final class TorrentMetadataReadWebTest extends TestCase
             'torrent_id' => $torrent->id,
             'type' => 'tv',
             'resolution' => '2160p',
+            'source' => 'web-dl',
+            'release_group' => 'ntb',
+            'year' => 2024,
             'imdb_id' => 'tt2222222',
             'tmdb_id' => 222,
             'nfo' => 'persisted nfo',
@@ -41,10 +44,40 @@ final class TorrentMetadataReadWebTest extends TestCase
         $response->assertOk();
         $response->assertSee('Tv');
         $response->assertSee('2160p');
+        $response->assertSee('WEB-DL');
+        $response->assertSee('NTB');
+        $response->assertSee('2024');
         $response->assertSee('tt2222222');
         $response->assertSee('222');
         $response->assertSee('persisted nfo');
         $response->assertDontSee('legacy nfo');
+    }
+
+    public function test_torrent_detail_hides_empty_metadata_fields(): void
+    {
+        $user = User::factory()->create();
+
+        $torrent = Torrent::factory()->create([
+            'type' => 'movie',
+            'resolution' => null,
+            'source' => null,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'type' => null,
+            'resolution' => null,
+            'source' => '',
+            'release_group' => '',
+            'year' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk();
+        $response->assertDontSee('Resolution');
+        $response->assertDontSee('Release group');
+        $response->assertDontSee('Unknown');
     }
 
     public function test_torrent_browse_renders_type_from_metadata_view_without_lazy_loading(): void
@@ -59,6 +92,10 @@ final class TorrentMetadataReadWebTest extends TestCase
         TorrentMetadata::query()->create([
             'torrent_id' => $torrent->id,
             'type' => 'tv',
+            'resolution' => '1080p',
+            'source' => 'bluray',
+            'release_group' => 'flux',
+            'year' => 2025,
         ]);
 
         Model::preventLazyLoading(true);
@@ -71,6 +108,10 @@ final class TorrentMetadataReadWebTest extends TestCase
 
         $response->assertOk();
         $response->assertSeeInOrder(['Web Browse Metadata', 'Tv']);
+        $response->assertSee('1080p');
+        $response->assertSee('BLURAY');
+        $response->assertSee('FLUX');
+        $response->assertSee('2025');
     }
 
     public function test_torrent_detail_falls_back_to_legacy_columns_when_metadata_row_is_missing(): void
