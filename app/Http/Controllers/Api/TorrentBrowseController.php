@@ -18,7 +18,7 @@ final class TorrentBrowseController extends Controller
     {
         $query = Torrent::query()
             ->visible()
-            ->with(['category', 'uploader']);
+            ->with(['category', 'uploader', 'metadata']);
 
         $filters = $request->filters();
 
