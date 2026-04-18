@@ -6,11 +6,12 @@ namespace App\Http\Resources\Support;
 
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
-use Illuminate\Database\Eloquent\Model;
 
 final class TorrentMetadataView
 {
-    private function __construct(private readonly Torrent $torrent) {}
+    private function __construct(private readonly Torrent $torrent)
+    {
+    }
 
     public static function fromTorrent(Torrent $torrent): self
     {
