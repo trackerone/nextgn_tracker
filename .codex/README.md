@@ -21,3 +21,9 @@ Autopilot v1 provides conservative automation foundations:
 ## Operational notes
 - Workflows in `.github/workflows/codex-*.yml` intentionally default to reporting and briefing.
 - Maintain strict repository rules in `AGENTS.md`.
+
+## Autopilot v1.5 controlled execution
+- Execution remains disabled by default and requires explicit guard enablement.
+- Guarded execution entrypoint is in `.github/workflows/codex-issue-implementation.yml`.
+- Path policy lives in `.codex/policies/execution-allowlist.txt`.
+- See `docs/automation/codex-controlled-execution.md` for enable/rollback and safety notes.

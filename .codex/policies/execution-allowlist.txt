@@ -1,0 +1,5 @@
+# Codex execution allowlist (v1.5)
+# Paths are repository-relative prefixes.
+# Keep this list intentionally narrow and review changes carefully.
+
+.codex/runs/

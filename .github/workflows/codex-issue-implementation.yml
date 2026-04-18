@@ -13,6 +13,11 @@ on:
         description: 'Optional explicit scope override'
         required: false
         type: string
+      run_execution:
+        description: 'Run controlled Codex execution backend (requires explicit guards)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -26,10 +31,20 @@ jobs:
       (
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request == null &&
-        contains(github.event.comment.body, '/codex implement') &&
+        (
+          contains(github.event.comment.body, '/codex implement') ||
+          contains(github.event.comment.body, '/codex execute')
+        ) &&
         contains('OWNER,MEMBER,COLLABORATOR', github.event.comment.author_association)
       )
     runs-on: ubuntu-latest
+    outputs:
+      issue_number: ${{ steps.context.outputs.issue_number }}
+      issue_title: ${{ steps.context.outputs.issue_title }}
+      issue_url: ${{ steps.context.outputs.issue_url }}
+      requested_scope: ${{ steps.context.outputs.requested_scope }}
+      execution_requested: ${{ steps.context.outputs.execution_requested }}
+      execution_allowed: ${{ steps.context.outputs.execution_allowed }}
 
     steps:
       - name: Checkout
@@ -38,6 +53,9 @@ jobs:
       - name: Resolve issue context
         id: context
         uses: actions/github-script@v7
+        env:
+          CODEX_EXECUTION_ENABLED: ${{ vars.CODEX_EXECUTION_ENABLED || 'false' }}
+          CODEX_EXECUTION_KEY_PRESENT: ${{ secrets.CODEX_EXECUTION_KEY != '' }}
         with:
           script: |
             const issueNumber = context.eventName === 'workflow_dispatch'
@@ -52,30 +70,191 @@ jobs:
 
             const requestedScope = context.eventName === 'workflow_dispatch'
               ? (core.getInput('requested_scope') || '').trim()
-              : 'Scope inferred from issue and /codex implement comment';
+              : 'Scope inferred from issue and Codex comment command';
+
+            const executeByDispatch = context.eventName === 'workflow_dispatch' && core.getInput('run_execution') === 'true';
+            const executeByComment = context.eventName === 'issue_comment' && context.payload.comment.body.includes('/codex execute');
+            const executionRequested = executeByDispatch || executeByComment;
+
+            const enabledByVar = (process.env.CODEX_EXECUTION_ENABLED || '').toLowerCase() === 'true';
+            const keyPresent = (process.env.CODEX_EXECUTION_KEY_PRESENT || '').toLowerCase() === 'true';
+            const executionAllowed = executionRequested && enabledByVar && keyPresent;
 
             core.setOutput('issue_number', String(issueNumber));
             core.setOutput('issue_title', issue.data.title);
             core.setOutput('issue_url', issue.data.html_url);
             core.setOutput('requested_scope', requestedScope || 'Not provided');
+            core.setOutput('execution_requested', executionRequested ? 'true' : 'false');
+            core.setOutput('execution_allowed', executionAllowed ? 'true' : 'false');
 
       - name: Publish intake comment
         uses: actions/github-script@v7
         with:
           script: |
             const issueNumber = Number('${{ steps.context.outputs.issue_number }}');
+            const executionRequested = '${{ steps.context.outputs.execution_requested }}' === 'true';
+            const executionAllowed = '${{ steps.context.outputs.execution_allowed }}' === 'true';
+
+            const executionStatus = !executionRequested
+              ? 'Not requested (use `/codex execute` or `workflow_dispatch.run_execution=true`).'
+              : executionAllowed
+                ? 'Requested and guard checks passed. Execution backend will run in this workflow.'
+                : 'Requested but blocked by safety guard (requires `CODEX_EXECUTION_ENABLED=true` repository variable and non-empty `CODEX_EXECUTION_KEY` secret).';
+
             const body = [
               '## 🤖 Codex implementation intake prepared',
               '',
               `- Issue: #${issueNumber}`,
               `- Title: ${{ steps.context.outputs.issue_title }}`,
               `- Scope: ${{ steps.context.outputs.requested_scope }}`,
+              `- Controlled execution: ${executionStatus}`,
               '',
-              'This workflow only prepares a safe, reviewable intake for a narrow Codex run.',
-              'It does **not** bypass CI or auto-merge.',
+              'This workflow preserves reviewability and does **not** bypass CI or auto-merge.',
               '',
               '### Next step',
-              '- Start a Codex implementation run using `.codex/templates/issue-implementation.md` and this issue context.',
+              '- Intake only: start a manual Codex run using `.codex/templates/issue-implementation.md`.',
+              '- Controlled mode: use `/codex execute` after guards are enabled to open/update a draft PR branch output.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body,
+            });
+
+  controlled-execution:
+    needs: prepare-intake
+    if: needs.prepare-intake.outputs.execution_allowed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build execution packet branch output
+        env:
+          ISSUE_NUMBER: ${{ needs.prepare-intake.outputs.issue_number }}
+          ISSUE_TITLE: ${{ needs.prepare-intake.outputs.issue_title }}
+          ISSUE_URL: ${{ needs.prepare-intake.outputs.issue_url }}
+          REQUESTED_SCOPE: ${{ needs.prepare-intake.outputs.requested_scope }}
+        run: |
+          set -euo pipefail
+
+          branch_name="codex/issue-${ISSUE_NUMBER}-execution"
+          git checkout -B "${branch_name}"
+
+          mkdir -p .codex/runs
+          packet_file=".codex/runs/issue-${ISSUE_NUMBER}-execution.md"
+          timestamp="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+
+          cat > "${packet_file}" <<EOF
+          # Codex controlled execution packet
+
+          - Issue: #${ISSUE_NUMBER}
+          - Title: ${ISSUE_TITLE}
+          - URL: ${ISSUE_URL}
+          - Requested scope: ${REQUESTED_SCOPE}
+          - Generated at (UTC): ${timestamp}
+
+          ## Safety profile
+          - Triggered only with explicit execution command.
+          - Requires guarded enablement (`CODEX_EXECUTION_ENABLED=true`) and required secret (`CODEX_EXECUTION_KEY`).
+          - Branch/PR-only delivery path; never direct merge.
+          - Allowed paths constrained by `.codex/policies/execution-allowlist.txt`.
+
+          ## TODO
+          - TODO: Connect this packet to a narrow Codex code-edit run once policy confidence and CI telemetry are stable.
+          EOF
+
+          git add "${packet_file}"
+          if git diff --cached --quiet; then
+            echo "No packet changes to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(codex): add execution packet for issue #${ISSUE_NUMBER}"
+          fi
+
+          echo "branch_name=${branch_name}" >> "$GITHUB_OUTPUT"
+
+      - name: Enforce allowlisted changed paths
+        run: |
+          set -euo pipefail
+
+          if [ ! -f .codex/policies/execution-allowlist.txt ]; then
+            echo "Missing allowlist file: .codex/policies/execution-allowlist.txt"
+            exit 1
+          fi
+
+          mapfile -t allowlist < <(grep -vE '^\s*(#|$)' .codex/policies/execution-allowlist.txt)
+          mapfile -t changed_files < <(git diff --name-only origin/${{ github.event.repository.default_branch }}...HEAD)
+
+          if [ "${#changed_files[@]}" -eq 0 ]; then
+            echo "No changed files detected against default branch."
+            exit 0
+          fi
+
+          for file in "${changed_files[@]}"; do
+            allowed=false
+            for prefix in "${allowlist[@]}"; do
+              if [[ "$file" == "$prefix"* ]]; then
+                allowed=true
+                break
+              fi
+            done
+
+            if [ "$allowed" = false ]; then
+              echo "Blocked file outside allowlist: $file"
+              exit 1
+            fi
+          done
+
+      - name: Open or update draft PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: codex/issue-${{ needs.prepare-intake.outputs.issue_number }}-execution
+          base: ${{ github.event.repository.default_branch }}
+          title: "chore(codex): controlled execution output for issue #${{ needs.prepare-intake.outputs.issue_number }}"
+          draft: true
+          commit-message: "chore(codex): controlled execution output for issue #${{ needs.prepare-intake.outputs.issue_number }}"
+          body: |
+            ## Codex controlled execution output (v1.5)
+
+            This draft PR was generated by the guarded Codex execution backend.
+
+            ### Guards applied
+            - Explicit execution trigger (`/codex execute` or `workflow_dispatch.run_execution=true`)
+            - Repository flag `CODEX_EXECUTION_ENABLED=true`
+            - Required secret `CODEX_EXECUTION_KEY`
+            - Path allowlist enforcement via `.codex/policies/execution-allowlist.txt`
+            - Draft PR only (no merge automation)
+
+            ### Current scope
+            - Generates a durable execution packet artifact under `.codex/runs/`.
+            - Keeps human review and all CI/branch protections intact.
+
+            ### Follow-up
+            - Future slice: wire packet to narrow Codex code edit flow under the same allowlist policy.
+
+      - name: Publish execution status comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = Number('${{ needs.prepare-intake.outputs.issue_number }}');
+            const body = [
+              '## ✅ Codex controlled execution completed',
+              '',
+              '- A draft PR branch output was created or updated.',
+              '- All changes were checked against `.codex/policies/execution-allowlist.txt`.',
+              '- CI, review, and branch protections remain unchanged.',
             ].join('\n');
 
             await github.rest.issues.createComment({
