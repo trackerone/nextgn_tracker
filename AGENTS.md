@@ -1,0 +1,3 @@
+- All metadata reads must go through TorrentMetadataView
+- No fallback logic outside TorrentMetadataView
+- No direct use of legacy metadata fields in views
