@@ -20,7 +20,6 @@ final class PersonalizedDiscoveryFeedBuilder
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
     ) {}
-
     /**
      * @return array{
      *     hasFollows: bool,
