@@ -19,8 +19,7 @@ final class PersonalizedDiscoveryFeedBuilder
     public function __construct(
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
@@ -115,7 +114,17 @@ final class PersonalizedDiscoveryFeedBuilder
                     ],
                 ];
             })
-            ->sortByDesc(fn (array $family): array => $family['sort'])
+            ->sort(function (array $left, array $right): int {
+                foreach ([0, 1, 2, 3] as $index) {
+                    $comparison = $right['sort'][$index] <=> $left['sort'][$index];
+
+                    if ($comparison !== 0) {
+                        return $comparison;
+                    }
+                }
+
+                return 0;
+            })
             ->map(function (array $family): array {
                 unset($family['sort']);
 
