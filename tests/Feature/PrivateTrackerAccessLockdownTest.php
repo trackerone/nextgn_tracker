@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Post;
 use App\Models\Role;
 use App\Models\Topic;
 use App\Models\Torrent;
@@ -20,6 +21,10 @@ class PrivateTrackerAccessLockdownTest extends TestCase
     {
         $torrent = Torrent::factory()->create();
         $topic = Topic::factory()->create();
+        $post = Post::factory()->create([
+            'topic_id' => $topic->getKey(),
+            'user_id' => $topic->user_id,
+        ]);
 
         $this->get(route('torrents.index'))->assertRedirect(route('login'));
         $this->get(route('torrents.show', $torrent))->assertRedirect(route('login'));
@@ -27,6 +32,11 @@ class PrivateTrackerAccessLockdownTest extends TestCase
         $this->get(route('my.follows'))->assertRedirect(route('login'));
         $this->get(route('topics.index'))->assertRedirect(route('login'));
         $this->get(route('topics.show', $topic))->assertRedirect(route('login'));
+        $this->postJson(route('topics.posts.store', $topic), ['body' => 'Guest reply'])
+            ->assertUnauthorized();
+        $this->patchJson(route('posts.update', $post), ['body' => 'Guest edit'])
+            ->assertUnauthorized();
+        $this->deleteJson(route('posts.destroy', $post))->assertUnauthorized();
         $this->get(route('staff.torrents.moderation.index'))->assertRedirect(route('login'));
     }
 
@@ -108,5 +118,19 @@ class PrivateTrackerAccessLockdownTest extends TestCase
     {
         $this->get(route('login'))->assertOk();
         $this->get(route('health.index'))->assertOk();
+    }
+
+    public function test_residual_public_aliases_and_optional_surfaces_are_not_exposed(): void
+    {
+        $this->get('/up')->assertNotFound();
+        $this->get('/announce')->assertNotFound();
+        $this->get('/scrape')->assertNotFound();
+
+        $this->get('/rss')->assertNotFound();
+        $this->get('/feed')->assertNotFound();
+        $this->get('/autocomplete')->assertNotFound();
+        $this->get('/members')->assertNotFound();
+        $this->get('/toplist')->assertNotFound();
+        $this->get('/stats')->assertNotFound();
     }
 }
