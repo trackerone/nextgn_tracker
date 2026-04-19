@@ -19,7 +19,8 @@ final class PersonalizedDiscoveryFeedBuilder
     public function __construct(
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
-    ) {
+    )
+    {
     }
 
     /**
@@ -81,8 +82,7 @@ final class PersonalizedDiscoveryFeedBuilder
         $families = $this->releaseFamilyGrouper->group($matchedTorrents, $metadataByTorrentId);
 
         $rankedFamilies = collect($families)
-            ->map(function (array $family) use ($metadataByTorrentId, $qualityByTorrentId, $unseenLookup): array
-            {
+            ->map(function (array $family) use ($metadataByTorrentId, $qualityByTorrentId, $unseenLookup): array {
                 $primary = $family['primary'];
                 $primaryMetadata = $metadataByTorrentId[(int) $primary->id] ?? [];
                 $primaryQuality = $qualityByTorrentId[(int) $primary->id] ?? [];
@@ -112,8 +112,7 @@ final class PersonalizedDiscoveryFeedBuilder
                     ],
                 ];
             })
-            ->sort(function (array $left, array $right): int
-            {
+            ->sort(function (array $left, array $right): int {
                 foreach ([0, 1, 2, 3] as $index) {
                     $comparison = $right['sort'][$index] <=> $left['sort'][$index];
 
@@ -124,8 +123,7 @@ final class PersonalizedDiscoveryFeedBuilder
 
                 return 0;
             })
-            ->map(function (array $family): array
-            {
+            ->map(function (array $family): array {
                 unset($family['sort']);
 
                 return $family;
