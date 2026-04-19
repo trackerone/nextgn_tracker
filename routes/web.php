@@ -47,7 +47,7 @@ Route::get('/', static fn () => redirect('/login'));
 
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
-Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
 Route::middleware('auth')->get('/home', static fn () => response('Dashboard', 200));
 
@@ -251,5 +251,5 @@ Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
     ->name('announce');
 
 Route::middleware(['throttle:120,1'])
-    ->get('/scrape', ScrapeController::class)
+    ->get('/scrape/{passkey}', ScrapeController::class)
     ->name('scrape');

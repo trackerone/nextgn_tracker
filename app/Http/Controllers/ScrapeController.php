@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Contracts\TorrentRepositoryInterface;
 use App\Services\BencodeService;
+use App\Tracker\Announce\AnnounceResult;
+use App\Tracker\Announce\PasskeyUserResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -14,10 +16,21 @@ final class ScrapeController extends Controller
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly TorrentRepositoryInterface $torrents,
+        private readonly PasskeyUserResolver $passkeyUserResolver,
     ) {}
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, string $passkey): Response
     {
+        $resolvedUser = $this->passkeyUserResolver->resolve($request, $passkey);
+
+        if ($resolvedUser instanceof AnnounceResult) {
+            return response(
+                $this->bencode->encode($resolvedUser->payload),
+                200,
+                ['Content-Type' => 'text/plain; charset=utf-8'],
+            );
+        }
+
         $hashes = $this->allInfoHashParams($request);
 
         /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */

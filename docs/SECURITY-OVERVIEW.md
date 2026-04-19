@@ -5,7 +5,7 @@ NextGN Tracker assumes hostile network conditions and enforces layered controls 
 ## Application surface
 - **Authentication** – Email/password with bcrypt hashing and optional passkey/WebAuthn support. Sessions are CSRF-protected, rate limited, and require verified email before tracker endpoints can be used.
 - **Roles & permissions** – `sysop`, `admin`, `moderator`, `uploader`, `user`, and `guest` roles drive authorization gates/policies. `role.min:{level}` middleware is enforced for staff panels, uploads, and moderation flows.
-- **Tracker endpoints** – `/announce` and `/scrape` require a valid passkey tied to the authenticated user plus request signing (HMAC) for API integrations. Requests are throttled per user/IP and responses are sanitized through the bencode service.
+- **Tracker endpoints** – `/announce/{passkey}` and `/scrape/{passkey}` require a valid passkey tied to an active user (non-banned, non-disabled). Requests are throttled and responses are sanitized through the bencode service.
 - **API clients** – Any automation must authenticate via personal access tokens or signed URLs; never expose passkeys in logs or front-end bundles.
 
 ## Transport & headers

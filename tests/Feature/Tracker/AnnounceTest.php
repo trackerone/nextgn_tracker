@@ -42,6 +42,31 @@ class AnnounceTest extends TestCase
         $this->assertSame($expected, $response->getContent());
     }
 
+    public function test_banned_or_disabled_user_passkey_is_rejected(): void
+    {
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-user-state-rejected');
+
+        $query = http_build_query([
+            'info_hash' => $infoHashHex,
+            'peer_id' => $this->makePeerIdHex('user-state-rejected'),
+            'port' => 6881,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 100,
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $bannedUser = User::factory()->create(['is_banned' => true]);
+        $disabledUser = User::factory()->create(['is_disabled' => true]);
+
+        $this->get(sprintf('/announce/%s?%s', $bannedUser->ensurePasskey(), $query))
+            ->assertOk()
+            ->assertSee('Invalid passkey.', false);
+
+        $this->get(sprintf('/announce/%s?%s', $disabledUser->ensurePasskey(), $query))
+            ->assertOk()
+            ->assertSee('Invalid passkey.', false);
+    }
+
     public function test_started_event_registers_peer_and_returns_payload(): void
     {
         $user = User::factory()->create([
