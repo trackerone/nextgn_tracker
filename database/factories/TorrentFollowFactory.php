@@ -28,6 +28,7 @@ class TorrentFollowFactory extends Factory
             'resolution' => null,
             'source' => null,
             'year' => null,
+            'last_checked_at' => null,
         ];
     }
 }

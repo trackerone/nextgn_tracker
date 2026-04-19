@@ -20,11 +20,13 @@ class TorrentFollow extends Model
         'resolution',
         'source',
         'year',
+        'last_checked_at',
     ];
 
     protected $casts = [
         'user_id' => 'integer',
         'year' => 'integer',
+        'last_checked_at' => 'immutable_datetime',
     ];
 
     public function user(): BelongsTo
