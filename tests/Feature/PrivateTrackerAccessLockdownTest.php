@@ -79,6 +79,32 @@ class PrivateTrackerAccessLockdownTest extends TestCase
             ->assertForbidden();
     }
 
+
+    public function test_tracker_protocol_routes_require_passkey_and_not_browser_session(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+
+        $announceQuery = http_build_query([
+            'info_hash' => $torrent->info_hash,
+            'peer_id' => strtoupper(bin2hex(str_pad('-UTLOCKDOWN-12345678', 20, '0'))),
+            'port' => 6881,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 1,
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $this->get('/announce/'.$user->ensurePasskey().'?'.$announceQuery)->assertOk();
+
+        $binaryHash = hex2bin($torrent->info_hash);
+        $this->assertIsString($binaryHash);
+
+        $this->get('/scrape/'.$user->ensurePasskey().'?info_hash='.urlencode($binaryHash))->assertOk();
+        $this->get('/scrape/invalid-passkey?info_hash='.urlencode($binaryHash))
+            ->assertOk()
+            ->assertSee('Invalid passkey.', false);
+    }
+
     public function test_public_pages_render_for_guests_without_layout_auth_assumptions(): void
     {
         $this->get(route('login'))->assertOk();

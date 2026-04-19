@@ -15,12 +15,29 @@ final class PasskeyUserResolver
     {
         $user = User::query()->where('passkey', $passkey)->first();
 
-        if ($user instanceof User) {
-            return $user;
+        if (! $user instanceof User) {
+            $this->securityLogger->logInvalidPasskey($request, $passkey);
+
+            return AnnounceResult::failure('Invalid passkey.');
         }
 
-        $this->securityLogger->logInvalidPasskey($request, $passkey);
+        if ($user->isBanned() || $user->isDisabled()) {
+            $this->securityLogger->log(
+                request: $request,
+                user: $user,
+                eventType: 'tracker.passkey_user_rejected',
+                severity: 'medium',
+                message: 'Tracker passkey rejected due to disabled or banned user state',
+                context: [
+                    'path' => $request->path(),
+                    'is_banned' => $user->isBanned(),
+                    'is_disabled' => $user->isDisabled(),
+                ],
+            );
 
-        return AnnounceResult::failure('Invalid passkey.');
+            return AnnounceResult::failure('Invalid passkey.');
+        }
+
+        return $user;
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Torrent;
+use App\Models\User;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,8 +14,9 @@ class ScrapeTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_single_info_hash_returns_expected_stats(): void
+    public function test_single_info_hash_returns_expected_stats_with_valid_passkey(): void
     {
+        $user = User::factory()->create();
         $torrent = Torrent::factory()->create([
             'seeders' => 12,
             'leechers' => 4,
@@ -24,7 +26,7 @@ class ScrapeTest extends TestCase
         $binaryHash = hex2bin($torrent->info_hash);
         $this->assertIsString($binaryHash);
 
-        $response = $this->get('/scrape?info_hash='.urlencode($binaryHash));
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?info_hash='.urlencode($binaryHash));
 
         $response->assertOk();
 
@@ -46,6 +48,7 @@ class ScrapeTest extends TestCase
 
     public function test_multiple_info_hashes_are_returned_in_response(): void
     {
+        $user = User::factory()->create();
         $first = Torrent::factory()->create([
             'seeders' => 5,
             'leechers' => 1,
@@ -64,7 +67,7 @@ class ScrapeTest extends TestCase
 
         $query = 'info_hash='.rawurlencode($firstBinary).'&info_hash='.rawurlencode($secondBinary);
 
-        $response = $this->get('/scrape?'.$query);
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?'.$query);
 
         $response->assertOk();
 
@@ -91,6 +94,7 @@ class ScrapeTest extends TestCase
 
     public function test_unknown_info_hash_returns_zeroed_stats(): void
     {
+        $user = User::factory()->create();
         $unknown = strtoupper(bin2hex(random_bytes(20)));
         $binary = hex2bin($unknown);
         $this->assertIsString($binary);
@@ -98,7 +102,7 @@ class ScrapeTest extends TestCase
         $requestedBinary = urldecode($encoded);
         $requestedHex = strtoupper(bin2hex($requestedBinary));
 
-        $response = $this->get('/scrape?info_hash='.$encoded);
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?info_hash='.$encoded);
 
         $response->assertOk();
 
@@ -116,5 +120,46 @@ class ScrapeTest extends TestCase
             app(BencodeService::class)->encode($expected),
             $response->getContent(),
         );
+    }
+
+    public function test_invalid_passkey_is_rejected_for_scrape(): void
+    {
+        $response = $this->get('/scrape/invalid-passkey');
+
+        $response->assertOk();
+
+        $this->assertSame(
+            app(BencodeService::class)->encode(['failure reason' => 'Invalid passkey.']),
+            $response->getContent(),
+        );
+    }
+
+    public function test_scrape_payload_exposes_only_stats(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'name' => 'Sensitive torrent title',
+            'description' => 'Sensitive metadata',
+            'seeders' => 7,
+            'leechers' => 3,
+            'completed' => 11,
+        ]);
+
+        $binaryHash = hex2bin($torrent->info_hash);
+        $this->assertIsString($binaryHash);
+
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?info_hash='.urlencode($binaryHash));
+
+        $response->assertOk();
+
+        $payload = app(BencodeService::class)->decode((string) $response->getContent());
+
+        $this->assertIsArray($payload);
+        $this->assertArrayHasKey('files', $payload);
+        $this->assertArrayNotHasKey('name', $payload);
+        $this->assertArrayNotHasKey('description', $payload);
+        $this->assertArrayNotHasKey('category', $payload);
+        $this->assertArrayNotHasKey('uploader', $payload);
+        $this->assertArrayNotHasKey('release', $payload);
     }
 }

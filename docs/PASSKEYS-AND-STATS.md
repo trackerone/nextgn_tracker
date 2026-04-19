@@ -17,7 +17,7 @@
 - Data source: `User::userTorrents()` relationship filtered by `completed_at`.
 
 ## Scrape endpoint
-- `GET /scrape` returns aggregate stats for one or more torrents in a single bencoded response.
+- `GET /scrape/{passkey}` returns aggregate stats for one or more torrents in a single bencoded response when the passkey belongs to an active (non-banned, non-disabled) user.
 - Provide one or multiple `info_hash` query parameters (20-byte values, URL-encoded). At least one valid info hash is required.
 - Response structure: `files` dictionary keyed by uppercase hex info hashes, each containing `complete` (seeders), `incomplete` (leechers), and `downloaded` (completed count).
 - Use scrape for read-only stats; announce remains responsible for peer lifecycle and stat updates.
