@@ -109,6 +109,9 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
             [
                 'torrent_id' => $recentSeen->id,
                 'title' => 'Signal 2026 S01E02',
+                'type' => null,
+                'resolution' => null,
+                'source' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
