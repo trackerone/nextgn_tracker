@@ -25,6 +25,9 @@
                         <a href="{{ route('my.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
                             My Uploads
                         </a>
+                        <a href="{{ route('my.discovery') }}" class="text-sm font-medium text-slate-300 hover:text-white">
+                            For You
+                        </a>
                         <a href="{{ route('my.follows') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
                             <span>My Follows</span>
                             @if (($followNavNewCount ?? 0) > 0)

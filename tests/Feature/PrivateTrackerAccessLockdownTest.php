@@ -29,6 +29,7 @@ class PrivateTrackerAccessLockdownTest extends TestCase
         $this->get(route('torrents.index'))->assertRedirect(route('login'));
         $this->get(route('torrents.show', $torrent))->assertRedirect(route('login'));
         $this->get(route('torrents.upload'))->assertRedirect(route('login'));
+        $this->get(route('my.discovery'))->assertRedirect(route('login'));
         $this->get(route('my.follows'))->assertRedirect(route('login'));
         $this->get(route('topics.index'))->assertRedirect(route('login'));
         $this->get(route('topics.show', $topic))->assertRedirect(route('login'));
@@ -60,6 +61,7 @@ class PrivateTrackerAccessLockdownTest extends TestCase
 
         $this->actingAs($user)->get(route('torrents.index'))->assertOk();
         $this->actingAs($user)->get(route('torrents.show', $torrent))->assertOk();
+        $this->actingAs($user)->get(route('my.discovery'))->assertOk();
         $this->actingAs($user)->get(route('my.follows'))->assertOk();
     }
 
