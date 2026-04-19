@@ -17,6 +17,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\MyUploadsController;
+use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ScrapeController;
@@ -218,6 +219,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
     Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
+    Route::get('/my/discovery', PersonalizedDiscoveryController::class)->name('my.discovery');
     Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
     Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
 
