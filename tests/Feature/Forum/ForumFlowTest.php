@@ -40,11 +40,13 @@ it('allows forum interactions with proper permissions', function (): void {
         'body_html' => $markdown->render('Første indlæg'),
     ]);
 
-    $this->getJson('/topics')
+    $this->actingAs($existingAuthor)
+        ->getJson('/topics')
         ->assertOk()
         ->assertJsonFragment(['title' => 'Velkommen']);
 
-    $this->getJson('/topics/'.$topic->slug)
+    $this->actingAs($existingAuthor)
+        ->getJson('/topics/'.$topic->slug)
         ->assertOk()
         ->assertJsonFragment(['title' => 'Velkommen']);
 
