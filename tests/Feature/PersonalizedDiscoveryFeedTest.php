@@ -83,8 +83,8 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
         ]);
         $recentSeen = Torrent::factory()->create([
             'name' => 'Signal 2026 S01E02 SDTV',
-            'created_at' => Carbon::parse('2026-04-10 12:00:00'),
-            'updated_at' => Carbon::parse('2026-04-10 12:00:00'),
+            'created_at' => Carbon::parse('2026-04-10 09:30:00'),
+            'updated_at' => Carbon::parse('2026-04-10 09:30:00'),
         ]);
 
         TorrentMetadata::query()->insert([
