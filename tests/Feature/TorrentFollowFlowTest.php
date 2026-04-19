@@ -263,7 +263,7 @@ final class TorrentFollowFlowTest extends TestCase
     {
         $response = $this->get(route('torrents.index'));
 
-        $response->assertOk();
+        $response->assertRedirect(route('login'));
         $response->assertDontSee('My Follows');
     }
 
