@@ -8,6 +8,7 @@ use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Requests\StoreTorrentFollowRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\TorrentFollow;
+use App\Services\Torrents\TorrentFollowInbox;
 use App\Services\Torrents\TorrentFollowMatcher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
 
 final class TorrentFollowController extends Controller
 {
-    public function index(Request $request, TorrentFollowMatcher $matcher): View
+    public function index(Request $request, TorrentFollowInbox $inbox): View
     {
         /** @var \Illuminate\Support\Collection<int, TorrentFollow> $follows */
         $follows = $request->user()
@@ -23,9 +24,14 @@ final class TorrentFollowController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
+        $checkedAt = now()->toImmutable();
+        $inboxItems = $inbox->build($follows);
+
+        $inbox->markAsSeen($follows, $checkedAt);
+
         return view('account.follows', [
-            'follows' => $follows,
-            'matchesByFollowId' => $matcher->matchesForFollows($follows),
+            'inboxItems' => $inboxItems,
+            'newMatchCount' => $inbox->totalNewCount($inboxItems),
         ]);
     }
 
@@ -34,6 +40,7 @@ final class TorrentFollowController extends Controller
         $validated = $request->validated();
 
         $request->user()->torrentFollows()->create([
+            'last_checked_at' => now(),
             'title' => (string) $validated['title'],
             'normalized_title' => $matcher->normalizedTitle((string) $validated['title']),
             'type' => $this->nullableString($validated['type'] ?? null),
@@ -55,6 +62,7 @@ final class TorrentFollowController extends Controller
         $title = $this->nullableString($metadata['title'] ?? null) ?? $model->name;
 
         TorrentFollow::query()->create([
+            'last_checked_at' => now(),
             'user_id' => $request->user()->id,
             'title' => $title,
             'normalized_title' => $matcher->normalizedTitle($title),
