@@ -21,6 +21,7 @@ final class PersonalizedDiscoveryFeedBuilder
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
     ) {
     }
+    
     /**
      * @return array{
      *     hasFollows: bool,
