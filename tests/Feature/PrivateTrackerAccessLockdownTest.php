@@ -33,10 +33,17 @@ class PrivateTrackerAccessLockdownTest extends TestCase
         $this->get(route('topics.index'))->assertRedirect(route('login'));
         $this->get(route('topics.show', $topic))->assertRedirect(route('login'));
         $this->postJson(route('topics.posts.store', $topic), ['body' => 'Guest reply'])
+<<<<< codex/run-residual-audit-of-public-endpoints-axk39c
+            ->assertUnauthorized();
+        $this->patchJson(route('posts.update', $post), ['body' => 'Guest edit'])
+            ->assertUnauthorized();
+        $this->deleteJson(route('posts.destroy', $post))->assertUnauthorized();
+=======
             ->assertRedirect(route('login'));
         $this->patchJson(route('posts.update', $post), ['body' => 'Guest edit'])
             ->assertRedirect(route('login'));
         $this->deleteJson(route('posts.destroy', $post))->assertRedirect(route('login'));
+>>>>> main
         $this->get(route('staff.torrents.moderation.index'))->assertRedirect(route('login'));
     }
 
