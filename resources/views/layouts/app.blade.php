@@ -25,8 +25,13 @@
                         <a href="{{ route('my.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
                             My Uploads
                         </a>
-                        <a href="{{ route('my.follows') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                            My Follows
+                        <a href="{{ route('my.follows') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
+                            <span>My Follows</span>
+                            @if (($followNavNewCount ?? 0) > 0)
+                                <span class="rounded-full border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+                                    {{ $followNavNewCount }}
+                                </span>
+                            @endif
                         </a>
                         @if (auth()->user()?->isStaff())
                             <a href="{{ route('moderation.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">

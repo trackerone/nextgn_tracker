@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\User;
 use App\Services\Torrents\UploadPreflightContextBuilder;
+use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,6 +49,23 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         $this->registerTorrentRateLimiters();
+
+        View::composer('layouts.app', function ($view): void {
+            $user = Auth::user();
+
+            if (! $user instanceof User) {
+                $view->with('followNavNewCount', 0);
+
+                return;
+            }
+
+            $badge = app(TorrentFollowNavigationBadge::class);
+
+            $view->with(
+                'followNavNewCount',
+                $badge->unseenCountFor($user)
+            );
+        });
     }
 
     private function registerTorrentRateLimiters(): void
