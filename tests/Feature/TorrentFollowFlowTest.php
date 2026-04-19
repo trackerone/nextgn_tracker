@@ -8,6 +8,7 @@ use App\Models\Torrent;
 use App\Models\TorrentFollow;
 use App\Models\TorrentMetadata;
 use App\Models\User;
+use App\Services\Torrents\TorrentFollowInbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -217,5 +218,99 @@ final class TorrentFollowFlowTest extends TestCase
 
         $follow->refresh();
         $this->assertNotNull($follow->last_checked_at);
+    }
+
+    public function test_navigation_shows_unseen_follow_badge_count(): void
+    {
+        $user = User::factory()->create();
+        TorrentFollow::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'Signal',
+            'normalized_title' => 'signal',
+            'last_checked_at' => Carbon::parse('2026-04-10 10:00:00'),
+        ]);
+
+        $newMatch = Torrent::factory()->create([
+            'name' => 'Signal 2026 S01E02',
+            'created_at' => Carbon::parse('2026-04-10 11:00:00'),
+            'updated_at' => Carbon::parse('2026-04-10 11:00:00'),
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $newMatch->id,
+            'title' => 'Signal',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index'));
+
+        $response->assertOk();
+        $response->assertSee('My Follows', false);
+        $response->assertSee('>1<', false);
+    }
+
+    public function test_navigation_hides_follow_badge_when_unseen_count_is_zero(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('torrents.index'));
+
+        $response->assertOk();
+        $response->assertSee('My Follows', false);
+        $response->assertDontSee('text-emerald-200', false);
+    }
+
+    public function test_navigation_has_no_follows_link_for_anonymous_users(): void
+    {
+        $response = $this->get(route('torrents.index'));
+
+        $response->assertOk();
+        $response->assertDontSee('My Follows');
+    }
+
+    public function test_navigation_badge_count_reuses_follow_inbox_logic(): void
+    {
+        $user = User::factory()->create();
+
+        TorrentFollow::factory()->create([
+            'user_id' => $user->id,
+            'title' => 'Signal',
+            'normalized_title' => 'signal',
+            'last_checked_at' => Carbon::parse('2026-04-10 10:00:00'),
+        ]);
+
+        $firstMatch = Torrent::factory()->create([
+            'name' => 'Signal 2026 S01E02',
+            'created_at' => Carbon::parse('2026-04-10 11:00:00'),
+            'updated_at' => Carbon::parse('2026-04-10 11:00:00'),
+        ]);
+        $secondMatch = Torrent::factory()->create([
+            'name' => 'Signal 2026 S01E03',
+            'created_at' => Carbon::parse('2026-04-10 12:00:00'),
+            'updated_at' => Carbon::parse('2026-04-10 12:00:00'),
+        ]);
+
+        TorrentMetadata::query()->insert([
+            [
+                'torrent_id' => $firstMatch->id,
+                'title' => 'Signal',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'torrent_id' => $secondMatch->id,
+                'title' => 'Signal',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $follows = $user->torrentFollows()->get();
+        $inbox = app(TorrentFollowInbox::class);
+        $expectedCount = $inbox->totalNewCount($inbox->build($follows));
+
+        $response = $this->actingAs($user)->get(route('torrents.index'));
+
+        $response->assertOk();
+        $response->assertSee('>'.(string) $expectedCount.'<', false);
     }
 }
