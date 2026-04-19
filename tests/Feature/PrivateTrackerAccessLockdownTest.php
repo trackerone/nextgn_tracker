@@ -79,7 +79,6 @@ class PrivateTrackerAccessLockdownTest extends TestCase
             ->assertForbidden();
     }
 
-
     public function test_tracker_protocol_routes_require_passkey_and_not_browser_session(): void
     {
         $user = User::factory()->create();
