@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
-use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
+use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
