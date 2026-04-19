@@ -19,8 +19,7 @@ final class PersonalizedDiscoveryFeedBuilder
     public function __construct(
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
