@@ -19,7 +19,8 @@ final class PersonalizedDiscoveryFeedBuilder
     public function __construct(
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
-    ) {}
+    ) {
+    }
 
     /**
      * @return array{
@@ -89,11 +90,7 @@ final class PersonalizedDiscoveryFeedBuilder
                     $family['alternatives']->isNotEmpty()
                 );
 
-                /** @var Collection<int, Torrent> $familyTorrents */
-                $familyTorrents = collect([$primary])->concat($family['alternatives'])->values();
-                $isUnseen = $familyTorrents->contains(
-                    fn (Torrent $torrent): bool => isset($unseenLookup[(int) $torrent->id])
-                );
+                $isUnseen = isset($unseenLookup[(int) $primary->id]);
                 $isFeatured = $family['alternatives']->isNotEmpty()
                     || (($primaryQuality['completeness'] ?? 'low') === 'high');
 
