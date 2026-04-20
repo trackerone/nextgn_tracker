@@ -69,11 +69,31 @@ final class PersonalizedDiscoveryFeedBuilder
 
         $metadataByTorrentId = TorrentMetadataView::mapByTorrentId($matchedTorrents);
         $qualityByTorrentId = TorrentMetadataQuality::mapByTorrentId($matchedTorrents, $metadataByTorrentId);
-        $unseenTorrentIds = collect($inboxItems)
-            ->flatMap(fn (array $item): Collection => $item['newMatches'])
-            ->pluck('id')
+        $seenStateByTorrentId = [];
+
+        foreach ($inboxItems as $item) {
+            /** @var Collection<int, Torrent> $allMatches */
+            $allMatches = $item['allMatches'];
+            $newMatchLookup = $item['newMatches']
+                ->pluck('id')
+                ->mapWithKeys(fn (mixed $id): array => [(int) $id => true])
+                ->all();
+
+            foreach ($allMatches as $matchedTorrent) {
+                $torrentId = (int) $matchedTorrent->id;
+                $isNewForFollow = isset($newMatchLookup[$torrentId]);
+
+                $seenStateByTorrentId[$torrentId] = [
+                    'hasNew' => ($seenStateByTorrentId[$torrentId]['hasNew'] ?? false) || $isNewForFollow,
+                    'hasSeen' => ($seenStateByTorrentId[$torrentId]['hasSeen'] ?? false) || ! $isNewForFollow,
+                ];
+            }
+        }
+
+        $unseenTorrentIds = collect($seenStateByTorrentId)
+            ->filter(fn (array $state): bool => $state['hasNew'] && ! $state['hasSeen'])
+            ->keys()
             ->map(fn (mixed $id): int => (int) $id)
-            ->unique()
             ->all();
         $unseenLookup = array_fill_keys($unseenTorrentIds, true);
 
