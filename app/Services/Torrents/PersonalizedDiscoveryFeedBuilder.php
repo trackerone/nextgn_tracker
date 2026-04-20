@@ -8,8 +8,8 @@ use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use App\Models\TorrentFollow;
 use App\Models\User;
-use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentMetadataPresenter;
+use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentReleaseBadgePresenter;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
 use Illuminate\Support\Collection;
@@ -19,9 +19,7 @@ final class PersonalizedDiscoveryFeedBuilder
     public function __construct(
         private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
-    )
-    {
-    }
+    ) {}
 
     /**
      * @return array{
