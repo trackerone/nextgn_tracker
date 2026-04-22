@@ -15,7 +15,8 @@ final class RatioRulesConfig
 
     public function __construct(
         private readonly SiteSettingsRepository $settings,
-    ) {}
+    ) {
+    }
 
     public function enforcementEnabled(): bool
     {
