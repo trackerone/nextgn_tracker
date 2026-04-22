@@ -239,6 +239,11 @@ class Torrent extends Model
         return $this->hasMany(UserTorrent::class);
     }
 
+    public function torrentUserStats(): HasMany
+    {
+        return $this->hasMany(TorrentUserStat::class);
+    }
+
     public static function storagePathForHash(string $infoHash): string
     {
         return 'torrents/'.strtoupper($infoHash).'.torrent';

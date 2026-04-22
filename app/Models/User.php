@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Route;
@@ -125,6 +126,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function userTorrents(): HasMany
     {
         return $this->hasMany(UserTorrent::class);
+    }
+
+    public function userStat(): HasOne
+    {
+        return $this->hasOne(UserStat::class);
+    }
+
+    public function torrentUserStats(): HasMany
+    {
+        return $this->hasMany(TorrentUserStat::class);
     }
 
     public function sentInvites(): HasMany

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\ModerationUploadsController;
+use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
 use App\Http\Controllers\Api\TorrentBrowseController;
 use App\Http\Controllers\Api\TorrentDetailsController;
@@ -39,6 +40,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])
         ->name('api.my.uploads');
+
+    Route::get('/me/stats', MyStatsController::class)
+        ->name('api.me.stats');
 
     Route::get('/moderation/uploads', [ModerationUploadsController::class, 'index'])
         ->middleware('staff')
