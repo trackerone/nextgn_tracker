@@ -10,8 +10,8 @@ use App\Models\SecurityAuditLog;
 use App\Models\User;
 use App\Services\TorrentDownloadService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
-use RuntimeException;
 use Illuminate\Http\JsonResponse;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TorrentDownloadController extends Controller

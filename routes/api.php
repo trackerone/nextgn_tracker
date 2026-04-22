@@ -23,7 +23,6 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
     })->name('api.user');
 });
 
-
 Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/tracker')->group(function (): void {
     Route::get('/ratio', [TrackerRatioSettingsController::class, 'show'])
         ->name('api.admin.settings.tracker.ratio.show');
