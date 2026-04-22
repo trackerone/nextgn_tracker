@@ -6,16 +6,22 @@ namespace App\Http\Controllers\Api;
 
 use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Controllers\Controller;
+use App\Models\SecurityAuditLog;
 use App\Models\User;
 use App\Services\TorrentDownloadService;
+use App\Services\Tracker\DownloadEligibilityPolicy;
 use RuntimeException;
+use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TorrentDownloadController extends Controller
 {
-    public function __construct(private readonly TorrentDownloadService $downloads) {}
+    public function __construct(
+        private readonly TorrentDownloadService $downloads,
+        private readonly DownloadEligibilityPolicy $downloadEligibilityPolicy,
+    ) {}
 
-    public function __invoke(string $torrent): StreamedResponse
+    public function __invoke(string $torrent): StreamedResponse|JsonResponse
     {
         $user = auth()->user();
 
@@ -24,6 +30,21 @@ final class TorrentDownloadController extends Controller
         }
 
         $model = app(ResolveTorrentAccessAction::class)->execute($torrent, 'download');
+
+        $eligibility = $this->downloadEligibilityPolicy->check($user, $model);
+
+        if (! $eligibility['allowed']) {
+            SecurityAuditLog::logAndWarn($user, 'torrent.download.denied', [
+                'reason' => $eligibility['reason'],
+                'torrent_id' => (int) $model->getKey(),
+                'route' => (string) (request()->route()?->getName() ?? ''),
+            ]);
+
+            return response()->json([
+                'message' => 'Download not allowed',
+                'reason' => $eligibility['reason'],
+            ], 403);
+        }
 
         try {
             $payload = $this->downloads->buildPersonalizedPayload($model, $user);
