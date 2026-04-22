@@ -9,13 +9,14 @@ use App\Services\Settings\SiteSettingsRepository;
 final class RatioRulesConfig
 {
     public const ENFORCEMENT_ENABLED = 'tracker.ratio.enforcement_enabled';
+
     public const MINIMUM_DOWNLOAD_RATIO = 'tracker.ratio.minimum_download_ratio';
+
     public const FREELEECH_BYPASS_ENABLED = 'tracker.ratio.freeleech_bypass_enabled';
+
     public const NO_HISTORY_GRACE_ENABLED = 'tracker.ratio.no_history_grace_enabled';
 
-    public function __construct(private readonly SiteSettingsRepository $settings)
-    {
-    }
+    public function __construct(private readonly SiteSettingsRepository $settings) {}
 
     public function enforcementEnabled(): bool
     {
