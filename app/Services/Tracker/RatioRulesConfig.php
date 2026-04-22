@@ -14,7 +14,7 @@ final class RatioRulesConfig
     public const NO_HISTORY_GRACE_ENABLED = 'tracker.ratio.no_history_grace_enabled';
 
     public function __construct(
-        private readonly SiteSettingsRepository $settings,
+        private readonly SiteSettingsRepository $settings
     ) {
     }
 
