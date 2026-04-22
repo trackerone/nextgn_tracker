@@ -13,7 +13,10 @@ final class RatioRulesConfig
     public const FREELEECH_BYPASS_ENABLED = 'tracker.ratio.freeleech_bypass_enabled';
     public const NO_HISTORY_GRACE_ENABLED = 'tracker.ratio.no_history_grace_enabled';
 
-    public function __construct(private readonly SiteSettingsRepository $settings) {}
+    public function __construct(
+        private readonly SiteSettingsRepository $settings
+    ) {
+    }
 
     public function enforcementEnabled(): bool
     {
