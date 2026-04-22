@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 final class UserRatioStatsRecorder
 {
+    public function __construct(private readonly RatioCreditCalculator $ratioCreditCalculator) {}
+
     public function record(User $user, Torrent $torrent, ?Peer $oldPeer, AnnounceRequestData $newState): void
     {
         $uploadedDelta = 0;
@@ -28,7 +30,13 @@ final class UserRatioStatsRecorder
             && (int) $oldPeer->left > 0
             && $newState->left === 0;
 
-        DB::transaction(function () use ($user, $torrent, $uploadedDelta, $downloadedDelta, $isCompletionTransition): void {
+        $credited = $this->ratioCreditCalculator->calculate(
+            $uploadedDelta,
+            $downloadedDelta,
+            (bool) $torrent->is_freeleech,
+        );
+
+        DB::transaction(function () use ($user, $torrent, $credited, $isCompletionTransition): void {
             $now = now();
 
             $userStat = UserStat::query()
@@ -60,8 +68,8 @@ final class UserRatioStatsRecorder
                     ],
                 );
 
-            $torrentUserStat->uploaded_bytes += $uploadedDelta;
-            $torrentUserStat->downloaded_bytes += $downloadedDelta;
+            $torrentUserStat->uploaded_bytes += $credited['uploaded'];
+            $torrentUserStat->downloaded_bytes += $credited['downloaded'];
             $torrentUserStat->last_announced_at = $now;
 
             if ($isCompletionTransition) {
@@ -78,8 +86,8 @@ final class UserRatioStatsRecorder
 
             $torrentUserStat->save();
 
-            $userStat->uploaded_bytes += $uploadedDelta;
-            $userStat->downloaded_bytes += $downloadedDelta;
+            $userStat->uploaded_bytes += $credited['uploaded'];
+            $userStat->downloaded_bytes += $credited['downloaded'];
             $userStat->last_announced_at = $now;
             $userStat->save();
         });

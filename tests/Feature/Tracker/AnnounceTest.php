@@ -384,11 +384,114 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_ratio_stats_on_freeleech_credit_upload_but_not_download(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-freeleech-credit', [
+            'is_freeleech' => true,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-freeleech-credit');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 50,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 160,
+            'downloaded' => 95,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 0,
+        ]);
+    }
+
+    public function test_ratio_stats_first_announce_on_freeleech_does_not_credit_fake_delta(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-freeleech-first-announce', [
+            'is_freeleech' => true,
+        ]);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-ratio-freeleech-first-announce'),
+            'event' => 'started',
+            'uploaded' => 999,
+            'downloaded' => 555,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+    }
+
     public function test_ratio_stats_ignore_negative_deltas(): void
     {
         $user = User::factory()->create();
         [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-negative-deltas');
         $peerIdHex = $this->makePeerIdHex('peer-ratio-negative-deltas');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 100,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10,
+            'downloaded' => 20,
+            'left' => 90,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+    }
+
+    public function test_ratio_stats_ignore_negative_deltas_on_freeleech(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-freeleech-negative-deltas', [
+            'is_freeleech' => true,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-freeleech-negative-deltas');
 
         $this->announce($user, $infoHashHex, [
             'peer_id' => $peerIdHex,
