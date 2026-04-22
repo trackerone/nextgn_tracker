@@ -17,11 +17,13 @@ final class MyStatsController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        /** @var UserStat|null $stats */
-        $stats = $user->userStat;
+        /** @var UserStat $stats */
+        $stats = UserStat::query()->firstOrCreate([
+            'user_id' => $user->id,
+        ]);
 
-        $uploadedBytes = (int) ($stats?->uploaded_bytes ?? 0);
-        $downloadedBytes = (int) ($stats?->downloaded_bytes ?? 0);
+        $uploadedBytes = (int) $stats->uploaded_bytes;
+        $downloadedBytes = (int) $stats->downloaded_bytes;
         $ratio = $downloadedBytes > 0 ? $uploadedBytes / $downloadedBytes : null;
 
         return response()->json([
@@ -29,7 +31,7 @@ final class MyStatsController extends Controller
             'downloaded_bytes' => $downloadedBytes,
             'ratio' => $ratio,
             'ratio_display' => $this->formatRatio($uploadedBytes, $downloadedBytes, $ratio),
-            'completed_torrents_count' => (int) ($stats?->completed_torrents_count ?? 0),
+            'completed_torrents_count' => (int) $stats->completed_torrents_count,
         ]);
     }
 
