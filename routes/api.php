@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
@@ -20,6 +21,15 @@ Route::middleware(['api', 'api.hmac'])->group(function (): void {
             'email' => $request->user()?->email,
         ]);
     })->name('api.user');
+});
+
+
+Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/tracker')->group(function (): void {
+    Route::get('/ratio', [TrackerRatioSettingsController::class, 'show'])
+        ->name('api.admin.settings.tracker.ratio.show');
+
+    Route::post('/ratio', [TrackerRatioSettingsController::class, 'update'])
+        ->name('api.admin.settings.tracker.ratio.update');
 });
 
 Route::middleware(['api', 'auth'])->group(function (): void {
