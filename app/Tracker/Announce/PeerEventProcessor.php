@@ -8,6 +8,7 @@ use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Tracker\UserRatioStatsRecorder;
 use App\Services\UserTorrentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ final class PeerEventProcessor
         private readonly AnnounceSecurityLogger $securityLogger,
         private readonly AnnounceResponseBuilder $responseBuilder,
         private readonly TwentyByteParamDecoder $decoder,
+        private readonly UserRatioStatsRecorder $ratioStatsRecorder,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -31,7 +33,12 @@ final class PeerEventProcessor
             return AnnounceResult::failure('peer_id must be exactly 20 bytes.');
         }
 
-        if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $torrent, $data, $peerId)) {
+        $oldPeer = Peer::query()
+            ->where('torrent_id', $torrent->getKey())
+            ->where('peer_id', $peerId)
+            ->first();
+
+        if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $data, $oldPeer)) {
             $this->securityLogger->log(
                 request: $request,
                 user: $user,
@@ -52,22 +59,19 @@ final class PeerEventProcessor
             }
         }
 
-        $this->persistPeerState($request, $user, $torrent, $data, $peerId);
+        $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
         $this->persistUserTorrentState($user, $torrent, $data);
+        $this->ratioStatsRecorder->record($user, $torrent, $oldPeer, $data);
 
         $this->torrents->refreshPeerStats($torrent);
 
         return $this->responseBuilder->successWithPeers($torrent, $peerId, $data->numwant);
     }
 
-    private function persistPeerState(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data, string $peerId): void
+    private function persistPeerState(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data, string $peerId, ?Peer $existingPeer): void
     {
         $now = now();
         $ip = (string) ($data->ip ?? $request->ip() ?? '0.0.0.0');
-        $existingPeer = Peer::query()
-            ->where('torrent_id', $torrent->getKey())
-            ->where('peer_id', $peerId)
-            ->first();
 
         if ($data->event === 'stopped') {
             Peer::query()
@@ -117,13 +121,8 @@ final class PeerEventProcessor
         );
     }
 
-    private function shouldShortCircuitDuplicateAnnounce(Request $request, Torrent $torrent, AnnounceRequestData $data, string $peerId): bool
+    private function shouldShortCircuitDuplicateAnnounce(Request $request, AnnounceRequestData $data, ?Peer $peer): bool
     {
-        $peer = Peer::query()
-            ->where('torrent_id', $torrent->getKey())
-            ->where('peer_id', $peerId)
-            ->first();
-
         if ($peer === null) {
             return false;
         }

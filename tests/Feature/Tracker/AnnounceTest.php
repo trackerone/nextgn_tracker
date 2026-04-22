@@ -322,6 +322,168 @@ class AnnounceTest extends TestCase
         $this->assertSame(1, $torrent->completed);
     }
 
+    public function test_ratio_stats_accumulate_only_positive_deltas(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-positive-deltas');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-positive-deltas');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 50,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 160,
+            'downloaded' => 95,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 45,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 45,
+        ]);
+    }
+
+    public function test_ratio_stats_first_announce_without_existing_peer_does_not_credit_bytes(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-first-announce-zero');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-ratio-first-announce-zero'),
+            'event' => 'started',
+            'uploaded' => 999,
+            'downloaded' => 555,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+    }
+
+    public function test_ratio_stats_ignore_negative_deltas(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-negative-deltas');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-negative-deltas');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 100,
+            'left' => 100,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10,
+            'downloaded' => 20,
+            'left' => 90,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+    }
+
+    public function test_ratio_stats_completion_transition_updates_completion_counters(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-completion-transition');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-completion-transition');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'times_completed' => 1,
+        ]);
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'completed_torrents_count' => 1,
+        ]);
+    }
+
+    public function test_ratio_stats_repeated_complete_announce_does_not_increment_unique_completion_twice(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-complete-no-double-unique');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-complete-no-double-unique');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 50,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'times_completed' => 1,
+        ]);
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'completed_torrents_count' => 1,
+        ]);
+    }
+
     public function test_malformed_info_hash_is_rejected(): void
     {
         $user = User::factory()->create();
