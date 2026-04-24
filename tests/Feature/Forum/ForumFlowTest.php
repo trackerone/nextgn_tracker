@@ -117,6 +117,32 @@ it('allows forum interactions with proper permissions', function (): void {
         ->deleteJson("/posts/{$initialPostId}")
         ->assertNoContent();
 
+    $restoreTopic = Topic::query()->create([
+        'user_id' => $writer->getKey(),
+        'slug' => $slugger->generate('Restore test emne'),
+        'title' => 'Restore test emne',
+    ]);
+
+    $restorePost = $restoreTopic->posts()->create([
+        'user_id' => $writer->getKey(),
+        'body_md' => 'Skal gendannes',
+        'body_html' => $markdown->render('Skal gendannes'),
+    ]);
+
+    $this->actingAs($writer)
+        ->deleteJson("/posts/{$restorePost->id}")
+        ->assertNoContent();
+
+    $this->actingAs($moderator)
+        ->postJson("/posts/{$restorePost->id}/restore")
+        ->assertOk()
+        ->assertJsonFragment([
+            'id' => $restorePost->id,
+            'body_md' => 'Skal gendannes',
+        ]);
+
+    expect($restorePost->fresh()?->deleted_at)->toBeNull();
+
     $this->actingAs($admin)
         ->deleteJson("/topics/{$createdTopicId}")
         ->assertNoContent();
