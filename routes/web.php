@@ -165,7 +165,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
 
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
-    Route::post('/posts/{post}/restore')->withTrashed()->name('posts.restore');
+    Route::post('/posts/{post}/restore', [PostController::class, 'restore'])->withTrashed()->name('posts.restore');
 });
 
 /*
