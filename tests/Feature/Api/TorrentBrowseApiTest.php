@@ -248,5 +248,4 @@ final class TorrentBrowseApiTest extends TestCase
         $response->assertJsonPath('data.0.release_family.upgrade_available', false);
         $response->assertJsonPath('data.0.release_family.upgrade_from_torrent_id', null);
     }
-
 }
