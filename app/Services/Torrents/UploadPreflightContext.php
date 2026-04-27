@@ -18,6 +18,8 @@ final readonly class UploadPreflightContext
         public ?bool $metadataComplete,
         public ?string $infoHash,
         public ?int $existingTorrentId,
+        /** @var array<string, mixed>|null */
+        public ?array $releaseAdvice = null,
         public TorrentExtractedMetadata $extractedMetadata = new TorrentExtractedMetadata(
             title: null,
             year: null,
@@ -51,6 +53,7 @@ final readonly class UploadPreflightContext
             'metadata_complete' => $this->metadataComplete,
             'info_hash' => $this->infoHash,
             'existing_torrent_id' => $this->existingTorrentId,
+            'release_advice' => $this->releaseAdvice,
             'extracted_metadata' => $this->extractedMetadata->toArray() === [] ? null : $this->extractedMetadata->toArray(),
         ], static fn (mixed $value): bool => $value !== null);
     }

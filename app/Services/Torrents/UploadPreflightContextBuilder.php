@@ -14,6 +14,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly TorrentMetadataExtractor $metadataExtractor,
+        private readonly UploadReleaseAdvisor $releaseAdvisor,
     ) {}
 
     public function forUser(User $user, array $input = []): UploadPreflightContext
@@ -24,8 +25,19 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
     public function forPayload(User $user, string $torrentPayload, array $input = []): UploadPreflightContext
     {
         $rawNfo = is_string($input['nfo_text'] ?? null) ? $input['nfo_text'] : null;
+        $extractedMetadata = $this->metadataExtractor->extract($torrentPayload, $rawNfo);
+        $canonicalMetadata = CanonicalTorrentMetadata::fromExtractedMetadata(
+            $extractedMetadata,
+            is_string($input['type'] ?? null) ? $input['type'] : null,
+            is_string($input['resolution'] ?? null) ? $input['resolution'] : null,
+            is_string($input['source'] ?? null) ? $input['source'] : null,
+        );
 
-        return $this->makeContext($user, $input, $this->buildPayloadContext($torrentPayload, $rawNfo));
+        return $this->makeContext($user, $input, $this->buildPayloadContext(
+            $torrentPayload,
+            $extractedMetadata,
+            $this->releaseAdvisor->advise($canonicalMetadata),
+        ));
     }
 
     /**
@@ -46,6 +58,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             metadataComplete: $this->asBoolOrNull($payloadContext['metadata_complete'] ?? null),
             infoHash: $this->asStringOrNull($payloadContext['info_hash'] ?? null),
             existingTorrentId: $this->asIntOrNull($payloadContext['existing_torrent_id'] ?? null),
+            releaseAdvice: is_array($payloadContext['release_advice'] ?? null) ? $payloadContext['release_advice'] : null,
             extractedMetadata: $payloadContext['extracted_metadata'] ?? TorrentExtractedMetadata::empty(),
         );
     }
@@ -53,14 +66,17 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
     /**
      * @return array<string, mixed>
      */
-    private function buildPayloadContext(string $torrentPayload, ?string $rawNfo = null): array
-    {
+    private function buildPayloadContext(
+        string $torrentPayload,
+        TorrentExtractedMetadata $extractedMetadata,
+        array $releaseAdvice,
+    ): array {
         $decoded = $this->bencode->decode($torrentPayload);
-        $extractedMetadata = $this->metadataExtractor->extract($torrentPayload, $rawNfo);
 
         if (! is_array($decoded)) {
             return [
                 'metadata_complete' => false,
+                'release_advice' => $releaseAdvice,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -69,6 +85,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
         if (! is_array($info)) {
             return [
                 'metadata_complete' => false,
+                'release_advice' => $releaseAdvice,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -77,6 +94,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
         if ($sizeBytes === null) {
             return [
                 'metadata_complete' => false,
+                'release_advice' => $releaseAdvice,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -93,6 +111,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             'info_hash' => $infoHash,
             'duplicate' => $existingTorrent !== null,
             'existing_torrent_id' => $existingTorrent?->getKey(),
+            'release_advice' => $releaseAdvice,
             'extracted_metadata' => $extractedMetadata,
         ], static fn (mixed $value): bool => $value !== null);
     }

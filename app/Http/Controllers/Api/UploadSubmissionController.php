@@ -93,13 +93,16 @@ final class UploadSubmissionController extends Controller
             ),
         );
 
-        return $this->successfulUploadResponse($torrent);
+        return $this->successfulUploadResponse($torrent, is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null);
     }
 
     private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse
     {
         if ($decision->reason === UploadEligibilityReason::DuplicateTorrent) {
-            return $this->duplicateConflictResponse($this->resolveDuplicateTorrentFromContext($decision->context));
+            return $this->duplicateConflictResponse(
+                $this->resolveDuplicateTorrentFromContext($decision->context),
+                is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null,
+            );
         }
 
         if ($decision->reason === UploadEligibilityReason::MissingMetadata) {
@@ -111,13 +114,20 @@ final class UploadSubmissionController extends Controller
         abort(403);
     }
 
-    private function duplicateConflictResponse(?Torrent $existingTorrent = null): JsonResponse
+    /**
+     * @param  array<string, mixed>|null  $releaseAdvice
+     */
+    private function duplicateConflictResponse(?Torrent $existingTorrent = null, ?array $releaseAdvice = null): JsonResponse
     {
         $payload = [
             'message' => 'Torrent already exists.',
             'error' => 'duplicate_torrent',
             'duplicate' => true,
         ];
+
+        if ($releaseAdvice !== null) {
+            $payload['release_advice'] = $releaseAdvice;
+        }
 
         if ($existingTorrent instanceof Torrent) {
             $payload['existing_torrent'] = [
@@ -154,10 +164,19 @@ final class UploadSubmissionController extends Controller
         return null;
     }
 
-    private function successfulUploadResponse(Torrent $torrent): JsonResponse
+    /**
+     * @param  array<string, mixed>|null  $releaseAdvice
+     */
+    private function successfulUploadResponse(Torrent $torrent, ?array $releaseAdvice = null): JsonResponse
     {
-        return response()->json([
+        $payload = [
             'data' => (new UploadSubmissionResource($torrent))->resolve(),
-        ], 201);
+        ];
+
+        if ($releaseAdvice !== null) {
+            $payload['release_advice'] = $releaseAdvice;
+        }
+
+        return response()->json($payload, 201);
     }
 }
