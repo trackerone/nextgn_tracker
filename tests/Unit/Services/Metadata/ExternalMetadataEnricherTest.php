@@ -22,7 +22,7 @@ final class ExternalMetadataEnricherTest extends TestCase
 
     public function test_enrichment_disabled_marks_record_as_skipped(): void
     {
-        SiteSetting::query()->create(['key' => 'metadata.enrichment.enabled', 'value' => 'false', 'type' => 'bool']);
+        $this->setSiteSetting('metadata.enrichment.enabled', 'false', 'bool');
 
         $torrent = Torrent::factory()->create();
         $enricher = app(ExternalMetadataEnricher::class);
@@ -34,12 +34,10 @@ final class ExternalMetadataEnricherTest extends TestCase
 
     public function test_provider_priority_is_respected_and_tmdb_is_persisted(): void
     {
-        SiteSetting::query()->insert([
-            ['key' => 'metadata.enrichment.enabled', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.providers.priority', 'value' => '["tmdb","trakt"]', 'type' => 'json', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.providers.tmdb.enabled', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.providers.trakt.enabled', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb","trakt"]', 'json');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
 
         $tmdb = Mockery::mock(TmdbMetadataProvider::class);
         $trakt = Mockery::mock(TraktMetadataProvider::class);
@@ -91,7 +89,7 @@ final class ExternalMetadataEnricherTest extends TestCase
 
     public function test_imdb_provider_without_credentials_safely_skips(): void
     {
-        SiteSetting::query()->create(['key' => 'metadata.providers.imdb.enabled', 'value' => 'true', 'type' => 'bool']);
+        $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
         config()->set('metadata.imdb.dataset_enabled', false);
 
         $provider = app(ImdbMetadataProvider::class);
@@ -101,5 +99,13 @@ final class ExternalMetadataEnricherTest extends TestCase
         $this->assertSame('imdb', $result->provider);
         $this->assertSame('tt1234567', $result->imdbId);
         $this->assertSame('https://www.imdb.com/title/tt1234567/', $result->externalUrl);
+    }
+
+    private function setSiteSetting(string $key, string $value, string $type): void
+    {
+        SiteSetting::query()->updateOrCreate(
+            ['key' => $key],
+            ['value' => $value, 'type' => $type],
+        );
     }
 }

@@ -25,10 +25,8 @@ final class ExternalMetadataFlowTest extends TestCase
     {
         Queue::fake();
 
-        SiteSetting::query()->insert([
-            ['key' => 'metadata.enrichment.enabled', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.enrichment.auto_on_publish', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.enrichment.auto_on_publish', 'true', 'bool');
 
         $moderator = User::factory()->create();
         $torrent = Torrent::factory()->unapproved()->create(['status' => TorrentStatus::Pending]);
@@ -42,10 +40,8 @@ final class ExternalMetadataFlowTest extends TestCase
     {
         Queue::fake();
 
-        SiteSetting::query()->insert([
-            ['key' => 'metadata.enrichment.enabled', 'value' => 'true', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.enrichment.auto_on_publish', 'value' => 'false', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.enrichment.auto_on_publish', 'false', 'bool');
 
         $moderator = User::factory()->create();
         $torrent = Torrent::factory()->unapproved()->create(['status' => TorrentStatus::Pending]);
@@ -90,5 +86,13 @@ final class ExternalMetadataFlowTest extends TestCase
         $response->assertJsonPath('data.external_metadata.imdb_id', 'tt1234567');
         $response->assertJsonPath('data.external_metadata.tmdb_id', '123');
         $response->assertJsonPath('data.external_metadata.enrichment_status', 'enriched');
+    }
+
+    private function setSiteSetting(string $key, string $value, string $type): void
+    {
+        SiteSetting::query()->updateOrCreate(
+            ['key' => $key],
+            ['value' => $value, 'type' => $type],
+        );
     }
 }
