@@ -15,13 +15,11 @@ final class ExternalMetadataConfigTest extends TestCase
 
     public function test_reads_values_from_site_settings_repository(): void
     {
-        SiteSetting::query()->insert([
-            ['key' => 'metadata.enrichment.enabled', 'value' => 'false', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.enrichment.auto_on_publish', 'value' => 'false', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.enrichment.refresh_after_days', 'value' => '7', 'type' => 'int', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.providers.tmdb.enabled', 'value' => 'false', 'type' => 'bool', 'created_at' => now(), 'updated_at' => now()],
-            ['key' => 'metadata.providers.priority', 'value' => '["trakt","tmdb"]', 'type' => 'json', 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        $this->setSiteSetting('metadata.enrichment.enabled', 'false', 'bool');
+        $this->setSiteSetting('metadata.enrichment.auto_on_publish', 'false', 'bool');
+        $this->setSiteSetting('metadata.enrichment.refresh_after_days', '7', 'int');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'false', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["trakt","tmdb"]', 'json');
 
         $config = app(ExternalMetadataConfig::class);
 
@@ -30,5 +28,13 @@ final class ExternalMetadataConfigTest extends TestCase
         $this->assertSame(7, $config->refreshAfterDays());
         $this->assertFalse($config->providerEnabled('tmdb'));
         $this->assertSame(['trakt', 'tmdb'], $config->providerPriority());
+    }
+
+    private function setSiteSetting(string $key, string $value, string $type): void
+    {
+        SiteSetting::query()->updateOrCreate(
+            ['key' => $key],
+            ['value' => $value, 'type' => $type],
+        );
     }
 }
