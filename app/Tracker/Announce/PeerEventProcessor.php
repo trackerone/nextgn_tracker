@@ -8,6 +8,8 @@ use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Tracker\AnnounceIntegrityEvaluation;
+use App\Services\Tracker\AnnounceIntegrityEvaluator;
 use App\Services\Tracker\UserRatioStatsRecorder;
 use App\Services\UserTorrentService;
 use Illuminate\Http\Request;
@@ -24,6 +26,7 @@ final class PeerEventProcessor
         private readonly AnnounceResponseBuilder $responseBuilder,
         private readonly TwentyByteParamDecoder $decoder,
         private readonly UserRatioStatsRecorder $ratioStatsRecorder,
+        private readonly AnnounceIntegrityEvaluator $integrityEvaluator,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -31,24 +34,6 @@ final class PeerEventProcessor
         $peerId = $this->decoder->decode($data->peerId);
         if ($peerId === null) {
             return AnnounceResult::failure('peer_id must be exactly 20 bytes.');
-        }
-
-        $oldPeer = Peer::query()
-            ->where('torrent_id', $torrent->getKey())
-            ->where('peer_id', $peerId)
-            ->first();
-
-        if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $data, $oldPeer)) {
-            $this->securityLogger->log(
-                request: $request,
-                user: $user,
-                eventType: 'tracker.rate_limited',
-                severity: 'medium',
-                message: 'Rate limit violation during announce',
-                context: ['torrent_id' => $torrent->getKey()],
-            );
-
-            return $this->responseBuilder->successWithoutPeers($torrent);
         }
 
         if ($data->event === 'started' && $data->left > 0 && ! $this->isStaff($user)) {
@@ -59,10 +44,49 @@ final class PeerEventProcessor
             }
         }
 
-        $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
-        $this->persistUserTorrentState($user, $torrent, $data);
-        $this->ratioStatsRecorder->record($user, $torrent, $oldPeer, $data);
+        $result = DB::transaction(function () use ($request, $user, $torrent, $data, $peerId): array {
+            $oldPeer = Peer::query()
+                ->where('torrent_id', $torrent->getKey())
+                ->where('peer_id', $peerId)
+                ->lockForUpdate()
+                ->first();
 
+            if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $data, $oldPeer)) {
+                $this->securityLogger->log(
+                    request: $request,
+                    user: $user,
+                    eventType: 'tracker.rate_limited',
+                    severity: 'medium',
+                    message: 'Rate limit violation during announce',
+                    context: ['torrent_id' => $torrent->getKey()],
+                );
+
+                return ['short_circuit' => true];
+            }
+
+            $integrity = $this->integrityEvaluator->evaluate($oldPeer, $data);
+
+            $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
+            $this->persistUserTorrentState($user, $torrent, $data);
+            $this->ratioStatsRecorder->record($user, $torrent, $integrity);
+
+            return [
+                'short_circuit' => false,
+                'integrity' => $integrity,
+                'old_peer' => $oldPeer,
+            ];
+        });
+
+        if (($result['short_circuit'] ?? false) === true) {
+            return $this->responseBuilder->successWithoutPeers($torrent);
+        }
+
+        /** @var AnnounceIntegrityEvaluation $integrity */
+        $integrity = $result['integrity'];
+        /** @var Peer|null $oldPeer */
+        $oldPeer = $result['old_peer'];
+
+        $this->logIntegrityEvents($request, $user, $torrent, $peerId, $oldPeer, $data, $integrity);
         $this->torrents->refreshPeerStats($torrent);
 
         return $this->responseBuilder->successWithPeers($torrent, $peerId, $data->numwant);
@@ -85,22 +109,20 @@ final class PeerEventProcessor
         $existingUploaded = $existingPeer instanceof Peer ? (int) $existingPeer->uploaded : 0;
         $existingDownloaded = $existingPeer instanceof Peer ? (int) $existingPeer->downloaded : 0;
 
-        Peer::query()->updateOrCreate(
-            [
-                'torrent_id' => $torrent->getKey(),
-                'peer_id' => $peerId,
-            ],
-            [
-                'user_id' => $user->getKey(),
-                'ip' => $ip,
-                'port' => $data->port,
-                'uploaded' => max($existingUploaded, $data->uploaded),
-                'downloaded' => max($existingDownloaded, $data->downloaded),
-                'left' => $data->left,
-                'is_seeder' => $data->left === 0,
-                'last_announce_at' => $now,
-            ],
-        );
+        $peer = $existingPeer ?? new Peer([
+            'torrent_id' => $torrent->getKey(),
+            'peer_id' => $peerId,
+        ]);
+
+        $peer->user_id = $user->getKey();
+        $peer->ip = $ip;
+        $peer->port = $data->port;
+        $peer->uploaded = max($existingUploaded, $data->uploaded);
+        $peer->downloaded = max($existingDownloaded, $data->downloaded);
+        $peer->left = $data->left;
+        $peer->is_seeder = $data->left === 0;
+        $peer->last_announce_at = $now;
+        $peer->save();
 
         if ($data->event === 'completed' && $this->shouldIncrementCompletedCounter($user, $torrent)) {
             $torrent->increment('completed');
@@ -158,5 +180,52 @@ final class PeerEventProcessor
                 'admin1',
                 'admin2',
             ], true);
+    }
+
+    private function logIntegrityEvents(
+        Request $request,
+        User $user,
+        Torrent $torrent,
+        string $peerId,
+        ?Peer $oldPeer,
+        AnnounceRequestData $newState,
+        AnnounceIntegrityEvaluation $integrity,
+    ): void {
+        if (! $integrity->isSuspicious()) {
+            return;
+        }
+
+        $context = [
+            'user_id' => $user->getKey(),
+            'torrent_id' => $torrent->getKey(),
+            'peer_id' => bin2hex($peerId),
+            'old_uploaded' => $oldPeer instanceof Peer ? (int) $oldPeer->uploaded : null,
+            'new_uploaded' => $newState->uploaded,
+            'old_downloaded' => $oldPeer instanceof Peer ? (int) $oldPeer->downloaded : null,
+            'new_downloaded' => $newState->downloaded,
+            'old_left' => $oldPeer instanceof Peer ? (int) $oldPeer->left : null,
+            'new_left' => $newState->left,
+            'reasons' => $integrity->reasons,
+        ];
+
+        $this->securityLogger->log(
+            request: $request,
+            user: $user,
+            eventType: 'tracker.announce.suspicious_delta',
+            severity: 'medium',
+            message: 'Suspicious announce delta detected.',
+            context: $context,
+        );
+
+        if ($integrity->hasReason('completion_rollback')) {
+            $this->securityLogger->log(
+                request: $request,
+                user: $user,
+                eventType: 'tracker.announce.completion_rollback',
+                severity: 'medium',
+                message: 'Completion rollback detected during announce.',
+                context: $context,
+            );
+        }
     }
 }

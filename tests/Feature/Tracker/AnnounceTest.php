@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Tracker;
 
 use App\Models\Peer;
+use App\Models\SecurityEvent;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
@@ -483,6 +484,11 @@ class AnnounceTest extends TestCase
             'uploaded_bytes' => 0,
             'downloaded_bytes' => 0,
         ]);
+
+        $this->assertDatabaseHas('security_events', [
+            'user_id' => $user->id,
+            'event_type' => 'tracker.announce.suspicious_delta',
+        ]);
     }
 
     public function test_ratio_stats_ignore_negative_deltas_on_freeleech(): void
@@ -520,6 +526,75 @@ class AnnounceTest extends TestCase
             'uploaded_bytes' => 0,
             'downloaded_bytes' => 0,
         ]);
+    }
+
+    public function test_repeated_announce_with_same_counters_does_not_double_credit_ratio_stats(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-repeat-no-double-credit');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-repeat-no-double-credit');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 50,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 160,
+            'downloaded' => 95,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 160,
+            'downloaded' => 95,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 45,
+        ]);
+
+        $this->assertDatabaseHas('torrent_user_stats', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 45,
+        ]);
+    }
+
+    public function test_completion_rollback_logs_specific_security_event(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-completion-rollback-log');
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-completion-rollback-log');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'left' => 100,
+        ])->assertOk();
+
+        $completionRollbackEvent = SecurityEvent::query()
+            ->where('event_type', 'tracker.announce.completion_rollback')
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($completionRollbackEvent);
+        $this->assertSame(['completion_rollback'], $completionRollbackEvent->context['reasons'] ?? []);
     }
 
     public function test_ratio_stats_completion_transition_updates_completion_counters(): void
