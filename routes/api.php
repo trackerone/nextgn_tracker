@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
+use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
@@ -29,6 +30,14 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
 
     Route::post('/ratio', [TrackerRatioSettingsController::class, 'update'])
         ->name('api.admin.settings.tracker.ratio.update');
+});
+
+Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
+    Route::get('/providers', [MetadataProviderSettingsController::class, 'show'])
+        ->name('api.admin.settings.metadata.providers.show');
+
+    Route::post('/providers', [MetadataProviderSettingsController::class, 'update'])
+        ->name('api.admin.settings.metadata.providers.update');
 });
 
 Route::middleware(['api', 'auth'])->group(function (): void {

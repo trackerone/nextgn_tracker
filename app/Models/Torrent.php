@@ -232,6 +232,11 @@ class Torrent extends Model
         return $this->hasOne(TorrentMetadata::class);
     }
 
+    public function externalMetadata(): HasOne
+    {
+        return $this->hasOne(TorrentExternalMetadata::class);
+    }
+
     public function peers(): HasMany
     {
         return $this->hasMany(Peer::class);

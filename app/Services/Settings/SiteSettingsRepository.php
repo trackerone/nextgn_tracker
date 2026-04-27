@@ -14,6 +14,13 @@ final class SiteSettingsRepository
         'tracker.ratio.minimum_download_ratio' => ['value' => '0.5', 'type' => 'float'],
         'tracker.ratio.freeleech_bypass_enabled' => ['value' => 'true', 'type' => 'bool'],
         'tracker.ratio.no_history_grace_enabled' => ['value' => 'true', 'type' => 'bool'],
+        'metadata.providers.tmdb.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'metadata.providers.trakt.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'metadata.providers.imdb.enabled' => ['value' => 'false', 'type' => 'bool'],
+        'metadata.providers.priority' => ['value' => '["tmdb","trakt","imdb"]', 'type' => 'json'],
+        'metadata.enrichment.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'metadata.enrichment.auto_on_publish' => ['value' => 'true', 'type' => 'bool'],
+        'metadata.enrichment.refresh_after_days' => ['value' => '30', 'type' => 'int'],
     ];
 
     public function getBool(string $key): bool
@@ -34,6 +41,16 @@ final class SiteSettingsRepository
     public function getString(string $key): string
     {
         return $this->value($key);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function getJson(string $key): array
+    {
+        $decoded = json_decode($this->value($key), true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     public function set(string $key, mixed $value, string $type): void
