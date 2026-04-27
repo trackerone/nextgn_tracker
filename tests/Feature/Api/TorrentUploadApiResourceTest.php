@@ -6,10 +6,9 @@ namespace Tests\Feature\Api;
 
 use App\Enums\TorrentStatus;
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Services\BencodeService;
-use App\Services\Torrents\CanonicalTorrentMetadata;
-use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Torrents\UploadPreflightContext;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -175,34 +174,27 @@ final class TorrentUploadApiResourceTest extends TestCase
         Storage::fake('torrents');
 
         $user = User::factory()->create();
-        $payload = $this->sampleTorrentPayload();
+        $payload = $this->sampleTorrentPayload(
+            infoName: 'Api.Upload.2024.1080p.WEB-DL-GRP',
+            piecesSeed: 'a',
+        );
 
-        $this->actingAs($user)->postJson('/api/uploads', [
-            'name' => 'API Upload',
+        $existing = Torrent::factory()->create([
             'type' => 'movie',
-            'source' => 'WEB-DL',
-            'resolution' => '1080p',
-            'torrent_file' => UploadedFile::fake()->createWithContent(
-                'api-upload.torrent',
-                $payload,
-                'application/x-bittorrent'
-            ),
-        ])->assertCreated();
+            'status' => Torrent::STATUS_PUBLISHED,
+            'is_approved' => true,
+            'is_banned' => false,
+            'info_hash' => $this->infoHashForPayload($payload),
+        ]);
 
-        $this->mock(UploadReleaseAdvisor::class, function ($mock): void {
-            $mock->shouldReceive('advise')
-                ->once()
-                ->andReturn([
-                    'family_key' => 'movie:api upload:2024',
-                    'quality_score' => 720,
-                    'family_exists' => true,
-                    'same_quality_exists' => false,
-                    'better_version_exists' => true,
-                    'best_torrent_id' => 1,
-                    'matching_torrent_ids' => [1],
-                    'warnings' => ['same_family_exists', 'better_version_exists'],
-                ]);
-        });
+        TorrentMetadata::query()->create([
+            'torrent_id' => $existing->id,
+            'title' => 'Api Upload',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+        ]);
 
         $response = $this->actingAs($user)->postJson('/api/uploads', [
             'name' => 'API Upload Duplicate',
@@ -219,6 +211,8 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertStatus(409);
         $response->assertJsonPath('release_advice.family_exists', true);
         $response->assertJsonPath('release_advice.better_version_exists', true);
+        $response->assertJsonPath('release_advice.same_quality_exists', false);
+        $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
         $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
     }
@@ -229,19 +223,21 @@ final class TorrentUploadApiResourceTest extends TestCase
 
         $user = User::factory()->create();
 
-        $this->mock(UploadReleaseAdvisor::class, function ($mock): void {
-            $mock->shouldReceive('advise')
-                ->andReturnUsing(static fn (CanonicalTorrentMetadata $metadata): array => [
-                    'family_key' => 'movie:'.strtolower((string) $metadata->title).':2024',
-                    'quality_score' => 610,
-                    'family_exists' => true,
-                    'same_quality_exists' => true,
-                    'better_version_exists' => true,
-                    'best_torrent_id' => 123,
-                    'matching_torrent_ids' => [123],
-                    'warnings' => ['same_family_exists', 'same_quality_exists', 'better_version_exists'],
-                ]);
-        });
+        $existing = Torrent::factory()->create([
+            'type' => 'movie',
+            'status' => Torrent::STATUS_PUBLISHED,
+            'is_approved' => true,
+            'is_banned' => false,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $existing->id,
+            'title' => 'Api Upload Advisory',
+            'type' => 'movie',
+            'year' => 2024,
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+        ]);
 
         $response = $this->actingAs($user)->postJson('/api/uploads', [
             'name' => 'API Upload Advisory',
@@ -250,7 +246,10 @@ final class TorrentUploadApiResourceTest extends TestCase
             'resolution' => '1080p',
             'torrent_file' => UploadedFile::fake()->createWithContent(
                 'api-upload-advisory.torrent',
-                $this->sampleTorrentPayload(),
+                $this->sampleTorrentPayload(
+                    infoName: 'Api.Upload.Advisory.2024.1080p.WEB-DL-GRP',
+                    piecesSeed: 'b',
+                ),
                 'application/x-bittorrent'
             ),
         ]);
@@ -259,18 +258,31 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('data.name', 'API Upload Advisory');
         $response->assertJsonPath('release_advice.family_exists', true);
         $response->assertJsonPath('release_advice.better_version_exists', true);
+        $response->assertJsonPath('release_advice.same_quality_exists', false);
+        $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
+        $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
+        $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
     }
 
-    private function sampleTorrentPayload(): string
+    private function sampleTorrentPayload(string $infoName = 'API Upload', string $piecesSeed = 'a'): string
     {
         return app(BencodeService::class)->encode([
             'announce' => 'http://localhost/announce',
             'info' => [
-                'name' => 'API Upload',
+                'name' => $infoName,
                 'piece length' => 16384,
                 'length' => 1024,
-                'pieces' => str_repeat('a', 20),
+                'pieces' => str_repeat($piecesSeed, 20),
             ],
         ]);
+    }
+
+    private function infoHashForPayload(string $payload): string
+    {
+        $decoded = app(BencodeService::class)->decode($payload);
+        $this->assertIsArray($decoded);
+        $this->assertIsArray($decoded['info'] ?? null);
+
+        return strtoupper(sha1(app(BencodeService::class)->encode($decoded['info'])));
     }
 }
