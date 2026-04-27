@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Http\Resources\Support\TorrentMetadataView;
+use App\Models\TorrentExternalMetadata;
 use App\Models\Torrent;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -44,6 +45,7 @@ final class TorrentDetailsResource extends JsonResource
             'description' => $this->description,
             'type' => $this->type,
             'metadata' => TorrentMetadataView::forTorrent($this->resource),
+            'external_metadata' => $this->externalMetadata(),
             'info_hash' => strtolower((string) $this->info_hash),
             'size_bytes' => (int) ($this->size_bytes ?? 0),
             'size_human' => $this->formatted_size,
@@ -74,6 +76,35 @@ final class TorrentDetailsResource extends JsonResource
             ])->values()->all(),
             'download_url' => '/api/torrents/'.$this->id.'/download',
             'magnet_url' => $magnetUrl,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function externalMetadata(): ?array
+    {
+        $metadata = $this->resource->externalMetadata;
+
+        if (! $metadata instanceof TorrentExternalMetadata) {
+            return null;
+        }
+
+        return [
+            'imdb_id' => $metadata->imdb_id,
+            'tmdb_id' => $metadata->tmdb_id,
+            'trakt_id' => $metadata->trakt_id,
+            'trakt_slug' => $metadata->trakt_slug,
+            'title' => $metadata->title,
+            'year' => $metadata->year,
+            'media_type' => $metadata->media_type,
+            'overview' => $metadata->overview,
+            'poster_url' => $metadata->poster_url,
+            'backdrop_url' => $metadata->backdrop_url,
+            'tmdb_url' => $metadata->tmdb_url,
+            'imdb_url' => $metadata->imdb_url,
+            'trakt_url' => $metadata->trakt_url,
+            'enrichment_status' => $metadata->enrichment_status,
         ];
     }
 }

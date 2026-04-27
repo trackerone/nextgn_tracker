@@ -17,7 +17,7 @@ final class TorrentDetailsController extends Controller
         $user = $request->user();
         abort_unless($user !== null, 401);
 
-        $torrentModel = app(ResolveTorrentAccessAction::class)->execute($torrent, 'view', ['category', 'uploader', 'metadata']);
+        $torrentModel = app(ResolveTorrentAccessAction::class)->execute($torrent, 'view', ['category', 'uploader', 'metadata', 'externalMetadata']);
 
         return response()->json([
             'data' => (new TorrentDetailsResource($torrentModel, $user->passkey))->resolve(),

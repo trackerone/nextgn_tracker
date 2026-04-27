@@ -24,7 +24,7 @@ final class TorrentBrowseController extends Controller
     ): JsonResponse {
         $query = Torrent::query()
             ->visible()
-            ->with(['category', 'uploader', 'metadata']);
+            ->with(['category', 'uploader', 'metadata', 'externalMetadata']);
 
         $filters = $request->filters();
 
