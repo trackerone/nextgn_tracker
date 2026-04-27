@@ -11,6 +11,33 @@ use Illuminate\Support\Str;
 final class TorrentReleaseFamilyGrouper
 {
     /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    public function keyForMetadata(array $metadata): ?string
+    {
+        $title = $this->normalizedTitle($metadata);
+        $type = $this->normalizedType($metadata);
+
+        if ($title === null || $type === null) {
+            return null;
+        }
+
+        if ($type === 'movie') {
+            $year = $this->asPositiveInt($metadata['year'] ?? null);
+
+            return $year === null ? null : sprintf('movie:%s:%d', $title, $year);
+        }
+
+        if ($type === 'tv') {
+            $seasonEpisode = $this->extractSeasonEpisode($metadata);
+
+            return $seasonEpisode === null ? null : sprintf('tv:%s:%s', $title, $seasonEpisode);
+        }
+
+        return sprintf('%s:%s', $type, $title);
+    }
+
+    /**
      * @param  Collection<int, Torrent>  $torrents
      * @param  array<int, array<string, int|string|null>>  $metadataByTorrentId
      * @return array<int, array{
@@ -29,7 +56,7 @@ final class TorrentReleaseFamilyGrouper
 
         foreach ($torrents as $torrent) {
             $metadata = $metadataByTorrentId[(int) $torrent->id] ?? [];
-            $familyKey = $this->groupingKey($torrent, $metadata);
+            $familyKey = $this->keyForMetadata($metadata) ?? sprintf('torrent:%d', (int) $torrent->id);
 
             if (! isset($families[$familyKey])) {
                 $families[$familyKey] = [
@@ -80,39 +107,6 @@ final class TorrentReleaseFamilyGrouper
         }
 
         return $groupedFamilies;
-    }
-
-    /** @param array<string, int|string|null> $metadata */
-    private function groupingKey(Torrent $torrent, array $metadata): string
-    {
-        $title = $this->normalizedTitle($metadata);
-        $type = $this->normalizedType($metadata);
-
-        if ($title === null || $type === null) {
-            return sprintf('torrent:%d', (int) $torrent->id);
-        }
-
-        if ($type === 'movie') {
-            $year = $this->asPositiveInt($metadata['year'] ?? null);
-
-            if ($year === null) {
-                return sprintf('torrent:%d', (int) $torrent->id);
-            }
-
-            return sprintf('movie:%s:%d', $title, $year);
-        }
-
-        if ($type === 'tv') {
-            $seasonEpisode = $this->extractSeasonEpisode($metadata);
-
-            if ($seasonEpisode === null) {
-                return sprintf('torrent:%d', (int) $torrent->id);
-            }
-
-            return sprintf('tv:%s:%s', $title, $seasonEpisode);
-        }
-
-        return sprintf('%s:%s', $type, $title);
     }
 
     /** @param array<string, int|string|null> $metadata */
