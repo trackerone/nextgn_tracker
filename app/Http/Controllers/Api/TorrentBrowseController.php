@@ -21,8 +21,7 @@ final class TorrentBrowseController extends Controller
         TorrentBrowseQuery $browseQuery,
         ReleaseFamilyBestVersionResolver $bestVersionResolver,
         ReleaseUpgradeAdvisor $upgradeAdvisor
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $query = Torrent::query()
             ->visible()
             ->with(['category', 'uploader', 'metadata']);
