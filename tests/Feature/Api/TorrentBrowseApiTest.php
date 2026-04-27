@@ -208,4 +208,45 @@ final class TorrentBrowseApiTest extends TestCase
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.id', $match->id);
     }
+
+    public function test_browse_payload_includes_release_family_intelligence_structure(): void
+    {
+        $user = User::factory()->create();
+
+        $lower = Torrent::factory()->create(['name' => 'Arc Light 2024 1080p WEB-DL']);
+        $best = Torrent::factory()->create(['name' => 'Arc Light 2024 2160p BLURAY']);
+
+        TorrentMetadata::query()->insert([
+            [
+                'torrent_id' => $lower->id,
+                'title' => 'Arc Light',
+                'type' => 'movie',
+                'year' => 2024,
+                'resolution' => '1080p',
+                'source' => 'WEB-DL',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'torrent_id' => $best->id,
+                'title' => 'Arc Light',
+                'type' => 'movie',
+                'year' => 2024,
+                'resolution' => '2160p',
+                'source' => 'BLURAY',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $response = $this->actingAs($user)->getJson('/api/torrents?sort=id&direction=asc');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.release_family.key', 'movie:arc light:2024');
+        $response->assertJsonPath('data.0.release_family.is_best_version', false);
+        $response->assertJsonPath('data.0.release_family.best_torrent_id', $best->id);
+        $response->assertJsonPath('data.0.release_family.upgrade_available', false);
+        $response->assertJsonPath('data.0.release_family.upgrade_from_torrent_id', null);
+    }
+
 }
