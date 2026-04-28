@@ -6,14 +6,12 @@ namespace Tests\Unit\Services\Metadata;
 
 use App\Models\SiteSetting;
 use App\Models\Torrent;
+use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
 use App\Services\Metadata\ExternalMetadataEnricher;
 use App\Services\Metadata\Providers\ImdbMetadataProvider;
-use App\Services\Metadata\Providers\TmdbMetadataProvider;
-use App\Services\Metadata\Providers\TraktMetadataProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 final class ExternalMetadataEnricherTest extends TestCase
@@ -39,36 +37,36 @@ final class ExternalMetadataEnricherTest extends TestCase
         $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
         $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
 
-        $tmdb = Mockery::mock(TmdbMetadataProvider::class);
-        $trakt = Mockery::mock(TraktMetadataProvider::class);
-        $imdb = Mockery::mock(ImdbMetadataProvider::class);
-
-        $tmdb->shouldReceive('providerKey')->andReturn('tmdb');
-        $tmdb->shouldReceive('supports')->andReturn(true);
-        $tmdb->shouldReceive('lookup')->once()->andReturn(new ExternalMetadataResult(
-            provider: 'tmdb',
-            found: true,
-            imdbId: 'tt0111161',
-            tmdbId: '278',
-            title: 'The Shawshank Redemption',
-            year: 1994,
-            mediaType: 'movie',
-            externalUrl: 'https://www.themoviedb.org/movie/278',
-            rawPayload: ['id' => 278],
-        ));
-
-        $trakt->shouldReceive('providerKey')->andReturn('trakt');
-        $trakt->shouldReceive('supports')->andReturn(true);
-        $trakt->shouldReceive('lookup')->once()->andReturn(new ExternalMetadataResult(
-            provider: 'trakt',
-            found: true,
-            traktId: '1',
-            traktSlug: 'shawshank-redemption-1994',
-            externalUrl: 'https://trakt.tv/movies/shawshank-redemption-1994',
-            rawPayload: ['ids' => ['trakt' => 1]],
-        ));
-
-        $imdb->shouldReceive('providerKey')->andReturn('imdb');
+        $tmdb = new FakeExternalMetadataProvider(
+            key: 'tmdb',
+            result: new ExternalMetadataResult(
+                provider: 'tmdb',
+                found: true,
+                imdbId: 'tt0111161',
+                tmdbId: '278',
+                title: 'The Shawshank Redemption',
+                year: 1994,
+                mediaType: 'movie',
+                externalUrl: 'https://www.themoviedb.org/movie/278',
+                rawPayload: ['id' => 278],
+            ),
+        );
+        $trakt = new FakeExternalMetadataProvider(
+            key: 'trakt',
+            result: new ExternalMetadataResult(
+                provider: 'trakt',
+                found: true,
+                traktId: '1',
+                traktSlug: 'shawshank-redemption-1994',
+                externalUrl: 'https://trakt.tv/movies/shawshank-redemption-1994',
+                rawPayload: ['ids' => ['trakt' => 1]],
+            ),
+        );
+        $imdb = new FakeExternalMetadataProvider(
+            key: 'imdb',
+            result: ExternalMetadataResult::skipped('imdb'),
+            supports: false,
+        );
 
         $torrent = Torrent::factory()->create(['imdb_id' => 'tt0111161']);
         $enricher = app()->makeWith(ExternalMetadataEnricher::class, [
@@ -107,5 +105,29 @@ final class ExternalMetadataEnricherTest extends TestCase
             ['key' => $key],
             ['value' => $value, 'type' => $type],
         );
+    }
+}
+
+final class FakeExternalMetadataProvider implements ExternalMetadataProvider
+{
+    public function __construct(
+        private readonly string $key,
+        private readonly ExternalMetadataResult $result,
+        private readonly bool $supports = true,
+    ) {}
+
+    public function providerKey(): string
+    {
+        return $this->key;
+    }
+
+    public function supports(ExternalMetadataLookup $lookup): bool
+    {
+        return $this->supports;
+    }
+
+    public function lookup(ExternalMetadataLookup $lookup): ExternalMetadataResult
+    {
+        return $this->result;
     }
 }
