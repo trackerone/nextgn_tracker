@@ -11,10 +11,13 @@ use App\Models\SiteSetting;
 use App\Models\Torrent;
 use App\Models\TorrentExternalMetadata;
 use App\Models\User;
+use App\Services\Metadata\Contracts\ExternalMetadataProvider;
+use App\Services\Metadata\DTO\ExternalMetadataLookup;
+use App\Services\Metadata\DTO\ExternalMetadataResult;
 use App\Services\Metadata\ExternalMetadataEnricher;
+use App\Services\Metadata\ExternalMetadataConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Mockery;
 use Tests\TestCase;
 
 final class ExternalMetadataFlowTest extends TestCase
@@ -53,11 +56,28 @@ final class ExternalMetadataFlowTest extends TestCase
 
     public function test_enrichment_job_updates_torrent_external_metadata(): void
     {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb"]', 'json');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
+
         $torrent = Torrent::factory()->create();
 
-        $enricher = Mockery::mock(ExternalMetadataEnricher::class);
-        $enricher->shouldReceive('enrich')->once()->andReturn(
-            TorrentExternalMetadata::factory()->for($torrent)->create(['enrichment_status' => 'enriched'])
+        $enricher = new ExternalMetadataEnricher(
+            app(ExternalMetadataConfig::class),
+            new FakeFlowExternalMetadataProvider(
+                key: 'tmdb',
+                result: new ExternalMetadataResult(
+                    provider: 'tmdb',
+                    found: true,
+                    imdbId: 'tt1234567',
+                    tmdbId: '123',
+                    title: 'Flow Result',
+                    year: 2020,
+                    mediaType: 'movie',
+                ),
+            ),
+            new FakeFlowExternalMetadataProvider('trakt', ExternalMetadataResult::skipped('trakt'), supports: false),
+            new FakeFlowExternalMetadataProvider('imdb', ExternalMetadataResult::skipped('imdb'), supports: false),
         );
 
         $job = new EnrichTorrentExternalMetadata($torrent->id);
@@ -94,5 +114,29 @@ final class ExternalMetadataFlowTest extends TestCase
             ['key' => $key],
             ['value' => $value, 'type' => $type],
         );
+    }
+}
+
+final class FakeFlowExternalMetadataProvider implements ExternalMetadataProvider
+{
+    public function __construct(
+        private readonly string $key,
+        private readonly ExternalMetadataResult $result,
+        private readonly bool $supports = true,
+    ) {}
+
+    public function providerKey(): string
+    {
+        return $this->key;
+    }
+
+    public function supports(ExternalMetadataLookup $lookup): bool
+    {
+        return $this->supports;
+    }
+
+    public function lookup(ExternalMetadataLookup $lookup): ExternalMetadataResult
+    {
+        return $this->result;
     }
 }

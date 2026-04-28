@@ -6,6 +6,7 @@ namespace App\Services\Metadata;
 
 use App\Models\Torrent;
 use App\Models\TorrentExternalMetadata;
+use App\Models\TorrentMetadata;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
@@ -37,6 +38,7 @@ final class ExternalMetadataEnricher
 
     public function enrich(Torrent $torrent): TorrentExternalMetadata
     {
+        /** @var TorrentExternalMetadata $externalMetadata */
         $externalMetadata = $torrent->externalMetadata()->firstOrNew();
 
         if (! $this->config->enrichmentEnabled()) {
@@ -106,15 +108,19 @@ final class ExternalMetadataEnricher
 
     private function buildLookup(Torrent $torrent): ExternalMetadataLookup
     {
-        $canonical = $torrent->metadata;
+        $metadataModel = $torrent->metadata;
+        $canonical = $metadataModel instanceof TorrentMetadata ? $metadataModel : null;
+        $tmdbId = $canonical !== null && $canonical->tmdb_id !== null
+            ? (string) $canonical->tmdb_id
+            : ($torrent->tmdb_id !== null ? (string) $torrent->tmdb_id : null);
 
         return new ExternalMetadataLookup(
-            imdbId: $canonical?->imdb_id ?? $torrent->imdb_id,
-            tmdbId: ($canonical?->tmdb_id !== null ? (string) $canonical->tmdb_id : null) ?? ($torrent->tmdb_id !== null ? (string) $torrent->tmdb_id : null),
+            imdbId: $canonical !== null ? $canonical->imdb_id : $torrent->imdb_id,
+            tmdbId: $tmdbId,
             traktId: null,
-            title: $canonical?->title ?? $torrent->name,
-            year: $canonical?->year,
-            mediaType: $canonical?->type ?? $torrent->type,
+            title: $canonical !== null ? $canonical->title : $torrent->name,
+            year: $canonical !== null ? $canonical->year : null,
+            mediaType: $canonical !== null ? $canonical->type : $torrent->type,
         );
     }
 

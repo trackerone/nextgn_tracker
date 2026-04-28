@@ -86,7 +86,7 @@ final class TorrentDetailsResource extends JsonResource
     {
         $metadata = $this->resource->externalMetadata;
 
-        if (! $metadata instanceof TorrentExternalMetadata) {
+        if (!$metadata instanceof TorrentExternalMetadata) {
             return null;
         }
 

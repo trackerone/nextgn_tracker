@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
+use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
