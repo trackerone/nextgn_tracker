@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\User;
+use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnricher;
+use App\Services\Metadata\Providers\ImdbMetadataProvider;
+use App\Services\Metadata\Providers\TmdbMetadataProvider;
+use App\Services\Metadata\Providers\TraktMetadataProvider;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
@@ -23,6 +28,17 @@ class AppServiceProvider extends ServiceProvider
             UploadPreflightContextBuilderContract::class,
             UploadPreflightContextBuilder::class
         );
+
+        $this->app->bind(ExternalMetadataEnricher::class, function ($app): ExternalMetadataEnricher {
+            return new ExternalMetadataEnricher(
+                $app->make(ExternalMetadataConfig::class),
+                [
+                    $app->make(TmdbMetadataProvider::class),
+                    $app->make(TraktMetadataProvider::class),
+                    $app->make(ImdbMetadataProvider::class),
+                ],
+            );
+        });
     }
 
     public function boot(): void

@@ -10,9 +10,6 @@ use App\Models\TorrentMetadata;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
-use App\Services\Metadata\Providers\ImdbMetadataProvider;
-use App\Services\Metadata\Providers\TmdbMetadataProvider;
-use App\Services\Metadata\Providers\TraktMetadataProvider;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -25,15 +22,17 @@ final class ExternalMetadataEnricher
 
     public function __construct(
         private readonly ExternalMetadataConfig $config,
-        TmdbMetadataProvider $tmdbProvider,
-        TraktMetadataProvider $traktProvider,
-        ImdbMetadataProvider $imdbProvider,
+        iterable $providers,
     ) {
-        $this->providers = [
-            $tmdbProvider->providerKey() => $tmdbProvider,
-            $traktProvider->providerKey() => $traktProvider,
-            $imdbProvider->providerKey() => $imdbProvider,
-        ];
+        $this->providers = [];
+
+        foreach ($providers as $provider) {
+            if (! $provider instanceof ExternalMetadataProvider) {
+                continue;
+            }
+
+            $this->providers[$provider->providerKey()] = $provider;
+        }
     }
 
     public function enrich(Torrent $torrent): TorrentExternalMetadata
