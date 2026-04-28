@@ -33,9 +33,10 @@ final class ExternalMetadataEnricherTest extends TestCase
     public function test_provider_priority_is_respected_and_tmdb_is_persisted(): void
     {
         $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
-        $this->setSiteSetting('metadata.providers.priority', '["tmdb","trakt"]', 'json');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb","trakt","imdb"]', 'json');
         $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
         $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
 
         $tmdb = new FakeExternalMetadataProvider(
             key: 'tmdb',
@@ -70,9 +71,7 @@ final class ExternalMetadataEnricherTest extends TestCase
 
         $torrent = Torrent::factory()->create(['imdb_id' => 'tt0111161']);
         $enricher = app()->makeWith(ExternalMetadataEnricher::class, [
-            'tmdbProvider' => $tmdb,
-            'traktProvider' => $trakt,
-            'imdbProvider' => $imdb,
+            'providers' => [$tmdb, $trakt, $imdb],
         ]);
 
         $record = $enricher->enrich($torrent);
