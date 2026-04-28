@@ -64,20 +64,22 @@ final class ExternalMetadataFlowTest extends TestCase
 
         $enricher = new ExternalMetadataEnricher(
             app(ExternalMetadataConfig::class),
-            new FakeFlowExternalMetadataProvider(
-                key: 'tmdb',
-                result: new ExternalMetadataResult(
-                    provider: 'tmdb',
-                    found: true,
-                    imdbId: 'tt1234567',
-                    tmdbId: '123',
-                    title: 'Flow Result',
-                    year: 2020,
-                    mediaType: 'movie',
+            [
+                new FakeFlowExternalMetadataProvider(
+                    key: 'tmdb',
+                    result: new ExternalMetadataResult(
+                        provider: 'tmdb',
+                        found: true,
+                        imdbId: 'tt1234567',
+                        tmdbId: '123',
+                        title: 'Flow Result',
+                        year: 2020,
+                        mediaType: 'movie',
+                    ),
                 ),
-            ),
-            new FakeFlowExternalMetadataProvider('trakt', ExternalMetadataResult::skipped('trakt'), supports: false),
-            new FakeFlowExternalMetadataProvider('imdb', ExternalMetadataResult::skipped('imdb'), supports: false),
+                new FakeFlowExternalMetadataProvider('trakt', ExternalMetadataResult::skipped('trakt'), supports: false),
+                new FakeFlowExternalMetadataProvider('imdb', ExternalMetadataResult::skipped('imdb'), supports: false),
+            ],
         );
 
         $job = new EnrichTorrentExternalMetadata($torrent->id);
@@ -123,7 +125,8 @@ final class FakeFlowExternalMetadataProvider implements ExternalMetadataProvider
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
         private readonly bool $supports = true,
-    ) {}
+    ) {
+    }
 
     public function providerKey(): string
     {

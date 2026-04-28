@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Http\Resources\Support\TorrentMetadataView;
-use App\Models\TorrentExternalMetadata;
 use App\Models\Torrent;
+use App\Models\TorrentExternalMetadata;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -86,7 +86,7 @@ final class TorrentDetailsResource extends JsonResource
     {
         $metadata = $this->resource->externalMetadata;
 
-        if (!$metadata instanceof TorrentExternalMetadata) {
+        if (! $metadata instanceof TorrentExternalMetadata) {
             return null;
         }
 
