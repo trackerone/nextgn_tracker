@@ -102,7 +102,7 @@ final class ExternalMetadataFlowTest extends TestCase
             'enrichment_status' => 'enriched',
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/torrents/'.$torrent->id);
+        $response = $this->actingAs($user)->getJson('/api/torrents/' . $torrent->id);
 
         $response->assertOk();
         $response->assertJsonPath('data.external_metadata.imdb_id', 'tt1234567');

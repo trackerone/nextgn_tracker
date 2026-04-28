@@ -9,6 +9,7 @@ use App\Models\Torrent;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
+use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Metadata\ExternalMetadataEnricher;
 use App\Services\Metadata\Providers\ImdbMetadataProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +38,10 @@ final class ExternalMetadataEnricherTest extends TestCase
         $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
         $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
         $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
+
+        $config = app(ExternalMetadataConfig::class);
+
+        $this->assertSame(['tmdb', 'trakt', 'imdb'], $config->providerPriority());
 
         $tmdb = new FakeExternalMetadataProvider(
             key: 'tmdb',
@@ -70,12 +75,13 @@ final class ExternalMetadataEnricherTest extends TestCase
         );
 
         $torrent = Torrent::factory()->create(['imdb_id' => 'tt0111161']);
-        $enricher = app()->makeWith(ExternalMetadataEnricher::class, [
-            'providers' => [$tmdb, $trakt, $imdb],
-        ]);
+        $enricher = new ExternalMetadataEnricher($config, [$tmdb, $trakt, $imdb]);
 
         $record = $enricher->enrich($torrent);
 
+        $this->assertSame(1, $tmdb->lookupCalls);
+        $this->assertSame(1, $trakt->lookupCalls);
+        $this->assertSame(0, $imdb->lookupCalls);
         $this->assertSame('enriched', $record->enrichment_status);
         $this->assertSame('tt0111161', $record->imdb_id);
         $this->assertSame('278', $record->tmdb_id);
@@ -113,7 +119,10 @@ final class FakeExternalMetadataProvider implements ExternalMetadataProvider
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
         private readonly bool $supports = true,
-    ) {}
+    ) {
+    }
+
+    public int $lookupCalls = 0;
 
     public function providerKey(): string
     {
@@ -127,6 +136,8 @@ final class FakeExternalMetadataProvider implements ExternalMetadataProvider
 
     public function lookup(ExternalMetadataLookup $lookup): ExternalMetadataResult
     {
+        $this->lookupCalls++;
+
         return $this->result;
     }
 }
