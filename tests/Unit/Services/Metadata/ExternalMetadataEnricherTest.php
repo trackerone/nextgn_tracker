@@ -54,9 +54,10 @@ final class ExternalMetadataEnricherTest extends TestCase
                 year: 1994,
                 mediaType: 'movie',
                 externalUrl: 'https://www.themoviedb.org/movie/278',
-                rawPayload: ['id' => 278],
-            ),
+                rawPayload: ['id' => 278]
+            )
         );
+
         $trakt = new FakeExternalMetadataProvider(
             key: 'trakt',
             result: new ExternalMetadataResult(
@@ -65,13 +66,14 @@ final class ExternalMetadataEnricherTest extends TestCase
                 traktId: '1',
                 traktSlug: 'shawshank-redemption-1994',
                 externalUrl: 'https://trakt.tv/movies/shawshank-redemption-1994',
-                rawPayload: ['ids' => ['trakt' => 1]],
-            ),
+                rawPayload: ['ids' => ['trakt' => 1]]
+            )
         );
+
         $imdb = new FakeExternalMetadataProvider(
             key: 'imdb',
             result: ExternalMetadataResult::skipped('imdb'),
-            supports: false,
+            supports: false
         );
 
         $torrent = Torrent::factory()->create(['imdb_id' => 'tt0111161']);
@@ -108,21 +110,21 @@ final class ExternalMetadataEnricherTest extends TestCase
     {
         SiteSetting::query()->updateOrCreate(
             ['key' => $key],
-            ['value' => $value, 'type' => $type],
+            ['value' => $value, 'type' => $type]
         );
     }
 }
 
 final class FakeExternalMetadataProvider implements ExternalMetadataProvider
 {
+    public int $lookupCalls = 0;
+
     public function __construct(
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
-        private readonly bool $supports = true,
+        private readonly bool $supports = true
     ) {
     }
-
-    public int $lookupCalls = 0;
 
     public function providerKey(): string
     {
