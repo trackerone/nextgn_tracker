@@ -14,8 +14,8 @@ use App\Models\User;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
-use App\Services\Metadata\ExternalMetadataEnricher;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnricher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -125,8 +125,7 @@ final class FakeFlowExternalMetadataProvider implements ExternalMetadataProvider
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
         private readonly bool $supports = true,
-    ) {
-    }
+    ) {}
 
     public function providerKey(): string
     {
