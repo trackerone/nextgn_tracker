@@ -7,15 +7,38 @@ namespace App\Services\Torrents;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Metadata\Contracts\ExternalMetadataProvider;
+use App\Services\Metadata\DTO\ExternalMetadataLookup;
+use App\Services\Metadata\DTO\ExternalMetadataResult;
+use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnrichmentService;
 use Illuminate\Support\Str;
 
 final class UploadPreflightContextBuilder implements UploadPreflightContextBuilderContract
 {
+    /**
+     * @var array<string, ExternalMetadataProvider>
+     */
+    private array $providers;
+
     public function __construct(
         private readonly BencodeService $bencode,
         private readonly TorrentMetadataExtractor $metadataExtractor,
         private readonly UploadReleaseAdvisor $releaseAdvisor,
-    ) {}
+        private readonly ExternalMetadataConfig $externalMetadataConfig,
+        private readonly ExternalMetadataEnrichmentService $externalMetadataEnrichmentService,
+        iterable $providers,
+    ) {
+        $this->providers = [];
+
+        foreach ($providers as $provider) {
+            if (! $provider instanceof ExternalMetadataProvider) {
+                continue;
+            }
+
+            $this->providers[$provider->providerKey()] = $provider;
+        }
+    }
 
     public function forUser(User $user, array $input = []): UploadPreflightContext
     {
@@ -32,11 +55,15 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             is_string($input['resolution'] ?? null) ? $input['resolution'] : null,
             is_string($input['source'] ?? null) ? $input['source'] : null,
         );
+        $externalMetadata = $this->lookupExternalMetadata($canonicalMetadata);
+        $enrichmentOutcome = $this->externalMetadataEnrichmentService->enrich($canonicalMetadata, $externalMetadata);
 
         return $this->makeContext($user, $input, $this->buildPayloadContext(
             $torrentPayload,
             $extractedMetadata,
-            $this->releaseAdvisor->advise($canonicalMetadata),
+            $this->releaseAdvisor->advise($enrichmentOutcome->metadata),
+            $enrichmentOutcome->appliedFields,
+            $enrichmentOutcome->conflicts,
         ));
     }
 
@@ -59,6 +86,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             infoHash: $this->asStringOrNull($payloadContext['info_hash'] ?? null),
             existingTorrentId: $this->asIntOrNull($payloadContext['existing_torrent_id'] ?? null),
             releaseAdvice: is_array($payloadContext['release_advice'] ?? null) ? $payloadContext['release_advice'] : null,
+            metadataEnrichmentAppliedFields: is_array($payloadContext['metadata_enrichment_applied_fields'] ?? null) ? $payloadContext['metadata_enrichment_applied_fields'] : [],
+            metadataEnrichmentConflicts: is_array($payloadContext['metadata_enrichment_conflicts'] ?? null) ? $payloadContext['metadata_enrichment_conflicts'] : [],
             extractedMetadata: $payloadContext['extracted_metadata'] ?? TorrentExtractedMetadata::empty(),
         );
     }
@@ -70,6 +99,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
         string $torrentPayload,
         TorrentExtractedMetadata $extractedMetadata,
         array $releaseAdvice,
+        array $metadataEnrichmentAppliedFields = [],
+        array $metadataEnrichmentConflicts = [],
     ): array {
         $decoded = $this->bencode->decode($torrentPayload);
 
@@ -77,6 +108,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             return [
                 'metadata_complete' => false,
                 'release_advice' => $releaseAdvice,
+                'metadata_enrichment_applied_fields' => $metadataEnrichmentAppliedFields,
+                'metadata_enrichment_conflicts' => $metadataEnrichmentConflicts,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -86,6 +119,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             return [
                 'metadata_complete' => false,
                 'release_advice' => $releaseAdvice,
+                'metadata_enrichment_applied_fields' => $metadataEnrichmentAppliedFields,
+                'metadata_enrichment_conflicts' => $metadataEnrichmentConflicts,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -95,6 +130,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             return [
                 'metadata_complete' => false,
                 'release_advice' => $releaseAdvice,
+                'metadata_enrichment_applied_fields' => $metadataEnrichmentAppliedFields,
+                'metadata_enrichment_conflicts' => $metadataEnrichmentConflicts,
                 'extracted_metadata' => $extractedMetadata,
             ];
         }
@@ -112,8 +149,45 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             'duplicate' => $existingTorrent !== null,
             'existing_torrent_id' => $existingTorrent?->getKey(),
             'release_advice' => $releaseAdvice,
+            'metadata_enrichment_applied_fields' => $metadataEnrichmentAppliedFields,
+            'metadata_enrichment_conflicts' => $metadataEnrichmentConflicts,
             'extracted_metadata' => $extractedMetadata,
         ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    private function lookupExternalMetadata(CanonicalTorrentMetadata $canonical): ?ExternalMetadataResult
+    {
+        if (! $this->externalMetadataConfig->enrichmentEnabled()) {
+            return null;
+        }
+
+        $lookup = new ExternalMetadataLookup(
+            imdbId: $canonical->imdbId,
+            tmdbId: $canonical->tmdbId !== null ? (string) $canonical->tmdbId : null,
+            traktId: null,
+            title: $canonical->title,
+            year: $canonical->year,
+            mediaType: $canonical->type,
+        );
+
+        foreach ($this->externalMetadataConfig->providerPriority() as $providerKey) {
+            $provider = $this->providers[$providerKey] ?? null;
+            if (! $provider instanceof ExternalMetadataProvider || ! $provider->supports($lookup)) {
+                continue;
+            }
+
+            try {
+                $result = $provider->lookup($lookup);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if ($result->found) {
+                return $result;
+            }
+        }
+
+        return null;
     }
 
     /**

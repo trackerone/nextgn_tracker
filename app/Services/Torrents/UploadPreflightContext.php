@@ -20,6 +20,10 @@ final readonly class UploadPreflightContext
         public ?int $existingTorrentId,
         /** @var array<string, mixed>|null */
         public ?array $releaseAdvice = null,
+        /** @var list<string> */
+        public array $metadataEnrichmentAppliedFields = [],
+        /** @var list<string> */
+        public array $metadataEnrichmentConflicts = [],
         public TorrentExtractedMetadata $extractedMetadata = new TorrentExtractedMetadata(
             title: null,
             year: null,
@@ -54,6 +58,8 @@ final readonly class UploadPreflightContext
             'info_hash' => $this->infoHash,
             'existing_torrent_id' => $this->existingTorrentId,
             'release_advice' => $this->releaseAdvice,
+            'metadata_enrichment_applied_fields' => $this->metadataEnrichmentAppliedFields === [] ? null : $this->metadataEnrichmentAppliedFields,
+            'metadata_enrichment_conflicts' => $this->metadataEnrichmentConflicts === [] ? null : $this->metadataEnrichmentConflicts,
             'extracted_metadata' => $this->extractedMetadata->toArray() === [] ? null : $this->extractedMetadata->toArray(),
         ], static fn (mixed $value): bool => $value !== null);
     }
