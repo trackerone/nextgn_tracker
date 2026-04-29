@@ -25,31 +25,37 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(UploadPreflightContextBuilderContract::class, function ($app): UploadPreflightContextBuilder {
+        $this->app->singleton(UploadPreflightContextBuilder::class, function ($app): UploadPreflightContextBuilder {
             return new UploadPreflightContextBuilder(
                 $app->make(\App\Services\BencodeService::class),
                 $app->make(\App\Services\Torrents\TorrentMetadataExtractor::class),
                 $app->make(\App\Services\Torrents\UploadReleaseAdvisor::class),
                 $app->make(ExternalMetadataConfig::class),
                 $app->make(ExternalMetadataEnrichmentService::class),
-                [
-                    $app->make(TmdbMetadataProvider::class),
-                    $app->make(TraktMetadataProvider::class),
-                    $app->make(ImdbMetadataProvider::class),
-                ],
+                $this->externalMetadataProviders($app),
             );
         });
+
+        $this->app->bind(UploadPreflightContextBuilderContract::class, static fn ($app): UploadPreflightContextBuilder => $app->make(UploadPreflightContextBuilder::class));
 
         $this->app->bind(ExternalMetadataEnricher::class, function ($app): ExternalMetadataEnricher {
             return new ExternalMetadataEnricher(
                 $app->make(ExternalMetadataConfig::class),
-                [
-                    $app->make(TmdbMetadataProvider::class),
-                    $app->make(TraktMetadataProvider::class),
-                    $app->make(ImdbMetadataProvider::class),
-                ],
+                $this->externalMetadataProviders($app),
             );
         });
+    }
+
+    /**
+     * @return list<\App\Services\Metadata\Contracts\ExternalMetadataProvider>
+     */
+    private function externalMetadataProviders($app): array
+    {
+        return [
+            $app->make(TmdbMetadataProvider::class),
+            $app->make(TraktMetadataProvider::class),
+            $app->make(ImdbMetadataProvider::class),
+        ];
     }
 
     public function boot(): void

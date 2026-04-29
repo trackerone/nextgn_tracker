@@ -30,6 +30,13 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $this->builder = app(UploadPreflightContextBuilder::class);
     }
 
+    public function test_builder_can_resolve_from_container(): void
+    {
+        $resolved = app(UploadPreflightContextBuilder::class);
+
+        $this->assertInstanceOf(UploadPreflightContextBuilder::class, $resolved);
+    }
+
     public function test_for_user_maps_user_state_and_normalized_input(): void
     {
         $user = User::factory()->create([
