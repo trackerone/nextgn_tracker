@@ -123,8 +123,7 @@ final class FakeExternalMetadataProvider implements ExternalMetadataProvider
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
         private readonly bool $supports = true
-    ) {
-    }
+    ) {}
 
     public function providerKey(): string
     {

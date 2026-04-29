@@ -102,7 +102,7 @@ final class ExternalMetadataFlowTest extends TestCase
             'enrichment_status' => 'enriched',
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/torrents/' . $torrent->id);
+        $response = $this->actingAs($user)->getJson('/api/torrents/'.$torrent->id);
 
         $response->assertOk();
         $response->assertJsonPath('data.external_metadata.imdb_id', 'tt1234567');
@@ -125,8 +125,7 @@ final class FakeFlowExternalMetadataProvider implements ExternalMetadataProvider
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
         private readonly bool $supports = true
-    ) {
-    }
+    ) {}
 
     public function providerKey(): string
     {
