@@ -5,8 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Services\Torrents;
 
 use App\Models\Torrent;
+use App\Models\SiteSetting;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Metadata\Contracts\ExternalMetadataProvider;
+use App\Services\Metadata\DTO\ExternalMetadataLookup;
+use App\Services\Metadata\DTO\ExternalMetadataResult;
+use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnrichmentService;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -112,5 +118,96 @@ final class UploadPreflightContextBuilderTest extends TestCase
         $this->assertNotNull($context->infoHash);
         $this->assertSame($existingTorrent->getKey(), $context->existingTorrentId);
         $this->assertSame('duplicate payload', strtolower((string) $context->extractedMetadata->title));
+    }
+
+    public function test_for_payload_applies_external_metadata_enrichment_when_available(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb"]', 'json');
+        $user = User::factory()->create();
+        $builder = $this->builderWithProviders([
+            new FakeUploadExternalMetadataProvider(new ExternalMetadataResult(
+                provider: 'tmdb',
+                found: true,
+                imdbId: 'tt1234567',
+                tmdbId: '123',
+                title: 'External Title',
+                year: 2024,
+            )),
+        ]);
+
+        $payload = app(BencodeService::class)->encode(['info' => ['name' => 'External.Title.2024.1080p', 'piece length' => 16384, 'length' => 1024, 'pieces' => str_repeat('a', 20)]]);
+        $context = $builder->forPayload($user, $payload, ['type' => 'movie', 'resolution' => '1080p']);
+
+        $this->assertContains('imdb_id', $context->metadataEnrichmentAppliedFields);
+        $this->assertContains('tmdb_id', $context->metadataEnrichmentAppliedFields);
+        $this->assertSame([], $context->metadataEnrichmentConflicts);
+    }
+
+    public function test_for_payload_without_external_metadata_keeps_behavior_unchanged(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $user = User::factory()->create();
+        $builder = $this->builderWithProviders([new FakeUploadExternalMetadataProvider(ExternalMetadataResult::skipped('tmdb'))]);
+
+        $payload = app(BencodeService::class)->encode(['info' => ['name' => 'No.External.Metadata.2021.1080p', 'piece length' => 16384, 'length' => 1024, 'pieces' => str_repeat('a', 20)]]);
+        $context = $builder->forPayload($user, $payload, ['type' => 'movie', 'resolution' => '1080p']);
+
+        $this->assertSame([], $context->metadataEnrichmentAppliedFields);
+        $this->assertSame([], $context->metadataEnrichmentConflicts);
+    }
+
+    public function test_for_payload_records_conflicts_but_still_succeeds(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $user = User::factory()->create();
+        $builder = $this->builderWithProviders([
+            new FakeUploadExternalMetadataProvider(new ExternalMetadataResult(provider: 'tmdb', found: true, title: 'Different Title', year: 1999)),
+        ]);
+        $payload = app(BencodeService::class)->encode(['info' => ['name' => 'Original.Title.2022.1080p', 'piece length' => 16384, 'length' => 1024, 'pieces' => str_repeat('a', 20)]]);
+        $context = $builder->forPayload($user, $payload, ['type' => 'movie', 'resolution' => '1080p']);
+
+        $this->assertTrue($context->metadataComplete === true);
+        $this->assertNotSame([], $context->metadataEnrichmentConflicts);
+    }
+
+    /**
+     * @param  list<ExternalMetadataProvider>  $providers
+     */
+    private function builderWithProviders(array $providers): UploadPreflightContextBuilder
+    {
+        return new UploadPreflightContextBuilder(
+            app(BencodeService::class),
+            app(\App\Services\Torrents\TorrentMetadataExtractor::class),
+            app(\App\Services\Torrents\UploadReleaseAdvisor::class),
+            app(ExternalMetadataConfig::class),
+            app(ExternalMetadataEnrichmentService::class),
+            $providers,
+        );
+    }
+
+    private function setSiteSetting(string $key, string $value, string $type): void
+    {
+        SiteSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'type' => $type]);
+    }
+}
+
+final class FakeUploadExternalMetadataProvider implements ExternalMetadataProvider
+{
+    public function __construct(private readonly ExternalMetadataResult $result) {}
+
+    public function providerKey(): string
+    {
+        return 'tmdb';
+    }
+
+    public function supports(ExternalMetadataLookup $lookup): bool
+    {
+        return true;
+    }
+
+    public function lookup(ExternalMetadataLookup $lookup): ExternalMetadataResult
+    {
+        return $this->result;
     }
 }

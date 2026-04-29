@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnrichmentService;
 use App\Services\Metadata\ExternalMetadataEnricher;
 use App\Services\Metadata\Providers\ImdbMetadataProvider;
 use App\Services\Metadata\Providers\TmdbMetadataProvider;
@@ -24,10 +25,20 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->app->bind(
-            UploadPreflightContextBuilderContract::class,
-            UploadPreflightContextBuilder::class
-        );
+        $this->app->bind(UploadPreflightContextBuilderContract::class, function ($app): UploadPreflightContextBuilder {
+            return new UploadPreflightContextBuilder(
+                $app->make(\App\Services\BencodeService::class),
+                $app->make(\App\Services\Torrents\TorrentMetadataExtractor::class),
+                $app->make(\App\Services\Torrents\UploadReleaseAdvisor::class),
+                $app->make(ExternalMetadataConfig::class),
+                $app->make(ExternalMetadataEnrichmentService::class),
+                [
+                    $app->make(TmdbMetadataProvider::class),
+                    $app->make(TraktMetadataProvider::class),
+                    $app->make(ImdbMetadataProvider::class),
+                ],
+            );
+        });
 
         $this->app->bind(ExternalMetadataEnricher::class, function ($app): ExternalMetadataEnricher {
             return new ExternalMetadataEnricher(
