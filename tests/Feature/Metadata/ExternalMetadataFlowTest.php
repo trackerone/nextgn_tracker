@@ -14,8 +14,8 @@ use App\Models\User;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
-use App\Services\Metadata\ExternalMetadataEnricher;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Metadata\ExternalMetadataEnricher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -75,11 +75,11 @@ final class ExternalMetadataFlowTest extends TestCase
                         title: 'Flow Result',
                         year: 2020,
                         mediaType: 'movie',
-                    ),
+                    )
                 ),
                 new FakeFlowExternalMetadataProvider('trakt', ExternalMetadataResult::skipped('trakt'), supports: false),
                 new FakeFlowExternalMetadataProvider('imdb', ExternalMetadataResult::skipped('imdb'), supports: false),
-            ],
+            ]
         );
 
         $job = new EnrichTorrentExternalMetadata($torrent->id);
@@ -114,7 +114,7 @@ final class ExternalMetadataFlowTest extends TestCase
     {
         SiteSetting::query()->updateOrCreate(
             ['key' => $key],
-            ['value' => $value, 'type' => $type],
+            ['value' => $value, 'type' => $type]
         );
     }
 }
@@ -124,7 +124,7 @@ final class FakeFlowExternalMetadataProvider implements ExternalMetadataProvider
     public function __construct(
         private readonly string $key,
         private readonly ExternalMetadataResult $result,
-        private readonly bool $supports = true,
+        private readonly bool $supports = true
     ) {
     }
 
