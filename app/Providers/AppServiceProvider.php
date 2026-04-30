@@ -86,7 +86,9 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.app', function ($view): void {
             $user = Auth::user();
 
-            if (! ($user instanceof User)) {
+            $isAuthenticatedUser = $user instanceof User;
+
+            if (! $isAuthenticatedUser) {
                 $view->with('followNavNewCount', 0);
 
                 return;
