@@ -36,7 +36,10 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
-        $this->app->bind(UploadPreflightContextBuilderContract::class, static fn ($app): UploadPreflightContextBuilder => $app->make(UploadPreflightContextBuilder::class));
+        $this->app->bind(
+            UploadPreflightContextBuilderContract::class,
+            fn ($app): UploadPreflightContextBuilder => $app->make(UploadPreflightContextBuilder::class),
+        );
 
         $this->app->bind(ExternalMetadataEnricher::class, function ($app): ExternalMetadataEnricher {
             return new ExternalMetadataEnricher(
