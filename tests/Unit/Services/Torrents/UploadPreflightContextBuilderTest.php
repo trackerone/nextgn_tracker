@@ -198,7 +198,6 @@ final class UploadPreflightContextBuilderTest extends TestCase
         SiteSetting::query()->updateOrCreate(['key' => $key], ['value' => $value, 'type' => $type]);
     }
 }
-
 final class FakeUploadExternalMetadataProvider implements ExternalMetadataProvider
 {
     public function __construct(private readonly ExternalMetadataResult $result)
