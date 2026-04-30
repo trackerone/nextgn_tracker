@@ -6,8 +6,8 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
-use App\Services\Metadata\ExternalMetadataEnrichmentService;
 use App\Services\Metadata\ExternalMetadataEnricher;
+use App\Services\Metadata\ExternalMetadataEnrichmentService;
 use App\Services\Metadata\Providers\ImdbMetadataProvider;
 use App\Services\Metadata\Providers\TmdbMetadataProvider;
 use App\Services\Metadata\Providers\TraktMetadataProvider;

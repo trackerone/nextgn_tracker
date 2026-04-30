@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Torrents;
 
-use App\Models\Torrent;
 use App\Models\SiteSetting;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
@@ -200,9 +200,7 @@ final class UploadPreflightContextBuilderTest extends TestCase
 }
 final class FakeUploadExternalMetadataProvider implements ExternalMetadataProvider
 {
-    public function __construct(private readonly ExternalMetadataResult $result)
-    {
-    }
+    public function __construct(private readonly ExternalMetadataResult $result) {}
 
     public function providerKey(): string
     {
