@@ -201,7 +201,9 @@ final class UploadPreflightContextBuilderTest extends TestCase
 
 final class FakeUploadExternalMetadataProvider implements ExternalMetadataProvider
 {
-    public function __construct(private readonly ExternalMetadataResult $result) {}
+    public function __construct(private readonly ExternalMetadataResult $result)
+    {
+    }
 
     public function providerKey(): string
     {
