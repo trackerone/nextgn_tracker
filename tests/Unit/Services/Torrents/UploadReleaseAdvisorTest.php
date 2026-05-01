@@ -57,7 +57,19 @@ final class UploadReleaseAdvisorTest extends TestCase
         $this->assertContains('same_title_year_different_version', $advice['warnings']);
     }
 
-    private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null): Torrent
+    public function test_best_torrent_prefers_enriched_metadata_at_same_resolution_and_source(): void
+    {
+        $incomplete = $this->createVisibleTorrentWithMetadata('Rank Film', 2024, '1080p', 'WEB-DL');
+        $enriched = $this->createVisibleTorrentWithMetadata('Rank Film', 2024, '1080p', 'WEB-DL', imdbId: 'tt7654321', tmdbId: 7654321, releaseGroup: 'NTb');
+
+        $advice = $this->advisor->advise($this->candidate('Rank Film', 2024, '1080p', 'WEB-DL'));
+
+        $this->assertTrue($advice['better_version_exists']);
+        $this->assertSame($enriched->id, $advice['best_torrent_id']);
+        $this->assertContains($incomplete->id, $advice['matching_torrent_ids']);
+    }
+
+    private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null, ?string $releaseGroup = null): Torrent
     {
         $torrent = Torrent::factory()->create([
             'type' => 'movie',
@@ -74,6 +86,7 @@ final class UploadReleaseAdvisorTest extends TestCase
             'year' => $year,
             'resolution' => $resolution,
             'source' => $source,
+            'release_group' => $releaseGroup,
             'imdb_id' => $imdbId,
             'tmdb_id' => $tmdbId,
         ]);

@@ -15,7 +15,11 @@ final class ReleaseQualityRanker
     {
         return $this->resolutionScore($metadata)
             + $this->sourceScore($metadata)
-            + $this->completenessBonus($metadata);
+            + $this->completenessBonus($metadata)
+            + $this->externalIdBonus($metadata)
+            + $this->cleanTitleYearBonus($metadata)
+            + $this->highCompletenessBonus($metadata)
+            + $this->missingReleaseGroupPenalty($metadata);
     }
 
     /**
@@ -81,6 +85,67 @@ final class ReleaseQualityRanker
         }
 
         return $bonus;
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    private function externalIdBonus(array $metadata): int
+    {
+        $hasExternalId = $this->stringOrNull($metadata['imdb_id'] ?? null) !== null
+            || $this->intOrNull($metadata['tmdb_id'] ?? null) !== null;
+
+        return $hasExternalId ? 8 : 0;
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    private function cleanTitleYearBonus(array $metadata): int
+    {
+        $hasTitleYear = $this->stringOrNull($metadata['title'] ?? null) !== null
+            && $this->intOrNull($metadata['year'] ?? null) !== null;
+
+        return $hasTitleYear ? 6 : 0;
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    private function highCompletenessBonus(array $metadata): int
+    {
+        $trackedFields = [
+            'title',
+            'year',
+            'resolution',
+            'source',
+            'release_group',
+            'imdb_id',
+            'tmdb_id',
+        ];
+
+        $missing = 0;
+
+        foreach ($trackedFields as $field) {
+            $value = $metadata[$field] ?? null;
+            $present = $field === 'year' || $field === 'tmdb_id'
+                ? $this->intOrNull($value) !== null
+                : $this->stringOrNull($value) !== null;
+
+            if (! $present) {
+                $missing++;
+            }
+        }
+
+        return $missing <= 1 ? 8 : ($missing <= 2 ? 4 : 0);
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    private function missingReleaseGroupPenalty(array $metadata): int
+    {
+        return $this->stringOrNull($metadata['release_group'] ?? null) === null ? -3 : 0;
     }
 
     private function stringOrNull(mixed $value): ?string
