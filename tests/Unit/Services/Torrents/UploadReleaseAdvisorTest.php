@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services\Torrents;
 
+use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\ReleaseQualityRanker;
 use App\Services\Torrents\UploadReleaseAdvisor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -61,6 +63,22 @@ final class UploadReleaseAdvisorTest extends TestCase
     {
         $incomplete = $this->createVisibleTorrentWithMetadata('Rank Film', 2024, '1080p', 'WEB-DL');
         $enriched = $this->createVisibleTorrentWithMetadata('Rank Film', 2024, '1080p', 'WEB-DL', imdbId: 'tt7654321', tmdbId: 7654321, releaseGroup: 'NTb');
+
+        $ranker = app(ReleaseQualityRanker::class);
+        $incompleteMetadata = TorrentMetadataView::forTorrent($incomplete);
+        $enrichedMetadata = TorrentMetadataView::forTorrent($enriched);
+
+        $this->assertNull($incompleteMetadata['imdb_id']);
+        $this->assertNull($incompleteMetadata['tmdb_id']);
+        $this->assertNull($incompleteMetadata['release_group']);
+        $this->assertSame('tt7654321', $enrichedMetadata['imdb_id']);
+        $this->assertSame(7654321, $enrichedMetadata['tmdb_id']);
+        $this->assertSame('NTb', $enrichedMetadata['release_group']);
+
+        $incompleteScore = $ranker->score($incompleteMetadata);
+        $enrichedScore = $ranker->score($enrichedMetadata);
+
+        $this->assertGreaterThan($incompleteScore, $enrichedScore);
 
         $advice = $this->advisor->advise($this->candidate('Rank Film', 2024, '1080p', 'WEB-DL'));
 
