@@ -191,8 +191,8 @@ class TorrentUploadTest extends TestCase
 
         $existing = Torrent::query()->firstOrFail();
 
-        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
-            $mock->shouldReceive('forPayload')->andReturn(
+    $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
+        $mock->shouldReceive('forPayload')->andReturn(
             new UploadPreflightContext(
                 category: null,
                 type: 'movie',
@@ -206,7 +206,8 @@ class TorrentUploadTest extends TestCase
                 infoHash: null,
                 existingTorrentId: null,
             )
-        });
+        );
+    });
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
             'name' => 'Duplicate Upload 2',
