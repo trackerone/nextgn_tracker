@@ -107,7 +107,6 @@ final class UploadReleaseAdvisorTest extends TestCase
         $this->assertContains('better_version_exists', $advice['warnings']);
     }
 
-
     public function test_equal_technical_version_with_worse_metadata_does_not_mark_upgrade_available(): void
     {
         $this->createVisibleTorrentWithMetadata('Parity Film', 2024, '1080p', 'WEB-DL', imdbId: 'tt1111111', tmdbId: 1111111, releaseGroup: 'NTb');
