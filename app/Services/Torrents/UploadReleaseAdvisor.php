@@ -7,16 +7,14 @@ namespace App\Services\Torrents;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
-use Illuminate\Support\Collection;
 
 final class UploadReleaseAdvisor
 {
     public function __construct(
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper,
         private readonly ReleaseQualityRanker $qualityRanker,
-    ) {   
-    }
-    
+    ) {}
+
     public function advise(CanonicalTorrentMetadata $metadata): array
     {
         $candidateMetadata = [
@@ -54,7 +52,15 @@ final class UploadReleaseAdvisor
                     'is_exact_duplicate' => $this->isExactTechnicalMatch($existingMetadata, $candidateMetadata),
                 ];
             })
-            ->sort(fn (array $a, array $b): int => [$b['quality_score'], $b['timestamp'], $b['torrent_id']] <=> [$a['quality_score'], $a['timestamp'], $a['torrent_id']])
+            ->sort(fn (array $a, array $b): int => [
+                $b['quality_score'],
+                $b['timestamp'],
+                $b['torrent_id'],
+            ] <=> [
+                $a['quality_score'],
+                $a['timestamp'],
+                $a['torrent_id'],
+            ])
             ->values();
 
         if ($scoredExisting->isEmpty()) {
