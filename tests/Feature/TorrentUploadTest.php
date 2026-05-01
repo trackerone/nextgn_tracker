@@ -191,23 +191,23 @@ class TorrentUploadTest extends TestCase
 
         $existing = Torrent::query()->firstOrFail();
 
-    $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
-        $mock->shouldReceive('forPayload')->andReturn(
-            new UploadPreflightContext(
-                category: null,
-                type: 'movie',
-                resolution: null,
-                scene: null,
-                duplicate: false,
-                size: 4096,
-                isBanned: false,
-                isDisabled: false,
-                metadataComplete: true,
-                infoHash: null,
-                existingTorrentId: null,
-            )
-        );
-    });
+        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
+            $mock->shouldReceive('forPayload')->andReturn(
+                new UploadPreflightContext(
+                    category: null,
+                    type: 'movie',
+                    resolution: null,
+                    scene: null,
+                    duplicate: false,
+                    size: 4096,
+                    isBanned: false,
+                    isDisabled: false,
+                    metadataComplete: true,
+                    infoHash: null,
+                    existingTorrentId: null,
+                )
+            );
+        });
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
             'name' => 'Duplicate Upload 2',
@@ -235,7 +235,7 @@ class TorrentUploadTest extends TestCase
     {
         $response = $this->view('torrents.upload', [
             'categories' => collect(),
-            'errors' => new ViewErrorBag(),
+            'errors' => new ViewErrorBag,
             'releaseAdvice' => [
                 'upgrade_available' => true,
                 'best_version_torrent_id' => 1234,
@@ -251,7 +251,7 @@ class TorrentUploadTest extends TestCase
     {
         $response = $this->view('torrents.upload', [
             'categories' => collect(),
-            'errors' => new ViewErrorBag(),
+            'errors' => new ViewErrorBag,
             'releaseAdvice' => [
                 'upgrade_available' => false,
                 'best_version_is_current_upload' => false,
