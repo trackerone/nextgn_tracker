@@ -14,8 +14,8 @@ final class UploadReleaseAdvisor
     public function __construct(
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper,
         private readonly ReleaseQualityRanker $qualityRanker,
-    ) {}
-
+    ) {   
+    }
     public function advise(CanonicalTorrentMetadata $metadata): array
     {
         $candidateMetadata = [
