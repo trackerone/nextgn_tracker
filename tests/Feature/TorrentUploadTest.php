@@ -193,7 +193,7 @@ class TorrentUploadTest extends TestCase
 
         $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
             $mock->shouldReceive('forPayload')->andReturn(
-                new UploadPreflightContext(
+            new UploadPreflightContext(
                 category: null,
                 type: 'movie',
                 resolution: null,
