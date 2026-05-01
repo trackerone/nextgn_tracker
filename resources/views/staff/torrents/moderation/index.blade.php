@@ -9,6 +9,7 @@
 @section('content')
     @php
         $torrentMetadata = $torrentMetadata ?? [];
+        $metadataEnrichmentOutcome = $metadataEnrichmentOutcome ?? [];
         $moderationMetadataReview = $moderationMetadataReview ?? [];
     @endphp
     <div class="space-y-8">
@@ -33,6 +34,7 @@
                     @forelse ($pendingTorrents as $torrent)
                         @php
                             $metadata = $torrentMetadata[$torrent->id] ?? [];
+                            $enrichmentOutcome = $metadataEnrichmentOutcome[$torrent->id] ?? ['applied_fields' => [], 'conflicts' => []];
                             $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
                             $review = $moderationMetadataReview[$torrent->id] ?? ['needs_review' => false, 'labels' => []];
                         @endphp
@@ -63,6 +65,17 @@
                                     <span class="rounded-full border border-emerald-600/60 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-emerald-200">
                                         Metadata OK
                                     </span>
+                                @endif
+                                @if (($enrichmentOutcome['conflicts'] ?? []) !== [])
+                                    <div class="mt-2 rounded-md border border-amber-500/60 bg-amber-500/10 p-2 text-xs text-amber-100">
+                                        <p class="font-semibold">External metadata conflict</p>
+                                        <p class="mt-1">{{ implode(', ', $enrichmentOutcome['conflicts']) }}</p>
+                                    </div>
+                                @endif
+                                @if (($enrichmentOutcome['applied_fields'] ?? []) !== [])
+                                    <p class="mt-2 text-xs text-slate-400">
+                                        External enrichment applied: {{ implode(', ', $enrichmentOutcome['applied_fields']) }}
+                                    </p>
                                 @endif
                             </td>
                             <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>

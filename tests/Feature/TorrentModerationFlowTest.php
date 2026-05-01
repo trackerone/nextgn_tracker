@@ -230,4 +230,58 @@ final class TorrentModerationFlowTest extends TestCase
             ->assertSee('Metadata OK')
             ->assertDontSee('Needs metadata review');
     }
+
+    public function test_moderation_listing_hides_enrichment_conflict_warning_when_no_conflicts_exist(): void
+    {
+        $staff = $this->createStaffUser();
+
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PENDING,
+            'name' => 'No Conflict Upload',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'No Conflict Upload',
+            'type' => 'movie',
+            'raw_payload' => [
+                'metadata_enrichment_applied_fields' => ['imdb_id'],
+                'metadata_enrichment_conflicts' => [],
+            ],
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.torrents.moderation.index'))
+            ->assertOk()
+            ->assertSee($torrent->name)
+            ->assertDontSee('External metadata conflict')
+            ->assertSee('External enrichment applied: imdb_id');
+    }
+
+    public function test_moderation_listing_shows_enrichment_conflict_warning_when_conflicts_exist(): void
+    {
+        $staff = $this->createStaffUser();
+
+        $torrent = Torrent::factory()->create([
+            'status' => Torrent::STATUS_PENDING,
+            'name' => 'Conflict Upload',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Conflict Upload',
+            'type' => 'movie',
+            'raw_payload' => [
+                'metadata_enrichment_applied_fields' => ['tmdb_id'],
+                'metadata_enrichment_conflicts' => ['title', 'year'],
+            ],
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('staff.torrents.moderation.index'))
+            ->assertOk()
+            ->assertSee($torrent->name)
+            ->assertSee('External metadata conflict')
+            ->assertSee('title, year');
+    }
 }
