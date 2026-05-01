@@ -213,6 +213,10 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertStatus(409);
         $response->assertJsonPath('release_advice.family_exists', true);
         $response->assertJsonPath('release_advice.better_version_exists', true);
+        $response->assertJsonPath('release_advice.upgrade_available', true);
+        $response->assertJsonPath('release_advice.best_version_is_current_upload', false);
+        $response->assertJsonPath('release_advice.best_version_torrent_id', $existing->id);
+        $response->assertJsonPath('release_advice.upgrade_reason', 'A technically better version already exists in this release family.');
         $response->assertJsonPath('release_advice.same_quality_exists', false);
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
@@ -262,6 +266,10 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('data.name', 'API Upload Advisory');
         $response->assertJsonPath('release_advice.family_exists', true);
         $response->assertJsonPath('release_advice.better_version_exists', true);
+        $response->assertJsonPath('release_advice.upgrade_available', true);
+        $response->assertJsonPath('release_advice.best_version_is_current_upload', false);
+        $response->assertJsonPath('release_advice.best_version_torrent_id', $existing->id);
+        $response->assertJsonPath('release_advice.upgrade_reason', 'A technically better version already exists in this release family.');
         $response->assertJsonPath('release_advice.same_quality_exists', false);
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
