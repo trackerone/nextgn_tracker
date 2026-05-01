@@ -12,6 +12,7 @@ use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class TorrentUploadTest extends TestCase
@@ -232,6 +233,7 @@ class TorrentUploadTest extends TestCase
     {
         $response = $this->view('torrents.upload', [
             'categories' => collect(),
+            'errors' => new ViewErrorBag(),
             'releaseAdvice' => [
                 'upgrade_available' => true,
                 'best_version_torrent_id' => 1234,
@@ -248,6 +250,7 @@ class TorrentUploadTest extends TestCase
     {
         $response = $this->view('torrents.upload', [
             'categories' => collect(),
+            'errors' => new ViewErrorBag(),
             'releaseAdvice' => [
                 'upgrade_available' => false,
                 'best_version_is_current_upload' => false,
