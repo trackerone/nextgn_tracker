@@ -92,7 +92,7 @@ final class UploadReleaseAdvisor
             'family_exists' => true,
             'same_quality_exists' => in_array('same_quality_exists', $warnings, true),
             'better_version_exists' => in_array('better_version_exists', $warnings, true),
-            'best_torrent_id' => $best['torrent_id'] ?? null,
+            'best_torrent_id' => $best['torrent_id'],
             'matching_torrent_ids' => $scoredExisting->pluck('torrent_id')->values()->all(),
             'exact_duplicate_exists' => $exactDuplicateExists,
             'alternate_version_exists' => $alternateVersionExists,
