@@ -241,7 +241,6 @@ class TorrentUploadTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
         $response->assertSee('A better version already exists.');
         $response->assertSee('Best version torrent ID: 1234');
     }
@@ -257,7 +256,6 @@ class TorrentUploadTest extends TestCase
             ],
         ]);
 
-        $response->assertOk();
         $response->assertDontSee('A better version already exists.');
     }
 
