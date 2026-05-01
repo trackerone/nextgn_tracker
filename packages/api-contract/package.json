@@ -9,6 +9,6 @@
   "types": "./src/index.ts",
   "files": ["src"],
   "scripts": {
-    "lint": "echo 'TODO: add contract linting'"
+    "lint": "echo 'No api-contract lint configured yet'"
   }
 }
