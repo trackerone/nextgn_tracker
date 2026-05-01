@@ -54,4 +54,40 @@ final class ReleaseQualityRankerTest extends TestCase
 
         $this->assertGreaterThan($webDl, $bluray);
     }
+
+    public function test_enriched_metadata_beats_incomplete_metadata_at_same_resolution_and_source(): void
+    {
+        $ranker = app(ReleaseQualityRanker::class);
+
+        $enriched = $ranker->score([
+            'title' => 'Example',
+            'year' => 2024,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'release_group' => 'NTb',
+            'imdb_id' => 'tt1234567',
+            'tmdb_id' => 123,
+        ]);
+
+        $incomplete = $ranker->score([
+            'title' => null,
+            'year' => null,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'release_group' => null,
+            'imdb_id' => null,
+            'tmdb_id' => null,
+        ]);
+
+        $this->assertGreaterThan($incomplete, $enriched);
+    }
+
+    public function test_fallback_behavior_unchanged_when_no_metadata_exists(): void
+    {
+        $ranker = app(ReleaseQualityRanker::class);
+
+        $score = $ranker->score([]);
+
+        $this->assertSame(197, $score);
+    }
 }
