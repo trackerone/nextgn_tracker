@@ -18,7 +18,21 @@ final class TorrentReleaseFamilyGrouper
         $title = $this->normalizedTitle($metadata);
         $type = $this->normalizedType($metadata);
 
-        if ($title === null || $type === null) {
+        if ($type === null) {
+            return null;
+        }
+
+        $tmdbId = $this->asPositiveInt($metadata['tmdb_id'] ?? null);
+        if ($tmdbId !== null) {
+            return sprintf('%s:tmdb:%d', $type, $tmdbId);
+        }
+
+        $imdbId = $this->normalizedImdbId($metadata['imdb_id'] ?? null);
+        if ($imdbId !== null) {
+            return sprintf('%s:imdb:%s', $type, $imdbId);
+        }
+
+        if ($title === null) {
             return null;
         }
 
@@ -185,6 +199,17 @@ final class TorrentReleaseFamilyGrouper
             'HDTV' => 100,
             default => 0,
         };
+    }
+
+    private function normalizedImdbId(mixed $value): ?string
+    {
+        $imdbId = Str::lower((string) ($this->asString($value) ?? ''));
+
+        if ($imdbId === '' || preg_match('/^tt\d+$/', $imdbId) !== 1) {
+            return null;
+        }
+
+        return $imdbId;
     }
 
     private function asString(mixed $value): ?string
