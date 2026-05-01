@@ -93,7 +93,11 @@ final class UploadSubmissionController extends Controller
             ),
         );
 
-        return $this->successfulUploadResponse($torrent, is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null);
+        return $this->successfulUploadResponse(
+            $torrent,
+            is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null,
+            $this->metadataEnrichmentOutcomeFromContext($decision->context),
+        );
     }
 
     private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse
@@ -102,6 +106,7 @@ final class UploadSubmissionController extends Controller
             return $this->duplicateConflictResponse(
                 $this->resolveDuplicateTorrentFromContext($decision->context),
                 is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null,
+                $this->metadataEnrichmentOutcomeFromContext($decision->context),
             );
         }
 
@@ -117,7 +122,7 @@ final class UploadSubmissionController extends Controller
     /**
      * @param  array<string, mixed>|null  $releaseAdvice
      */
-    private function duplicateConflictResponse(?Torrent $existingTorrent = null, ?array $releaseAdvice = null): JsonResponse
+    private function duplicateConflictResponse(?Torrent $existingTorrent = null, ?array $releaseAdvice = null, array $metadataEnrichmentOutcome = []): JsonResponse
     {
         $payload = [
             'message' => 'Torrent already exists.',
@@ -128,6 +133,8 @@ final class UploadSubmissionController extends Controller
         if ($releaseAdvice !== null) {
             $payload['release_advice'] = $releaseAdvice;
         }
+
+        $payload = array_merge($payload, $metadataEnrichmentOutcome);
 
         if ($existingTorrent instanceof Torrent) {
             $payload['existing_torrent'] = [
@@ -167,7 +174,7 @@ final class UploadSubmissionController extends Controller
     /**
      * @param  array<string, mixed>|null  $releaseAdvice
      */
-    private function successfulUploadResponse(Torrent $torrent, ?array $releaseAdvice = null): JsonResponse
+    private function successfulUploadResponse(Torrent $torrent, ?array $releaseAdvice = null, array $metadataEnrichmentOutcome = []): JsonResponse
     {
         $payload = [
             'data' => (new UploadSubmissionResource($torrent))->resolve(),
@@ -177,6 +184,24 @@ final class UploadSubmissionController extends Controller
             $payload['release_advice'] = $releaseAdvice;
         }
 
+        $payload = array_merge($payload, $metadataEnrichmentOutcome);
+
         return response()->json($payload, 201);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array{metadata_enrichment_applied_fields: list<string>, metadata_enrichment_conflicts: list<string>}
+     */
+    private function metadataEnrichmentOutcomeFromContext(array $context): array
+    {
+        return [
+            'metadata_enrichment_applied_fields' => is_array($context['metadata_enrichment_applied_fields'] ?? null)
+                ? array_values(array_filter($context['metadata_enrichment_applied_fields'], static fn (mixed $field): bool => is_string($field)))
+                : [],
+            'metadata_enrichment_conflicts' => is_array($context['metadata_enrichment_conflicts'] ?? null)
+                ? array_values(array_filter($context['metadata_enrichment_conflicts'], static fn (mixed $field): bool => is_string($field)))
+                : [],
+        ];
     }
 }

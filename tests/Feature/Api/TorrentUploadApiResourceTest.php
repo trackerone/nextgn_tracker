@@ -52,6 +52,8 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonMissingPath('data.info_hash');
         $response->assertJsonMissingPath('data.storage_path');
         $response->assertJsonMissingPath('data.user_id');
+        $response->assertJsonPath('metadata_enrichment_applied_fields', []);
+        $response->assertJsonPath('metadata_enrichment_conflicts', []);
     }
 
     public function test_my_uploads_response_exposes_only_expected_fields(): void
@@ -215,6 +217,8 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
         $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
+        $response->assertJsonPath('metadata_enrichment_applied_fields', []);
+        $response->assertJsonPath('metadata_enrichment_conflicts', []);
     }
 
     public function test_upload_submit_is_not_blocked_by_release_advice_warnings(): void
@@ -262,6 +266,54 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
         $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
+        $response->assertJsonPath('metadata_enrichment_applied_fields', []);
+        $response->assertJsonPath('metadata_enrichment_conflicts', []);
+    }
+
+    public function test_upload_responses_include_metadata_enrichment_outcome_from_preflight_context(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+
+        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
+            $mock->shouldReceive('forPayload')->andReturn(new UploadPreflightContext(
+                category: null,
+                type: 'movie',
+                resolution: '1080p',
+                scene: null,
+                duplicate: false,
+                size: 1024,
+                isBanned: false,
+                isDisabled: false,
+                metadataComplete: true,
+                infoHash: null,
+                existingTorrentId: null,
+                releaseAdvice: [
+                    'family_exists' => false,
+                    'same_quality_exists' => false,
+                    'better_version_exists' => false,
+                    'warnings' => [],
+                ],
+                metadataEnrichmentAppliedFields: ['imdb_id', 'tmdb_id'],
+                metadataEnrichmentConflicts: ['title'],
+            ));
+        });
+
+        $response = $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Upload Enrichment',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-upload-enrichment.torrent',
+                $this->sampleTorrentPayload(infoName: 'API Upload Enrichment', piecesSeed: 'z'),
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $response->assertCreated();
+        $response->assertJsonPath('metadata_enrichment_applied_fields', ['imdb_id', 'tmdb_id']);
+        $response->assertJsonPath('metadata_enrichment_conflicts', ['title']);
+        $response->assertJsonPath('release_advice.family_exists', false);
     }
 
     private function sampleTorrentPayload(string $infoName = 'API Upload', string $piecesSeed = 'a'): string
