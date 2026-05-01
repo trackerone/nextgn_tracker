@@ -31,6 +31,7 @@ final class UploadReleaseAdvisor
         $familyKey = $this->releaseFamilyGrouper->keyForMetadata($candidateMetadata);
         $fallbackFamilyKey = $this->fallbackFamilyKey($candidateMetadata);
         $qualityScore = $this->qualityRanker->score($candidateMetadata);
+        $technicalScore = $this->qualityRanker->technicalScore($candidateMetadata);
 
         if ($familyKey === null) {
             return $this->emptyAdvice($qualityScore);
@@ -60,6 +61,7 @@ final class UploadReleaseAdvisor
                 return [
                     'torrent_id' => (int) $torrent->id,
                     'quality_score' => $this->qualityRanker->score($existingMetadata),
+                    'technical_score' => $this->qualityRanker->technicalScore($existingMetadata),
                     'timestamp' => $torrent->published_at?->getTimestamp() ?? $torrent->created_at?->getTimestamp() ?? 0,
                     'is_exact_duplicate' => $this->isExactTechnicalMatch($existingMetadata, $candidateMetadata),
                 ];
@@ -99,7 +101,7 @@ final class UploadReleaseAdvisor
             $warnings[] = 'same_quality_exists';
         }
 
-        if ($scoredExisting->contains(fn (array $entry): bool => $entry['quality_score'] > $qualityScore)) {
+        if ($scoredExisting->contains(fn (array $entry): bool => $entry['technical_score'] > $technicalScore)) {
             $warnings[] = 'better_version_exists';
         }
 
@@ -137,7 +139,6 @@ final class UploadReleaseAdvisor
         ];
     }
 
-
     /**
      * @param  array<string, int|string|null>  $metadata
      */
@@ -149,6 +150,7 @@ final class UploadReleaseAdvisor
 
         return $this->releaseFamilyGrouper->keyForMetadata($fallbackMetadata);
     }
+
     private function isExactTechnicalMatch(array $existingMetadata, array $candidateMetadata): bool
     {
         return $this->norm($existingMetadata['resolution'] ?? null) === $this->norm($candidateMetadata['resolution'] ?? null)

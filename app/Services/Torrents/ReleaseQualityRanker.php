@@ -13,13 +13,20 @@ final class ReleaseQualityRanker
      */
     public function score(array $metadata): int
     {
-        return $this->resolutionScore($metadata)
-            + $this->sourceScore($metadata)
+        return $this->technicalScore($metadata)
             + $this->completenessBonus($metadata)
             + $this->externalIdBonus($metadata)
             + $this->cleanTitleYearBonus($metadata)
             + $this->highCompletenessBonus($metadata)
             + $this->missingReleaseGroupPenalty($metadata);
+    }
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    public function technicalScore(array $metadata): int
+    {
+        return $this->resolutionScore($metadata) + $this->sourceScore($metadata);
     }
 
     /**
