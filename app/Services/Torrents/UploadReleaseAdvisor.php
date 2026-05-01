@@ -16,6 +16,7 @@ final class UploadReleaseAdvisor
         private readonly ReleaseQualityRanker $qualityRanker,
     ) {   
     }
+    
     public function advise(CanonicalTorrentMetadata $metadata): array
     {
         $candidateMetadata = [
