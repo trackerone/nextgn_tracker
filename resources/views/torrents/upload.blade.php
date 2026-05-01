@@ -33,6 +33,22 @@
             </div>
         @endif
 
+        @php($releaseAdvice = is_array($releaseAdvice ?? null) ? $releaseAdvice : [])
+        @if (($releaseAdvice['upgrade_available'] ?? false) === true)
+            <div style="background-color: #7c2d12; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                <strong>A better version already exists.</strong>
+                @if (is_numeric($releaseAdvice['best_version_torrent_id'] ?? null))
+                    <span style="display: block; margin-top: 0.25rem; font-size: 0.9rem;">
+                        Best version torrent ID: {{ (int) $releaseAdvice['best_version_torrent_id'] }}
+                    </span>
+                @endif
+            </div>
+        @elseif (($releaseAdvice['best_version_is_current_upload'] ?? false) === true)
+            <div style="background-color: #064e3b; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                This upload appears to be the best available version in its release family.
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('torrents.store') }}" enctype="multipart/form-data">
             @csrf
 

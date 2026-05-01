@@ -56,6 +56,7 @@ class TorrentUploadController extends Controller
 
         return view('torrents.upload', [
             'categories' => $categories,
+            'releaseAdvice' => is_array($context->releaseAdvice) ? $context->releaseAdvice : null,
         ]);
     }
 

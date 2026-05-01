@@ -10,6 +10,7 @@
     @php
         $torrentMetadata = $torrentMetadata ?? [];
         $metadataEnrichmentOutcome = $metadataEnrichmentOutcome ?? [];
+        $releaseAdviceByTorrent = $releaseAdviceByTorrent ?? [];
         $moderationMetadataReview = $moderationMetadataReview ?? [];
     @endphp
     <div class="space-y-8">
@@ -35,6 +36,7 @@
                         @php
                             $metadata = $torrentMetadata[$torrent->id] ?? [];
                             $enrichmentOutcome = $metadataEnrichmentOutcome[$torrent->id] ?? ['applied_fields' => [], 'conflicts' => []];
+                            $releaseAdvice = $releaseAdviceByTorrent[$torrent->id] ?? [];
                             $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
                             $review = $moderationMetadataReview[$torrent->id] ?? ['needs_review' => false, 'labels' => []];
                         @endphp
@@ -47,6 +49,16 @@
                                             <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
                                         @endforeach
                                     </div>
+                                @endif
+                                @if (($releaseAdvice['upgrade_available'] ?? false) === true)
+                                    <div class="mt-2 rounded-md border border-amber-500/60 bg-amber-500/10 p-2 text-xs text-amber-100">
+                                        <p class="font-semibold">A better version already exists.</p>
+                                        @if (is_numeric($releaseAdvice['best_version_torrent_id'] ?? null))
+                                            <p class="mt-1">Best version torrent ID: {{ (int) $releaseAdvice['best_version_torrent_id'] }}</p>
+                                        @endif
+                                    </div>
+                                @elseif (($releaseAdvice['best_version_is_current_upload'] ?? false) === true)
+                                    <p class="mt-2 text-xs text-emerald-300/90">This upload appears to be the best version in this release family.</p>
                                 @endif
                             </td>
                             <td class="px-4 py-3">{{ $torrent->uploader?->name ?? 'Unknown' }}</td>

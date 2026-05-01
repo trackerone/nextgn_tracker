@@ -98,6 +98,13 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
             'torrent_id' => $pending->id,
             'type' => 'tv',
             'source' => 'BLURAY',
+            'raw_payload' => [
+                'release_advice' => [
+                    'upgrade_available' => true,
+                    'best_version_torrent_id' => 9876,
+                    'best_version_is_current_upload' => false,
+                ],
+            ],
         ]);
 
         $browseResponse = $this->actingAs($member)
@@ -121,5 +128,7 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
 
         // Moderation surface is rendered HTML; verify pending row reflects effective metadata output.
         $moderationResponse->assertSeeInOrder([$pending->name, 'Tv']);
+        $moderationResponse->assertSee('A better version already exists.');
+        $moderationResponse->assertSee('Best version torrent ID: 9876');
     }
 }
