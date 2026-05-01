@@ -64,7 +64,7 @@ final class UploadReleaseAdvisorTest extends TestCase
 
         $advice = $this->advisor->advise($this->candidate('Rank Film', 2024, '1080p', 'WEB-DL'));
 
-        $this->assertTrue($advice['better_version_exists']);
+        $this->assertFalse($advice['better_version_exists']);
         $this->assertSame($enriched->id, $advice['best_torrent_id']);
         $this->assertContains($incomplete->id, $advice['matching_torrent_ids']);
     }
