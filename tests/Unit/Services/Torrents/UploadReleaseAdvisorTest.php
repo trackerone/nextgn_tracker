@@ -87,6 +87,18 @@ final class UploadReleaseAdvisorTest extends TestCase
         $this->assertSame([$enriched->id, $incomplete->id], $advice['matching_torrent_ids']);
     }
 
+    public function test_technically_better_existing_version_sets_better_version_exists(): void
+    {
+        $better = $this->createVisibleTorrentWithMetadata('Tech Film', 2024, '2160p', 'BLURAY');
+        $this->createVisibleTorrentWithMetadata('Tech Film', 2024, '1080p', 'WEB-DL', imdbId: 'tt8888888', tmdbId: 8888888, releaseGroup: 'NTb');
+
+        $advice = $this->advisor->advise($this->candidate('Tech Film', 2024, '1080p', 'WEB-DL'));
+
+        $this->assertTrue($advice['better_version_exists']);
+        $this->assertSame($better->id, $advice['best_torrent_id']);
+        $this->assertContains('better_version_exists', $advice['warnings']);
+    }
+
     private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null, ?string $releaseGroup = null): Torrent
     {
         $torrent = Torrent::factory()->create([
