@@ -29,6 +29,7 @@ final class UploadReleaseAdvisor
         ];
 
         $familyKey = $this->releaseFamilyGrouper->keyForMetadata($candidateMetadata);
+        $fallbackFamilyKey = $this->fallbackFamilyKey($candidateMetadata);
         $qualityScore = $this->qualityRanker->score($candidateMetadata);
 
         if ($familyKey === null) {
@@ -39,8 +40,19 @@ final class UploadReleaseAdvisor
             ->visible()
             ->with('metadata')
             ->get()
-            ->filter(function (Torrent $torrent) use ($familyKey): bool {
-                return $this->releaseFamilyGrouper->keyForMetadata(TorrentMetadataView::forTorrent($torrent)) === $familyKey;
+            ->filter(function (Torrent $torrent) use ($familyKey, $fallbackFamilyKey): bool {
+                $torrentMetadata = TorrentMetadataView::forTorrent($torrent);
+                $torrentFamilyKey = $this->releaseFamilyGrouper->keyForMetadata($torrentMetadata);
+
+                if ($torrentFamilyKey === $familyKey) {
+                    return true;
+                }
+
+                if ($fallbackFamilyKey === null) {
+                    return false;
+                }
+
+                return $this->fallbackFamilyKey($torrentMetadata) === $fallbackFamilyKey;
             })
             ->map(function (Torrent $torrent) use ($candidateMetadata): array {
                 $existingMetadata = TorrentMetadataView::forTorrent($torrent);
@@ -125,6 +137,18 @@ final class UploadReleaseAdvisor
         ];
     }
 
+
+    /**
+     * @param  array<string, int|string|null>  $metadata
+     */
+    private function fallbackFamilyKey(array $metadata): ?string
+    {
+        $fallbackMetadata = $metadata;
+        $fallbackMetadata['imdb_id'] = null;
+        $fallbackMetadata['tmdb_id'] = null;
+
+        return $this->releaseFamilyGrouper->keyForMetadata($fallbackMetadata);
+    }
     private function isExactTechnicalMatch(array $existingMetadata, array $candidateMetadata): bool
     {
         return $this->norm($existingMetadata['resolution'] ?? null) === $this->norm($candidateMetadata['resolution'] ?? null)
