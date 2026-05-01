@@ -14,7 +14,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo 'TODO: configure ESLint' && exit 0"
+    "lint": "echo 'No root ESLint configured; use frontend/package-specific checks instead'"
   },
   "dependencies": {
     "lucide-react": "^0.362.0",
