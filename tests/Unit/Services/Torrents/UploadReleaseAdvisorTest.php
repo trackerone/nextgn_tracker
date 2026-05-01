@@ -84,7 +84,7 @@ final class UploadReleaseAdvisorTest extends TestCase
 
         $this->assertFalse($advice['better_version_exists']);
         $this->assertSame($enriched->id, $advice['best_torrent_id']);
-        $this->assertContains($incomplete->id, $advice['matching_torrent_ids']);
+        $this->assertSame([$enriched->id, $incomplete->id], $advice['matching_torrent_ids']);
     }
 
     private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null, ?string $releaseGroup = null): Torrent
