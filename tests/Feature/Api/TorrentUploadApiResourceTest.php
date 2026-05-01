@@ -216,7 +216,7 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('release_advice.same_quality_exists', false);
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
-        $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
+        $response->assertJsonPath('release_advice.warnings.1', 'same_title_year_different_version');
         $response->assertJsonPath('metadata_enrichment_applied_fields', []);
         $response->assertJsonPath('metadata_enrichment_conflicts', []);
     }
@@ -265,7 +265,7 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('release_advice.same_quality_exists', false);
         $response->assertJsonPath('release_advice.best_torrent_id', $existing->id);
         $response->assertJsonPath('release_advice.warnings.0', 'same_family_exists');
-        $response->assertJsonPath('release_advice.warnings.1', 'better_version_exists');
+        $response->assertJsonPath('release_advice.warnings.1', 'same_title_year_different_version');
         $response->assertJsonPath('metadata_enrichment_applied_fields', []);
         $response->assertJsonPath('metadata_enrichment_conflicts', []);
     }
