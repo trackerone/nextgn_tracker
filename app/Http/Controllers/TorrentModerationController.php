@@ -47,6 +47,7 @@ class TorrentModerationController extends Controller
             'pendingTorrents' => $pending,
             'recentTorrents' => $recent,
             'torrentMetadata' => $metadata = TorrentMetadataView::mapByTorrentId($pending->getCollection()),
+            'metadataEnrichmentOutcome' => TorrentMetadataView::enrichmentOutcomeMapByTorrentId($pending->getCollection()),
             'moderationMetadataReview' => TorrentModerationMetadataReview::mapByTorrentId(
                 $pending->getCollection(),
                 $metadata
