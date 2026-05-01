@@ -107,13 +107,20 @@ final class UploadReleaseAdvisor
 
         $best = $scoredExisting->first();
 
+        $betterVersionExists = in_array('better_version_exists', $warnings, true);
+        $bestTorrentId = (int) $best['torrent_id'];
+
         return [
             'family_key' => $familyKey,
             'quality_score' => $qualityScore,
             'family_exists' => true,
             'same_quality_exists' => in_array('same_quality_exists', $warnings, true),
-            'better_version_exists' => in_array('better_version_exists', $warnings, true),
-            'best_torrent_id' => $best['torrent_id'],
+            'better_version_exists' => $betterVersionExists,
+            'upgrade_available' => $betterVersionExists,
+            'upgrade_reason' => $betterVersionExists ? 'A technically better version already exists in this release family.' : null,
+            'best_version_is_current_upload' => ! $betterVersionExists,
+            'best_torrent_id' => $bestTorrentId,
+            'best_version_torrent_id' => $bestTorrentId,
             'matching_torrent_ids' => $scoredExisting->pluck('torrent_id')->values()->all(),
             'exact_duplicate_exists' => $exactDuplicateExists,
             'alternate_version_exists' => $alternateVersionExists,
@@ -130,7 +137,11 @@ final class UploadReleaseAdvisor
             'family_exists' => false,
             'same_quality_exists' => false,
             'better_version_exists' => false,
+            'upgrade_available' => false,
+            'upgrade_reason' => null,
+            'best_version_is_current_upload' => true,
             'best_torrent_id' => null,
+            'best_version_torrent_id' => null,
             'matching_torrent_ids' => [],
             'exact_duplicate_exists' => false,
             'alternate_version_exists' => false,

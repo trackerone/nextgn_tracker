@@ -83,7 +83,11 @@ final class UploadReleaseAdvisorTest extends TestCase
         $advice = $this->advisor->advise($this->candidate('Rank Film', 2024, '1080p', 'WEB-DL'));
 
         $this->assertFalse($advice['better_version_exists']);
+        $this->assertFalse($advice['upgrade_available']);
+        $this->assertTrue($advice['best_version_is_current_upload']);
+        $this->assertNull($advice['upgrade_reason']);
         $this->assertSame($enriched->id, $advice['best_torrent_id']);
+        $this->assertSame($enriched->id, $advice['best_version_torrent_id']);
         $this->assertSame([$enriched->id, $incomplete->id], $advice['matching_torrent_ids']);
     }
 
@@ -95,8 +99,25 @@ final class UploadReleaseAdvisorTest extends TestCase
         $advice = $this->advisor->advise($this->candidate('Tech Film', 2024, '1080p', 'WEB-DL'));
 
         $this->assertTrue($advice['better_version_exists']);
+        $this->assertTrue($advice['upgrade_available']);
+        $this->assertFalse($advice['best_version_is_current_upload']);
+        $this->assertSame('A technically better version already exists in this release family.', $advice['upgrade_reason']);
         $this->assertSame($better->id, $advice['best_torrent_id']);
+        $this->assertSame($better->id, $advice['best_version_torrent_id']);
         $this->assertContains('better_version_exists', $advice['warnings']);
+    }
+
+
+    public function test_equal_technical_version_with_worse_metadata_does_not_mark_upgrade_available(): void
+    {
+        $this->createVisibleTorrentWithMetadata('Parity Film', 2024, '1080p', 'WEB-DL', imdbId: 'tt1111111', tmdbId: 1111111, releaseGroup: 'NTb');
+
+        $advice = $this->advisor->advise($this->candidate('Parity Film', 2024, '1080p', 'WEB-DL'));
+
+        $this->assertFalse($advice['better_version_exists']);
+        $this->assertFalse($advice['upgrade_available']);
+        $this->assertTrue($advice['best_version_is_current_upload']);
+        $this->assertNull($advice['upgrade_reason']);
     }
 
     private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null, ?string $releaseGroup = null): Torrent
