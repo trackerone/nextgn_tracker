@@ -228,6 +228,70 @@ class TorrentUploadTest extends TestCase
         $response->assertSessionHasErrors(['name', 'torrent_file']);
     }
 
+    public function test_upload_page_renders_upgrade_warning_when_preflight_has_upgrade_available(): void
+    {
+        $user = User::factory()->create();
+        Category::factory()->create();
+
+        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
+            $mock->shouldReceive('forUser')->andReturn(new UploadPreflightContext(
+                category: null,
+                type: null,
+                resolution: null,
+                scene: null,
+                duplicate: null,
+                size: null,
+                isBanned: false,
+                isDisabled: false,
+                metadataComplete: null,
+                infoHash: null,
+                existingTorrentId: null,
+                releaseAdvice: [
+                    'upgrade_available' => true,
+                    'best_version_torrent_id' => 1234,
+                    'best_version_is_current_upload' => false,
+                ],
+            ));
+        });
+
+        $response = $this->actingAs($user)->get(route('torrents.upload'));
+
+        $response->assertOk();
+        $response->assertSee('A better version already exists.');
+        $response->assertSee('Best version torrent ID: 1234');
+    }
+
+    public function test_upload_page_hides_upgrade_warning_when_preflight_has_no_upgrade(): void
+    {
+        $user = User::factory()->create();
+        Category::factory()->create();
+
+        $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
+            $mock->shouldReceive('forUser')->andReturn(new UploadPreflightContext(
+                category: null,
+                type: null,
+                resolution: null,
+                scene: null,
+                duplicate: null,
+                size: null,
+                isBanned: false,
+                isDisabled: false,
+                metadataComplete: null,
+                infoHash: null,
+                existingTorrentId: null,
+                releaseAdvice: [
+                    'upgrade_available' => false,
+                    'best_version_is_current_upload' => false,
+                ],
+            ));
+        });
+
+        $response = $this->actingAs($user)->get(route('torrents.upload'));
+
+        $response->assertOk();
+        $response->assertDontSee('A better version already exists.');
+    }
+
     private function sampleTorrentPayload(string $name, int $length): string
     {
         $bencode = app(\App\Services\BencodeService::class);

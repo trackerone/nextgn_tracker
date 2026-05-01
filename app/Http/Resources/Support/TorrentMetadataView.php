@@ -66,6 +66,26 @@ final class TorrentMetadataView
     }
 
     /**
+     * @param  iterable<int, Model>  $torrents
+     * @return array<int, array<string, mixed>>
+     */
+    public static function releaseAdviceMapByTorrentId(iterable $torrents): array
+    {
+        /** @var array<int, array<string, mixed>> $mapped */
+        $mapped = [];
+
+        foreach ($torrents as $torrent) {
+            if (! $torrent instanceof Torrent) {
+                continue;
+            }
+
+            $mapped[(int) $torrent->id] = self::fromTorrent($torrent)->releaseAdvice();
+        }
+
+        return $mapped;
+    }
+
+    /**
      * @return array<string, int|string|null>
      */
     public function toArray(): array
@@ -114,6 +134,18 @@ final class TorrentMetadataView
             'applied_fields' => $this->normalizeStringList($payload['metadata_enrichment_applied_fields'] ?? null),
             'conflicts' => $this->normalizeStringList($payload['metadata_enrichment_conflicts'] ?? null),
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function releaseAdvice(): array
+    {
+        $rawPayload = $this->metadata()?->raw_payload;
+        $payload = is_array($rawPayload) ? $rawPayload : [];
+        $releaseAdvice = $payload['release_advice'] ?? null;
+
+        return is_array($releaseAdvice) ? $releaseAdvice : [];
     }
 
     /**
