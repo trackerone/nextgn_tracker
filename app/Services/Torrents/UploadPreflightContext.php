@@ -58,8 +58,8 @@ final readonly class UploadPreflightContext
             'info_hash' => $this->infoHash,
             'existing_torrent_id' => $this->existingTorrentId,
             'release_advice' => $this->releaseAdvice,
-            'metadata_enrichment_applied_fields' => $this->metadataEnrichmentAppliedFields === [] ? null : $this->metadataEnrichmentAppliedFields,
-            'metadata_enrichment_conflicts' => $this->metadataEnrichmentConflicts === [] ? null : $this->metadataEnrichmentConflicts,
+            'metadata_enrichment_applied_fields' => $this->metadataEnrichmentAppliedFields,
+            'metadata_enrichment_conflicts' => $this->metadataEnrichmentConflicts,
             'extracted_metadata' => $this->extractedMetadata->toArray() === [] ? null : $this->extractedMetadata->toArray(),
         ], static fn (mixed $value): bool => $value !== null);
     }
