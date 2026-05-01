@@ -20,68 +20,44 @@ final class UploadReleaseAdvisorTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->advisor = app(UploadReleaseAdvisor::class);
     }
 
-    public function test_no_existing_family_returns_no_warnings(): void
+    public function test_same_imdb_id_strengthens_family_match(): void
     {
-        $advice = $this->advisor->advise($this->candidate('No Match', 2025, '2160p', 'BLURAY'));
+        $existing = $this->createVisibleTorrentWithMetadata('Different Local Title', 2021, '1080p', 'WEB-DL', imdbId: 'tt1234567');
 
-        $this->assertSame('movie:no match:2025', $advice['family_key']);
-        $this->assertFalse($advice['family_exists']);
-        $this->assertFalse($advice['same_quality_exists']);
-        $this->assertFalse($advice['better_version_exists']);
-        $this->assertNull($advice['best_torrent_id']);
-        $this->assertSame([], $advice['matching_torrent_ids']);
-        $this->assertSame([], $advice['warnings']);
-    }
-
-    public function test_same_family_existing_returns_same_family_warning(): void
-    {
-        $existing = $this->createVisibleTorrentWithMetadata('Family Film', 2024, '720p', 'HDTV');
-
-        $advice = $this->advisor->advise($this->candidate('Family Film', 2024, '2160p', 'BLURAY'));
+        $advice = $this->advisor->advise($this->candidate('Other Name', 2024, '1080p', 'WEB-DL', imdbId: 'tt1234567'));
 
         $this->assertTrue($advice['family_exists']);
         $this->assertSame([$existing->id], $advice['matching_torrent_ids']);
-        $this->assertContains('same_family_exists', $advice['warnings']);
+        $this->assertStringContainsString(':imdb:tt1234567', $advice['family_key']);
     }
 
-    public function test_same_quality_existing_returns_same_quality_warning(): void
+    public function test_different_technical_fields_are_alternate_version_not_exact_duplicate(): void
     {
-        $existing = $this->createVisibleTorrentWithMetadata('Quality Film', 2023, '1080p', 'WEB-DL');
+        $this->createVisibleTorrentWithMetadata('Family Film', 2024, '2160p', 'BLURAY', tmdbId: 555);
 
-        $advice = $this->advisor->advise($this->candidate('Quality Film', 2023, '1080p', 'WEB-DL'));
+        $advice = $this->advisor->advise($this->candidate('Family Film', 2024, '1080p', 'WEB-DL', tmdbId: 555));
 
-        $this->assertTrue($advice['same_quality_exists']);
-        $this->assertContains('same_quality_exists', $advice['warnings']);
-        $this->assertSame($existing->id, $advice['best_torrent_id']);
+        $this->assertFalse($advice['exact_duplicate_exists']);
+        $this->assertTrue($advice['alternate_version_exists']);
+        $this->assertTrue($advice['same_external_id_different_version']);
+        $this->assertContains('same_external_id_different_version', $advice['warnings']);
     }
 
-    public function test_better_version_existing_returns_better_version_warning(): void
+    public function test_missing_external_ids_falls_back_to_title_and_year_family(): void
     {
-        $best = $this->createVisibleTorrentWithMetadata('Upgrade Film', 2024, '2160p', 'BLURAY');
-        $this->createVisibleTorrentWithMetadata('Upgrade Film', 2024, '1080p', 'WEB-DL');
+        $existing = $this->createVisibleTorrentWithMetadata('Fallback Film', 2020, '720p', 'HDTV');
 
-        $advice = $this->advisor->advise($this->candidate('Upgrade Film', 2024, '720p', 'HDTV'));
+        $advice = $this->advisor->advise($this->candidate('Fallback Film', 2020, '1080p', 'WEB-DL'));
 
-        $this->assertTrue($advice['better_version_exists']);
-        $this->assertContains('better_version_exists', $advice['warnings']);
-        $this->assertSame($best->id, $advice['best_torrent_id']);
+        $this->assertSame('movie:fallback film:2020', $advice['family_key']);
+        $this->assertSame([$existing->id], $advice['matching_torrent_ids']);
+        $this->assertContains('same_title_year_different_version', $advice['warnings']);
     }
 
-    public function test_candidate_better_than_existing_does_not_set_better_version_warning(): void
-    {
-        $this->createVisibleTorrentWithMetadata('No Better Warning', 2022, '720p', 'HDTV');
-
-        $advice = $this->advisor->advise($this->candidate('No Better Warning', 2022, '2160p', 'BLURAY'));
-
-        $this->assertFalse($advice['better_version_exists']);
-        $this->assertNotContains('better_version_exists', $advice['warnings']);
-    }
-
-    private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source): Torrent
+    private function createVisibleTorrentWithMetadata(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null): Torrent
     {
         $torrent = Torrent::factory()->create([
             'type' => 'movie',
@@ -98,12 +74,14 @@ final class UploadReleaseAdvisorTest extends TestCase
             'year' => $year,
             'resolution' => $resolution,
             'source' => $source,
+            'imdb_id' => $imdbId,
+            'tmdb_id' => $tmdbId,
         ]);
 
         return $torrent;
     }
 
-    private function candidate(string $title, int $year, string $resolution, string $source): CanonicalTorrentMetadata
+    private function candidate(string $title, int $year, string $resolution, string $source, ?string $imdbId = null, ?int $tmdbId = null): CanonicalTorrentMetadata
     {
         return CanonicalTorrentMetadata::fromArray([
             'title' => $title,
@@ -111,6 +89,8 @@ final class UploadReleaseAdvisorTest extends TestCase
             'year' => $year,
             'resolution' => $resolution,
             'source' => $source,
+            'imdb_id' => $imdbId,
+            'tmdb_id' => $tmdbId,
         ]);
     }
 }
