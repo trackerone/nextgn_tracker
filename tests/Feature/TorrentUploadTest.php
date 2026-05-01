@@ -205,7 +205,7 @@ class TorrentUploadTest extends TestCase
                 metadataComplete: true,
                 infoHash: null,
                 existingTorrentId: null,
-            ));
+            )
         });
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
