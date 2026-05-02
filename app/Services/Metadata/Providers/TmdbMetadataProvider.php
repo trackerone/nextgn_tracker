@@ -25,7 +25,7 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
     public function supports(ExternalMetadataLookup $lookup): bool
     {
         return $this->config->providerEnabled($this->providerKey())
-            && (bool) config('metadata.tmdb.api_key')
+            && $this->config->tmdbApiKey() !== null
             && ($lookup->imdbId !== null || $lookup->title !== null || $lookup->tmdbId !== null);
     }
 
@@ -35,7 +35,7 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
             return ExternalMetadataResult::skipped($this->providerKey(), 'Provider disabled or missing credentials.');
         }
 
-        $apiKey = (string) config('metadata.tmdb.api_key');
+        $apiKey = (string) $this->config->tmdbApiKey();
         $baseUrl = rtrim((string) config('metadata.tmdb.base_url', 'https://api.themoviedb.org/3'), '/');
         $imageBaseUrl = rtrim((string) config('metadata.tmdb.image_base_url', 'https://image.tmdb.org/t/p/original'), '/');
 

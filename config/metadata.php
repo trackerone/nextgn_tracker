@@ -10,6 +10,7 @@ return [
     ],
     'trakt' => [
         'client_id' => env('TRAKT_CLIENT_ID'),
+        'client_secret' => env('TRAKT_CLIENT_SECRET'),
         'base_url' => env('TRAKT_BASE_URL', 'https://api.trakt.tv'),
     ],
     'imdb' => [
