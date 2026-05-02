@@ -10,6 +10,7 @@ use App\Jobs\EnrichTorrentExternalMetadata;
 use App\Models\SiteSetting;
 use App\Models\Torrent;
 use App\Models\TorrentExternalMetadata;
+use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
@@ -108,6 +109,96 @@ final class ExternalMetadataFlowTest extends TestCase
         $response->assertJsonPath('data.external_metadata.imdb_id', 'tt1234567');
         $response->assertJsonPath('data.external_metadata.tmdb_id', '123');
         $response->assertJsonPath('data.external_metadata.enrichment_status', 'enriched');
+    }
+
+    public function test_provider_priority_wins_for_conflicting_non_null_fields(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb","trakt","imdb"]', 'json');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
+
+        $torrent = Torrent::factory()->create();
+
+        $enricher = new ExternalMetadataEnricher(
+            app(ExternalMetadataConfig::class),
+            [
+                new FakeFlowExternalMetadataProvider('tmdb', new ExternalMetadataResult(provider: 'tmdb', found: true, imdbId: 'tt1111111', tmdbId: '111', title: 'TMDB Title', year: 2021, overview: 'From TMDB', externalUrl: 'https://www.themoviedb.org/movie/111')),
+                new FakeFlowExternalMetadataProvider('trakt', new ExternalMetadataResult(provider: 'trakt', found: true, imdbId: 'tt2222222', tmdbId: '222', title: 'Trakt Title', year: 2022, traktId: '900', traktSlug: 'trakt-title', externalUrl: 'https://trakt.tv/movies/trakt-title')),
+                new FakeFlowExternalMetadataProvider('imdb', new ExternalMetadataResult(provider: 'imdb', found: true, imdbId: 'tt3333333', title: 'IMDb Title', year: 2023, externalUrl: 'https://www.imdb.com/title/tt3333333/')),
+            ]
+        );
+
+        $external = $enricher->enrich($torrent);
+
+        $this->assertSame('tt1111111', $external->imdb_id);
+        $this->assertSame('111', $external->tmdb_id);
+        $this->assertSame('TMDB Title', $external->title);
+        $this->assertSame(2021, $external->year);
+    }
+
+    public function test_later_provider_fills_only_missing_fields_without_overwriting_earlier_values(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb","trakt"]', 'json');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.trakt.enabled', 'true', 'bool');
+
+        $torrent = Torrent::factory()->create();
+
+        $enricher = new ExternalMetadataEnricher(
+            app(ExternalMetadataConfig::class),
+            [
+                new FakeFlowExternalMetadataProvider('tmdb', new ExternalMetadataResult(provider: 'tmdb', found: true, imdbId: null, tmdbId: '444', title: 'Primary Title', year: 2024, overview: null, externalUrl: 'https://www.themoviedb.org/movie/444')),
+                new FakeFlowExternalMetadataProvider('trakt', new ExternalMetadataResult(provider: 'trakt', found: true, imdbId: 'tt4444444', tmdbId: '999', title: 'Secondary Title', year: 2018, overview: 'From Trakt', traktSlug: 'secondary-title', externalUrl: 'https://trakt.tv/movies/secondary-title')),
+            ]
+        );
+
+        $external = $enricher->enrich($torrent);
+
+        $this->assertSame('Primary Title', $external->title);
+        $this->assertSame(2024, $external->year);
+        $this->assertSame('444', $external->tmdb_id);
+        $this->assertSame('tt4444444', $external->imdb_id);
+        $this->assertSame('From Trakt', $external->overview);
+    }
+
+    public function test_local_canonical_ids_are_preserved_and_imdb_fill_only_does_not_replace_richer_values(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.priority', '["tmdb","imdb"]', 'json');
+        $this->setSiteSetting('metadata.providers.tmdb.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
+
+        $torrent = Torrent::factory()->create([
+            'imdb_id' => 'tt7777777',
+            'tmdb_id' => '777',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Local Canonical Title',
+            'year' => 2020,
+            'imdb_id' => 'tt7777777',
+            'tmdb_id' => 777,
+        ]);
+
+        $enricher = new ExternalMetadataEnricher(
+            app(ExternalMetadataConfig::class),
+            [
+                new FakeFlowExternalMetadataProvider('tmdb', new ExternalMetadataResult(provider: 'tmdb', found: true, imdbId: 'tt7777777', tmdbId: '777', title: 'Rich TMDB Title', year: 2020, overview: 'TMDB overview', externalUrl: 'https://www.themoviedb.org/movie/777')),
+                new FakeFlowExternalMetadataProvider('imdb', new ExternalMetadataResult(provider: 'imdb', found: true, imdbId: 'tt9999999', title: 'IMDb fallback title', year: 2025, externalUrl: 'https://www.imdb.com/title/tt9999999/')),
+            ]
+        );
+
+        $external = $enricher->enrich($torrent->fresh(['metadata']));
+
+        $this->assertSame('tt7777777', $external->imdb_id);
+        $this->assertSame('777', $external->tmdb_id);
+        $this->assertSame('Rich TMDB Title', $external->title);
+        $this->assertSame(2020, $external->year);
+        $this->assertSame('TMDB overview', $external->overview);
     }
 
     private function setSiteSetting(string $key, string $value, string $type): void
