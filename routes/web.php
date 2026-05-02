@@ -93,6 +93,8 @@ Route::middleware(['auth', 'role.level:admin', $adminThrottle])->group(function 
         ->name('admin.settings.ratio.edit');
     Route::patch('/admin/settings/ratio', [RatioSettingsController::class, 'update'])
         ->name('admin.settings.ratio.update');
+    Route::view('/admin/settings/metadata', 'admin.settings.metadata')
+        ->name('admin.settings.metadata.edit');
 });
 
 // Invites are intended to be accessible to staff (tests assert staff access).
