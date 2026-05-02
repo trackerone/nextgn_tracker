@@ -68,6 +68,19 @@ final class TorrentMetadataExtractorTest extends TestCase
         $this->assertNull($metadata->rawNfo);
     }
 
+    public function test_extracts_identity_hints_from_raw_name_when_nfo_is_absent(): void
+    {
+        $metadata = $this->extractor->extract(
+            torrentPayload: $this->samplePayload('Docu.Name.2024.720p.HDTV.tt7654321.tmdb-12345-ABC'),
+            rawNfo: null,
+        );
+
+        $this->assertSame('tt7654321', $metadata->imdbId);
+        $this->assertSame('12345', $metadata->tmdbId);
+        $this->assertSame('https://www.imdb.com/title/tt7654321/', $metadata->imdbUrl);
+        $this->assertSame('https://www.themoviedb.org/movie/12345', $metadata->tmdbUrl);
+    }
+
     private function samplePayload(string $name): string
     {
         return app(BencodeService::class)->encode([
