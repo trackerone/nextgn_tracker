@@ -30,16 +30,19 @@ final class TorrentMetadataExtractor
         $year = $this->extractYear($normalizedNfo) ?? $this->extractYear($infoName);
 
         if ($normalizedNfo === null) {
+            $imdbId = $this->extractImdbId($infoName ?? '');
+            $tmdbId = $this->extractTmdbId($infoName ?? '');
+
             return new TorrentExtractedMetadata(
                 title: $titleFromName,
                 year: $year,
                 resolution: $this->extractResolution($infoName),
                 source: $this->extractSource($infoName),
                 releaseGroup: $this->extractReleaseGroup($infoName),
-                imdbId: null,
-                imdbUrl: null,
-                tmdbId: null,
-                tmdbUrl: null,
+                imdbId: $imdbId,
+                imdbUrl: $imdbId !== null ? sprintf('https://www.imdb.com/title/%s/', $imdbId) : null,
+                tmdbId: $tmdbId,
+                tmdbUrl: $tmdbId !== null ? sprintf('https://www.themoviedb.org/movie/%s', $tmdbId) : null,
                 rawNfo: null,
                 rawName: $infoName,
                 parsedName: $titleFromName,
