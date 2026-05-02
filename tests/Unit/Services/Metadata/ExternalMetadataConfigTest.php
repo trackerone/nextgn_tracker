@@ -30,8 +30,6 @@ final class ExternalMetadataConfigTest extends TestCase
         $this->assertSame(['trakt', 'tmdb'], $config->providerPriority());
     }
 
-
-
     public function test_credentials_prefer_db_secret_and_fallback_to_config(): void
     {
         config()->set('metadata.tmdb.api_key', 'tmdb-env-key');
