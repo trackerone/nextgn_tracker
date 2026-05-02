@@ -12,6 +12,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\DuplicateTorrentResolver;
 use App\Services\Torrents\PersistTorrentMetadataService;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityDecision;
@@ -31,6 +32,7 @@ final class UploadSubmissionController extends Controller
         private readonly PersistTorrentMetadataService $metadataPersistence,
         private readonly UploadEligibilityService $uploadEligibility,
         private readonly UploadPreflightContextBuilderContract $preflightContextBuilder,
+        private readonly DuplicateTorrentResolver $duplicateTorrentResolver,
     ) {}
 
     public function store(UploadSubmissionRequest $request): JsonResponse
@@ -151,24 +153,7 @@ final class UploadSubmissionController extends Controller
      */
     private function resolveDuplicateTorrentFromContext(array $context): ?Torrent
     {
-        $existingTorrentId = $context['existing_torrent_id'] ?? null;
-
-        if (is_int($existingTorrentId)) {
-            $torrent = Torrent::query()->find($existingTorrentId);
-            if ($torrent instanceof Torrent) {
-                return $torrent;
-            }
-        }
-
-        $infoHash = $context['info_hash'] ?? null;
-        if (is_string($infoHash) && $infoHash !== '') {
-            $torrent = Torrent::query()->where('info_hash', $infoHash)->first();
-            if ($torrent instanceof Torrent) {
-                return $torrent;
-            }
-        }
-
-        return null;
+        return $this->duplicateTorrentResolver->resolveFromContext($context);
     }
 
     /**
