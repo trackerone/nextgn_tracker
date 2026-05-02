@@ -47,6 +47,7 @@ final class ExternalMetadataConfig
     {
         return $this->credentials->getSecret('metadata.providers.trakt.client_secret', config('metadata.trakt.client_secret'));
     }
+
     /**
      * @return list<string>
      */
