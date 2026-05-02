@@ -27,14 +27,18 @@ final class ClearMetadataCredentialRequest extends FormRequest
         $provider = (string) $this->route('provider');
         $field = (string) $this->route('field');
 
-        $valid = match ($provider) {
-            'tmdb' => in_array($field, ['api_key'], true),
-            'trakt' => in_array($field, ['client_id', 'client_secret'], true),
-            default => false,
+        $allowedFields = match ($provider) {
+            'tmdb' => ['api_key'],
+            'trakt' => ['client_id', 'client_secret'],
+            default => null,
         };
 
-        if (! $valid) {
-            throw ValidationException::withMessages(['field' => 'Unknown provider/field combination.']);
+        if ($allowedFields === null) {
+            throw ValidationException::withMessages(['provider' => 'Unknown provider.']);
+        }
+
+        if (! in_array($field, $allowedFields, true)) {
+            throw ValidationException::withMessages(['field' => 'Field is not valid for provider.']);
         }
     }
 }
