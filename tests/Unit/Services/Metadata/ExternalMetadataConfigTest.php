@@ -47,6 +47,7 @@ final class ExternalMetadataConfigTest extends TestCase
 
         $this->assertSame('tmdb-db-key', $config->tmdbApiKey());
     }
+
     private function setSiteSetting(string $key, string $value, string $type): void
     {
         SiteSetting::query()->updateOrCreate(
