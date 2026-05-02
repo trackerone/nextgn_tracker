@@ -107,7 +107,24 @@
         });
 
         if (!response.ok) {
-            throw new Error(await response.text() || 'Request failed');
+            let message = 'Request failed';
+            const contentType = response.headers.get('content-type') ?? '';
+
+            if (contentType.includes('application/json')) {
+                const data = await response.json().catch(() => ({}));
+                const firstError = data?.errors && typeof data.errors === 'object'
+                    ? Object.values(data.errors).flat().find((value) => typeof value === 'string')
+                    : null;
+                if (typeof data?.message === 'string' && data.message.trim() !== '') {
+                    message = data.message;
+                } else if (typeof firstError === 'string' && firstError.trim() !== '') {
+                    message = firstError;
+                }
+            } else if (response.status >= 500) {
+                message = 'Server error. Please try again.';
+            }
+
+            throw new Error(message);
         }
 
         return response.status === 204 ? {} : await response.json();
