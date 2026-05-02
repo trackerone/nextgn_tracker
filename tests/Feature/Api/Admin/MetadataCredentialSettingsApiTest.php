@@ -59,10 +59,12 @@ final class MetadataCredentialSettingsApiTest extends TestCase
 
         $this->actingAs($admin)
             ->putJson('/api/admin/settings/metadata/credentials/imdb', ['api_key' => 'x'])
-            ->assertStatus(422);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['provider']);
 
         $this->actingAs($admin)
             ->deleteJson('/api/admin/settings/metadata/credentials/tmdb/client_secret')
-            ->assertStatus(422);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['field']);
     }
 }
