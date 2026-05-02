@@ -21,22 +21,39 @@ final class ImdbMetadataProvider implements ExternalMetadataProvider
     public function supports(ExternalMetadataLookup $lookup): bool
     {
         return $this->config->providerEnabled($this->providerKey())
-            && (bool) config('metadata.imdb.dataset_enabled', false)
-            && $lookup->imdbId !== null;
+            && $this->isValidImdbId($lookup->imdbId);
     }
 
     public function lookup(ExternalMetadataLookup $lookup): ExternalMetadataResult
     {
-        if ($lookup->imdbId !== null && str_starts_with($lookup->imdbId, 'tt')) {
-            return new ExternalMetadataResult(
-                provider: $this->providerKey(),
-                found: false,
-                imdbId: $lookup->imdbId,
-                externalUrl: sprintf('https://www.imdb.com/title/%s/', $lookup->imdbId),
-                error: $this->supports($lookup) ? 'IMDb official integration TODO: not implemented yet.' : 'Provider disabled or credentials unavailable.',
-            );
+        if (! $this->isValidImdbId($lookup->imdbId)) {
+            return ExternalMetadataResult::skipped($this->providerKey(), 'No IMDb identifier available.');
         }
 
-        return ExternalMetadataResult::skipped($this->providerKey(), 'No IMDb identifier available.');
+        if (! $this->config->providerEnabled($this->providerKey())) {
+            return ExternalMetadataResult::skipped($this->providerKey(), 'Provider disabled.');
+        }
+
+        $imdbId = strtolower((string) $lookup->imdbId);
+
+        return new ExternalMetadataResult(
+            provider: $this->providerKey(),
+            found: true,
+            imdbId: $imdbId,
+            externalUrl: sprintf('https://www.imdb.com/title/%s/', $imdbId),
+            rawPayload: [
+                'source' => 'imdb',
+                'mode' => 'fill_only',
+            ],
+        );
+    }
+
+    private function isValidImdbId(?string $imdbId): bool
+    {
+        if (! is_string($imdbId)) {
+            return false;
+        }
+
+        return preg_match('/^tt\d{7,8}$/i', trim($imdbId)) === 1;
     }
 }

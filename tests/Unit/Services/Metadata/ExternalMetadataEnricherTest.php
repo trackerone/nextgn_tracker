@@ -92,18 +92,17 @@ final class ExternalMetadataEnricherTest extends TestCase
         $this->assertSame('https://trakt.tv/movies/shawshank-redemption-1994', $record->trakt_url);
     }
 
-    public function test_imdb_provider_without_credentials_safely_skips(): void
+    public function test_imdb_provider_returns_fill_only_result_when_enabled_and_id_exists(): void
     {
         $this->setSiteSetting('metadata.providers.imdb.enabled', 'true', 'bool');
-        config()->set('metadata.imdb.dataset_enabled', false);
-
         $provider = app(ImdbMetadataProvider::class);
         $result = $provider->lookup(new ExternalMetadataLookup('tt1234567', null, null, null, null, 'movie'));
 
-        $this->assertFalse($result->found);
+        $this->assertTrue($result->found);
         $this->assertSame('imdb', $result->provider);
         $this->assertSame('tt1234567', $result->imdbId);
         $this->assertSame('https://www.imdb.com/title/tt1234567/', $result->externalUrl);
+        $this->assertSame(['source' => 'imdb', 'mode' => 'fill_only'], $result->rawPayload);
     }
 
     private function setSiteSetting(string $key, string $value, string $type): void
