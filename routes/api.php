@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
@@ -38,6 +39,15 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/m
 
     Route::post('/providers', [MetadataProviderSettingsController::class, 'update'])
         ->name('api.admin.settings.metadata.providers.update');
+
+    Route::get('/credentials/status', [MetadataCredentialSettingsController::class, 'status'])
+        ->name('api.admin.settings.metadata.credentials.status');
+
+    Route::put('/credentials/{provider}', [MetadataCredentialSettingsController::class, 'set'])
+        ->name('api.admin.settings.metadata.credentials.set');
+
+    Route::delete('/credentials/{provider}/{field}', [MetadataCredentialSettingsController::class, 'clear'])
+        ->name('api.admin.settings.metadata.credentials.clear');
 });
 
 Route::middleware(['api', 'auth'])->group(function (): void {
