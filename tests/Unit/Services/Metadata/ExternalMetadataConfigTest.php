@@ -30,6 +30,25 @@ final class ExternalMetadataConfigTest extends TestCase
         $this->assertSame(['trakt', 'tmdb'], $config->providerPriority());
     }
 
+
+
+    public function test_credentials_prefer_db_secret_and_fallback_to_config(): void
+    {
+        config()->set('metadata.tmdb.api_key', 'tmdb-env-key');
+        config()->set('metadata.trakt.client_id', 'trakt-env-id');
+        config()->set('metadata.trakt.client_secret', 'trakt-env-secret');
+
+        $config = app(ExternalMetadataConfig::class);
+
+        $this->assertSame('tmdb-env-key', $config->tmdbApiKey());
+        $this->assertSame('trakt-env-id', $config->traktClientId());
+        $this->assertSame('trakt-env-secret', $config->traktClientSecret());
+
+        app(\App\Services\Metadata\MetadataCredentialsRepository::class)
+            ->setSecret('metadata.providers.tmdb.api_key', 'tmdb-db-key');
+
+        $this->assertSame('tmdb-db-key', $config->tmdbApiKey());
+    }
     private function setSiteSetting(string $key, string $value, string $type): void
     {
         SiteSetting::query()->updateOrCreate(

@@ -8,7 +8,10 @@ use App\Services\Settings\SiteSettingsRepository;
 
 final class ExternalMetadataConfig
 {
-    public function __construct(private readonly SiteSettingsRepository $settings) {}
+    public function __construct(
+        private readonly SiteSettingsRepository $settings,
+        private readonly MetadataCredentialsRepository $credentials,
+    ) {}
 
     public function enrichmentEnabled(): bool
     {
@@ -30,6 +33,22 @@ final class ExternalMetadataConfig
         return $this->settings->getBool(sprintf('metadata.providers.%s.enabled', $provider));
     }
 
+
+
+    public function tmdbApiKey(): ?string
+    {
+        return $this->credentials->getSecret('metadata.providers.tmdb.api_key', config('metadata.tmdb.api_key'));
+    }
+
+    public function traktClientId(): ?string
+    {
+        return $this->credentials->getSecret('metadata.providers.trakt.client_id', config('metadata.trakt.client_id'));
+    }
+
+    public function traktClientSecret(): ?string
+    {
+        return $this->credentials->getSecret('metadata.providers.trakt.client_secret', config('metadata.trakt.client_secret'));
+    }
     /**
      * @return list<string>
      */

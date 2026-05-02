@@ -25,7 +25,7 @@ final class TraktMetadataProvider implements ExternalMetadataProvider
     public function supports(ExternalMetadataLookup $lookup): bool
     {
         return $this->config->providerEnabled($this->providerKey())
-            && (bool) config('metadata.trakt.client_id')
+            && $this->config->traktClientId() !== null
             && ($lookup->imdbId !== null || $lookup->tmdbId !== null || $lookup->title !== null);
     }
 
@@ -36,7 +36,7 @@ final class TraktMetadataProvider implements ExternalMetadataProvider
         }
 
         $baseUrl = rtrim((string) config('metadata.trakt.base_url', 'https://api.trakt.tv'), '/');
-        $clientId = (string) config('metadata.trakt.client_id');
+        $clientId = (string) $this->config->traktClientId();
 
         try {
             $idType = $lookup->imdbId !== null ? 'imdb' : ($lookup->tmdbId !== null ? 'tmdb' : 'slug');
