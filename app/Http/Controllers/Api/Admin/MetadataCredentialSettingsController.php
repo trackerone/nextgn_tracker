@@ -16,7 +16,8 @@ final class MetadataCredentialSettingsController extends Controller
     public function __construct(
         private readonly MetadataCredentialsRepository $credentials,
         private readonly AuditLogger $auditLogger,
-    ) {}
+    ) {
+    }
 
     public function status(): JsonResponse
     {
@@ -91,7 +92,7 @@ final class MetadataCredentialSettingsController extends Controller
         $status = [];
 
         foreach ($this->credentialKeyMap()[$provider] as $field => $key) {
-            $status['has_'. $field] = $this->credentials->hasSecret($key);
+            $status['has_' . $field] = $this->credentials->hasSecret($key);
         }
 
         return $status;
