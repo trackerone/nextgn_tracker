@@ -33,8 +33,6 @@ final class ExternalMetadataConfig
         return $this->settings->getBool(sprintf('metadata.providers.%s.enabled', $provider));
     }
 
-
-
     public function tmdbApiKey(): ?string
     {
         return $this->credentials->getSecret('metadata.providers.tmdb.api_key', config('metadata.tmdb.api_key'));
