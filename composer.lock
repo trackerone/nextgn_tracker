@@ -1974,6 +1974,7 @@
         },
         {
             "name": "league/commonmark",
+<<<< fix/aikido-security-update-packages-29594180-axa3
             "version": "2.8.2",
             "source": {
                 "type": "git",
@@ -1984,6 +1985,18 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/59fb075d2101740c337c7216e3f32b36c204218b",
                 "reference": "59fb075d2101740c337c7216e3f32b36c204218b",
+=======
+            "version": "2.8.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thephpleague/commonmark.git",
+                "reference": "84b1ca48347efdbe775426f108622a42735a6579"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thephpleague/commonmark/zipball/84b1ca48347efdbe775426f108622a42735a6579",
+                "reference": "84b1ca48347efdbe775426f108622a42735a6579",
+>>>> main
                 "shasum": ""
             },
             "require": {
@@ -2077,7 +2090,11 @@
                     "type": "tidelift"
                 }
             ],
+<<<< fix/aikido-security-update-packages-29594180-axa3
             "time": "2026-03-19T13:16:38+00:00"
+=======
+            "time": "2026-03-05T21:37:03+00:00"
+>>>> main
         },
         {
             "name": "league/config",
