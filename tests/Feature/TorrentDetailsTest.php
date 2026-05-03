@@ -50,7 +50,16 @@ final class TorrentDetailsTest extends TestCase
     public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create(['name' => 'No Metadata Torrent']);
+        $torrent = Torrent::factory()->create([
+            'name' => 'No Metadata Torrent',
+            'type' => null,
+            'source' => null,
+            'resolution' => null,
+            'release_group' => null,
+            'imdb_id' => null,
+            'tmdb_id' => null,
+            'nfo_text' => null,
+        ]);
 
         $this->actingAs($user)
             ->get(route('torrents.show', $torrent))
