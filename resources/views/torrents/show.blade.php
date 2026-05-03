@@ -11,6 +11,11 @@
     $metadataReview = $metadataReview ?? [];
     $hasMetadataRecord = $hasMetadataRecord ?? false;
     $hasDisplayableMetadata = $hasDisplayableMetadata ?? false;
+    $eligibility = $eligibility ?? ['allowed' => false, 'reason' => 'ratio_too_low'];
+    $eligibilityTitle = $eligibilityTitle ?? 'Download status';
+    $eligibilityTone = $eligibilityTone ?? 'danger';
+    $freeleechMessage = $freeleechMessage ?? 'Freeleech is not active for this torrent.';
+    $ratioMessage = $ratioMessage ?? 'Your ratio is not blocking this download.';
 @endphp
 
 @extends('layouts.app')
@@ -33,6 +38,11 @@
             ['label' => 'Size', 'value' => $torrent->formatted_size],
             ['label' => 'Files', 'value' => number_format($torrent->file_count)],
             ['label' => 'Codecs', 'value' => collect($torrent->codecs ?? [])->filter()->implode(' / ') ?: 'n/a'],
+        ];
+        $metaBadges = [
+            ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
+            ['label' => 'Size', 'value' => $torrent->formatted_size],
+            ['label' => 'Files', 'value' => number_format($torrent->file_count)],
         ];
         $stats = [
             ['label' => 'Seeders', 'value' => number_format($torrent->seeders), 'class' => 'text-emerald-400'],
@@ -85,8 +95,17 @@
                 </section>
             @endif
             @if (is_string($eligibilityMessage) && $eligibilityMessage !== '')
-                <section class="mt-5 rounded-2xl border border-slate-700 bg-slate-950/50 p-4 text-sm text-slate-200">
-                    {{ $eligibilityMessage }}
+                <section @class([
+                    'mt-5 rounded-2xl p-4 text-sm',
+                    'border border-emerald-500/40 bg-emerald-500/10 text-emerald-100' => $eligibilityTone === 'success',
+                    'border border-rose-500/40 bg-rose-500/10 text-rose-100' => $eligibilityTone !== 'success',
+                ])>
+                    <p class="font-semibold">{{ $eligibilityTitle }}</p>
+                    <p class="mt-1">{{ $eligibilityMessage }}</p>
+                    <div class="mt-3 grid gap-2 md:grid-cols-2">
+                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs">{{ $ratioMessage }}</p>
+                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs">{{ $freeleechMessage }}</p>
+                    </div>
                 </section>
             @endif
             @can('moderate', $torrent)
@@ -140,14 +159,24 @@
                     Metadata is not available for this torrent yet.
                 </div>
             @endif
-            <dl class="mt-8 grid gap-6 md:grid-cols-3">
-                @foreach ($meta as $item)
-                    <div>
-                        <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
-                        <dd class="text-lg font-semibold text-white">{{ $item['value'] }}</dd>
-                    </div>
-                @endforeach
-            </dl>
+            <section class="mt-8 space-y-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($metaBadges as $badge)
+                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs text-slate-200">
+                            <span class="text-slate-400">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
+                        </span>
+                    @endforeach
+                </div>
+                <dl class="grid gap-3 md:grid-cols-2">
+                    @foreach ($meta as $item)
+                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+                            <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
+                            <dd class="mt-1 text-sm font-semibold text-white">{{ $item['value'] }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </section>
             <div class="mt-8 grid gap-4 md:grid-cols-3">
                 @foreach ($stats as $stat)
                     <div class="rounded-2xl bg-slate-950/60 p-4 text-center">

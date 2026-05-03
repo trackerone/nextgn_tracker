@@ -114,6 +114,19 @@ final class TorrentController extends Controller
             'ratio_too_low' => 'Download denied: your ratio is below the required threshold.',
             default => 'Download allowed: you can download this torrent.',
         };
+        $isFreeleech = (bool) ($model->is_freeleech ?? $model->freeleech ?? false);
+        $eligibilityTone = $eligibility['allowed'] ? 'success' : 'danger';
+        $eligibilityTitle = $eligibility['allowed']
+            ? 'You can download this torrent'
+            : 'Download is currently blocked';
+        $freeleechMessage = $isFreeleech
+            ? (($eligibility['reason'] ?? '') === 'freeleech'
+                ? 'Freeleech is active and currently bypasses ratio requirements.'
+                : 'Freeleech is active for this torrent.')
+            : 'Freeleech is not active for this torrent.';
+        $ratioMessage = ($eligibility['reason'] ?? '') === 'ratio_too_low'
+            ? 'Your current ratio does not meet the required threshold.'
+            : 'Your ratio is not blocking this download.';
 
         $releaseAdvice = app(UploadReleaseAdvisor::class)->advise(
             CanonicalTorrentMetadata::fromArray($metadata)
@@ -150,6 +163,10 @@ final class TorrentController extends Controller
             'nfoHtml' => $nfoHtml,
             'eligibility' => $eligibility,
             'eligibilityMessage' => $eligibilityMessage,
+            'eligibilityTitle' => $eligibilityTitle,
+            'eligibilityTone' => $eligibilityTone,
+            'freeleechMessage' => $freeleechMessage,
+            'ratioMessage' => $ratioMessage,
             'releaseAdvice' => $releaseAdvice,
             'metadataQuality' => $quality,
             'metadataReview' => $metadataReview,
