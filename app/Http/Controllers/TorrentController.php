@@ -12,7 +12,11 @@ use App\Models\Torrent;
 use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
 use App\Support\Torrents\TorrentMetadataQuality;
+use App\Support\Torrents\TorrentModerationMetadataReview;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
+use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\UploadReleaseAdvisor;
+use App\Services\Tracker\DownloadEligibilityPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -96,6 +100,24 @@ final class TorrentController extends Controller
         }
 
         $metadata = TorrentMetadataView::forTorrent($model);
+        $quality = TorrentMetadataQuality::evaluate($metadata, $model->name);
+        $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
+
+        $eligibility = $request->user() !== null
+            ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
+            : ['allowed' => false, 'reason' => 'ratio_too_low'];
+
+        $eligibilityMessage = match ($eligibility['reason']) {
+            'freeleech' => 'Download allowed: freeleech bypass is active for this torrent.',
+            'no_history' => 'Download allowed: no-history grace applies to your account.',
+            'ratio_too_low' => 'Download denied: your ratio is below the required threshold.',
+            default => 'Download allowed: you can download this torrent.',
+        };
+
+        $releaseAdvice = app(UploadReleaseAdvisor::class)->advise(
+            CanonicalTorrentMetadata::fromArray($metadata)
+        );
+
         $descriptionText = (string) ($model->description ?? '');
         $descriptionHtml = nl2br(e($descriptionText));
 
@@ -108,6 +130,11 @@ final class TorrentController extends Controller
             'descriptionHtml' => $descriptionHtml,
             'nfoText' => $nfoText,
             'nfoHtml' => $nfoHtml,
+            'eligibility' => $eligibility,
+            'eligibilityMessage' => $eligibilityMessage,
+            'releaseAdvice' => $releaseAdvice,
+            'metadataQuality' => $quality,
+            'metadataReview' => $metadataReview,
         ]);
     }
 }

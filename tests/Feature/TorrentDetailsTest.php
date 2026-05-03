@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
+use App\Models\UserStat;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class TorrentDetailsTest extends TestCase
@@ -42,5 +45,86 @@ final class TorrentDetailsTest extends TestCase
         $response->assertSee('&lt;script&gt;alert', false);
         $response->assertSee('Example nfo content');
         $response->assertSee('<meta name="robots" content="noindex, nofollow">', false);
+    }
+
+    public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create(['name' => 'No Metadata Torrent']);
+
+        $this->actingAs($user)
+            ->get(route('torrents.show', $torrent))
+            ->assertOk()
+            ->assertSee('Metadata is not available for this torrent yet.');
+    }
+
+    public function test_details_page_shows_eligibility_message_for_ratio_denial(): void
+    {
+        $user = User::factory()->create();
+        UserStat::query()->create(['user_id' => $user->id, 'uploaded_bytes' => 0, 'downloaded_bytes' => 1024]);
+        $torrent = Torrent::factory()->create(['is_freeleech' => false]);
+
+        $this->actingAs($user)
+            ->get(route('torrents.show', $torrent))
+            ->assertOk()
+            ->assertSee('Download denied: your ratio is below the required threshold.');
+    }
+
+    public function test_details_page_shows_upgrade_banner_when_better_version_exists(): void
+    {
+        $user = User::factory()->create();
+        $best = Torrent::factory()->create();
+        $current = Torrent::factory()->create();
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $best->id,
+            'title' => 'Upgrade Film',
+            'year' => 2024,
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'bluray',
+            'release_group' => 'BEST',
+            'imdb_id' => 'tt1234567',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $current->id,
+            'title' => 'Upgrade Film',
+            'year' => 2024,
+            'type' => 'movie',
+            'resolution' => '720p',
+            'source' => 'web',
+            'release_group' => 'LOW',
+            'imdb_id' => 'tt1234567',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('torrents.show', $current))
+            ->assertOk()
+            ->assertSee('A better version already exists for this release family.')
+            ->assertSee('View better version #'.$best->id);
+    }
+
+    public function test_metadata_quality_signals_are_visible_only_for_staff(): void
+    {
+        $normalUser = User::factory()->create();
+        $staffUser = User::factory()->create(['role' => 'moderator', 'is_staff' => true]);
+        $torrent = Torrent::factory()->create(['name' => 'Broken Meta '.Str::random(5)]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Broken Meta',
+            'type' => 'movie',
+        ]);
+
+        $this->actingAs($normalUser)
+            ->get(route('torrents.show', $torrent))
+            ->assertOk()
+            ->assertDontSee('Metadata review needed');
+
+        $this->actingAs($staffUser)
+            ->get(route('torrents.show', $torrent))
+            ->assertOk()
+            ->assertSee('Metadata review needed');
     }
 }
