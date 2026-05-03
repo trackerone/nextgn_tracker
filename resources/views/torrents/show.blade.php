@@ -9,6 +9,7 @@
     $releaseAdvice = $releaseAdvice ?? [];
     $metadataQuality = $metadataQuality ?? [];
     $metadataReview = $metadataReview ?? [];
+    $hasMetadataRecord = $hasMetadataRecord ?? false;
 @endphp
 
 @extends('layouts.app')
@@ -124,7 +125,7 @@
                     @endif
                 </section>
             @endcan
-            @if ($metadataFacts !== [])
+            @if ($hasMetadataRecord && $metadataFacts !== [])
                 <dl class="mt-8 grid gap-6 md:grid-cols-3">
                     @foreach ($metadataFacts as $item)
                         <div>
