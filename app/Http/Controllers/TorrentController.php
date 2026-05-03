@@ -125,9 +125,7 @@ final class TorrentController extends Controller
         $nfoText = (string) ($metadata['nfo'] ?? '');
         $nfoHtml = nl2br(e($nfoText));
         $hasDisplayableMetadata = collect([
-            $metadata['title'] ?? null,
             $metadata['year'] ?? null,
-            $metadata['type'] ?? null,
             $metadata['resolution'] ?? null,
             $metadata['source'] ?? null,
             $metadata['release_group'] ?? null,
@@ -141,6 +139,11 @@ final class TorrentController extends Controller
 
             return is_string($value) && trim($value) !== '';
         });
+
+        if (! $hasDisplayableMetadata && $metadataRecordExists) {
+            $metadataType = $metadata['type'] ?? null;
+            $hasDisplayableMetadata = is_string($metadataType) && trim($metadataType) !== '';
+        }
 
         return response()->view('torrents.show', [
             'torrent' => $model,
