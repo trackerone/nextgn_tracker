@@ -108,6 +108,11 @@
                 ]) aria-live="polite">
                     <p class="font-semibold leading-6" title="Eligibility is evaluated from your ratio, account state and freeleech rules.">{{ $eligibilityTitle }}</p>
                     <p class="mt-1 leading-6">{{ $eligibilityMessage }}</p>
+                    @if (($eligibility['allowed'] ?? false) !== true)
+                        <p class="mt-3 rounded-xl border border-rose-400/30 bg-rose-950/20 px-3 py-2 text-xs leading-5 text-rose-100">
+                            Improve ratio or wait for freeleech/no-history grace before retrying this download.
+                        </p>
+                    @endif
                     <div class="mt-3 grid gap-2 md:grid-cols-2">
                         <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs leading-5" title="Ratio requirement status">{{ $ratioMessage }}</p>
                         <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs leading-5" title="Freeleech impact on this download">{{ $freeleechMessage }}</p>
@@ -152,14 +157,17 @@
                 </section>
             @endcan
             @if ($hasDisplayableMetadata)
-                <dl class="mt-8 grid gap-6 md:grid-cols-3">
-                    @foreach ($metadataFacts as $item)
-                        <div>
-                            <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
-                            <dd class="text-lg font-semibold text-white">{{ $item['value'] }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
+                <section class="mt-8 space-y-3" aria-label="Normalized metadata">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Normalized metadata</h2>
+                    <dl class="grid gap-4 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 md:grid-cols-3">
+                        @foreach ($metadataFacts as $item)
+                            <div class="space-y-1">
+                                <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
+                                <dd class="text-base font-semibold leading-6 text-white">{{ $item['value'] }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </section>
             @else
                 <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
                     Metadata is not available for this torrent yet.
@@ -167,20 +175,20 @@
             @endif
             <section class="mt-8 space-y-4" aria-label="Quick facts and metadata badges">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-2.5">
                     @foreach ($metaBadges as $badge)
-                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs leading-5 text-slate-200 transition hover:border-slate-500" title="{{ $badge['label'] }} quick fact">
-                            <span class="text-slate-400">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
+                        <span class="rounded-full border border-slate-600 bg-slate-900/80 px-3.5 py-1.5 text-xs font-medium leading-5 text-slate-100 transition hover:border-slate-400" title="{{ $badge['label'] }} quick fact">
+                            <span class="text-slate-300">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
                         </span>
                     @endforeach
                 </div>
                 @if ($metadataInlineBadges !== [])
                     <div class="space-y-2">
                         <p class="text-xs uppercase tracking-wide text-slate-500">Metadata badges</p>
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-2.5">
                             @foreach ($metadataInlineBadges as $badge)
-                                <span class="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs leading-5 text-indigo-100 transition hover:border-indigo-400" title="{{ $badge['hint'] }}">
-                                    <span class="text-indigo-300/80">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
+                                <span class="rounded-full border border-indigo-400/60 bg-indigo-500/15 px-3.5 py-1.5 text-xs font-medium leading-5 text-indigo-100 transition hover:border-indigo-300" title="{{ $badge['hint'] }}">
+                                    <span class="text-indigo-200">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
                                 </span>
                             @endforeach
                         </div>
@@ -188,7 +196,7 @@
                 @endif
                 <dl class="grid gap-3 md:grid-cols-2">
                     @foreach ($meta as $item)
-                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:border-slate-700">
+                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3.5 hover:border-slate-700">
                             <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
                             <dd class="mt-1 text-sm font-semibold leading-6 text-white">{{ $item['value'] }}</dd>
                         </div>
