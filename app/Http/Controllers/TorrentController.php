@@ -124,6 +124,23 @@ final class TorrentController extends Controller
 
         $nfoText = (string) ($metadata['nfo'] ?? '');
         $nfoHtml = nl2br(e($nfoText));
+        $hasDisplayableMetadata = collect([
+            $metadata['title'] ?? null,
+            $metadata['year'] ?? null,
+            $metadata['type'] ?? null,
+            $metadata['resolution'] ?? null,
+            $metadata['source'] ?? null,
+            $metadata['release_group'] ?? null,
+            $metadata['imdb_id'] ?? null,
+            $metadata['tmdb_id'] ?? null,
+            $metadata['nfo'] ?? null,
+        ])->contains(static function (mixed $value): bool {
+            if (is_int($value)) {
+                return true;
+            }
+
+            return is_string($value) && trim($value) !== '';
+        });
 
         return response()->view('torrents.show', [
             'torrent' => $model,
@@ -137,6 +154,7 @@ final class TorrentController extends Controller
             'metadataQuality' => $quality,
             'metadataReview' => $metadataReview,
             'hasMetadataRecord' => $metadataRecordExists,
+            'hasDisplayableMetadata' => $hasDisplayableMetadata,
         ]);
     }
 }
