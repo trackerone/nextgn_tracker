@@ -55,6 +55,7 @@ final class TorrentDetailsTest extends TestCase
         $this->actingAs($user)
             ->get(route('torrents.show', $torrent))
             ->assertOk()
+            ->assertSee('No Metadata Torrent')
             ->assertSee('Metadata is not available for this torrent yet.');
     }
 
