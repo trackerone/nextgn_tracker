@@ -6,8 +6,8 @@ namespace Tests\Feature;
 
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
-use App\Models\UserStat;
 use App\Models\User;
+use App\Models\UserStat;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;

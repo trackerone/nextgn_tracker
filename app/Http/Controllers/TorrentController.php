@@ -9,14 +9,14 @@ use App\Http\Requests\BrowseTorrentsRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Services\Torrents\CanonicalTorrentMetadata;
+use App\Services\Torrents\UploadReleaseAdvisor;
+use App\Services\Tracker\DownloadEligibilityPolicy;
 use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
 use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentModerationMetadataReview;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
-use App\Services\Torrents\CanonicalTorrentMetadata;
-use App\Services\Torrents\UploadReleaseAdvisor;
-use App\Services\Tracker\DownloadEligibilityPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -99,6 +99,7 @@ final class TorrentController extends Controller
             return response()->json($model);
         }
 
+        $metadataRecordExists = $model->getRelationValue('metadata') !== null;
         $metadata = TorrentMetadataView::forTorrent($model);
         $quality = TorrentMetadataQuality::evaluate($metadata, $model->name);
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
@@ -135,6 +136,7 @@ final class TorrentController extends Controller
             'releaseAdvice' => $releaseAdvice,
             'metadataQuality' => $quality,
             'metadataReview' => $metadataReview,
+            'hasMetadataRecord' => $metadataRecordExists,
         ]);
     }
 }
