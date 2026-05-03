@@ -125,7 +125,7 @@
                     @endif
                 </section>
             @endcan
-            @if ($hasMetadataRecord && $metadataFacts !== [])
+            @if ($metadataFacts !== [])
                 <dl class="mt-8 grid gap-6 md:grid-cols-3">
                     @foreach ($metadataFacts as $item)
                         <div>
