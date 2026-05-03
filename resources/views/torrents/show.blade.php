@@ -44,6 +44,12 @@
             ['label' => 'Size', 'value' => $torrent->formatted_size],
             ['label' => 'Files', 'value' => number_format($torrent->file_count)],
         ];
+        $metadataInlineBadges = array_values(array_filter([
+            ! empty($metadata['resolution']) ? ['label' => 'Resolution', 'value' => (string) $metadata['resolution'], 'hint' => 'Playback quality reported from normalized metadata.'] : null,
+            ! empty($metadata['source']) ? ['label' => 'Source', 'value' => (string) $metadata['source'], 'hint' => 'Release source, e.g. BluRay, WEB-DL or HDTV.'] : null,
+            ! empty($metadata['genres']) ? ['label' => 'Genre', 'value' => is_array($metadata['genres']) ? implode(', ', $metadata['genres']) : (string) $metadata['genres'], 'hint' => 'Primary genre tags for browsing/filtering.'] : null,
+            ! empty($metadata['year']) ? ['label' => 'Year', 'value' => (string) $metadata['year'], 'hint' => 'Original release year.'] : null,
+        ]));
         $stats = [
             ['label' => 'Seeders', 'value' => number_format($torrent->seeders), 'class' => 'text-emerald-400'],
             ['label' => 'Leechers', 'value' => number_format($torrent->leechers), 'class' => 'text-amber-400'],
@@ -96,15 +102,15 @@
             @endif
             @if (is_string($eligibilityMessage) && $eligibilityMessage !== '')
                 <section @class([
-                    'mt-5 rounded-2xl p-4 text-sm',
+                    'mt-5 rounded-2xl p-5 text-sm shadow-lg',
                     'border border-emerald-500/40 bg-emerald-500/10 text-emerald-100' => $eligibilityTone === 'success',
-                    'border border-rose-500/40 bg-rose-500/10 text-rose-100' => $eligibilityTone !== 'success',
-                ])>
-                    <p class="font-semibold">{{ $eligibilityTitle }}</p>
-                    <p class="mt-1">{{ $eligibilityMessage }}</p>
+                    'border-2 border-rose-500/50 bg-rose-500/10 text-rose-100 shadow-rose-950/40' => $eligibilityTone !== 'success',
+                ]) aria-live="polite">
+                    <p class="font-semibold leading-6" title="Eligibility is evaluated from your ratio, account state and freeleech rules.">{{ $eligibilityTitle }}</p>
+                    <p class="mt-1 leading-6">{{ $eligibilityMessage }}</p>
                     <div class="mt-3 grid gap-2 md:grid-cols-2">
-                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs">{{ $ratioMessage }}</p>
-                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs">{{ $freeleechMessage }}</p>
+                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs leading-5" title="Ratio requirement status">{{ $ratioMessage }}</p>
+                        <p class="rounded-xl border border-white/10 bg-slate-950/30 px-3 py-2 text-xs leading-5" title="Freeleech impact on this download">{{ $freeleechMessage }}</p>
                     </div>
                 </section>
             @endif
@@ -159,20 +165,32 @@
                     Metadata is not available for this torrent yet.
                 </div>
             @endif
-            <section class="mt-8 space-y-4">
+            <section class="mt-8 space-y-4" aria-label="Quick facts and metadata badges">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($metaBadges as $badge)
-                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs text-slate-200">
+                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-3 py-1 text-xs leading-5 text-slate-200 transition hover:border-slate-500" title="{{ $badge['label'] }} quick fact">
                             <span class="text-slate-400">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
                         </span>
                     @endforeach
                 </div>
+                @if ($metadataInlineBadges !== [])
+                    <div class="space-y-2">
+                        <p class="text-xs uppercase tracking-wide text-slate-500">Metadata badges</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($metadataInlineBadges as $badge)
+                                <span class="rounded-full border border-indigo-500/40 bg-indigo-500/10 px-3 py-1 text-xs leading-5 text-indigo-100 transition hover:border-indigo-400" title="{{ $badge['hint'] }}">
+                                    <span class="text-indigo-300/80">{{ $badge['label'] }}:</span> {{ $badge['value'] }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
                 <dl class="grid gap-3 md:grid-cols-2">
                     @foreach ($meta as $item)
-                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3 hover:border-slate-700">
                             <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
-                            <dd class="mt-1 text-sm font-semibold text-white">{{ $item['value'] }}</dd>
+                            <dd class="mt-1 text-sm font-semibold leading-6 text-white">{{ $item['value'] }}</dd>
                         </div>
                     @endforeach
                 </dl>
