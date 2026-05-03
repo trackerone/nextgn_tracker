@@ -62,7 +62,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(prepend: [
-            sprintf('throttle:%s', config('security.api.default_rate_limit', '60,1')),
+            'throttle:60,1',
         ]);
 
         $middleware->api(append: [
