@@ -19,6 +19,7 @@ final class TorrentDetailsTest extends TestCase
     public function test_authenticated_user_can_see_details(): void
     {
         $user = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'name' => 'Detail Test',
             'type' => 'movie',
@@ -53,9 +54,13 @@ final class TorrentDetailsTest extends TestCase
 
         $torrent = Torrent::factory()->create([
             'name' => 'No Metadata Torrent',
-            'type' => null,
-            'source' => null,
-            'resolution' => null,
+
+            // REQUIRED (NOT NULL fields)
+            'type' => '',
+            'source' => '',
+            'resolution' => '',
+
+            // Remove all metadata signals
             'imdb_id' => null,
             'tmdb_id' => null,
             'nfo_text' => null,
