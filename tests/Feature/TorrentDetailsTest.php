@@ -50,15 +50,19 @@ final class TorrentDetailsTest extends TestCase
     public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
     {
         $user = User::factory()->create();
+
         $torrent = Torrent::factory()->create([
             'name' => 'No Metadata Torrent',
             'type' => null,
             'source' => null,
             'resolution' => null,
-            'release_group' => null,
             'imdb_id' => null,
             'tmdb_id' => null,
             'nfo_text' => null,
+            'nfo_storage_path' => null,
+            'tags' => [],
+            'codecs' => null,
+            'description' => null,
         ]);
 
         $this->actingAs($user)
@@ -71,8 +75,16 @@ final class TorrentDetailsTest extends TestCase
     public function test_details_page_shows_eligibility_message_for_ratio_denial(): void
     {
         $user = User::factory()->create();
-        UserStat::query()->create(['user_id' => $user->id, 'uploaded_bytes' => 0, 'downloaded_bytes' => 1024]);
-        $torrent = Torrent::factory()->create(['is_freeleech' => false]);
+
+        UserStat::query()->create([
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 1024,
+        ]);
+
+        $torrent = Torrent::factory()->create([
+            'is_freeleech' => false,
+        ]);
 
         $this->actingAs($user)
             ->get(route('torrents.show', $torrent))
@@ -83,6 +95,7 @@ final class TorrentDetailsTest extends TestCase
     public function test_details_page_shows_upgrade_banner_when_better_version_exists(): void
     {
         $user = User::factory()->create();
+
         $best = Torrent::factory()->create();
         $current = Torrent::factory()->create();
 
@@ -118,8 +131,15 @@ final class TorrentDetailsTest extends TestCase
     public function test_metadata_quality_signals_are_visible_only_for_staff(): void
     {
         $normalUser = User::factory()->create();
-        $staffUser = User::factory()->create(['role' => 'moderator', 'is_staff' => true]);
-        $torrent = Torrent::factory()->create(['name' => 'Broken Meta '.Str::random(5)]);
+
+        $staffUser = User::factory()->create([
+            'role' => 'moderator',
+            'is_staff' => true,
+        ]);
+
+        $torrent = Torrent::factory()->create([
+            'name' => 'Broken Meta '.Str::random(5),
+        ]);
 
         TorrentMetadata::query()->create([
             'torrent_id' => $torrent->id,
