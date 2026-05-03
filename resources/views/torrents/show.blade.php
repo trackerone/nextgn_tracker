@@ -5,6 +5,10 @@
     $descriptionHtml = $descriptionHtml ?? '';
     $nfoText = $nfoText ?? '';
     $nfoHtml = $nfoHtml ?? '';
+    $eligibilityMessage = $eligibilityMessage ?? null;
+    $releaseAdvice = $releaseAdvice ?? [];
+    $metadataQuality = $metadataQuality ?? [];
+    $metadataReview = $metadataReview ?? [];
 @endphp
 
 @extends('layouts.app')
@@ -70,6 +74,19 @@
                     </div>
                 @endcan
             </div>
+            @if (($releaseAdvice['upgrade_available'] ?? false) === true)
+                <section class="mt-5 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
+                    <p class="font-semibold">A better version already exists for this release family.</p>
+                    @if (! empty($releaseAdvice['best_torrent_id']))
+                        <a href="{{ route('torrents.show', $releaseAdvice['best_torrent_id']) }}" class="mt-2 inline-block underline">View better version #{{ $releaseAdvice['best_torrent_id'] }}</a>
+                    @endif
+                </section>
+            @endif
+            @if (is_string($eligibilityMessage) && $eligibilityMessage !== '')
+                <section class="mt-5 rounded-2xl border border-slate-700 bg-slate-950/50 p-4 text-sm text-slate-200">
+                    {{ $eligibilityMessage }}
+                </section>
+            @endif
             @can('moderate', $torrent)
                 <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                     <div class="flex flex-col gap-2 text-sm text-slate-200">
@@ -98,6 +115,13 @@
                             <button type="submit" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Soft-delete</button>
                         </form>
                     </div>
+                    @if (($metadataReview['needs_review'] ?? false) === true)
+                        <div class="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+                            <p class="font-semibold">Metadata review needed ({{ $metadataQuality['review_category'] ?? 'warning' }})</p>
+                            <p>Missing: {{ implode(', ', $metadataQuality['missing_fields'] ?? []) }}</p>
+                            <p>Labels: {{ implode(', ', $metadataReview['labels'] ?? []) }}</p>
+                        </div>
+                    @endif
                 </section>
             @endcan
             @if ($metadataFacts !== [])
@@ -109,6 +133,10 @@
                         </div>
                     @endforeach
                 </dl>
+            @else
+                <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                    Metadata is not available for this torrent yet.
+                </div>
             @endif
             <dl class="mt-8 grid gap-6 md:grid-cols-3">
                 @foreach ($meta as $item)
