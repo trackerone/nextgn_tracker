@@ -185,6 +185,8 @@ jobs:
           echo "branch_name=${branch_name}" >> "$GITHUB_OUTPUT"
 
       - name: Enforce allowlisted changed paths
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
 
@@ -194,7 +196,7 @@ jobs:
           fi
 
           mapfile -t allowlist < <(grep -vE '^\s*(#|$)' .codex/policies/execution-allowlist.txt)
-          mapfile -t changed_files < <(git diff --name-only origin/${{ github.event.repository.default_branch }}...HEAD)
+          mapfile -t changed_files < <(git diff --name-only origin/$DEFAULT_BRANCH...HEAD)
 
           if [ "${#changed_files[@]}" -eq 0 ]; then
             echo "No changed files detected against default branch."
