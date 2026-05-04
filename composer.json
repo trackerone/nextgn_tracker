@@ -29,13 +29,13 @@
         "larastan/larastan": "^3.9",
         "laravel/framework": "^13.7",
         "laravel/sanctum": "^4.3",
-        "laravel/tinker": "^2.11",
+        "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "league/flysystem-local": "^3.0",
-        "livewire/livewire": "^3.7",
+        "livewire/livewire": "^4.3",
         "pestphp/pest-plugin-laravel": "^4.0",
         "ramsey/uuid": "^4.7",
-        "spatie/laravel-permission": "^6.24",
+        "spatie/laravel-permission": "^7.4",
         "spatie/laravel-ray": "^1.43"
     },
     "require-dev": {
