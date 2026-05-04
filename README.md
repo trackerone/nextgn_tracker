@@ -2,8 +2,8 @@
 
 <p align="center">
   <!-- Stack -->
-  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 13.x" />
-  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.4+" />
+  <img src="https://img.shields.io/badge/Laravel-13.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 13.x" />
+  <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.4+" />
   <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node 20-24 LTS" />
   <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite Assets" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License MIT" />
@@ -51,8 +51,8 @@ Instead, it separates operational torrent state from canonical release metadata.
 
 ## Tech stack
 
-- PHP 8.3+
-- Laravel 12
+- PHP 8.4+
+- Laravel 13
 - MySQL/MariaDB
 - Vite + React + TypeScript + Tailwind
 - shadcn/ui and lucide-react
