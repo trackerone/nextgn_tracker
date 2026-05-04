@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { ConversationItem, MessageItem } from './types';
+import DOMPurify from 'dompurify';
 
 interface ThreadViewProps {
   conversation: ConversationItem | null;
@@ -7,6 +8,15 @@ interface ThreadViewProps {
   currentUserId?: number | null;
   isLoading: boolean;
   onSendMessage: (body: string) => Promise<void>;
+}
+
+function sanitizeHtml(html: string | null | undefined) {
+  return html
+    ? DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['span', 'p'],
+        ALLOWED_ATTR: ['class'],
+      })
+    : '';
 }
 
 const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, currentUserId = null, isLoading, onSendMessage }) => {
@@ -61,7 +71,7 @@ const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, current
                 <span>{message.sender?.name ?? (isOwn ? 'Dig' : 'Ukendt')}</span>
                 <time dateTime={message.created_at}>{new Date(message.created_at).toLocaleString()}</time>
               </header>
-              <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: message.body_html }} />
+              <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.body_html) }} />
             </article>
           );
         })}
