@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, History, RefreshCcw, Trash2, UserCircle2 } from 'lucide-react';
 import { PostItemData, SessionContext } from './types';
+import DOMPurify from 'dompurify';
 
 interface PostItemProps {
   post: PostItemData;
@@ -9,6 +10,15 @@ interface PostItemProps {
   onDelete?: (post: PostItemData) => void;
   onRestore?: (post: PostItemData) => void;
   isOwner: boolean;
+}
+
+function sanitizeHtml(html: string | null | undefined) {
+  return html
+    ? DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: ['span', 'p'],
+        ALLOWED_ATTR: ['class'],
+      })
+    : '';
 }
 
 const PostItem: React.FC<PostItemProps> = ({ post, session, onEdit, onDelete, onRestore, isOwner }) => {
@@ -68,7 +78,7 @@ const PostItem: React.FC<PostItemProps> = ({ post, session, onEdit, onDelete, on
           )}
         </div>
       </header>
-      <div className="prose prose-invert mt-3 max-w-none text-sm" dangerouslySetInnerHTML={{ __html: post.body_html }} />
+      <div className="prose prose-invert mt-3 max-w-none text-sm" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body_html) }} />
     </article>
   );
 };
