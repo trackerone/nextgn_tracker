@@ -33,6 +33,9 @@ final class LoginController extends Controller
         }
 
         RateLimiter::clear(AppServiceProvider::loginThrottleKey($request));
+        RateLimiter::clear(AppServiceProvider::hashedLoginThrottleKey(
+            AppServiceProvider::loginThrottleKey($request)
+        ));
 
         $request->session()->regenerate();
 

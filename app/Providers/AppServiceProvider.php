@@ -208,6 +208,11 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
+    public static function hashedLoginThrottleKey(string $throttleKey): string
+    {
+        return sha1($throttleKey);
+    }
+
     private function loginRateLimitKey(Request $request): string
     {
         return self::loginThrottleKey($request);
