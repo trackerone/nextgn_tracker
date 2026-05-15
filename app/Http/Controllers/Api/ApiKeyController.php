@@ -55,6 +55,7 @@ class ApiKeyController extends Controller
             'label' => $validated['label'],
             'key' => ApiKey::storageKeyForPlaintext($plainKey),
             ...ApiKey::hashedAttributesForPlaintext($plainKey),
+            ...ApiKey::hmacAttributesForPlaintext($plainKey),
         ]);
 
         return response()->json([

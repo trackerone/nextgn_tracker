@@ -8,6 +8,7 @@ use App\Models\ApiKey;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ApiKeyHmacMiddleware
@@ -21,21 +22,35 @@ final class ApiKeyHmacMiddleware
         $timestamp = (string) $request->header('X-Api-Timestamp', '');
 
         if ($key === '' || $signature === '' || $timestamp === '') {
+            $this->logSecurityEvent('api_hmac_missing_credentials', 'Missing API HMAC credentials.');
+
             return $this->unauthorized();
         }
 
         if (! ctype_digit($timestamp) || ! $this->timestampIsFresh((int) $timestamp)) {
+            $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC timestamp failed freshness validation.', [
+                'timestamp' => $timestamp,
+            ]);
+
             return $this->unauthorized();
         }
 
         $apiKey = ApiKey::findForPlaintext($key);
 
         if ($apiKey === null) {
+            $this->logSecurityEvent('api_hmac_unknown_key_prefix', 'API HMAC key prefix could not be resolved.', [
+                'key_prefix' => ApiKey::prefixForPlaintext($key),
+            ]);
+
             return $this->unauthorized();
         }
 
-        $secret = (string) config('security.api.hmac_secret', '');
-        if ($secret === '') {
+        $secret = $this->signingSecretFor($apiKey, $key);
+        if ($secret === null) {
+            $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signing secret could not be resolved.', [
+                'api_key_id' => $apiKey->getKey(),
+            ]);
+
             return $this->unauthorized();
         }
 
@@ -80,7 +95,20 @@ final class ApiKeyHmacMiddleware
         }
 
         if (! $ok) {
+            $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signature validation failed.', [
+                'api_key_id' => $apiKey->getKey(),
+                'key_prefix' => $apiKey->key_prefix,
+                'hmac_version' => $apiKey->hmac_version,
+            ]);
+
             return $this->unauthorized();
+        }
+
+        if ($apiKey->usesLegacyGlobalHmac()) {
+            $this->logSecurityEvent('api_hmac_legacy_global_usage', 'Deprecated global API HMAC secret accepted.', [
+                'api_key_id' => $apiKey->getKey(),
+                'key_prefix' => $apiKey->key_prefix,
+            ]);
         }
 
         $apiKey->upgradeFromPlaintextIfNeeded($key);
@@ -97,11 +125,36 @@ final class ApiKeyHmacMiddleware
         return $next($request);
     }
 
+    private function signingSecretFor(ApiKey $apiKey, string $plainKey): ?string
+    {
+        if (! $apiKey->usesLegacyGlobalHmac()) {
+            if (! $apiKey->hmacSecretMatchesPlaintext($plainKey)) {
+                return null;
+            }
+
+            return ApiKey::hmacSigningSecretForPlaintext($plainKey);
+        }
+
+        $secret = (string) config('security.api.hmac_secret', '');
+
+        return $secret === '' ? null : $secret;
+    }
+
     private function timestampIsFresh(int $timestamp): bool
     {
         $allowedSkew = (int) config('security.api.allowed_time_skew_seconds', self::DEFAULT_ALLOWED_TIME_SKEW_SECONDS);
 
         return abs(now()->timestamp - $timestamp) <= $allowedSkew;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function logSecurityEvent(string $eventType, string $message, array $context = []): void
+    {
+        Log::channel('security')->warning($message, $context + [
+            'event_type' => $eventType,
+        ]);
     }
 
     private function unauthorized(): Response
