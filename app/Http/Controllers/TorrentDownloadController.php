@@ -8,15 +8,19 @@ use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\TorrentDownloadService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class TorrentDownloadController extends Controller
 {
-    public function __construct(private readonly DownloadEligibilityPolicy $downloadEligibilityPolicy) {}
+    public function __construct(
+        private readonly TorrentDownloadService $downloads,
+        private readonly DownloadEligibilityPolicy $downloadEligibilityPolicy,
+    ) {}
 
     public function download(Request $request, string $torrent): StreamedResponse|JsonResponse
     {
@@ -42,18 +46,23 @@ final class TorrentDownloadController extends Controller
             ], 403);
         }
 
-        $disk = (string) config('upload.torrents.disk', 'torrents');
-        $path = $model->torrentStoragePath();
-
-        if (! Storage::disk($disk)->exists($path)) {
+        try {
+            $payload = $this->downloads->buildPersonalizedPayload($model, $user);
+        } catch (RuntimeException) {
             abort(404);
         }
 
         $filename = ($model->slug ?: (string) $model->getKey()).'.torrent';
 
-        return Storage::disk($disk)->download($path, $filename, [
-            'Content-Type' => 'application/x-bittorrent',
-        ]);
+        return response()->streamDownload(
+            static function () use ($payload): void {
+                echo $payload;
+            },
+            $filename,
+            [
+                'Content-Type' => 'application/x-bittorrent',
+            ]
+        );
     }
 
     public function magnet(Request $request, string $torrent): JsonResponse
