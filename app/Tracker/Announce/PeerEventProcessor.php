@@ -47,6 +47,7 @@ final class PeerEventProcessor
         $result = DB::transaction(function () use ($request, $user, $torrent, $data, $peerId): array {
             $oldPeer = Peer::query()
                 ->where('torrent_id', $torrent->getKey())
+                ->where('user_id', $user->getKey())
                 ->where('peer_id', $peerId)
                 ->lockForUpdate()
                 ->first();
@@ -100,6 +101,7 @@ final class PeerEventProcessor
         if ($data->event === 'stopped') {
             Peer::query()
                 ->where('torrent_id', $torrent->getKey())
+                ->where('user_id', $user->getKey())
                 ->where('peer_id', $peerId)
                 ->delete();
 
@@ -111,6 +113,7 @@ final class PeerEventProcessor
 
         $peer = $existingPeer ?? new Peer([
             'torrent_id' => $torrent->getKey(),
+            'user_id' => $user->getKey(),
             'peer_id' => $peerId,
         ]);
 
