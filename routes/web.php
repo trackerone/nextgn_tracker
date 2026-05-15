@@ -47,7 +47,7 @@ $moderationThrottle = sprintf(
 Route::get('/', static fn () => redirect('/login'));
 
 Route::get('/login', [LoginController::class, 'show'])->name('login');
-Route::post('/login', [LoginController::class, 'store']);
+Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
 Route::middleware('auth')->get('/home', static fn () => response('Dashboard', 200));
@@ -218,7 +218,9 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
 */
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
-    Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
+    Route::post('/torrents', [TorrentUploadController::class, 'store'])
+        ->middleware('throttle:torrent-upload')
+        ->name('torrents.store');
     Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
     Route::get('/my/discovery', PersonalizedDiscoveryController::class)->name('my.discovery');

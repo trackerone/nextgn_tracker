@@ -14,6 +14,7 @@ use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Tests\TestCase;
@@ -354,6 +355,22 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('metadata_enrichment_applied_fields', ['imdb_id', 'tmdb_id']);
         $response->assertJsonPath('metadata_enrichment_conflicts', ['title']);
         $response->assertJsonPath('release_advice.family_exists', false);
+    }
+
+    public function test_api_upload_endpoint_throttles_failed_uploads(): void
+    {
+        config()->set('security.rate_limits.torrent_upload', '1,1');
+
+        $user = User::factory()->create();
+        RateLimiter::clear(sprintf('torrent-upload:user:%s', (string) $user->id));
+
+        $this->actingAs($user)
+            ->postJson(route('api.uploads.store'), [])
+            ->assertUnprocessable();
+
+        $this->actingAs($user)
+            ->postJson(route('api.uploads.store'), [])
+            ->assertTooManyRequests();
     }
 
     private function sampleTorrentPayload(string $infoName = 'API Upload', string $piecesSeed = 'a'): string

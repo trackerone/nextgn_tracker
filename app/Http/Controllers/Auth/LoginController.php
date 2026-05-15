@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Providers\AppServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 final class LoginController extends Controller
@@ -29,6 +31,8 @@ final class LoginController extends Controller
                 'email' => ['Invalid credentials.'],
             ]);
         }
+
+        RateLimiter::clear(AppServiceProvider::loginThrottleKey($request));
 
         $request->session()->regenerate();
 

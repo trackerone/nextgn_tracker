@@ -64,6 +64,7 @@ Route::middleware(['api', 'auth'])->group(function (): void {
         ->name('api.torrents.download');
 
     Route::post('/uploads', [UploadSubmissionController::class, 'store'])
+        ->middleware('throttle:torrent-upload')
         ->name('api.uploads.store');
 
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])

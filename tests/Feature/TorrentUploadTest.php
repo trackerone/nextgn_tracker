@@ -12,6 +12,7 @@ use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ViewErrorBag;
 use Mockery;
@@ -304,6 +305,24 @@ class TorrentUploadTest extends TestCase
         ]);
 
         $response->assertDontSee('A better version already exists.');
+    }
+
+    public function test_web_upload_endpoint_throttles_failed_uploads(): void
+    {
+        config()->set('security.rate_limits.torrent_upload', '1,1');
+
+        $user = User::factory()->create();
+        RateLimiter::clear(sprintf('torrent-upload:user:%s', (string) $user->id));
+
+        $this->actingAs($user)
+            ->from(route('torrents.upload'))
+            ->post(route('torrents.store'), [])
+            ->assertRedirect(route('torrents.upload'));
+
+        $this->actingAs($user)
+            ->from(route('torrents.upload'))
+            ->post(route('torrents.store'), [])
+            ->assertTooManyRequests();
     }
 
     private function sampleTorrentPayload(string $name, int $length): string
