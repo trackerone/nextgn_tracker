@@ -37,10 +37,12 @@ class AuthFlowTest extends TestCase
         $response->assertSuccessful();
     }
 
-    public function test_login_throttling_returns_too_many_requests_after_limit_is_exceeded(): void
+    public function test_login_throttles_after_max_failed_attempts(): void
     {
-        config()->set('security.rate_limits.login', '2,1');
-        for ($attempt = 0; $attempt < 2; $attempt++) {
+        $maxAttempts = 2;
+        config()->set('security.rate_limits.login', sprintf('%d,1', $maxAttempts));
+
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
             $response = $this->from('/login')->post('/login', [
                 'email' => 'locked@example.org',
                 'password' => 'wrong-password',
@@ -59,9 +61,10 @@ class AuthFlowTest extends TestCase
         ]);
     }
 
-    public function test_successful_login_clears_login_throttle_state(): void
+    public function test_successful_login_clears_partial_failed_attempt_throttle_state(): void
     {
-        config()->set('security.rate_limits.login', '2,1');
+        $maxAttempts = 2;
+        config()->set('security.rate_limits.login', sprintf('%d,1', $maxAttempts));
         $email = 'clear@example.org';
 
         User::factory()->create([
@@ -82,19 +85,14 @@ class AuthFlowTest extends TestCase
 
         $this->post('/logout')->assertRedirect('/login');
 
-        $response = $this->from('/login')->post('/login', [
-            'email' => $email,
-            'password' => 'wrong-password',
-        ]);
+        for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+            $response = $this->from('/login')->post('/login', [
+                'email' => $email,
+                'password' => 'wrong-password',
+            ]);
 
-        $this->assertNotSame(429, $response->getStatusCode());
-
-        $response = $this->from('/login')->post('/login', [
-            'email' => $email,
-            'password' => 'wrong-password',
-        ]);
-
-        $this->assertNotSame(429, $response->getStatusCode());
+            $this->assertNotSame(429, $response->getStatusCode());
+        }
 
         $this->from('/login')->post('/login', [
             'email' => $email,
