@@ -140,7 +140,7 @@ final class TorrentDownloadTest extends TestCase
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function storeTorrentPayload(Torrent $torrent, array $payload): void
     {
