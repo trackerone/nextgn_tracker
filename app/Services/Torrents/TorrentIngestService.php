@@ -105,12 +105,9 @@ final class TorrentIngestService
     public function deletePersistedTorrent(Torrent $torrent): void
     {
         $storagePath = $torrent->torrentStoragePath();
+        $storageDisk = (string) config('upload.torrents.disk', 'torrents');
 
-        if ($storagePath !== null) {
-            $storageDisk = (string) config('upload.torrents.disk', 'torrents');
-
-            Storage::disk($storageDisk)->delete($storagePath);
-        }
+        Storage::disk($storageDisk)->delete($storagePath);
 
         $torrent->delete();
     }
