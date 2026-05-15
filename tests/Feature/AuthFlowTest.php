@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class AuthFlowTest extends TestCase
@@ -42,11 +40,6 @@ class AuthFlowTest extends TestCase
     public function test_login_throttling_returns_too_many_requests_after_limit_is_exceeded(): void
     {
         config()->set('security.rate_limits.login', '2,1');
-        $throttleKey = 'login:locked@example.org|127.0.0.1';
-
-        RateLimiter::clear($throttleKey);
-        RateLimiter::clear(AppServiceProvider::hashedLoginThrottleKey($throttleKey));
-
         for ($attempt = 0; $attempt < 2; $attempt++) {
             $this->from('/login')->post('/login', [
                 'email' => 'locked@example.org',
@@ -67,46 +60,36 @@ class AuthFlowTest extends TestCase
     public function test_successful_login_clears_login_throttle_state(): void
     {
         config()->set('security.rate_limits.login', '2,1');
-        $throttleKey = 'login:clear@example.org|127.0.0.1';
-        $cacheKey = AppServiceProvider::hashedLoginThrottleKey($throttleKey);
+        $email = 'clear@example.org';
 
-        RateLimiter::clear($throttleKey);
-        RateLimiter::clear($cacheKey);
-
-        $user = User::factory()->create([
-            'email' => 'clear@example.org',
+        User::factory()->create([
+            'email' => $email,
         ]);
 
         $this->from('/login')->post('/login', [
-            'email' => 'clear@example.org',
+            'email' => $email,
             'password' => 'wrong-password',
         ])->assertSessionHasErrors('email');
 
-        $this->assertSame(1, RateLimiter::attempts($cacheKey));
-
         $this->post('/login', [
-            'email' => 'clear@example.org',
+            'email' => $email,
             'password' => 'password',
         ])->assertRedirect('/home');
-
-        $this->assertSame(0, RateLimiter::attempts($cacheKey));
 
         $this->post('/logout')->assertRedirect('/login');
 
         $this->from('/login')->post('/login', [
-            'email' => 'clear@example.org',
-            'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
-
-        $this->assertSame(1, RateLimiter::attempts($cacheKey));
-
-        $this->from('/login')->post('/login', [
-            'email' => 'clear@example.org',
+            'email' => $email,
             'password' => 'wrong-password',
         ])->assertSessionHasErrors('email');
 
         $this->from('/login')->post('/login', [
-            'email' => 'clear@example.org',
+            'email' => $email,
+            'password' => 'wrong-password',
+        ])->assertSessionHasErrors('email');
+
+        $this->from('/login')->post('/login', [
+            'email' => $email,
             'password' => 'wrong-password',
         ])->assertTooManyRequests();
     }
