@@ -23,6 +23,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Throwable;
 
 final class UploadSubmissionController extends Controller
 {
@@ -63,6 +64,8 @@ final class UploadSubmissionController extends Controller
 
         $metadata = $context->extractedMetadata;
 
+        $torrent = null;
+
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
                 'name' => $this->sanitizer->sanitizeString(strval($data['name'])),
@@ -85,21 +88,34 @@ final class UploadSubmissionController extends Controller
             ]);
         }
 
-        $this->metadataPersistence->persist(
-            $torrent,
-            CanonicalTorrentMetadata::fromExtractedMetadata(
-                $metadata,
-                $data['type'] ?? null,
-                $data['resolution'] ?? null,
-                $data['source'] ?? null,
-            ),
-        );
+        try {
+            $this->metadataPersistence->persist(
+                $torrent,
+                CanonicalTorrentMetadata::fromExtractedMetadata(
+                    $metadata,
+                    $data['type'] ?? null,
+                    $data['resolution'] ?? null,
+                    $data['source'] ?? null,
+                ),
+            );
+        } catch (Throwable $exception) {
+            $this->cleanupFailedUpload($torrent);
+
+            throw $exception;
+        }
 
         return $this->successfulUploadResponse(
             $torrent,
             is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null,
             $this->metadataEnrichmentOutcomeFromContext($decision->context),
         );
+    }
+
+    private function cleanupFailedUpload(?Torrent $torrent): void
+    {
+        if ($torrent instanceof Torrent) {
+            $this->ingestService->deletePersistedTorrent($torrent);
+        }
     }
 
     private function mapDeniedEligibilityToApiResponse(UploadEligibilityDecision $decision): JsonResponse

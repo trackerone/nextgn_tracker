@@ -12,10 +12,12 @@ use App\Services\Security\SanitizationService;
 use App\Services\Uploads\UploadPathGenerator;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 final class TorrentIngestService
 {
@@ -81,17 +83,36 @@ final class TorrentIngestService
             'storage_path' => $storagePath,
         ]);
 
-        $torrent->save();
+        try {
+            DB::transaction(function () use ($payload, $storageDisk, $storagePath, $torrent): void {
+                $torrent->save();
 
-        $stored = Storage::disk($storageDisk)->put($storagePath, $payload);
+                $stored = Storage::disk($storageDisk)->put($storagePath, $payload);
 
-        if ($stored === false) {
-            $torrent->delete();
+                if ($stored === false) {
+                    throw new RuntimeException('Unable to persist torrent payload.');
+                }
+            });
+        } catch (Throwable $exception) {
+            Storage::disk($storageDisk)->delete($storagePath);
 
-            throw new RuntimeException('Unable to persist torrent payload.');
+            throw $exception;
         }
 
         return $torrent;
+    }
+
+    public function deletePersistedTorrent(Torrent $torrent): void
+    {
+        $storagePath = $torrent->torrentStoragePath();
+
+        if ($storagePath !== null) {
+            $storageDisk = (string) config('upload.torrents.disk', 'torrents');
+
+            Storage::disk($storageDisk)->delete($storagePath);
+        }
+
+        $torrent->delete();
     }
 
     /**

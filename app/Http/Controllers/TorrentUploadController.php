@@ -27,6 +27,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 class TorrentUploadController extends Controller
 {
@@ -107,6 +108,8 @@ class TorrentUploadController extends Controller
             ]);
         }
 
+        $torrent = null;
+
         try {
             $torrent = $this->ingestService->ingest($user, $torrentFile, [
                 'name' => $this->sanitizer->sanitizeString($data['name']),
@@ -124,6 +127,8 @@ class TorrentUploadController extends Controller
                 'status' => Torrent::STATUS_PENDING,
             ]);
         } catch (TorrentAlreadyExistsException $exception) {
+            $this->nfoStorage->delete($nfoStoragePath);
+
             SecurityAuditLog::log($user, 'torrent.upload.duplicate', [
                 'existing_torrent_id' => $exception->torrent->getKey(),
                 'info_hash' => $exception->torrent->info_hash,
@@ -131,6 +136,8 @@ class TorrentUploadController extends Controller
 
             return $this->redirectToExistingTorrent($exception->torrent);
         } catch (InvalidArgumentException $exception) {
+            $this->nfoStorage->delete($nfoStoragePath);
+
             SecurityAuditLog::log($user, 'torrent.upload.rejected', [
                 'reason' => $exception->getMessage(),
             ]);
@@ -138,32 +145,51 @@ class TorrentUploadController extends Controller
             throw ValidationException::withMessages([
                 'torrent_file' => $exception->getMessage(),
             ]);
+        } catch (Throwable $exception) {
+            $this->cleanupFailedUpload($torrent, $nfoStoragePath);
+
+            throw $exception;
         }
 
-        $this->metadataPersistence->persist(
-            $torrent,
-            CanonicalTorrentMetadata::fromExtractedMetadata(
-                $metadata,
-                $data['type'] ?? null,
-                $data['resolution'] ?? null,
-                $data['source'] ?? null,
-            ),
-        );
+        try {
+            $this->metadataPersistence->persist(
+                $torrent,
+                CanonicalTorrentMetadata::fromExtractedMetadata(
+                    $metadata,
+                    $data['type'] ?? null,
+                    $data['resolution'] ?? null,
+                    $data['source'] ?? null,
+                ),
+            );
 
-        $this->auditLogger->log('torrent.created', $torrent, [
-            'uploader_id' => $user->getKey(),
-            'info_hash' => $torrent->info_hash ?? null,
-        ]);
+            $this->auditLogger->log('torrent.created', $torrent, [
+                'uploader_id' => $user->getKey(),
+                'info_hash' => $torrent->info_hash ?? null,
+            ]);
 
-        SecurityAuditLog::log($user, 'torrent.upload', [
-            'torrent_id' => $torrent->getKey(),
-            'size_bytes' => $torrentSizeBytes,
-            'mime' => $torrentMime,
-            'nfo_present' => $nfoStoragePath !== null,
-            'nfo_bytes' => $this->resolveNfoSize($request, $nfoPayload),
-        ]);
+            SecurityAuditLog::log($user, 'torrent.upload', [
+                'torrent_id' => $torrent->getKey(),
+                'size_bytes' => $torrentSizeBytes,
+                'mime' => $torrentMime,
+                'nfo_present' => $nfoStoragePath !== null,
+                'nfo_bytes' => $this->resolveNfoSize($request, $nfoPayload),
+            ]);
+        } catch (Throwable $exception) {
+            $this->cleanupFailedUpload($torrent, $nfoStoragePath);
+
+            throw $exception;
+        }
 
         return $this->successfulUploadResponse($torrent);
+    }
+
+    private function cleanupFailedUpload(?Torrent $torrent, ?string $nfoStoragePath): void
+    {
+        if ($torrent instanceof Torrent) {
+            $this->ingestService->deletePersistedTorrent($torrent);
+        }
+
+        $this->nfoStorage->delete($nfoStoragePath);
     }
 
     /**
