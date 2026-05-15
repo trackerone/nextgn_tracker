@@ -255,6 +255,72 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_peer_identity_is_scoped_to_user_for_matching_peer_ids(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-user-scoped-peer-id');
+        $peerIdHex = $this->makePeerIdHex('shared-peer-id');
+        $peerIdBinary = hex2bin($peerIdHex);
+
+        $this->announce($userA, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->announce($userB, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('peers', 2);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userA->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ]);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userB->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ]);
+
+        $this->announce($userB, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'stopped',
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('peers', 1);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userA->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ]);
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userB->id,
+            'peer_id' => $peerIdBinary,
+        ]);
+    }
+
     public function test_announce_without_event_updates_existing_peer_and_left_zero_sets_seeder(): void
     {
         $user = User::factory()->create();
