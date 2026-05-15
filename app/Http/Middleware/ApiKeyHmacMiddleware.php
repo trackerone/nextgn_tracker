@@ -27,7 +27,7 @@ final class ApiKeyHmacMiddleware
             return $this->unauthorized();
         }
 
-        if (! ctype_digit($timestamp) || ! $this->timestampIsFresh((int) $timestamp)) {
+        if (ctype_digit($timestamp) === false || $this->timestampIsFresh((int) $timestamp) === false) {
             $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC timestamp failed freshness validation.', [
                 'timestamp' => $timestamp,
             ]);
@@ -94,7 +94,7 @@ final class ApiKeyHmacMiddleware
             }
         }
 
-        if (! $ok) {
+        if ($ok === false) {
             $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signature validation failed.', [
                 'api_key_id' => $apiKey->getKey(),
                 'key_prefix' => $apiKey->key_prefix,
@@ -127,8 +127,8 @@ final class ApiKeyHmacMiddleware
 
     private function signingSecretFor(ApiKey $apiKey, string $plainKey): ?string
     {
-        if (! $apiKey->usesLegacyGlobalHmac()) {
-            if (! $apiKey->hmacSecretMatchesPlaintext($plainKey)) {
+        if ($apiKey->usesLegacyGlobalHmac() === false) {
+            if ($apiKey->hmacSecretMatchesPlaintext($plainKey) === false) {
                 return null;
             }
 
