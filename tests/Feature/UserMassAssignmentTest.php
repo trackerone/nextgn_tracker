@@ -100,6 +100,7 @@ final class UserMassAssignmentTest extends TestCase
         $this->actingAs($admin)
             ->patch(route('admin.users.role.update', $target), [
                 'role' => User::ROLE_MODERATOR,
+                'audit_reason' => 'Regression coverage for explicit admin role assignment.',
             ])
             ->assertRedirect();
 
