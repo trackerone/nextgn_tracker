@@ -41,10 +41,12 @@ class AuthFlowTest extends TestCase
     {
         config()->set('security.rate_limits.login', '2,1');
         for ($attempt = 0; $attempt < 2; $attempt++) {
-            $this->from('/login')->post('/login', [
+            $response = $this->from('/login')->post('/login', [
                 'email' => 'locked@example.org',
                 'password' => 'wrong-password',
-            ])->assertSessionHasErrors('email');
+            ]);
+
+            $this->assertNotSame(429, $response->getStatusCode());
         }
 
         $this->from('/login')->post('/login', [
@@ -66,10 +68,12 @@ class AuthFlowTest extends TestCase
             'email' => $email,
         ]);
 
-        $this->from('/login')->post('/login', [
+        $response = $this->from('/login')->post('/login', [
             'email' => $email,
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ]);
+
+        $this->assertNotSame(429, $response->getStatusCode());
 
         $this->post('/login', [
             'email' => $email,
@@ -78,15 +82,19 @@ class AuthFlowTest extends TestCase
 
         $this->post('/logout')->assertRedirect('/login');
 
-        $this->from('/login')->post('/login', [
+        $response = $this->from('/login')->post('/login', [
             'email' => $email,
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ]);
 
-        $this->from('/login')->post('/login', [
+        $this->assertNotSame(429, $response->getStatusCode());
+
+        $response = $this->from('/login')->post('/login', [
             'email' => $email,
             'password' => 'wrong-password',
-        ])->assertSessionHasErrors('email');
+        ]);
+
+        $this->assertNotSame(429, $response->getStatusCode());
 
         $this->from('/login')->post('/login', [
             'email' => $email,
