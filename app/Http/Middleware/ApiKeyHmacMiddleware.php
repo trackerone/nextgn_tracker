@@ -27,10 +27,7 @@ final class ApiKeyHmacMiddleware
             return $this->unauthorized();
         }
 
-        if (
-            ! ctype_digit($timestamp)
-            || ! $this->timestampIsFresh((int) $timestamp)
-        ) {
+        if (! ctype_digit($timestamp) || ! $this->timestampIsFresh((int) $timestamp)) {
             $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC timestamp failed freshness validation.', [
                 'timestamp' => $timestamp,
             ]);
