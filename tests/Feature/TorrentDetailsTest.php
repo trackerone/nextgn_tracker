@@ -68,8 +68,9 @@ final class TorrentDetailsTest extends TestCase
         $this->assertIsString($content);
 
         $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $content);
-        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $content);
+        $this->assertStringContainsString('&lt;img', $content);
         $this->assertStringNotContainsString('<script>alert(1)</script>', $content);
+        $this->assertStringNotContainsString('<img', $content);
         $this->assertStringNotContainsString('<img src=x onerror=alert(1)>', $content);
     }
 
