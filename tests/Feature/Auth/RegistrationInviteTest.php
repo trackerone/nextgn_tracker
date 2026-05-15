@@ -43,6 +43,66 @@ class RegistrationInviteTest extends TestCase
         ]);
     }
 
+    public function test_simulated_double_consume_of_single_use_invite_only_creates_one_account(): void
+    {
+        $invite = Invite::factory()->create([
+            'max_uses' => 1,
+            'uses' => 0,
+        ]);
+
+        $this->post('/register', [
+            'name' => 'First User',
+            'email' => 'first@example.org',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'invite_code' => $invite->code,
+        ])->assertRedirect('/');
+
+        auth()->logout();
+        $this->flushSession();
+
+        $this->from('/register')->post('/register', [
+            'name' => 'Second User',
+            'email' => 'second@example.org',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'invite_code' => $invite->code,
+        ])->assertSessionHasErrors('invite_code');
+
+        $this->assertDatabaseHas('users', ['email' => 'first@example.org']);
+        $this->assertDatabaseMissing('users', ['email' => 'second@example.org']);
+        $this->assertSame(1, User::query()->whereIn('email', [
+            'first@example.org',
+            'second@example.org',
+        ])->count());
+        $this->assertDatabaseHas('invites', [
+            'id' => $invite->id,
+            'uses' => 1,
+        ]);
+    }
+
+    public function test_failed_registration_does_not_increment_invite_uses(): void
+    {
+        $invite = Invite::factory()->create([
+            'max_uses' => 1,
+            'uses' => 0,
+        ]);
+
+        $this->from('/register')->post('/register', [
+            'name' => 'Broken User',
+            'email' => 'broken@example.org',
+            'password' => 'Password123!',
+            'password_confirmation' => 'different-password',
+            'invite_code' => $invite->code,
+        ])->assertSessionHasErrors('password');
+
+        $this->assertDatabaseMissing('users', ['email' => 'broken@example.org']);
+        $this->assertDatabaseHas('invites', [
+            'id' => $invite->id,
+            'uses' => 0,
+        ]);
+    }
+
     public function test_invalid_invite_is_rejected(): void
     {
         $response = $this->from('/register')->post('/register', [

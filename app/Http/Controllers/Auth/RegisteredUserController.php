@@ -12,6 +12,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -43,20 +44,25 @@ class RegisteredUserController extends Controller
 
         $data = $request->validate($rules);
 
-        $invite = $this->resolveInvite($data['invite_code'] ?? null, $requiresInvite);
+        /** @var User $user */
+        $user = DB::transaction(function () use ($data, $requiresInvite): User {
+            $invite = $this->resolveInviteForUpdate($data['invite_code'] ?? null, $requiresInvite);
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-            'invited_by_id' => $invite?->inviter_user_id,
-        ]);
+            $user = User::create([
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'invited_by_id' => $invite?->inviter_user_id,
+            ]);
 
-        $this->passkeys->generate($user);
+            $this->passkeys->generate($user);
 
-        if ($invite !== null) {
-            $invite->increment('uses');
-        }
+            if ($invite !== null) {
+                $invite->increment('uses');
+            }
+
+            return $user;
+        });
 
         event(new Registered($user));
 
@@ -65,7 +71,7 @@ class RegisteredUserController extends Controller
         return redirect()->intended('/');
     }
 
-    private function resolveInvite(?string $code, bool $required): ?Invite
+    private function resolveInviteForUpdate(?string $code, bool $required): ?Invite
     {
         if (! $code) {
             if ($required) {
@@ -77,7 +83,7 @@ class RegisteredUserController extends Controller
             return null;
         }
 
-        $invite = Invite::where('code', $code)->first();
+        $invite = Invite::where('code', $code)->lockForUpdate()->first();
 
         if (! $invite) {
             throw ValidationException::withMessages([
