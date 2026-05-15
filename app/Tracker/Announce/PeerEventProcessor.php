@@ -9,7 +9,7 @@ use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Tracker\AnnounceIntegrityEvaluation;
-use App\Services\Tracker\AnnounceIntegrityEvaluator;
+use App\Services\Tracker\AnnounceCreditPolicy;
 use App\Services\Tracker\UserRatioStatsRecorder;
 use App\Services\UserTorrentService;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ final class PeerEventProcessor
         private readonly AnnounceResponseBuilder $responseBuilder,
         private readonly TwentyByteParamDecoder $decoder,
         private readonly UserRatioStatsRecorder $ratioStatsRecorder,
-        private readonly AnnounceIntegrityEvaluator $integrityEvaluator,
+        private readonly AnnounceCreditPolicy $creditPolicy,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -65,7 +65,7 @@ final class PeerEventProcessor
                 return ['short_circuit' => true];
             }
 
-            $integrity = $this->integrityEvaluator->evaluate($oldPeer, $data);
+            $integrity = $this->creditPolicy->evaluate($oldPeer, $data, $torrent);
 
             $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
 
@@ -201,6 +201,11 @@ final class PeerEventProcessor
             'old_left' => $oldPeer instanceof Peer ? (int) $oldPeer->left : null,
             'new_left' => $newState->left,
             'reasons' => $integrity->reasons,
+            'elapsed_seconds' => $integrity->elapsedSeconds,
+            'max_uploaded_delta' => $integrity->maxUploadedDelta,
+            'max_downloaded_delta' => $integrity->maxDownloadedDelta,
+            'credited_uploaded_delta' => $integrity->uploadedDelta,
+            'credited_downloaded_delta' => $integrity->downloadedDelta,
         ];
 
         $this->securityLogger->log(
