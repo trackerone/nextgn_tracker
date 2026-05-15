@@ -204,7 +204,7 @@ class ApiKey extends Model
             'key_secret' => $matches[2],
         ];
 
-        if (isset($matches[3]) && $matches[3] !== '') {
+        if (isset($matches[3])) {
             $parsed['hmac_secret'] = $matches[3];
         }
 
