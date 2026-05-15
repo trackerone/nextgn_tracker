@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
-use App\Providers\AppServiceProvider;
+use App\Support\Security\LoginThrottleKey;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -32,10 +32,9 @@ final class LoginController extends Controller
             ]);
         }
 
-        RateLimiter::clear(AppServiceProvider::loginThrottleKey($request));
-        RateLimiter::clear(AppServiceProvider::hashedLoginThrottleKey(
-            AppServiceProvider::loginThrottleKey($request)
-        ));
+        foreach (LoginThrottleKey::keysForClearingRequest($request) as $key) {
+            RateLimiter::clear($key);
+        }
 
         $request->session()->regenerate();
 

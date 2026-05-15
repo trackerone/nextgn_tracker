@@ -15,6 +15,7 @@ use App\Services\Metadata\Providers\TraktMetadataProvider;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
+use App\Support\Security\LoginThrottleKey;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -116,7 +117,7 @@ class AppServiceProvider extends ServiceProvider
             );
 
             return Limit::perMinutes($decayMinutes, $maxAttempts)
-                ->by($this->loginRateLimitKey($request))
+                ->by(LoginThrottleKey::fromRequest($request))
                 ->response(function (Request $request, array $headers): \Symfony\Component\HttpFoundation\Response {
                     SecurityAuditLog::logAndWarn(null, 'auth.login.throttled', [
                         'email' => $this->normalizedEmail($request),
@@ -199,31 +200,7 @@ class AppServiceProvider extends ServiceProvider
         return [max(1, $maxAttempts), max(1, $decayMinutes)];
     }
 
-    public static function loginThrottleKey(Request $request): string
-    {
-        return sprintf(
-            'login:%s|%s',
-            self::normalizedEmailForRequest($request),
-            (string) $request->ip()
-        );
-    }
-
-    public static function hashedLoginThrottleKey(string $throttleKey): string
-    {
-        return sha1($throttleKey);
-    }
-
-    private function loginRateLimitKey(Request $request): string
-    {
-        return self::loginThrottleKey($request);
-    }
-
     private function normalizedEmail(Request $request): string
-    {
-        return self::normalizedEmailForRequest($request);
-    }
-
-    private static function normalizedEmailForRequest(Request $request): string
     {
         return mb_strtolower((string) $request->input('email', ''));
     }
