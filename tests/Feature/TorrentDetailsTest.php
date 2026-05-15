@@ -67,6 +67,11 @@ final class TorrentDetailsTest extends TestCase
 
         $this->assertIsString($content);
 
+ codex/fix-brittle-nfo-xss-test-yw1rm3
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $content);
+        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $content);
+        $this->assertStringNotContainsString('<script>alert(1)</script>', $content);
+        $this->assertStringNotContainsString('<img src=x onerror=alert(1)>', $content);
         $matches = [];
         $this->assertSame(
             1,
@@ -79,6 +84,7 @@ final class TorrentDetailsTest extends TestCase
         $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $nfoMarkup);
         $this->assertStringNotContainsString('<script', $nfoMarkup);
         $this->assertStringNotContainsString('<img', $nfoMarkup);
+ main
     }
 
     public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
