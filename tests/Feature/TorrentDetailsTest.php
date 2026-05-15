@@ -70,7 +70,7 @@ final class TorrentDetailsTest extends TestCase
         $matches = [];
         $this->assertSame(
             1,
-            preg_match('/<h2 class="text-lg font-semibold text-white">NFO<\/h2>\s*<pre[^>]*>(.*?)<\/pre>/s', $content, $matches)
+            preg_match('/<h2\b[^>]*>\s*NFO\s*<\/h2>\s*<pre\b[^>]*>(.*?)<\/pre>/s', $content, $matches)
         );
 
         $nfoMarkup = (string) ($matches[1] ?? '');
