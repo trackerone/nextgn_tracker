@@ -8,6 +8,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserTorrent;
 use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class UserTorrentService
 {
@@ -19,10 +20,24 @@ class UserTorrentService
         ?string $event,
         CarbonInterface $announcedAt,
     ): UserTorrent {
-        $userTorrent = UserTorrent::query()->firstOrNew([
+        UserTorrent::query()->insertOrIgnore([
             'user_id' => $user->getKey(),
             'torrent_id' => $torrent->getKey(),
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'created_at' => $announcedAt,
+            'updated_at' => $announcedAt,
         ]);
+
+        $userTorrent = UserTorrent::query()
+            ->where('user_id', $user->getKey())
+            ->where('torrent_id', $torrent->getKey())
+            ->lockForUpdate()
+            ->first();
+
+        if (! $userTorrent instanceof UserTorrent) {
+            throw new ModelNotFoundException('User torrent row could not be resolved for announce update.');
+        }
 
         $userTorrent->fill([
             'uploaded' => max((int) ($userTorrent->uploaded ?? 0), $uploaded),
