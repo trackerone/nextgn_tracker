@@ -9,10 +9,12 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Torrents\UploadPreflightContext;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ViewErrorBag;
+use Mockery;
 use Tests\TestCase;
 
 class TorrentUploadTest extends TestCase
@@ -75,6 +77,49 @@ class TorrentUploadTest extends TestCase
         Storage::disk('torrents')->assertExists($torrent->torrentStoragePath());
         $this->assertNotNull($torrent->nfoStoragePath());
         Storage::disk('nfo')->assertExists($torrent->nfoStoragePath());
+    }
+
+    public function test_torrent_storage_failure_removes_database_row_and_nfo_file(): void
+    {
+        $nfoDisk = Mockery::mock(Filesystem::class);
+        $nfoDisk->shouldReceive('put')
+            ->once()
+            ->with(Mockery::type('string'), 'PRIVATE NFO')
+            ->andReturnTrue();
+        $nfoDisk->shouldReceive('delete')
+            ->once()
+            ->with(Mockery::type('string'))
+            ->andReturnTrue();
+
+        $torrentDisk = Mockery::mock(Filesystem::class);
+        $torrentDisk->shouldReceive('put')
+            ->once()
+            ->with(Mockery::type('string'), Mockery::type('string'))
+            ->andReturnFalse();
+        $torrentDisk->shouldReceive('delete')
+            ->once()
+            ->with(Mockery::type('string'))
+            ->andReturnTrue();
+
+        Storage::shouldReceive('disk')->with('nfo')->twice()->andReturn($nfoDisk);
+        Storage::shouldReceive('disk')->with('torrents')->twice()->andReturn($torrentDisk);
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Failure Cleanup', 2048);
+
+        $response = $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Failure Cleanup',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'failure-cleanup.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+            'nfo_text' => 'PRIVATE NFO',
+        ]);
+
+        $response->assertStatus(500);
+        $this->assertDatabaseCount('torrents', 0);
     }
 
     public function test_successful_upload_displays_normalized_metadata_feedback_on_confirmation_page(): void

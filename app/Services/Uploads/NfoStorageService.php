@@ -37,4 +37,15 @@ final class NfoStorageService
 
         return $path;
     }
+
+    public function delete(?string $path): void
+    {
+        if ($path === null) {
+            return;
+        }
+
+        $disk = (string) config('upload.nfo.disk', 'nfo');
+
+        Storage::disk($disk)->delete($path);
+    }
 }
