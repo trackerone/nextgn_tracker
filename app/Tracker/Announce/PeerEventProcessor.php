@@ -68,7 +68,11 @@ final class PeerEventProcessor
             $integrity = $this->integrityEvaluator->evaluate($oldPeer, $data);
 
             $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
-            $this->persistUserTorrentState($user, $torrent, $data);
+
+            if ($this->persistUserTorrentState($user, $torrent, $data)) {
+                $torrent->increment('completed');
+            }
+
             $this->ratioStatsRecorder->record($user, $torrent, $integrity);
 
             return [
@@ -126,17 +130,13 @@ final class PeerEventProcessor
         $peer->is_seeder = $data->left === 0;
         $peer->last_announce_at = $now;
         $peer->save();
-
-        if ($data->event === 'completed' && $this->shouldIncrementCompletedCounter($user, $torrent)) {
-            $torrent->increment('completed');
-        }
     }
 
-    private function persistUserTorrentState(User $user, Torrent $torrent, AnnounceRequestData $data): void
+    private function persistUserTorrentState(User $user, Torrent $torrent, AnnounceRequestData $data): bool
     {
         $now = now();
 
-        $this->userTorrents->updateFromAnnounce(
+        $userTorrent = $this->userTorrents->updateFromAnnounce(
             $user,
             $torrent,
             $data->uploaded,
@@ -144,6 +144,8 @@ final class PeerEventProcessor
             $data->event,
             $now,
         );
+
+        return $data->event === 'completed' && $userTorrent->wasChanged('completed_at');
     }
 
     private function shouldShortCircuitDuplicateAnnounce(Request $request, AnnounceRequestData $data, ?Peer $peer): bool
@@ -159,16 +161,6 @@ final class PeerEventProcessor
             && (int) $peer->downloaded === $data->downloaded
             && (int) $peer->left === $data->left
             && (string) $peer->ip === $ip;
-    }
-
-    private function shouldIncrementCompletedCounter(User $user, Torrent $torrent): bool
-    {
-        $completedAt = DB::table('user_torrents')
-            ->where('user_id', $user->getKey())
-            ->where('torrent_id', $torrent->getKey())
-            ->value('completed_at');
-
-        return $completedAt === null;
     }
 
     private function isStaff(User $user): bool

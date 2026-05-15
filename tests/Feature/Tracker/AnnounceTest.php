@@ -389,6 +389,84 @@ class AnnounceTest extends TestCase
         $this->assertSame(1, $torrent->completed);
     }
 
+    public function test_completed_event_from_different_peer_ids_increments_counter_once(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-completed-counter-different-peers');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-completed-counter-one'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $firstCompletedAt = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->value('completed_at');
+
+        $this->travel(5)->minutes();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-completed-counter-two'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+
+        $this->assertSame(1, $torrent->completed);
+        $this->assertDatabaseCount('user_torrents', 1);
+        $this->assertSame(
+            $firstCompletedAt,
+            UserTorrent::query()
+                ->where('user_id', $user->id)
+                ->where('torrent_id', $torrent->id)
+                ->value('completed_at')
+        );
+    }
+
+    public function test_completed_event_sequence_with_existing_incomplete_snatch_is_idempotent(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-completed-counter-existing-snatch');
+
+        UserTorrent::query()->create([
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'completed_at' => null,
+        ]);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-existing-snatch-one'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-existing-snatch-two'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+
+        $this->assertSame(1, $torrent->completed);
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+        ]);
+
+        $completedAt = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->value('completed_at');
+
+        $this->assertNotNull($completedAt);
+    }
+
     public function test_ratio_stats_accumulate_only_positive_deltas(): void
     {
         $user = User::factory()->create();
