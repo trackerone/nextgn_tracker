@@ -417,7 +417,7 @@ class AnnounceTest extends TestCase
 
         $this->assertSame(1, $torrent->completed);
         $this->assertDatabaseCount('user_torrents', 1);
-        $this->assertSame(
+        $this->assertEquals(
             $firstCompletedAt,
             UserTorrent::query()
                 ->where('user_id', $user->id)
