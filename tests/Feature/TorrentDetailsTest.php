@@ -48,6 +48,39 @@ final class TorrentDetailsTest extends TestCase
         $response->assertSee('<meta name="robots" content="noindex, nofollow">', false);
     }
 
+    public function test_nfo_payload_is_rendered_as_escaped_plain_text(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'name' => 'Unsafe NFO Test',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'nfo' => "<script>alert(1)</script>\n<img src=x onerror=alert(1)>",
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk();
+        $content = $response->getContent();
+
+        $this->assertIsString($content);
+
+        $matches = [];
+        $this->assertSame(
+            1,
+            preg_match('/<h2 class="text-lg font-semibold text-white">NFO<\/h2>\s*<pre[^>]*>(.*?)<\/pre>/s', $content, $matches)
+        );
+
+        $nfoMarkup = (string) ($matches[1] ?? '');
+
+        $this->assertStringContainsString('&lt;script&gt;alert(1)&lt;/script&gt;', $nfoMarkup);
+        $this->assertStringContainsString('&lt;img src=x onerror=alert(1)&gt;', $nfoMarkup);
+        $this->assertStringNotContainsString('<script', $nfoMarkup);
+        $this->assertStringNotContainsString('<img', $nfoMarkup);
+    }
+
     public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
     {
         $user = User::factory()->create();

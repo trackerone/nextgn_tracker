@@ -235,7 +235,7 @@
         @if (($nfoText ?? '') !== '')
             <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                 <h2 class="text-lg font-semibold text-white">NFO</h2>
-                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{!! $nfoText !!}</pre>
+                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{!! $nfoHtml !!}</pre>
             </section>
         @endif
         <div id="magnetValue" class="hidden rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-4 text-emerald-100 text-sm"></div>
