@@ -22,11 +22,22 @@ class ApiKeyManagementTest extends TestCase
         ]);
 
         $createResponse->assertCreated();
-        $this->assertNotEmpty($createResponse->json('key'));
+        $plainKey = (string) $createResponse->json('key');
+        $this->assertNotEmpty($plainKey);
+        $this->assertStringStartsWith('ngn_live_', $plainKey);
+
+        $apiKey = ApiKey::query()->firstOrFail();
+        $this->assertNotSame($plainKey, $apiKey->key);
+        $this->assertNotNull($apiKey->key_prefix);
+        $this->assertNotNull($apiKey->key_hash);
+        $this->assertDatabaseMissing('api_keys', ['key' => $plainKey]);
 
         $indexResponse = $this->actingAs($user)->getJson(route('account.api-keys.index'));
         $indexResponse->assertOk();
         $indexResponse->assertJsonCount(1, 'data');
+        $indexResponse->assertJsonMissingPath('data.0.key');
+        $indexResponse->assertJsonMissingPath('data.0.key_hash');
+        $indexResponse->assertJsonMissingPath('data.0.key_prefix');
 
         $apiKeyId = $indexResponse->json('data.0.id');
         $this->assertNotNull($apiKeyId);
@@ -36,6 +47,18 @@ class ApiKeyManagementTest extends TestCase
         $deleteResponse->assertJson(['status' => 'deleted']);
 
         $this->assertSame(0, ApiKey::query()->count());
+    }
+
+    public function test_api_key_serialization_never_exposes_hashes_or_secrets(): void
+    {
+        $plainKey = ApiKey::generateKey();
+        $apiKey = ApiKey::factory()->withPlainKey($plainKey)->create();
+
+        $serialized = $apiKey->toArray();
+
+        $this->assertArrayNotHasKey('key', $serialized);
+        $this->assertArrayNotHasKey('key_hash', $serialized);
+        $this->assertArrayHasKey('key_prefix', $serialized);
     }
 
     public function test_permission_is_required(): void
