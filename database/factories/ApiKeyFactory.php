@@ -23,6 +23,7 @@ class ApiKeyFactory extends Factory
             'user_id' => User::factory(),
             'key' => ApiKey::storageKeyForPlaintext($plainKey),
             ...ApiKey::hashedAttributesForPlaintext($plainKey),
+            ...ApiKey::hmacAttributesForPlaintext($plainKey),
             'label' => $this->faker->optional()->words(3, true),
             'last_used_at' => null,
         ];
@@ -33,6 +34,7 @@ class ApiKeyFactory extends Factory
         return $this->state(fn (): array => [
             'key' => ApiKey::storageKeyForPlaintext($plainKey),
             ...ApiKey::hashedAttributesForPlaintext($plainKey),
+            ...ApiKey::hmacAttributesForPlaintext($plainKey),
         ]);
     }
 
@@ -42,6 +44,9 @@ class ApiKeyFactory extends Factory
             'key' => $plainKey,
             'key_prefix' => null,
             'key_hash' => null,
+            'hmac_secret_hash' => null,
+            'hmac_secret_fingerprint' => null,
+            'hmac_version' => 'legacy-global',
         ]);
     }
 }

@@ -16,7 +16,9 @@ class ApiKey extends Model
 
     private const PREFIX_BYTES = 4;
 
-    private const SECRET_BYTES = 32;
+    private const KEY_SECRET_BYTES = 32;
+
+    private const HMAC_SECRET_BYTES = 32;
 
     /** @var list<string>
      */
@@ -25,6 +27,9 @@ class ApiKey extends Model
         'key',
         'key_prefix',
         'key_hash',
+        'hmac_secret_hash',
+        'hmac_secret_fingerprint',
+        'hmac_version',
         'label',
         'last_used_at',
     ];
@@ -35,6 +40,8 @@ class ApiKey extends Model
     protected $hidden = [
         'key',
         'key_hash',
+        'hmac_secret_hash',
+        'hmac_secret_fingerprint',
     ];
 
     /**
@@ -52,10 +59,11 @@ class ApiKey extends Model
     public static function generateKey(): string
     {
         return sprintf(
-            'ngn_%s_%s_%s',
+            'ngn_%s_%s_%s_%s',
             self::KEY_ENVIRONMENT,
             bin2hex(random_bytes(self::PREFIX_BYTES)),
-            bin2hex(random_bytes(self::SECRET_BYTES)),
+            bin2hex(random_bytes(self::KEY_SECRET_BYTES)),
+            bin2hex(random_bytes(self::HMAC_SECRET_BYTES)),
         );
     }
 
@@ -69,13 +77,37 @@ class ApiKey extends Model
         if ($parsed !== null) {
             return [
                 'key_prefix' => $parsed['prefix'],
-                'key_hash' => self::hashSecret($parsed['secret']),
+                'key_hash' => self::hashSecret($parsed['key_secret']),
             ];
         }
 
         return [
             'key_prefix' => self::legacyPrefix($plainKey),
             'key_hash' => self::hashSecret($plainKey),
+        ];
+    }
+
+    /**
+     * @return array{hmac_secret_hash: string, hmac_secret_fingerprint: string, hmac_version: string}
+     */
+    public static function hmacAttributesForPlaintext(string $plainKey): array
+    {
+        $hmacSecret = self::hmacSigningSecretForPlaintext($plainKey);
+
+        if ($hmacSecret === null) {
+            return [
+                'hmac_secret_hash' => '',
+                'hmac_secret_fingerprint' => '',
+                'hmac_version' => 'legacy-global',
+            ];
+        }
+
+        $secretHash = self::hashSecret($hmacSecret);
+
+        return [
+            'hmac_secret_hash' => $secretHash,
+            'hmac_secret_fingerprint' => substr($secretHash, 0, 16),
+            'hmac_version' => 'per-key',
         ];
     }
 
@@ -110,6 +142,20 @@ class ApiKey extends Model
         return $legacyApiKey;
     }
 
+    public static function prefixForPlaintext(string $plainKey): string
+    {
+        $parsed = self::parseStructuredKey($plainKey);
+
+        return $parsed['prefix'] ?? self::legacyPrefix($plainKey);
+    }
+
+    public static function hmacSigningSecretForPlaintext(string $plainKey): ?string
+    {
+        $parsed = self::parseStructuredKey($plainKey);
+
+        return $parsed['hmac_secret'] ?? null;
+    }
+
     public function upgradeFromPlaintextIfNeeded(string $plainKey): void
     {
         if ($this->key_hash !== null) {
@@ -122,25 +168,47 @@ class ApiKey extends Model
         ])->save();
     }
 
+    public function usesLegacyGlobalHmac(): bool
+    {
+        return $this->hmac_secret_hash === null || $this->hmac_secret_hash === '';
+    }
+
+    public function hmacSecretMatchesPlaintext(string $plainKey): bool
+    {
+        $hmacSecret = self::hmacSigningSecretForPlaintext($plainKey);
+
+        if ($hmacSecret === null || ! is_string($this->hmac_secret_hash)) {
+            return false;
+        }
+
+        return hash_equals($this->hmac_secret_hash, self::hashSecret($hmacSecret));
+    }
+
     private static function hashSecret(string $secret): string
     {
         return hash('sha256', $secret);
     }
 
     /**
-     * @return array{prefix: string, secret: string}|null
+     * @return array{prefix: string, key_secret: string, hmac_secret?: string}|null
      */
     private static function parseStructuredKey(string $plainKey): ?array
     {
         $matches = [];
-        if (preg_match('/^ngn_[a-z]+_([a-f0-9]{8})_([a-f0-9]{64})$/', $plainKey, $matches) !== 1) {
+        if (preg_match('/^ngn_[a-z]+_([a-f0-9]{8})_([a-f0-9]{64})(?:_([a-f0-9]{64}))?$/', $plainKey, $matches) !== 1) {
             return null;
         }
 
-        return [
+        $parsed = [
             'prefix' => $matches[1],
-            'secret' => $matches[2],
+            'key_secret' => $matches[2],
         ];
+
+        if (isset($matches[3]) && $matches[3] !== '') {
+            $parsed['hmac_secret'] = $matches[3];
+        }
+
+        return $parsed;
     }
 
     private static function legacyPrefix(string $plainKey): string

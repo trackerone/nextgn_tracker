@@ -30,7 +30,11 @@ class ApiKeyManagementTest extends TestCase
         $this->assertNotSame($plainKey, $apiKey->key);
         $this->assertNotNull($apiKey->key_prefix);
         $this->assertNotNull($apiKey->key_hash);
+        $this->assertNotNull($apiKey->hmac_secret_hash);
+        $this->assertNotNull($apiKey->hmac_secret_fingerprint);
+        $this->assertSame('per-key', $apiKey->hmac_version);
         $this->assertDatabaseMissing('api_keys', ['key' => $plainKey]);
+        $this->assertDatabaseMissing('api_keys', ['hmac_secret_hash' => ApiKey::hmacSigningSecretForPlaintext($plainKey)]);
 
         $indexResponse = $this->actingAs($user)->getJson(route('account.api-keys.index'));
         $indexResponse->assertOk();
@@ -58,6 +62,8 @@ class ApiKeyManagementTest extends TestCase
 
         $this->assertArrayNotHasKey('key', $serialized);
         $this->assertArrayNotHasKey('key_hash', $serialized);
+        $this->assertArrayNotHasKey('hmac_secret_hash', $serialized);
+        $this->assertArrayNotHasKey('hmac_secret_fingerprint', $serialized);
         $this->assertArrayHasKey('key_prefix', $serialized);
     }
 
