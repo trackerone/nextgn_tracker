@@ -148,7 +148,7 @@ final class ApiKeyHmacMiddleware
     }
 
     /**
-     * @param array<string, mixed> $context
+     * @param  array<string, mixed>  $context
      */
     private function logSecurityEvent(string $eventType, string $message, array $context = []): void
     {
