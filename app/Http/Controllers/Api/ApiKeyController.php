@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ApiKey;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class ApiKeyController extends Controller
 {
@@ -49,13 +48,13 @@ class ApiKeyController extends Controller
             'label' => ['required', 'string', 'max:255'],
         ]);
 
-        $plainKey = Str::random(64);
+        $plainKey = ApiKey::generateKey();
 
         $apiKey = ApiKey::query()->create([
             'user_id' => $user->getKey(),
             'label' => $validated['label'],
-            // Your schema requires api_keys.key NOT NULL:
-            'key' => $plainKey,
+            'key' => ApiKey::storageKeyForPlaintext($plainKey),
+            ...ApiKey::hashedAttributesForPlaintext($plainKey),
         ]);
 
         return response()->json([

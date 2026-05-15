@@ -28,8 +28,7 @@ final class ApiKeyHmacMiddleware
             return $this->unauthorized();
         }
 
-        /** @var ApiKey|null $apiKey */
-        $apiKey = ApiKey::query()->where('key', $key)->first();
+        $apiKey = ApiKey::findForPlaintext($key);
 
         if ($apiKey === null) {
             return $this->unauthorized();
@@ -83,6 +82,8 @@ final class ApiKeyHmacMiddleware
         if (! $ok) {
             return $this->unauthorized();
         }
+
+        $apiKey->upgradeFromPlaintextIfNeeded($key);
 
         $user = $apiKey->user;
 
