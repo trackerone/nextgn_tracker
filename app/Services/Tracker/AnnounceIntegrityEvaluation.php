@@ -14,6 +14,9 @@ final readonly class AnnounceIntegrityEvaluation
         public int $downloadedDelta,
         public bool $isCompletionTransition,
         public array $reasons,
+        public ?int $elapsedSeconds = null,
+        public ?int $maxUploadedDelta = null,
+        public ?int $maxDownloadedDelta = null,
     ) {}
 
     public function isSuspicious(): bool

@@ -635,6 +635,128 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_excessive_upload_delta_is_not_credited_and_is_logged(): void
+    {
+        config()->set('tracker.credit.max_upload_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-excessive-upload', [
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-excessive-upload');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10_000,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $event = SecurityEvent::query()
+            ->where('event_type', 'tracker.announce.suspicious_delta')
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($event);
+        $this->assertContains('uploaded_implausible', $event->context['reasons'] ?? []);
+        $this->assertSame(0, $event->context['credited_uploaded_delta'] ?? null);
+    }
+
+    public function test_excessive_download_delta_is_not_credited_and_is_logged(): void
+    {
+        config()->set('tracker.credit.max_download_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-excessive-download', [
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-excessive-download');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 0,
+            'downloaded' => 10_000,
+            'left' => 400,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $event = SecurityEvent::query()
+            ->where('event_type', 'tracker.announce.suspicious_delta')
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($event);
+        $this->assertContains('downloaded_implausible', $event->context['reasons'] ?? []);
+        $this->assertSame(0, $event->context['credited_downloaded_delta'] ?? null);
+    }
+
+    public function test_freeleech_excessive_upload_delta_is_not_credited(): void
+    {
+        config()->set('tracker.credit.max_upload_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-freeleech-excessive-upload', [
+            'is_freeleech' => true,
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-freeleech-excessive-upload');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10_000,
+            'downloaded' => 10_000,
+            'left' => 400,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('security_events', [
+            'user_id' => $user->id,
+            'event_type' => 'tracker.announce.suspicious_delta',
+        ]);
+    }
+
     public function test_ratio_stats_ignore_negative_deltas_on_freeleech(): void
     {
         $user = User::factory()->create();
