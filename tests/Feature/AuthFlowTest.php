@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Support\Security\LoginThrottleKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class AuthFlowTest extends TestCase
@@ -41,10 +43,14 @@ class AuthFlowTest extends TestCase
     {
         $maxAttempts = 2;
         config()->set('security.rate_limits.login', sprintf('%d,1', $maxAttempts));
+        $email = 'locked-auth-flow@example.org';
+        $ip = '203.0.113.10';
+        $this->clearLoginThrottle($email, $ip);
+        $this->withServerVariables(['REMOTE_ADDR' => $ip]);
 
         for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
             $response = $this->from('/login')->post('/login', [
-                'email' => 'locked@example.org',
+                'email' => $email,
                 'password' => 'wrong-password',
             ]);
 
@@ -52,7 +58,7 @@ class AuthFlowTest extends TestCase
         }
 
         $this->from('/login')->post('/login', [
-            'email' => 'locked@example.org',
+            'email' => $email,
             'password' => 'wrong-password',
         ])->assertTooManyRequests();
 
@@ -65,7 +71,10 @@ class AuthFlowTest extends TestCase
     {
         $maxAttempts = 2;
         config()->set('security.rate_limits.login', sprintf('%d,1', $maxAttempts));
-        $email = 'clear@example.org';
+        $email = 'clear-auth-flow@example.org';
+        $ip = '203.0.113.20';
+        $this->clearLoginThrottle($email, $ip);
+        $this->withServerVariables(['REMOTE_ADDR' => $ip]);
 
         User::factory()->create([
             'email' => $email,
@@ -98,5 +107,12 @@ class AuthFlowTest extends TestCase
             'email' => $email,
             'password' => 'wrong-password',
         ])->assertTooManyRequests();
+    }
+
+    private function clearLoginThrottle(string $email, string $ip): void
+    {
+        foreach (LoginThrottleKey::keysForClearing($email, $ip) as $key) {
+            RateLimiter::clear($key);
+        }
     }
 }
