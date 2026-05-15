@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\TorrentRepositoryInterface;
+use App\Models\Torrent;
+use App\Models\User;
 use App\Services\BencodeService;
 use App\Tracker\Announce\AnnounceResult;
 use App\Tracker\Announce\PasskeyUserResolver;
+use App\Tracker\Announce\TorrentAccessResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -17,6 +20,7 @@ final class ScrapeController extends Controller
         private readonly BencodeService $bencode,
         private readonly TorrentRepositoryInterface $torrents,
         private readonly PasskeyUserResolver $passkeyUserResolver,
+        private readonly TorrentAccessResolver $torrentAccessResolver,
     ) {}
 
     public function __invoke(Request $request, string $passkey): Response
@@ -45,12 +49,8 @@ final class ScrapeController extends Controller
             $torrent = $this->torrents->findByInfoHash(strtolower($keyHex))
                 ?? $this->torrents->findByInfoHash(strtoupper($keyHex));
 
-            if ($torrent === null) {
-                $files[$keyHex] = [
-                    'complete' => 0,
-                    'downloaded' => 0,
-                    'incomplete' => 0,
-                ];
+            if ($torrent === null || ! $this->canScrapeTorrent($resolvedUser, $torrent)) {
+                $files[$keyHex] = $this->emptyStats();
 
                 continue;
             }
@@ -67,6 +67,27 @@ final class ScrapeController extends Controller
             200,
             ['Content-Type' => 'text/plain; charset=utf-8'],
         );
+    }
+
+    /**
+     * @return array{complete:int,downloaded:int,incomplete:int}
+     */
+    private function emptyStats(): array
+    {
+        return [
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ];
+    }
+
+    private function canScrapeTorrent(User $user, Torrent $torrent): bool
+    {
+        if ($this->torrentAccessResolver->canAccess($user, $torrent) === false) {
+            return false;
+        }
+
+        return $user->isStaff() || (bool) $torrent->is_visible;
     }
 
     /**
