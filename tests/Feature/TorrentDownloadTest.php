@@ -23,23 +23,86 @@ final class TorrentDownloadTest extends TestCase
         $this->get('/torrents/'.$torrent->getKey().'/magnet')->assertRedirect('/login');
     }
 
-    public function test_download_returns_file_when_exists(): void
+    public function test_download_returns_personalized_file_when_exists(): void
     {
         Storage::fake('torrents');
+        config()->set('tracker.announce_url', 'https://tracker.example/announce/%s');
+
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create();
 
-        $payload = app(BencodeService::class)->encode([
+        $this->storeTorrentPayload($torrent, [
             'announce' => 'https://tracker.invalid/announce',
             'info' => ['name' => 'demo'],
         ]);
-
-        Storage::disk('torrents')->put($torrent->torrentStoragePath(), $payload);
 
         $response = $this->actingAs($user)->get('/torrents/'.$torrent->getKey().'/download');
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/x-bittorrent');
+
+        $decoded = $this->decodeTorrentPayload($response->streamedContent());
+
+        $this->assertSame(sprintf('https://tracker.example/announce/%s', $user->passkey), $decoded['announce'] ?? null);
+    }
+
+    public function test_download_strips_uploaded_announce_list(): void
+    {
+        Storage::fake('torrents');
+        config()->set('tracker.announce_url', 'https://tracker.example/announce/%s');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+
+        $this->storeTorrentPayload($torrent, [
+            'announce' => 'https://tracker.invalid/announce',
+            'announce-list' => [
+                ['https://leaked-one.invalid/announce'],
+                ['https://leaked-two.invalid/announce'],
+            ],
+            'info' => ['name' => 'demo'],
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents/'.$torrent->getKey().'/download');
+
+        $response->assertOk();
+
+        $decoded = $this->decodeTorrentPayload($response->streamedContent());
+
+        $this->assertArrayNotHasKey('announce-list', $decoded);
+        $this->assertSame(sprintf('https://tracker.example/announce/%s', $user->passkey), $decoded['announce'] ?? null);
+    }
+
+    public function test_web_and_api_download_payloads_match_for_same_user_and_torrent(): void
+    {
+        Storage::fake('torrents');
+        config()->set('tracker.announce_url', 'https://tracker.example/announce/%s');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create(['slug' => 'shared-download']);
+
+        $this->storeTorrentPayload($torrent, [
+            'announce' => 'https://tracker.invalid/announce',
+            'announce-list' => [
+                ['https://leaked.invalid/announce'],
+            ],
+            'info' => ['name' => 'demo'],
+        ]);
+
+        $webResponse = $this->actingAs($user)->get('/torrents/'.$torrent->getKey().'/download');
+        $apiResponse = $this->actingAs($user)->get('/api/torrents/'.$torrent->getKey().'/download');
+
+        $webResponse->assertOk();
+        $apiResponse->assertOk();
+
+        $webPayload = $webResponse->streamedContent();
+        $apiPayload = $apiResponse->streamedContent();
+
+        $this->assertSame($apiPayload, $webPayload);
+        $this->assertSame(
+            $this->decodeTorrentPayload($apiPayload),
+            $this->decodeTorrentPayload($webPayload)
+        );
     }
 
     public function test_download_returns404_when_file_missing(): void
@@ -74,5 +137,28 @@ final class TorrentDownloadTest extends TestCase
         $this->assertStringContainsString(rawurlencode('https://nextgn.example/announce'), $magnet);
         $this->assertStringContainsString(rawurlencode('https://backup.example/announce'), $magnet);
         $this->assertStringNotContainsString('<script>', $magnet);
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function storeTorrentPayload(Torrent $torrent, array $payload): void
+    {
+        Storage::disk('torrents')->put(
+            $torrent->torrentStoragePath(),
+            app(BencodeService::class)->encode($payload)
+        );
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function decodeTorrentPayload(string $payload): array
+    {
+        $decoded = app(BencodeService::class)->decode($payload);
+
+        $this->assertIsArray($decoded);
+
+        return $decoded;
     }
 }
