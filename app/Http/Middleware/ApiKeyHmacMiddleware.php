@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ApiKeyHmacMiddleware
 {
+    private const DEFAULT_ALLOWED_TIME_SKEW_SECONDS = 300;
+
     public function handle(Request $request, Closure $next): Response
     {
         $key = (string) $request->header('X-Api-Key', '');
@@ -19,19 +21,23 @@ final class ApiKeyHmacMiddleware
         $timestamp = (string) $request->header('X-Api-Timestamp', '');
 
         if ($key === '' || $signature === '' || $timestamp === '') {
-            return response()->json(['message' => 'Missing API signature.'], 401);
+            return $this->unauthorized();
+        }
+
+        if (! ctype_digit($timestamp) || ! $this->timestampIsFresh((int) $timestamp)) {
+            return $this->unauthorized();
         }
 
         /** @var ApiKey|null $apiKey */
         $apiKey = ApiKey::query()->where('key', $key)->first();
 
         if ($apiKey === null) {
-            return response()->json(['message' => 'Invalid API key.'], 401);
+            return $this->unauthorized();
         }
 
         $secret = (string) config('security.api.hmac_secret', '');
         if ($secret === '') {
-            return response()->json(['message' => 'Server HMAC secret not configured.'], 401);
+            return $this->unauthorized();
         }
 
         $method = strtoupper($request->getMethod());
@@ -75,7 +81,7 @@ final class ApiKeyHmacMiddleware
         }
 
         if (! $ok) {
-            return response()->json(['message' => 'Invalid signature.'], 401);
+            return $this->unauthorized();
         }
 
         $user = $apiKey->user;
@@ -88,5 +94,17 @@ final class ApiKeyHmacMiddleware
         }
 
         return $next($request);
+    }
+
+    private function timestampIsFresh(int $timestamp): bool
+    {
+        $allowedSkew = (int) config('security.api.allowed_time_skew_seconds', self::DEFAULT_ALLOWED_TIME_SKEW_SECONDS);
+
+        return abs(now()->timestamp - $timestamp) <= $allowedSkew;
+    }
+
+    private function unauthorized(): Response
+    {
+        return response()->json(['message' => 'Unauthorized.'], 401);
     }
 }
