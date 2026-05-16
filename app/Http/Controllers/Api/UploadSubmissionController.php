@@ -80,7 +80,14 @@ final class UploadSubmissionController extends Controller
      * @param  array<string, mixed>|null  $releaseAdvice
      * @param  array{metadata_enrichment_applied_fields: list<string>, metadata_enrichment_conflicts: list<string>}  $metadataEnrichmentOutcome
      */
-    private function duplicateConflictResponse(?Torrent $existingTorrent = null, ?array $releaseAdvice = null, array $metadataEnrichmentOutcome = []): JsonResponse
+    private function duplicateConflictResponse(
+        ?Torrent $existingTorrent = null,
+        ?array $releaseAdvice = null,
+        array $metadataEnrichmentOutcome = [
+            'metadata_enrichment_applied_fields' => [],
+            'metadata_enrichment_conflicts' => [],
+        ],
+    ): JsonResponse
     {
         $payload = [
             'message' => 'Torrent already exists.',
@@ -108,7 +115,14 @@ final class UploadSubmissionController extends Controller
      * @param  array<string, mixed>|null  $releaseAdvice
      * @param  array{metadata_enrichment_applied_fields: list<string>, metadata_enrichment_conflicts: list<string>}  $metadataEnrichmentOutcome
      */
-    private function successfulUploadResponse(Torrent $torrent, ?array $releaseAdvice = null, array $metadataEnrichmentOutcome = []): JsonResponse
+    private function successfulUploadResponse(
+        Torrent $torrent,
+        ?array $releaseAdvice = null,
+        array $metadataEnrichmentOutcome = [
+            'metadata_enrichment_applied_fields' => [],
+            'metadata_enrichment_conflicts' => [],
+        ],
+    ): JsonResponse
     {
         $payload = [
             'data' => (new UploadSubmissionResource($torrent))->resolve(),
