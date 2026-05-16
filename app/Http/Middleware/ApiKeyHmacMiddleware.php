@@ -117,6 +117,10 @@ final class ApiKeyHmacMiddleware
 
         if ($user !== null) {
             /** @var \App\Models\User $user */
+            if ($user->isBanned() || $user->isDisabled()) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
+
             Auth::setUser($user);
             $request->setUserResolver(static fn () => $user);
             $request->attributes->set('api_key', $apiKey);
