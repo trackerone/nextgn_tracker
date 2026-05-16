@@ -54,7 +54,7 @@ final class UploadSubmissionController extends Controller
             return $this->mapDeniedUploadResultToApiResponse($result);
         }
 
-        if (!$result->torrent instanceof Torrent) {
+        if (! $result->torrent instanceof Torrent) {
             abort(403);
         }
 
@@ -87,8 +87,7 @@ final class UploadSubmissionController extends Controller
             'metadata_enrichment_applied_fields' => [],
             'metadata_enrichment_conflicts' => [],
         ],
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $payload = [
             'message' => 'Torrent already exists.',
             'error' => 'duplicate_torrent',
@@ -122,8 +121,7 @@ final class UploadSubmissionController extends Controller
             'metadata_enrichment_applied_fields' => [],
             'metadata_enrichment_conflicts' => [],
         ],
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $payload = [
             'data' => (new UploadSubmissionResource($torrent))->resolve(),
         ];
