@@ -54,7 +54,7 @@ final class UploadSubmissionController extends Controller
             return $this->mapDeniedUploadResultToApiResponse($result);
         }
 
-        if (! $result->torrent instanceof Torrent) {
+        if (!$result->torrent instanceof Torrent) {
             abort(403);
         }
 
