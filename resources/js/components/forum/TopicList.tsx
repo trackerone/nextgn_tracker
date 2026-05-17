@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, MessageCircle, Pin, UserCircle2 } from 'lucide-react';
+import { Clock3, Lock, MessageCircle, Pin, UserCircle2 } from 'lucide-react';
 import { TopicSummary } from './types';
 
 interface TopicListProps {
@@ -25,6 +25,8 @@ const TopicList: React.FC<TopicListProps> = ({ topics, selectedTopicId = null, o
     <ul className="space-y-3" aria-label="Forum topics">
       {topics.map((topic) => {
         const isSelected = selectedTopicId === topic.id;
+        const replyCount = Math.max((topic.posts_count ?? 0) - 1, 0);
+        const latestPost = topic.latest_post;
 
         return (
           <li
@@ -67,6 +69,17 @@ const TopicList: React.FC<TopicListProps> = ({ topics, selectedTopicId = null, o
                   </span>
                   <span aria-hidden="true">•</span>
                   <time dateTime={topic.created_at}>Started {formatTimestamp(topic.created_at)}</time>
+                  <span aria-hidden="true">•</span>
+                  <span>{replyCount} {replyCount === 1 ? 'reply' : 'replies'}</span>
+                  {latestPost && (
+                    <>
+                      <span aria-hidden="true">•</span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock3 className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                        Latest by <span className="font-medium text-slate-300">{latestPost.author?.name ?? 'Unknown user'}</span>
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
