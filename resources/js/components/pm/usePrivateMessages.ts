@@ -35,10 +35,23 @@ export function usePrivateMessages() {
 
     try {
       const conversation = await fetchJson<ConversationItem>(`/pm/${conversationId}`);
-      setSelectedConversation(conversation);
-      setMessages(conversation.messages ?? []);
+      const loadedMessages = conversation.messages ?? [];
+      const latestMessage = loadedMessages.at(-1) ?? conversation.last_message;
+
+      setSelectedConversation({
+        ...conversation,
+        last_message: latestMessage,
+        last_message_at: latestMessage?.created_at ?? conversation.last_message_at,
+      });
+      setMessages(loadedMessages);
       setConversations((current) => {
-        const updated = current.map((item) => (item.id === conversation.id ? { ...conversation, messages: undefined } : item));
+        const updated = current.map((item) => (item.id === conversation.id ? {
+          ...conversation,
+          last_message: latestMessage,
+          last_message_at: latestMessage?.created_at ?? conversation.last_message_at,
+          messages: undefined,
+        } : item));
+
         return sortConversations(updated);
       });
     } catch (exception) {
