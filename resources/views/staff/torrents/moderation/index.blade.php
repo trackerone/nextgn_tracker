@@ -14,20 +14,25 @@
         $moderationMetadataReview = $moderationMetadataReview ?? [];
     @endphp
     <div class="space-y-8">
-        <div>
-            <h1 class="text-2xl font-semibold text-white">Pending torrents</h1>
-            <p class="text-sm text-slate-400">Approve, reject, or soft-delete submissions before they hit the browse index.</p>
+        <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff moderation</p>
+                <h1 class="mt-2 text-2xl font-semibold text-white">Pending torrent review queue</h1>
+                <p class="text-sm text-slate-400">Scan upload context, metadata quality and safety signals before publishing or rejecting submissions.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"><span class="font-semibold text-white">{{ $pendingTorrents->total() }}</span> pending uploads</div>
         </div>
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-800 text-sm">
                 <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
                     <tr>
-                        <th class="px-4 py-3 text-left">Name</th>
+                        <th class="px-4 py-3 text-left">Upload</th>
                         <th class="px-4 py-3 text-left">Uploader</th>
-                        <th class="px-4 py-3 text-left">Type</th>
+                        <th class="px-4 py-3 text-left">Category / Type</th>
                         <th class="px-4 py-3 text-left">Metadata review</th>
-                        <th class="px-4 py-3 text-right">Size</th>
-                        <th class="px-4 py-3 text-right">Uploaded</th>
+                        <th class="px-4 py-3 text-left">Completeness</th>
+                        <th class="px-4 py-3 text-left">Submitted / Updated</th>
                         <th class="px-4 py-3 text-left">Actions</th>
                     </tr>
                 </thead>
@@ -39,10 +44,18 @@
                             $releaseAdvice = $releaseAdviceByTorrent[$torrent->id] ?? [];
                             $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
                             $review = $moderationMetadataReview[$torrent->id] ?? ['needs_review' => false, 'labels' => []];
+                            $hasNfo = is_string($metadata['nfo'] ?? null) && trim((string) $metadata['nfo']) !== '';
+                            $hasDescription = trim((string) ($torrent->description ?? '')) !== '';
+                            $statusLabel = ucfirst(str_replace('_', ' ', $torrent->status->value));
                         @endphp
-                        <tr>
+                        <tr class="align-top hover:bg-slate-900/80">
                             <td class="px-4 py-3">
-                                <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="rounded-full border border-amber-500/50 bg-amber-500/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-amber-200">{{ $statusLabel }}</span>
+                                    <span class="text-xs text-slate-500">#{{ $torrent->id }}</span>
+                                </div>
+                                <a href="{{ route('torrents.show', $torrent) }}" class="mt-2 block font-semibold text-white hover:text-brand">{{ $torrent->name }}</a>
+                                <p class="mt-1 text-xs text-slate-400">{{ $torrent->original_filename ?? 'Original filename unavailable' }}</p>
                                 @if ($metadataBadges !== [])
                                     <div class="mt-2 flex flex-wrap gap-1.5">
                                         @foreach ($metadataBadges as $badge)
@@ -61,8 +74,14 @@
                                     <p class="mt-2 text-xs text-emerald-300/90">This upload appears to be the best version in this release family.</p>
                                 @endif
                             </td>
-                            <td class="px-4 py-3">{{ $torrent->uploader?->name ?? 'Unknown' }}</td>
-                            <td class="px-4 py-3">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                <p class="font-semibold text-white">{{ $torrent->uploader?->name ?? 'Unknown' }}</p>
+                                <p class="mt-1 text-xs text-slate-500">Uploader record</p>
+                            </td>
+                            <td class="px-4 py-3">
+                                <p class="font-semibold text-white">{{ $torrent->category?->name ?? 'Uncategorized' }}</p>
+                                <p class="mt-1 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? 'Type unknown' }}</p>
+                            </td>
                             <td class="px-4 py-3">
                                 @if (($review['needs_review'] ?? false) === true)
                                     <span class="rounded-full border border-amber-600/60 bg-amber-500/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-200">
@@ -90,22 +109,30 @@
                                     </p>
                                 @endif
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
-                            <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
+                            <td class="px-4 py-3 text-xs text-slate-300">
+                                <p class="font-semibold text-white">{{ $torrent->formatted_size }} • {{ number_format($torrent->file_count) }} files</p>
+                                <p class="mt-1">{{ $hasDescription ? 'Description present' : 'No description' }}</p>
+                                <p>{{ $hasNfo ? 'NFO present' : 'No NFO' }}</p>
+                            </td>
+                            <td class="px-4 py-3 text-xs text-slate-400">
+                                <p><span class="font-semibold uppercase tracking-wide text-slate-500">Submitted</span><br>{{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? '—' }}</p>
+                                <p class="mt-2"><span class="font-semibold uppercase tracking-wide text-slate-500">Updated</span><br>{{ optional($torrent->updated_at)->toDayDateTimeString() ?? '—' }}</p>
+                            </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-col gap-2">
-                                    <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}">
+                                    <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" data-submit-label="Publishing…">
                                         @csrf
-                                        <button type="submit" class="w-full rounded-xl bg-emerald-500 px-3 py-1 text-xs font-semibold text-slate-950">Approve</button>
+                                        <button type="submit" class="w-full rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Publish torrent</button>
                                     </form>
-                                    <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-col gap-2">
+                                    <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
                                         @csrf
-                                        <input type="text" name="reason" required placeholder="Rejection reason (required)" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-2 py-1 text-xs text-white">
-                                        <button type="submit" class="w-full rounded-xl bg-rose-500 px-3 py-1 text-xs font-semibold text-white">Reject</button>
+                                        <input type="text" name="reason" required placeholder="What should the uploader fix?" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40">
+                                        <p class="text-xs leading-5 text-slate-500">Visible in moderation history; keep it specific and actionable.</p>
+                                        <button type="submit" class="w-full rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300">Reject with reason</button>
                                     </form>
-                                    <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}">
+                                    <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
                                         @csrf
-                                        <button type="submit" class="w-full rounded-xl border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200">Soft-delete</button>
+                                        <button type="submit" class="w-full rounded-xl border border-rose-500/60 bg-rose-950/30 px-3 py-2 text-xs font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete</button>
                                     </form>
                                 </div>
                             </td>
@@ -119,6 +146,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
             <div class="border-t border-slate-800 bg-slate-900/70 px-4 py-3">
                 {{ $pendingTorrents->links() }}
             </div>
@@ -143,4 +171,24 @@
             </section>
         @endif
     </div>
+    <script>
+        document.querySelectorAll('form[data-submit-label]').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                const message = form.dataset.confirm;
+                if (message && !window.confirm(message)) {
+                    event.preventDefault();
+                    return;
+                }
+
+                const button = form.querySelector('button[type="submit"]');
+                if (!button) {
+                    return;
+                }
+
+                button.disabled = true;
+                button.textContent = form.dataset.submitLabel || 'Submitting…';
+                button.classList.add('cursor-wait', 'opacity-70');
+            });
+        });
+    </script>
 @endsection

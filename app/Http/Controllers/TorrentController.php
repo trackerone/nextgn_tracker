@@ -103,6 +103,7 @@ final class TorrentController extends Controller
         $metadata = TorrentMetadataView::forTorrent($model);
         $quality = TorrentMetadataQuality::evaluate($metadata, $model->name);
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
+        $metadataEnrichmentOutcome = TorrentMetadataView::fromTorrent($model)->enrichmentOutcome();
 
         $eligibility = $request->user() !== null
             ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
@@ -170,6 +171,7 @@ final class TorrentController extends Controller
             'releaseAdvice' => $releaseAdvice,
             'metadataQuality' => $quality,
             'metadataReview' => $metadataReview,
+            'metadataEnrichmentOutcome' => $metadataEnrichmentOutcome,
             'hasMetadataRecord' => $metadataRecordExists,
             'hasDisplayableMetadata' => $hasDisplayableMetadata,
         ]);
