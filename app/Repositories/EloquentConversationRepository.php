@@ -21,7 +21,16 @@ class EloquentConversationRepository implements ConversationRepositoryInterface
                 'userA:id,name',
                 'userB:id,name',
                 'lastMessage' => static fn ($query) => $query
-                    ->select(['id', 'conversation_id', 'sender_id', 'body_md', 'read_at', 'created_at', 'updated_at'])
+                    ->select([
+                        'messages.id',
+                        'messages.conversation_id',
+                        'messages.sender_id',
+                        'messages.body_md',
+                        'messages.body_html',
+                        'messages.read_at',
+                        'messages.created_at',
+                        'messages.updated_at',
+                    ])
                     ->with('sender:id,name'),
             ])
             ->orderByDesc('last_message_at')
