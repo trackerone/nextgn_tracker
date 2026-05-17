@@ -1,24 +1,29 @@
-# Security Overview
+# Security overview
 
-NextGN Tracker assumes hostile network conditions and enforces layered controls across the stack. This document highlights the key expectations for contributors and operators.
+NextGN Tracker assumes hostile network conditions and uses layered Laravel controls across the web UI, API, tracker protocol endpoints, uploads, and operations.
 
 ## Application surface
-- **Authentication** – Email/password with bcrypt hashing and optional passkey/WebAuthn support. Sessions are CSRF-protected, rate limited, and require verified email before tracker endpoints can be used.
-- **Roles & permissions** – `sysop`, `admin`, `moderator`, `uploader`, `user`, and `guest` roles drive authorization gates/policies. `role.min:{level}` middleware is enforced for staff panels, uploads, and moderation flows.
-- **Tracker endpoints** – `/announce/{passkey}` and `/scrape/{passkey}` require a valid passkey tied to an active user (non-banned, non-disabled). Requests are throttled and responses are sanitized through the bencode service.
-- **API clients** – Any automation must authenticate via personal access tokens or signed URLs; never expose passkeys in logs or front-end bundles.
 
-## Transport & headers
-- Enforce HTTPS everywhere (HSTS, TLS 1.2+). Redirect HTTP to HTTPS at the load balancer or CDN edge.
-- Apply CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy, and X-Content-Type-Options headers globally (Laravel middleware + web server defaults).
-- Enable SameSite=strict cookies and secure flags for session + XSRF tokens.
+- **Authentication**: Email/password sessions are CSRF-protected and rate limited. Banned or disabled users are blocked by active-user middleware.
+- **Roles and permissions**: Role level middleware, staff middleware, gates, and policies protect admin, moderation, forum, torrent, and log surfaces.
+- **Tracker endpoints**: `/announce/{passkey}` and `/scrape/{passkey}` require a valid passkey for an active user. Announce requests are throttled, normalized, checked against torrent access rules, and answered with bencoded responses.
+- **API clients**: First-party JSON routes use browser/session auth. The current stateless API contract is HMAC API-key auth for `GET /api/user` with `X-Api-Key`, `X-Api-Timestamp`, and `X-Api-Signature`.
+- **Uploads**: Torrent/NFO uploads use centralized validation, MIME/extension/size limits, sanitization, duplicate detection, metadata persistence, and audit/security telemetry.
+
+## Headers and transport
+
+- `SecurityHeadersMiddleware` and `ResponseGuard` apply security headers such as CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and related response hardening.
+- Terminate TLS at the platform/load balancer and run production with `APP_ENV=production` and `APP_DEBUG=false`.
+- Keep session and XSRF cookies secure for production deployments.
 
 ## Data protection
-- Use prepared statements via Eloquent/Query Builder only (no raw mysqli). Avoid storing plaintext IPs long term—truncate or hash where possible.
-- Secrets live solely in `.env`/platform config. Never commit keys, passphrases, or certs to git.
-- Logs must redact passkeys, tokens, info hashes, and IP addresses before shipping to external services.
+
+- Use Laravel Eloquent, query builder, or existing repositories; do not add raw user-input SQL, mysqli, or global database handles.
+- Store secrets only in environment/platform configuration. Never commit app keys, API keys, HMAC secrets, provider tokens, passkeys, or passwords.
+- Do not log passkeys, API keys, HMAC secrets, provider tokens, raw announce IDs, or plaintext passwords. Security-sensitive events should go through the configured security log/audit surfaces.
 
 ## Operational safeguards
-- Enable Laravel maintenance mode before migrations in production.
-- Keep `composer.lock` and your Node lock file (`package-lock.json`, `pnpm-lock.yaml`, etc.) up to date via Dependabot or scheduled upgrades; run PHPStan, Rector, and PHPUnit before deploying.
-- Rotate passkeys and API credentials immediately if compromise is suspected. Document incident responses in the ops runbook.
+
+- Run migrations as an explicit release step before serving production traffic.
+- Run queue workers and the scheduler as separate processes when queued jobs or scheduled commands are enabled.
+- Rotate passkeys and API credentials if compromise is suspected, then review audit/security logs for related activity.

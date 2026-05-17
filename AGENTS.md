@@ -36,7 +36,7 @@ This file defines default operating rules for Codex agents in this repository.
 - Keep commits atomic where possible.
 
 ## Stack and conventions to verify before changes
-- Backend uses Laravel + PHP 8.3 with PSR-12 style.
+- Backend uses Laravel + PHP 8.4 with PSR-12 style.
 - Frontend uses Vite + Tailwind + React packages.
 - Use repository services/actions/policies patterns already present under `app/`.
 - For database access, use Laravel database abstractions and prepared statements.

@@ -3,9 +3,9 @@
 <p align="center">
 
   <!-- Stack -->
-  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" />
-  <img src="https://img.shields.io/badge/PHP-8.3%2B-777BB4?style=flat-square&logo=php&logoColor=white" />
-  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Laravel-13.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" />
+  <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?style=flat-square&logo=php&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node-20--25-339933?style=flat-square&logo=node.js&logoColor=white" />
   <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" />
 
@@ -27,7 +27,7 @@
 </p>
 
 ## Introduction
-NextGN Tracker is a hardened, Laravel 12-based tracker platform focused on privacy, compliance, and predictable performance. We welcome contributions that improve stability, security, developer experience, and the Vite-driven interface.
+NextGN Tracker is a hardened, Laravel 13-based tracker platform focused on privacy, compliance, and predictable performance. We welcome contributions that improve stability, security, developer experience, and the Vite-driven interface.
 
 ## Code of Conduct
 All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage with kindness, accept feedback gracefully, and keep reviews focused on the work rather than the person.
@@ -38,8 +38,8 @@ All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage
 3. For non-trivial changes, open an issue or proposal outlining motivation, scope, and acceptance criteria before coding.
 4. Coordinate with maintainers when touching security-sensitive paths or the deployment pipeline.
 
-## Development Setup (PHP 8.3+, Laravel 12, Node 20–24 LTS, Composer, npm, Vite)
-- Requirements: PHP 8.3+, Composer 2, Node 20–24 LTS, npm 9+, and a database supported by Laravel 12.
+## Development Setup (PHP 8.4+, Laravel 13, Node >=20 <26, Composer, npm, Vite)
+- Requirements: PHP 8.4+, Composer 2, Node >=20 <26, npm 9+, and a Laravel-supported database.
 - Clone the repository, then run `composer install` and `npm install`.
 - Copy `.env.example` to `.env`, set database credentials, queue/mail drivers, and tracker-specific keys.
 - Run `php artisan key:generate`, `php artisan migrate`, and boot the stack with `php artisan serve` plus `npm run dev`.
@@ -66,8 +66,8 @@ All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage
 
 ## Security & Responsible Disclosure
 - Never introduce raw SQL that touches user input; use the query builder or parameterized statements.
-- All uploads must go through the centralized upload pipeline with antivirus and MIME validation enabled.
-- Escape or sanitize every piece of user-generated content using ContentSafety helpers before rendering.
+- All uploads must go through the centralized upload pipeline with validation, MIME/extension/size limits, sanitization, duplicate detection, and audit/security telemetry.
+- Escape or sanitize user-generated content before rendering; use existing sanitizer/Markdown services and Blade escaping patterns.
 - Report vulnerabilities privately using the contact in `docs/SECURITY-OVERVIEW.md` before disclosing publicly.
 - When fixing vulnerabilities, include regression tests and describe risk/mitigation clearly in the PR.
 
@@ -95,7 +95,7 @@ If you're interested, contact the current maintainers via the channel listed in 
 <p align="center">
 
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-22C55E?style=for-the-badge&logo=github)
-![Stack](https://img.shields.io/badge/Stack-Laravel_12,_PHP_8.3%2B,_Vite-2563EB?style=for-the-badge)
+![Stack](https://img.shields.io/badge/Stack-Laravel_13,_PHP_8.4%2B,_Vite-2563EB?style=for-the-badge)
 
 </p>
 

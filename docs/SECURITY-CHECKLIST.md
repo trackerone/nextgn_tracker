@@ -1,29 +1,33 @@
-# Security Checklist
+# Security checklist
 
 Use this list before shipping changes or deploying NextGN Tracker.
 
 ## Configuration
-- [ ] `.env` contains production credentials only (no defaults). Disable `APP_DEBUG` and set `APP_ENV=production`.
-- [ ] Rotate `APP_KEY`, JWT secrets, and tracker passkey salts if compromise is suspected.
-- [ ] Queue, cache, and session drivers point to Redis or database hosts reachable only inside the VPC.
+
+- [ ] Production has `APP_ENV=production`, `APP_DEBUG=false`, a generated `APP_KEY`, correct `APP_URL`, and database credentials supplied by the platform.
+- [ ] API HMAC settings are present when API-key routes are used.
+- [ ] Queue, cache, session, and filesystem drivers are intentional for the environment.
 
 ## Application
-- [ ] All routes that mutate state include CSRF protection (`web` middleware) and authorization (`role.min`/policies).
-- [ ] Tracker endpoints validate passkeys, enforce HTTPS, and log rate-limit violations with user + IP context.
-- [ ] User-supplied markdown is sanitized via `MarkdownService`; no raw HTML rendering without purification.
-- [ ] No controllers access the database via raw mysqli/globals—only Eloquent, Query Builder, or Extended/Fluent PDO wrappers.
 
-## Headers & TLS
-- [ ] CSP, HSTS, Referrer-Policy, Permissions-Policy, and X-Frame-Options headers are enabled via middleware or web server config.
-- [ ] Cookies (`SESSION`, `XSRF-TOKEN`, passkey cookies) include `Secure`, `HttpOnly`, and `SameSite=strict` attributes.
-- [ ] ACME/Let’s Encrypt cert renewals are automated; TLS 1.0/1.1 are disabled.
+- [ ] Mutating web routes use CSRF protection and authorization through middleware, policies, or gates.
+- [ ] API routes stay in their documented session-auth or HMAC-auth buckets.
+- [ ] Tracker announce/scrape routes validate passkeys and do not leak restricted torrent state.
+- [ ] Uploads go through `SubmitTorrentUploadAction` and the shared validation rules; no alternate upload path bypasses MIME/extension/size checks.
+- [ ] Torrent metadata reads go through `TorrentMetadataView`.
+- [ ] User-supplied text is sanitized or escaped before rendering.
 
-## Logging & monitoring
-- [ ] Sensitive fields (passkeys, info hashes, IPs) are redacted before logs are shipped off-host.
-- [ ] Failed logins, announce denials, and moderation actions emit structured logs for the SIEM.
-- [ ] Health checks hit `/health` or `/up` without bypassing authentication for privileged routes.
+## Headers, TLS, and logs
+
+- [ ] CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and related security headers are active.
+- [ ] TLS termination is enforced at the platform/load balancer.
+- [ ] Passkeys, API keys, HMAC secrets, provider tokens, raw announce IDs, and plaintext passwords are not logged.
+- [ ] Admin audit/security views and the `security` log are reviewed after sensitive changes.
 
 ## Deployment
-- [ ] Run `composer install --no-dev`, `npm ci`/`npm install`, `npm run build`, and `php artisan migrate --force` in CI/CD.
-- [ ] Execute PHPStan, Rector (dry-run), PHPUnit, and frontend lint/tests before tagging a release.
-- [ ] Warm caches post-deploy: `php artisan config:cache route:cache view:cache event:cache`.
+
+- [ ] Run `composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader` for production builds.
+- [ ] Run `npm ci` or `npm install` and `npm run build` when frontend assets change.
+- [ ] Run `php artisan migrate --force` before serving traffic.
+- [ ] Rebuild Laravel caches with config, route, and view cache commands or the container entrypoint.
+- [ ] Verify `GET /health` returns `{ "status": "ok" }` without exposing privileged data.

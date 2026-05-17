@@ -4,7 +4,7 @@
   <!-- Stack -->
   <img src="https://img.shields.io/badge/Laravel-13.x-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 13.x" />
   <img src="https://img.shields.io/badge/PHP-8.4%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.4+" />
-  <img src="https://img.shields.io/badge/Node-20--24_LTS-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node 20-24 LTS" />
+  <img src="https://img.shields.io/badge/Node-20--25-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node 20-25" />
   <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite Assets" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License MIT" />
 </p>
@@ -13,6 +13,7 @@
   <!-- CI -->
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" alt="CI-PHP" />
+  </a>
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml">
     <img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml/badge.svg" alt="PHP Lint (Pint)" />
   </a>
@@ -49,11 +50,33 @@ Instead, it separates operational torrent state from canonical release metadata.
 - API endpoints for torrent browse/details/download, uploads, moderation queue/actions, and “my uploads”.
 - Forum, private messaging, invite administration, and security/audit log surfaces.
 
+
+## Current architecture snapshot
+
+- Laravel 13 on PHP 8.4, with Vite/React/Tailwind assets.
+- Passkey tracker endpoints are `GET /announce/{passkey}` and `GET /scrape/{passkey}`; browser auth is not used for tracker protocol traffic.
+- Download responses personalize the stored `.torrent` by injecting the requesting user's announce URL and removing `announce-list`.
+- First-party JSON APIs use session auth except `GET /api/user`, which uses the documented HMAC API-key contract.
+- Uploads flow through `SubmitTorrentUploadAction`, centralized validation, `UploadEligibilityService`, `TorrentIngestService`, NFO storage, and `torrent_metadata` persistence.
+- The Docker image runs as the non-root `nextgn` user; queue workers and scheduler are separate runtime processes.
+
+## Documentation
+
+- [Stack baseline](docs/STACK-BASELINE.md)
+- [Architecture and metadata model](docs/ARCHITECTURE.md)
+- [Tracker engine](docs/TRACKER-ENGINE.md)
+- [Download flow](docs/DOWNLOAD-FLOW.md)
+- [Upload workflow](docs/UPLOAD-WORKFLOW.md)
+- [API contract](docs/API_CONTRACT.md)
+- [Security overview](docs/SECURITY-OVERVIEW.md) and [security checklist](docs/SECURITY-CHECKLIST.md)
+- [Production operations](docs/PRODUCTION-OPERATIONS.md)
+- [Frontend setup](docs/FRONTEND-SETUP.md)
+
 ## Tech stack
 
 - PHP 8.4+
 - Laravel 13
-- MySQL/MariaDB
+- Laravel-supported SQL database (SQLite/MySQL/MariaDB/PostgreSQL/SQL Server)
 - Vite + React + TypeScript + Tailwind
 - shadcn/ui and lucide-react
 - Pest + PHPUnit, PHPStan/Larastan, Rector, Pint

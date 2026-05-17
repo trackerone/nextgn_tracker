@@ -2,7 +2,7 @@
 
 **Scope**
 - Repository: `nextgn_tracker`
-- Stack: PHP 8.3, Laravel 12
+- Stack: PHP 8.4, Laravel 13
 - Fokus: Backend-kode
   - Må RØRE: `app/`, `bootstrap/`, `config/`, `database/`, `routes/`, `tests/`, `lang/`, `resources/views/`
   - Må IKKE RØRE: `resources/js/`, Vite/Tailwind/ESBuild-setup eller øvrig frontend-kode
