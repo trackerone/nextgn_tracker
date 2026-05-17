@@ -51,7 +51,7 @@ class StagingDemoSeeder extends Seeder
             return;
         }
 
-        $force = (bool) ($this->command?->option('force') ?? false);
+        $force = (bool) $this->command->option('force');
 
         if (! $force) {
             throw new RuntimeException('StagingDemoSeeder is disabled in production. Re-run with php artisan db:seed --class=StagingDemoSeeder --force only for an explicitly approved non-production clone.');
