@@ -36,7 +36,8 @@ class TopicController extends Controller
 
     public function show(Topic $topic): JsonResponse
     {
-        $topic->load(['author.role']);
+        $topic->load(['author:id,name,role_id', 'author.role:id,name']);
+        $topic->loadCount('posts');
         $posts = $this->posts->paginateForTopic($topic, perPage: 20);
 
         return response()->json([
