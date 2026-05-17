@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Auth;
 
 use App\Support\Security\LoginThrottleKey;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -14,9 +15,9 @@ use Illuminate\Validation\ValidationException;
 
 final class LoginController extends Controller
 {
-    public function show(): \Illuminate\Http\Response
+    public function show(): View
     {
-        return response('Login', 200);
+        return view('auth.login');
     }
 
     public function store(Request $request): RedirectResponse

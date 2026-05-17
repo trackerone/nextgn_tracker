@@ -16,6 +16,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyUploadsController;
 use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
@@ -50,7 +51,7 @@ Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::middleware('auth')->get('/home', static fn () => response('Dashboard', 200));
+Route::middleware('auth')->get('/home', HomeController::class)->name('home');
 
 /*
 |--------------------------------------------------------------------------

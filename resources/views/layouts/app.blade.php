@@ -9,49 +9,59 @@
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
     <body class="min-h-screen bg-slate-950 font-sans text-slate-100">
-        <div class="border-b border-slate-800 bg-slate-950/80">
-            <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-                <div class="flex items-center gap-4">
-                    <a href="{{ url('/') }}" class="text-lg font-semibold text-white">
-                        {{ config('app.name', 'NextGN Tracker') }}
-                    </a>
-                    <a href="{{ route('torrents.index') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                        Torrents
+        @php
+            $navLink = 'rounded-full px-3 py-2 text-sm font-medium transition hover:bg-slate-800/80 hover:text-white';
+            $activeNavLink = 'bg-brand/15 text-brand ring-1 ring-brand/30';
+            $inactiveNavLink = 'text-slate-300';
+        @endphp
+        <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
+            <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 md:px-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NextGN Tracker') }} dashboard">
+                        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
+                        <span>
+                            <span class="block text-base font-semibold leading-tight text-white">{{ config('app.name', 'NextGN Tracker') }}</span>
+                            <span class="block text-xs font-medium text-slate-500 group-hover:text-slate-400">Community tracker</span>
+                        </span>
                     </a>
                     @auth
-                        <a href="{{ route('torrents.upload') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                            Upload
-                        </a>
-                        <a href="{{ route('my.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                            My Uploads
-                        </a>
-                        <a href="{{ route('my.discovery') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                            For You
-                        </a>
-                        <a href="{{ route('my.follows') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white">
-                            <span>My Follows</span>
+                        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-300">
+                            <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
+                            <span class="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
+                                {{ auth()->user()->role_label }}
+                            </span>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-rose-400/60 hover:text-white">Logout</button>
+                            </form>
+                        </div>
+                    @endauth
+                </div>
+
+                @auth
+                    <nav class="flex gap-2 overflow-x-auto pb-1" aria-label="Primary navigation">
+                        <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
+                        <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Torrents</a>
+                        <a href="{{ route('torrents.upload') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.upload') ? $activeNavLink : $inactiveNavLink }}">Upload</a>
+                        <a href="{{ route('my.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('my.discovery') ? $activeNavLink : $inactiveNavLink }}">For You</a>
+                        <a href="{{ route('my.follows') }}" class="{{ $navLink }} {{ request()->routeIs('my.follows') ? $activeNavLink : $inactiveNavLink }} inline-flex items-center gap-2">
+                            <span>Follows</span>
                             @if (($followNavNewCount ?? 0) > 0)
                                 <span class="rounded-full border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">{{ $followNavNewCount }}</span>
                             @endif
                         </a>
+                        <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
+                        <a href="{{ route('home') }}#community" class="{{ $navLink }} {{ $inactiveNavLink }}">Forum</a>
+                        <a href="{{ route('home') }}#messages" class="{{ $navLink }} {{ $inactiveNavLink }}">PM</a>
+                        <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio</a>
                         @if (auth()->user()?->isStaff())
-                            <a href="{{ route('moderation.uploads') }}" class="text-sm font-medium text-slate-300 hover:text-white">
-                                Moderation
-                            </a>
+                            <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Moderation</a>
                         @endif
-                    @endauth
-                </div>
-                @auth
-                    <div class="flex items-center gap-2 text-sm text-slate-300">
-                        <span>{{ auth()->user()->name }}</span>
-                        <span class="rounded-full border border-slate-800 bg-slate-900/70 px-3 py-1 text-xs font-semibold uppercase">
-                            {{ auth()->user()->role_label }}
-                        </span>
-                    </div>
+                    </nav>
                 @endauth
             </div>
-        </div>
-        <main class="mx-auto w-full max-w-6xl px-4 py-8">
+        </header>
+        <main class="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
             @if (session('status'))
                 <div class="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ session('status') }}

@@ -13,15 +13,17 @@
 
         @if (! $hasFollows)
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
-                <p>You have no follows yet, so we cannot personalize this feed.</p>
-                <a href="{{ route('my.follows') }}" class="mt-3 inline-flex rounded-xl bg-brand px-4 py-2 font-semibold text-slate-950">
+                <h2 class="text-lg font-semibold text-white">Personalization starts with follows</h2>
+                <p class="mt-2">Follow titles, resolutions, sources, or years to build a release feed around what you actually want to watch.</p>
+                <a href="{{ route('my.follows') }}" class="mt-4 inline-flex rounded-xl bg-brand px-4 py-2 font-semibold text-slate-950">
                     Create your first follow
                 </a>
             </section>
         @elseif (! $hasResults)
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
-                <p>No relevant releases found from your current follows yet.</p>
-                <a href="{{ route('my.follows') }}" class="mt-3 inline-flex rounded-xl border border-slate-700 px-4 py-2 font-semibold text-slate-200">
+                <h2 class="text-lg font-semibold text-white">No matches from your follows yet</h2>
+                <p class="mt-2">Your current preferences are saved. New matching releases will appear here once they are published.</p>
+                <a href="{{ route('my.follows') }}" class="mt-4 inline-flex rounded-xl border border-slate-700 px-4 py-2 font-semibold text-slate-200">
                     Update follow preferences
                 </a>
             </section>
