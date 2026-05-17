@@ -147,7 +147,7 @@ class Torrent extends Model
 
     public function isVisible(): bool
     {
-        // “Visible” følger godkendelse + ikke-banned (status/flag afgør isApproved/isBanned)
+        // "Visible" follows approval + not banned (status/flag determines isApproved/isBanned)
         return $this->isApproved() && ! $this->isBanned();
     }
 
@@ -158,15 +158,15 @@ class Torrent extends Model
 
     public function isApproved(): bool
     {
-        // Vi understøtter både legacy "status" og boolean "is_approved".
-        // Hvis schemaet har is_approved, så skal den være true, og status skal være approved.
+        // Support both legacy "status" and boolean "is_approved".
+        // If the schema has is_approved, it must be true and status must be approved.
         $hasIsApprovedColumn = Schema::hasColumn($this->getTable(), 'is_approved');
 
         if ($hasIsApprovedColumn) {
             return (bool) $this->is_approved && $this->status === TorrentStatus::Published;
         }
 
-        // Fallback hvis kolonnen ikke findes (fx ældre schema/test setup)
+        // Fallback if the column does not exist (for example older schema/test setup)
         return $this->status === TorrentStatus::Published;
     }
 
@@ -186,7 +186,7 @@ class Torrent extends Model
     }
 
     /**
-     * Scope for torrents, der må vises offentligt (forsiden/index).
+     * Scope for torrents that may be shown publicly (front page/index).
      */
     public function scopeDisplayable(Builder $query): Builder
     {
@@ -194,10 +194,10 @@ class Torrent extends Model
     }
 
     /**
-     * Basisscope for “synlige” torrents.
+     * Base scope for "visible" torrents.
      *
-     * Konservativt: kun APPROVED torrents, og ikke banned/soft-deleted.
-     * Hvis vi har is_approved kolonnen, skal den også være true.
+     * Conservative: only APPROVED torrents, and not banned/soft-deleted.
+     * If the is_approved column exists, it must also be true.
      */
     public function scopeVisible(Builder $query): Builder
     {

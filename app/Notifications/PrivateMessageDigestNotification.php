@@ -37,23 +37,23 @@ class PrivateMessageDigestNotification extends Notification implements ShouldQue
                 'weekly' => 'Your weekly private message digest',
                 default => 'Your daily private message digest',
             })
-            ->greeting('Hej '.$notifiable->name)
-            ->line("Du har {$count} ulæste privatbeskeder.");
+            ->greeting('Hello '.$notifiable->name)
+            ->line("You have {$count} unread private messages.");
 
         $this->messages
             ->take(10)
             ->each(function (Message $message) use (&$mail): void {
                 $mail->line(sprintf(
-                    'Fra %s: %s',
-                    $message->sender->name ?? 'Ukendt',
+                    'From %s: %s',
+                    $message->sender->name ?? 'Unknown',
                     mb_substr($message->body_md, 0, 80)
                 ));
             });
 
         if ($this->messages->count() > 10) {
-            $mail->line('…og flere. Log ind for at læse dem alle.');
+            $mail->line('...and more. Sign in to read them all.');
         } else {
-            $mail->line('Log ind for at svare.');
+            $mail->line('Sign in to reply.');
         }
 
         return $mail;

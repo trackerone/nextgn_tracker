@@ -19,7 +19,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Sluk Vite i tests, så vi ikke skal have manifest/public/build osv.
+        // Disable Vite in tests so manifest/public/build and similar assets are not required.
         if (method_exists($this, 'withoutVite')) {
             $this->withoutVite();
         }

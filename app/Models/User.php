@@ -161,7 +161,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
-        // Explicit staff-flag override (bruges i moderation flows / tests)
+        // Explicit staff-flag override (used in moderation flows / tests)
         if ((bool) $this->is_staff) {
             return true;
         }
@@ -333,7 +333,7 @@ class User extends Authenticatable implements MustVerifyEmail
     private static function staffRoles(): array
     {
         return [
-            // Normaliserede roller
+            // Normalized roles
             self::ROLE_MODERATOR,
             self::ROLE_ADMIN,
             self::ROLE_SYSOP,
@@ -351,13 +351,13 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleAttribute = $this->getAttribute('role');
 
-        // Hvis role-attributten er sat til noget andet end default, så er den autoritativ.
+        // If the role attribute is set to something other than the default, it is authoritative.
         if (is_string($roleAttribute) && $roleAttribute !== '' && $roleAttribute !== self::ROLE_USER) {
             return $roleAttribute;
         }
 
-        // Hvis role-attributten er default (typisk 'user'), men vi har en Role relation/role_id,
-        // så skal relationen have forrang (bruges i moderation/staff flows).
+        // If the role attribute is the default (usually 'user'), but we have a Role relation/role_id,
+        // the relation must take precedence (used in moderation/staff flows).
         $roleRelation = $this->getRelationValue('role');
 
         if ($roleRelation instanceof Role) {
@@ -368,7 +368,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $roleRelation->name;
         }
 
-        // Hvis der ikke er relation, men role-attributten findes (og er default), returnér den.
+        // If there is no relation, but the role attribute exists (and is the default), return it.
         if (is_string($roleAttribute) && $roleAttribute !== '') {
             return $roleAttribute;
         }

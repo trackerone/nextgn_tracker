@@ -14,7 +14,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
     event.preventDefault();
 
     if (body.trim().length < 3) {
-      setError('Svar skal være mindst 3 tegn.');
+      setError('The reply must be at least 3 characters.');
       return;
     }
 
@@ -25,7 +25,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
       await onSubmit({ body_md: body.trim() });
       setBody('');
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Kunne ikke gemme svaret.');
+      setError(submitError instanceof Error ? submitError.message : 'Could not save the reply.');
     } finally {
       setIsSubmitting(false);
     }
@@ -35,7 +35,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
     <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
       <div>
         <label className="block text-sm font-medium text-slate-300" htmlFor="reply-body">
-          Svar (Markdown)
+          Reply (Markdown)
         </label>
         <textarea
           id="reply-body"
@@ -43,7 +43,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
           onChange={(event) => setBody(event.target.value)}
           disabled={disabled || isSubmitting}
           className="mt-2 h-32 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-brand focus:outline-none"
-          placeholder="Skriv dit svar"
+          placeholder="Write your reply"
         />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -53,7 +53,7 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
           disabled={disabled || isSubmitting}
           className="inline-flex items-center rounded bg-brand px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? 'Gemmer…' : 'Send svar'}
+          {isSubmitting ? 'Saving...' : 'Send reply'}
         </button>
       </div>
     </form>

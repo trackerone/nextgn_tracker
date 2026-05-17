@@ -49,7 +49,7 @@ const App: React.FC = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-semibold text-slate-100">Forum</h1>
           {topicsMeta && (
-            <span className="text-sm text-slate-400">{topicsMeta.total} emner</span>
+            <span className="text-sm text-slate-400">{topicsMeta.total} topics</span>
           )}
         </div>
         {session.canWrite && (
@@ -58,7 +58,7 @@ const App: React.FC = () => {
           </div>
         )}
         {error && <p className="text-sm text-red-400">{error}</p>}
-        {isLoading && <p className="text-sm text-slate-400">Indlæser…</p>}
+        {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
         <TopicList topics={sortedTopics} onSelectTopic={handleSelectTopic} />
       </section>
       <TopicView

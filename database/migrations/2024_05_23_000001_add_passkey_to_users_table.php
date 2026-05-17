@@ -10,13 +10,13 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Hvis der ikke er nogen users-tabel (fx i en tom test-DB), så gør ingenting
+        // If there is no users table (for example in an empty test DB), do nothing
         if (! Schema::hasTable('users')) {
             return;
         }
 
         Schema::table('users', function (Blueprint $table): void {
-            // Undgå fejl hvis kolonnen allerede findes
+            // Avoid errors if the column already exists
             if (! Schema::hasColumn('users', 'passkey')) {
                 $table
                     ->string('passkey', 64)
@@ -34,7 +34,7 @@ return new class extends Migration
         }
 
         Schema::table('users', function (Blueprint $table): void {
-            // Kun prøv at droppe, hvis kolonnen faktisk findes
+            // Only try to drop the column if it actually exists
             if (Schema::hasColumn('users', 'passkey')) {
                 $table->dropColumn('passkey');
             }

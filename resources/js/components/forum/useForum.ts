@@ -18,7 +18,7 @@ export function useForum(initialSession: SessionContext) {
       setSelectedTopic(result.topic);
       setPosts(result.posts.data);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Kunne ikke hente emnet.');
+      setError(loadError instanceof Error ? loadError.message : 'Could not fetch the topic.');
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +54,7 @@ export function useForum(initialSession: SessionContext) {
   }, [loadTopic]);
   const handleReply = useCallback(async (payload: { body_md: string }) => {
     if (!selectedTopic) {
-      throw new Error('Ingen emne valgt');
+      throw new Error('No topic selected');
     }
     await fetchJson<PostItemData>(`/topics/${selectedTopic.id}/posts`, {
       method: 'POST',
@@ -105,7 +105,7 @@ export function useForum(initialSession: SessionContext) {
         },
       });
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke slette emnet.');
+      setError(exception instanceof Error ? exception.message : 'Could not delete the topic.');
       throw exception;
     }
     setTopics((current) => current.filter((item) => item.id !== selectedTopic.id));
@@ -135,7 +135,7 @@ export function useForum(initialSession: SessionContext) {
     }
   }, [loadTopic, selectedTopic]);
   const handleEditPost = useCallback(async (post: PostItemData) => {
-    const nextBody = window.prompt('Redigér indlægget', post.body_md);
+    const nextBody = window.prompt('Edit the post', post.body_md);
     if (!nextBody || nextBody.trim().length < 3) {
       return;
     }

@@ -45,7 +45,7 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
-        // App\Providers\RouteServiceProvider::class, // valgfri i L11 hvis du bruger default routes
+        // App\Providers\RouteServiceProvider::class, // optional in L11 if you use default routes
     ],
 
     'aliases' => [

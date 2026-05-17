@@ -32,7 +32,7 @@ const PrivateMessagesPanel: React.FC<PrivateMessagesPanelProps> = ({ currentUser
   return (
     <section className="space-y-4" id="private-messages">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-slate-100">Private beskeder</h2>
+        <h2 className="text-2xl font-semibold text-slate-100">Private messages</h2>
         <button
           type="button"
           onClick={() => {

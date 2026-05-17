@@ -1,5 +1,5 @@
 @php
-    // Test-/view-sikkerhed: sørg for at disse altid findes, uanset controller-flow.
+    // Test/view safety: ensure these always exist regardless of controller flow.
     $filters = $filters ?? [];
     $types = $types ?? [];
     $resolutions = $resolutions ?? [];

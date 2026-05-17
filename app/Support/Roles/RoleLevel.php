@@ -39,14 +39,14 @@ final class RoleLevel
         'user1' => 1,
         'newbie' => 0,
 
-        // Normaliserede app-roller
+        // Normalized app roles
         // IMPORTANT: default "user" must be >= 1 to pass role.min:1 routes (e.g., /pm).
         'user' => 1,
         'power_user' => 2,
         'uploader' => 5,
         'moderator' => 8,
         'admin' => 10,
-        // sysop er allerede dækket
+        // sysop is already covered
     ];
 
     /**
@@ -90,14 +90,14 @@ final class RoleLevel
     {
         /**
          * KRITISK:
-         * RoleAccessTest sætter/forventer legacy slug i users.role.
-         * Derfor skal vi mappe på users.role FØRST - men default 'user'
-         * må ikke overstyre en tilknyttet role_id/role relation.
+         * RoleAccessTest sets/expects a legacy slug in users.role.
+         * Therefore we must map users.role FIRST, but the default 'user'
+         * must not override an associated role_id/role relation.
          */
         $roleAttribute = $user->getAttribute('role');
         $roleAttributeSlug = is_string($roleAttribute) ? strtolower(trim($roleAttribute)) : null;
 
-        // 1) Primært: users.role hvis den er andet end default 'user'
+        // 1) Primary: users.role if it is something other than the default 'user'
         if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '' && $roleAttributeSlug !== 'user') {
             $mapped = self::forSlug($roleAttributeSlug);
             if ($mapped !== null) {
@@ -105,7 +105,7 @@ final class RoleLevel
             }
         }
 
-        // 2) Fallback: role relation slug (hvis seeded / role_id findes)
+        // 2) Fallback: role relation slug (if seeded / role_id exists)
         $legacyRole = $user->relationLoaded('role')
             ? $user->getRelation('role')
             : $user->role()->getResults();
@@ -116,13 +116,13 @@ final class RoleLevel
                 return $mapped;
             }
 
-            // 3) Sidste fallback: role->level hvis den findes
+            // 3) Last fallback: role->level if it exists
             if ($legacyRole->level !== null) {
                 return (int) $legacyRole->level;
             }
         }
 
-        // 4) Hvis der ingen role relation er, så brug users.role (inkl. 'user')
+        // 4) If there is no role relation, use users.role (including 'user')
         if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '') {
             $mapped = self::forSlug($roleAttributeSlug);
             if ($mapped !== null) {

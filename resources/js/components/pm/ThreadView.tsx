@@ -42,13 +42,13 @@ const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, current
   if (!conversation) {
     return (
       <div className="rounded border border-slate-800 bg-slate-950 p-6 text-sm text-slate-400">
-        Vælg en samtale for at se beskeder.
+        Select a conversation to view messages.
       </div>
     );
   }
 
   const partner = conversation.user_a_id === currentUserId ? conversation.user_b : conversation.user_a;
-  const partnerName = partner?.name ?? 'Ukendt bruger';
+  const partnerName = partner?.name ?? 'Unknown user';
 
   return (
     <div className="flex h-full flex-col rounded border border-slate-800 bg-slate-950">
@@ -57,7 +57,7 @@ const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, current
       </header>
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
-          <p className="text-sm text-slate-400">Ingen beskeder endnu.</p>
+          <p className="text-sm text-slate-400">No messages yet.</p>
         )}
         {messages.map((message) => {
           const isOwn = message.sender_id === currentUserId;
@@ -68,7 +68,7 @@ const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, current
               className={`rounded border px-3 py-2 text-sm ${isOwn ? 'border-emerald-600 bg-emerald-950 text-emerald-100' : 'border-slate-700 bg-slate-900 text-slate-100'}`}
             >
               <header className="mb-1 flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
-                <span>{message.sender?.name ?? (isOwn ? 'Dig' : 'Ukendt')}</span>
+                <span>{message.sender?.name ?? (isOwn ? 'You' : 'Unknown')}</span>
                 <time dateTime={message.created_at}>{new Date(message.created_at).toLocaleString()}</time>
               </header>
               <div className="prose prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(message.body_html) }} />
@@ -78,7 +78,7 @@ const ThreadView: React.FC<ThreadViewProps> = ({ conversation, messages, current
       </div>
       <form onSubmit={handleSubmit} className="border-t border-slate-800 px-4 py-3">
         <label className="block text-sm text-slate-300">
-          Skriv en besked
+          Write a message
           <textarea
             className="mt-2 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none"
             value={body}

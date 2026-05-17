@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Sørg for nye felter findes
+        // Ensure the new fields exist
         Schema::table('torrents', function (Blueprint $table): void {
             if (! Schema::hasColumn('torrents', 'size_bytes')) {
                 $table->unsignedBigInteger('size_bytes')
@@ -39,8 +39,8 @@ return new class extends Migration
             }
         });
 
-        // Backfill fra gamle felter hvis de findes (prod/legacy),
-        // men SKIP helt i friske miljøer (fx SQLite tests)
+        // Backfill from old fields if they exist (prod/legacy),
+        // but skip entirely in fresh environments (for example SQLite tests)
         if (Schema::hasColumn('torrents', 'size')) {
             DB::table('torrents')
                 ->where('size_bytes', 0)
@@ -57,7 +57,7 @@ return new class extends Migration
                 ]);
         }
 
-        // Drop legacy felter hvis de findes
+        // Drop legacy fields if they exist
         if (Schema::hasColumn('torrents', 'size')) {
             Schema::table('torrents', function (Blueprint $table): void {
                 $table->dropColumn('size');
@@ -73,7 +73,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Simple down: fjern de nye felter igen, hvis de findes
+        // Simple down: remove the new fields again if they exist
         Schema::table('torrents', function (Blueprint $table): void {
             if (Schema::hasColumn('torrents', 'type')) {
                 $table->dropColumn('type');
@@ -92,6 +92,6 @@ return new class extends Migration
             }
         });
 
-        // (Vi genskaber ikke legacy felterne her – ikke nødvendigt til tests)
+        // (Do not recreate the legacy fields here; tests do not need them)
     }
 };

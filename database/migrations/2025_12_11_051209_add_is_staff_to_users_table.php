@@ -11,11 +11,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table): void {
-            // Læg dig ca. dér hvor det giver mening ift. resten af kolonnerne
+            // Place it roughly where it makes sense relative to the other columns
             $table->boolean('is_staff')
                 ->default(false)
                 ->index()
-                ->after('is_disabled'); // hvis kolonnen findes – ellers fjern ->after(...)
+                ->after('is_disabled'); // if the column exists; otherwise remove ->after(...)
         });
     }
 
