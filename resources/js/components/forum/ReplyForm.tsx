@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Send } from 'lucide-react';
 
 interface ReplyFormProps {
   onSubmit: (payload: { body_md: string }) => Promise<void>;
@@ -32,28 +33,35 @@ const ReplyForm: React.FC<ReplyFormProps> = ({ onSubmit, disabled = false }) => 
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-      <div>
-        <label className="block text-sm font-medium text-slate-300" htmlFor="reply-body">
-          Reply (Markdown)
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-sm"
+      aria-busy={isSubmitting}
+    >
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-slate-100" htmlFor="reply-body">
+          Add your reply
         </label>
-        <textarea
-          id="reply-body"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          disabled={disabled || isSubmitting}
-          className="mt-2 h-32 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-brand focus:outline-none"
-          placeholder="Write your reply"
-        />
+        <p className="text-xs text-slate-400">Keep it constructive. Markdown, links, quotes and code snippets are welcome.</p>
       </div>
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      <div className="flex justify-end">
+      <textarea
+        id="reply-body"
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+        disabled={disabled || isSubmitting}
+        className="h-36 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand disabled:cursor-not-allowed disabled:opacity-60"
+        placeholder="Share an update, answer the question, or add context..."
+      />
+      {error && <p className="text-sm text-red-300" role="alert">{error}</p>}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-slate-500">Your reply appears in this thread after it is saved.</p>
         <button
           type="submit"
           disabled={disabled || isSubmitting}
-          className="inline-flex items-center rounded bg-brand px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? 'Saving...' : 'Send reply'}
+          <Send className="h-4 w-4" aria-hidden="true" />
+          {isSubmitting ? 'Posting reply...' : 'Post reply'}
         </button>
       </div>
     </form>
