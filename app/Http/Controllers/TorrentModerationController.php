@@ -31,7 +31,7 @@ class TorrentModerationController extends Controller
         $this->authorize('viewModerationListings', Torrent::class);
 
         $pending = Torrent::query()
-            ->with(['uploader', 'metadata'])
+            ->with(['category', 'uploader', 'metadata'])
             ->pending()
             ->orderByDesc('uploaded_at')
             ->paginate(25);

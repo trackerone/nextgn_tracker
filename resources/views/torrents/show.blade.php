@@ -9,6 +9,7 @@
     $releaseAdvice = $releaseAdvice ?? [];
     $metadataQuality = $metadataQuality ?? [];
     $metadataReview = $metadataReview ?? [];
+    $metadataEnrichmentOutcome = $metadataEnrichmentOutcome ?? ['applied_fields' => [], 'conflicts' => []];
     $hasMetadataRecord = $hasMetadataRecord ?? false;
     $hasDisplayableMetadata = $hasDisplayableMetadata ?? false;
     $eligibility = $eligibility ?? ['allowed' => false, 'reason' => 'ratio_too_low'];
@@ -125,9 +126,22 @@
                 </section>
             @endif
             @can('moderate', $torrent)
-                <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5" aria-label="Staff review context">
+                    @php
+                        $staffStatus = ucfirst(str_replace('_', ' ', $torrent->status->value));
+                        $hasNfo = ($nfoText ?? '') !== '';
+                        $hasDescription = trim((string) ($torrent->description ?? '')) !== '';
+                    @endphp
                     <div class="flex flex-col gap-2 text-sm text-slate-200">
-                        <p><span class="font-semibold">Status:</span> {{ ucfirst(str_replace('_', ' ', $torrent->status->value)) }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff review</p>
+                        <h2 class="text-lg font-semibold text-white">Moderation status and audit context</h2>
+                        <p><span class="font-semibold">Status:</span> <span @class([
+                            'rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide',
+                            'border-amber-500/50 bg-amber-500/10 text-amber-200' => $torrent->status->value === 'pending',
+                            'border-emerald-600/60 bg-emerald-500/10 text-emerald-200' => $torrent->status->value === 'published',
+                            'border-rose-600/60 bg-rose-500/10 text-rose-200' => $torrent->status->value === 'rejected',
+                            'border-slate-700 bg-slate-900 text-slate-300' => ! in_array($torrent->status->value, ['pending', 'published', 'rejected'], true),
+                        ])>{{ $staffStatus }}</span></p>
                         @if ($torrent->moderator)
                             <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
                         @endif
@@ -135,21 +149,44 @@
                             <p><span class="font-semibold">Reason:</span> {{ $torrent->moderated_reason }}</p>
                         @endif
                     </div>
+                    <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploader</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->uploader?->name ?? 'Unknown' }}</dd></div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted / Updated</dt><dd class="mt-1 text-sm font-semibold text-white">{{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? '—' }}</dd><dd class="text-xs text-slate-400">Updated {{ optional($torrent->updated_at)->toDayDateTimeString() ?? '—' }}</dd></div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Upload context</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->original_filename ?? 'Original filename unavailable' }}</dd><dd class="text-xs text-slate-400">{{ number_format($torrent->file_count) }} files • {{ $torrent->formatted_size }}</dd></div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Completeness</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $hasDescription ? 'Description' : 'No description' }} • {{ $hasNfo ? 'NFO' : 'No NFO' }}</dd><dd class="text-xs text-slate-400">{{ $hasMetadataRecord ? 'Metadata record present' : 'No metadata record' }}</dd></div>
+                    </dl>
+                    <div class="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
+                        <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Release metadata and signals</h3>
+                        @if ($metadataFacts !== [])
+                            <p class="mt-2">{{ collect($metadataFacts)->map(fn ($item) => $item['label'].': '.$item['value'])->implode(' • ') }}</p>
+                        @else
+                            <p class="mt-2 text-slate-500">No normalized release metadata is available yet.</p>
+                        @endif
+                        @if (($releaseAdvice['upgrade_available'] ?? false) === true)
+                            <p class="mt-2 text-amber-200">A better version is already known for this release family.</p>
+                        @elseif (($releaseAdvice['best_version_is_current_upload'] ?? false) === true)
+                            <p class="mt-2 text-emerald-200">This appears to be the best known version in its release family.</p>
+                        @endif
+                        @if (($metadataEnrichmentOutcome['conflicts'] ?? []) !== [])
+                            <p class="mt-2 text-amber-200">External metadata conflict: {{ implode(', ', $metadataEnrichmentOutcome['conflicts']) }}</p>
+                        @endif
+                    </div>
                     <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
-                        <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2">
+                        <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2" data-submit-label="Publishing…">
                             @csrf
-                            <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950">Approve</button>
+                            <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Publish torrent</button>
                         </form>
-                        <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2">
+                        <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
                             @csrf
-                            <label class="text-xs uppercase tracking-wide text-slate-400">Reject reason
-                                <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white" placeholder="Short reason" />
+                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Reject reason
+                                <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40" placeholder="What should the uploader fix?" />
                             </label>
-                            <button type="submit" class="rounded-xl bg-rose-500 px-4 py-2 text-sm font-semibold text-white">Reject</button>
+                            <p class="text-xs leading-5 text-slate-500">Required. This reason is retained with the moderation record, so make it specific and actionable.</p>
+                            <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300">Reject with reason</button>
                         </form>
-                        <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2">
+                        <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
                             @csrf
-                            <button type="submit" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Soft-delete</button>
+                            <button type="submit" class="rounded-xl border border-rose-500/60 bg-rose-950/30 px-4 py-2 text-sm font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete</button>
                         </form>
                     </div>
                     @if (($metadataReview['needs_review'] ?? false) === true)
@@ -247,23 +284,40 @@
         document.addEventListener('DOMContentLoaded', () => {
             const button = document.getElementById('magnetButton');
             const output = document.getElementById('magnetValue');
-            if (!button || !output) {
-                return;
-            }
-            button.addEventListener('click', async () => {
-                output.textContent = 'Fetching magnet link…';
-                output.classList.remove('hidden');
-                try {
-                    const response = await fetch(button.dataset.url ?? '', { headers: { 'Accept': 'application/json' } });
-                    if (!response.ok) {
+            if (button && output) {
+                button.addEventListener('click', async () => {
+                    output.textContent = 'Fetching magnet link…';
+                    output.classList.remove('hidden');
+                    try {
+                        const response = await fetch(button.dataset.url ?? '', { headers: { 'Accept': 'application/json' } });
+                        if (!response.ok) {
+                            output.textContent = 'Unable to fetch magnet link right now.';
+                            return;
+                        }
+                        const payload = await response.json();
+                        output.textContent = payload.magnet ?? 'Magnet link unavailable.';
+                    } catch (error) {
                         output.textContent = 'Unable to fetch magnet link right now.';
+                    }
+                });
+            }
+            document.querySelectorAll('form[data-submit-label]').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    const message = form.dataset.confirm;
+                    if (message && !window.confirm(message)) {
+                        event.preventDefault();
                         return;
                     }
-                    const payload = await response.json();
-                    output.textContent = payload.magnet ?? 'Magnet link unavailable.';
-                } catch (error) {
-                    output.textContent = 'Unable to fetch magnet link right now.';
-                }
+
+                    const submit = form.querySelector('button[type="submit"]');
+                    if (!submit) {
+                        return;
+                    }
+
+                    submit.disabled = true;
+                    submit.textContent = form.dataset.submitLabel || 'Submitting…';
+                    submit.classList.add('cursor-wait', 'opacity-70');
+                });
             });
         });
     </script>
