@@ -16,12 +16,12 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSubmit }) => {
     const parsedRecipient = Number(recipientId);
 
     if (!Number.isInteger(parsedRecipient) || parsedRecipient <= 0) {
-      setError('Angiv et gyldigt bruger-ID.');
+      setError('Enter a valid user ID.');
       return;
     }
 
     if (body.trim().length < 3) {
-      setError('Beskeden skal være mindst 3 tegn.');
+      setError('The message must be at least 3 characters.');
       return;
     }
 
@@ -33,7 +33,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSubmit }) => {
       setBody('');
       setRecipientId('');
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke sende beskeden.');
+      setError(exception instanceof Error ? exception.message : 'Could not send the message.');
     } finally {
       setIsSubmitting(false);
     }
@@ -41,10 +41,10 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSubmit }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded border border-slate-800 bg-slate-950 p-4">
-      <h3 className="text-sm font-semibold text-slate-200">Ny besked</h3>
+      <h3 className="text-sm font-semibold text-slate-200">New message</h3>
       {error && <p className="text-xs text-red-400">{error}</p>}
       <label className="block text-xs text-slate-400">
-        Modtager ID
+        Recipient ID
         <input
           type="number"
           min={1}
@@ -55,7 +55,7 @@ const NewMessageForm: React.FC<NewMessageFormProps> = ({ onSubmit }) => {
         />
       </label>
       <label className="block text-xs text-slate-400">
-        Besked
+        Message
         <textarea
           className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm text-slate-100 focus:border-emerald-500 focus:outline-none"
           value={body}

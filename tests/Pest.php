@@ -12,16 +12,16 @@ uses(TestCase::class)->in('Feature', 'Unit');
 uses(RefreshDatabase::class)->in('Feature', 'Unit');
 
 beforeEach(function (): void {
-    // Laravel 10/11 har withoutVite() på TestCase via InteractsWithViews
+    // Laravel 10/11 has withoutVite() on TestCase through InteractsWithViews
     if (method_exists($this, 'withoutVite')) {
         $this->withoutVite();
     }
 
-    // Seed roles hvis tabellen findes (SQLite in-memory kan variere pr. suite)
+    // Seed roles if the table exists (SQLite in-memory can vary by suite)
     if (Schema::hasTable('roles')) {
         $this->seed(RoleSeeder::class);
 
-        // Sørg for at level-feltet matcher vores mapping (hvis den kolonne findes i schema)
+        // Ensure the level field matches our mapping (if that column exists in the schema)
         foreach (Role::all() as $role) {
             $mappedLevel = RoleLevel::forSlug($role->slug);
 
@@ -41,12 +41,12 @@ function createUserWithRole(string $slug): User
 {
     // VIGTIGT:
     // RoleAccessTest arbejder med legacy-slugs (mod1/admin1/uploader1/newbie)
-    // Derfor skal user->role være legacy slug – ikke normaliseret.
+    // Therefore user->role must be a legacy slug, not normalized.
     $user = User::factory()->create([
         'role' => $slug,
     ]);
 
-    // Knyt role_id hvis roles-tabellen er seeded
+    // Attach role_id if the roles table is seeded
     if (Schema::hasTable('roles')) {
         $roleModel = Role::query()
             ->where('slug', $slug)

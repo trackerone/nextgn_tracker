@@ -27,7 +27,7 @@ final class TorrentController extends Controller
     public function __construct()
     {
         // Matcher tests:
-        // - guests -> /login på både index og show
+        // - guests -> /login on both index and show
         $this->middleware('auth');
     }
 
@@ -78,7 +78,7 @@ final class TorrentController extends Controller
             'groupedBrowse' => $groupedBrowse,
             'releaseFamilies' => $releaseFamilies,
 
-            // View-friendly (og test-neutralt)
+            // View-friendly (and test-neutral)
             'filters' => array_merge($filters->toArray(), ['grouped' => $groupedBrowse ? '1' : '0']),
             'q' => $filters->q,
             'type' => $filters->type,

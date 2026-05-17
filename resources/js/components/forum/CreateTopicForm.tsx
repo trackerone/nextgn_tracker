@@ -27,7 +27,7 @@ const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ onSubmit, disabled = 
       setTitle('');
       setBody('');
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : 'Kunne ikke oprette emnet.');
+      setError(submitError instanceof Error ? submitError.message : 'Could not create the topic.');
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +46,7 @@ const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ onSubmit, disabled = 
           onChange={(event) => setTitle(event.target.value)}
           disabled={disabled || isSubmitting}
           className="mt-2 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-brand focus:outline-none"
-          placeholder="Emnets titel"
+          placeholder="Topic title"
         />
       </div>
       <div>
@@ -59,7 +59,7 @@ const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ onSubmit, disabled = 
           onChange={(event) => setBody(event.target.value)}
           disabled={disabled || isSubmitting}
           className="mt-2 h-40 w-full rounded border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-brand focus:outline-none"
-          placeholder="Skriv dit indlæg i Markdown"
+          placeholder="Write your post in Markdown"
         />
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
@@ -69,7 +69,7 @@ const CreateTopicForm: React.FC<CreateTopicFormProps> = ({ onSubmit, disabled = 
           disabled={disabled || isSubmitting}
           className="inline-flex items-center rounded bg-brand px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSubmitting ? 'Gemmer…' : 'Opret emne'}
+          {isSubmitting ? 'Saving...' : 'Create topic'}
         </button>
       </div>
     </form>

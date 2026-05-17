@@ -10,7 +10,7 @@ use function Pest\Laravel\get;
 it('enforces role gates and middleware expectations', function (string $slug, int $expectedAdmin, int $expectedMod): void {
     $user = createUserWithRole($slug);
 
-    // Sørg for at brugeren er e-mail-verificeret
+    // Ensure the user is email-verified
     $user->forceFill([
         'email_verified_at' => now(),
     ])->save();

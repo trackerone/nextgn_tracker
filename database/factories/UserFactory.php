@@ -31,10 +31,10 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
-        // Vi undgår Faker "name" fuldstændigt for at slippe for Unknown format "name"
+        // Avoid Faker "name" entirely to prevent Unknown format "name" errors
         $unique = Str::uuid()->toString();
 
-        // Default test-user skal kunne passere EnsureMinimumRole:1 (fx /pm).
+        // The default test user must pass EnsureMinimumRole:1 (for example /pm).
         $userRoleId = Role::query()->where('slug', 'user1')->value('id');
 
         return [
@@ -44,17 +44,17 @@ class UserFactory extends Factory
             'password' => bcrypt('password'),
             'remember_token' => Str::random(10),
 
-            // Normaliseret rolle-attribut
+            // Normalized role attribute
             'role' => User::ROLE_USER,
 
-            // Legacy role relation (level-baseret adgang)
+            // Legacy role relation (level-based access)
             'role_id' => $userRoleId,
 
             'is_banned' => false,
             'is_disabled' => false,
             'passkey' => substr(hash('sha256', $unique), 0, 32),
 
-            // Hold default false; syncStaffFlags() opgraderer ved staff-roller.
+            // Keep the default false; syncStaffFlags() upgrades staff roles.
             'is_staff' => false,
         ];
     }

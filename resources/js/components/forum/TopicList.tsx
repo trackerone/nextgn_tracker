@@ -9,7 +9,7 @@ interface TopicListProps {
 
 const TopicList: React.FC<TopicListProps> = ({ topics, onSelectTopic }) => {
   if (topics.length === 0) {
-    return <p className="text-sm text-slate-400">Ingen emner endnu. Vær den første til at oprette et.</p>;
+    return <p className="text-sm text-slate-400">No topics yet. Be the first to create one.</p>;
   }
 
   return (

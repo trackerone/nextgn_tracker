@@ -28,7 +28,7 @@ it('allows starting a conversation and notifies the recipient', function (): voi
     $response = $this->actingAs($sender)
         ->postJson('/pm', [
             'recipient_id' => $recipient->getKey(),
-            'body_md' => 'Hej **verden**',
+            'body_md' => 'Hello **world**',
         ])
         ->assertCreated();
 
@@ -41,7 +41,7 @@ it('allows starting a conversation and notifies the recipient', function (): voi
     $message = Message::query()->where('conversation_id', $conversationId)->first();
     expect($message)->not()->toBeNull();
     expect($message->body_html)
-        ->toContain('<strong>verden</strong>')
+        ->toContain('<strong>world</strong>')
         ->not()->toContain('<script>');
 
     Notification::assertSentTo($recipient, NewPrivateMessageNotification::class);
@@ -56,7 +56,7 @@ it('allows replying to a conversation and marks messages as read when viewed', f
     $createResponse = $this->actingAs($userA)
         ->postJson('/pm', [
             'recipient_id' => $userB->getKey(),
-            'body_md' => 'Første besked',
+            'body_md' => 'First message',
         ])
         ->assertCreated();
 
@@ -64,7 +64,7 @@ it('allows replying to a conversation and marks messages as read when viewed', f
 
     $this->actingAs($userB)
         ->postJson("/pm/{$conversationId}/messages", [
-            'body_md' => 'Svar fra B',
+            'body_md' => 'Reply from B',
         ])
         ->assertCreated();
 
@@ -96,7 +96,7 @@ it('forbids non-participants from accessing conversations', function (): void {
 
     $this->actingAs($intruder)
         ->postJson("/pm/{$conversation->getKey()}/messages", [
-            'body_md' => 'Hej',
+            'body_md' => 'Hello',
         ])
         ->assertForbidden();
 });

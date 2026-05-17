@@ -31,7 +31,7 @@
                     </a>
                     <a href="#forum" class="text-sm font-medium text-slate-300 hover:text-brand">Forum</a>
                     @if ($session['canWrite'])
-                        <a href="#create-topic" class="text-sm font-medium text-brand hover:text-brand/80">Nyt emne</a>
+                        <a href="#create-topic" class="text-sm font-medium text-brand hover:text-brand/80">New topic</a>
                     @endif
                 </div>
                 @auth

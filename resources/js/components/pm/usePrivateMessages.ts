@@ -25,7 +25,7 @@ export function usePrivateMessages() {
       const result = await fetchJson<ConversationItem[]>('/pm');
       setConversations(sortConversations(result));
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke hente beskeder.');
+      setError(exception instanceof Error ? exception.message : 'Could not fetch messages.');
     }
   }, []);
 
@@ -42,7 +42,7 @@ export function usePrivateMessages() {
         return sortConversations(updated);
       });
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke hente tråden.');
+      setError(exception instanceof Error ? exception.message : 'Could not fetch the thread.');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +81,7 @@ export function usePrivateMessages() {
       setSelectedConversation({ ...response.conversation, messages: [response.message] });
       setMessages([response.message]);
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke starte besked.');
+      setError(exception instanceof Error ? exception.message : 'Could not start the message.');
       throw exception;
     }
   }, []);
@@ -113,7 +113,7 @@ export function usePrivateMessages() {
 
       return message;
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke sende besked.');
+      setError(exception instanceof Error ? exception.message : 'Could not send the message.');
       throw exception;
     }
   }, []);

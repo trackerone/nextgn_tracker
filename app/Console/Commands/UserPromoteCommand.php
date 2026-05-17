@@ -36,7 +36,7 @@ class UserPromoteCommand extends Command
         }
 
         // 🔴 VIGTIGT:
-        // Feature-tests forventer, at BÅDE role_id OG legacy `users.role`
+        // Feature tests expect BOTH role_id AND legacy `users.role`
         // bliver opdateret konsekvent.
         $user->forceFill([
             'role_id' => $role->getKey(),

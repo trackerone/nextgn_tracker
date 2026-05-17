@@ -11,9 +11,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('torrents', function (Blueprint $table): void {
-            // Vi antager at følgende allerede findes fra tidligere migrationer:
+            // Assume the following already exist from earlier migrations:
             // status, category_id, type, file_count, source, osv.
-            // Nu tilføjer vi resten af de felter, som INSERT-statementet forventer.
+            // Now add the remaining fields expected by the INSERT statement.
 
             if (! Schema::hasColumn('torrents', 'resolution')) {
                 $table->string('resolution', 32)->nullable()->after('source');

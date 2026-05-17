@@ -21,8 +21,8 @@ const InboxList: React.FC<InboxListProps> = ({ conversations, currentUserId = nu
     <ul className="space-y-2">
       {conversations.map((conversation) => {
         const partner = conversation.user_a_id === currentUserId ? conversation.user_b : conversation.user_a;
-        const partnerName = partner?.name ?? 'Ukendt bruger';
-        const preview = conversation.last_message?.body_md ?? 'Ingen beskeder endnu.';
+        const partnerName = partner?.name ?? 'Unknown user';
+        const preview = conversation.last_message?.body_md ?? 'No messages yet.';
         const isSelected = conversation.id === selectedConversationId;
 
         return (

@@ -30,7 +30,7 @@ const TopicView: React.FC<TopicViewProps> = ({
   onPostRestore,
 }) => {
   if (!topic) {
-    return <p className="text-sm text-slate-400">Vælg et emne for at se indholdet.</p>;
+    return <p className="text-sm text-slate-400">Select a topic to view its content.</p>;
   }
 
   return (
@@ -40,7 +40,7 @@ const TopicView: React.FC<TopicViewProps> = ({
           <div>
             <h2 className="text-2xl font-semibold text-slate-100">{topic.title}</h2>
             <div className="mt-2 flex items-center gap-3 text-sm text-slate-400">
-              <span>Startet af {topic.author.name}</span>
+              <span>Started by {topic.author.name}</span>
               <span>•</span>
               <time dateTime={topic.created_at}>{new Date(topic.created_at).toLocaleString()}</time>
             </div>
@@ -102,12 +102,12 @@ const TopicView: React.FC<TopicViewProps> = ({
 
       {session.canWrite ? (
         topic.is_locked ? (
-          <p className="text-sm text-slate-400">Dette emne er låst og accepterer ikke nye svar.</p>
+          <p className="text-sm text-slate-400">This topic is locked and does not accept new replies.</p>
         ) : (
           <ReplyForm onSubmit={onReply} />
         )
       ) : (
-        <p className="text-sm text-slate-400">Du skal være verificeret bruger for at svare.</p>
+        <p className="text-sm text-slate-400">You must be a verified user to reply.</p>
       )}
     </section>
   );

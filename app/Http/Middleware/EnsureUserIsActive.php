@@ -15,9 +15,9 @@ class EnsureUserIsActive
     {
         $user = $request->user();
 
-        // Kun logged-in brugere tjekkes
+        // Only logged-in users are checked
         if ($user !== null && ($user->is_disabled || $user->is_banned)) {
-            // Log brugeren ud og invalidér sessionen
+            // Log the user out and invalidate the session
             Auth::logout();
 
             if ($request->hasSession()) {

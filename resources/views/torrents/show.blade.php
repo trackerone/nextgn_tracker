@@ -1,5 +1,5 @@
 @php
-    // Test-/view-sikkerhed: disse kan mangle i visse flows.
+    // Test/view safety: these may be missing in some flows.
     $torrent = $torrent ?? null;
     $metadata = $metadata ?? [];
     $descriptionHtml = $descriptionHtml ?? '';

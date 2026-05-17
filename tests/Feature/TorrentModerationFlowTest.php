@@ -21,7 +21,7 @@ final class TorrentModerationFlowTest extends TestCase
     {
         parent::setUp();
 
-        // Sørg for at rollerne er seeded, så vi bruger samme slugs/levels som app'en.
+        // Ensure roles are seeded so we use the same slugs/levels as the app.
         $this->seed(RoleSeeder::class);
     }
 
@@ -31,7 +31,7 @@ final class TorrentModerationFlowTest extends TestCase
      */
     private function createStaffUser(): User
     {
-        // Foretrukne staff-slugs i prioriteret rækkefølge.
+        // Preferred staff slugs in priority order.
         $preferredSlugs = [
             User::ROLE_MODERATOR ?? 'moderator',
             defined(User::class.'::ROLE_ADMIN') ? User::ROLE_ADMIN : 'admin',
@@ -44,7 +44,7 @@ final class TorrentModerationFlowTest extends TestCase
             ->first();
 
         if ($role === null) {
-            // Fald tilbage til at lave en "moderator"-rolle med høj level og is_staff = true.
+            // Fall back to creating a "moderator" role with a high level and is_staff = true.
             $slug = User::ROLE_MODERATOR ?? 'moderator';
             $level = RoleLevel::forSlug($slug) ?? (RoleLevel::LOWEST_LEVEL + 20);
 
@@ -58,7 +58,7 @@ final class TorrentModerationFlowTest extends TestCase
                 ],
             );
         } elseif (! $role->is_staff) {
-            // Hvis den fundne rolle ikke er markeret som staff, så ret den til.
+            // If the found role is not marked as staff, update it.
             $role->is_staff = true;
             $role->save();
         }
