@@ -7,9 +7,12 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Topic;
 use App\Models\Torrent;
+use App\Models\User;
+use App\Services\Settings\RatioSettings;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 final class HomeController extends Controller
 {
@@ -17,6 +20,8 @@ final class HomeController extends Controller
     {
         $user = $request->user();
         abort_unless($user !== null, 403);
+
+        $user->loadMissing('role');
 
         $recentTorrents = Torrent::query()
             ->visible()
@@ -49,6 +54,8 @@ final class HomeController extends Controller
             ? Torrent::query()->pending()->count()
             : null;
 
+        $trackerStats = $this->trackerStatsFor($user);
+
         return view('home', [
             'recentTorrents' => $recentTorrents,
             'recentTopics' => $recentTopics,
@@ -57,11 +64,65 @@ final class HomeController extends Controller
             'pendingModerationCount' => $pendingModerationCount,
             'followNewCount' => $followBadge->unseenCountFor($user),
             'userStats' => [
-                'uploaded' => $user->totalUploaded(),
-                'downloaded' => $user->totalDownloaded(),
-                'ratio' => $user->ratio(),
-                'class' => $user->userClass(),
+                'uploaded' => $trackerStats['uploaded'],
+                'downloaded' => $trackerStats['downloaded'],
+                'ratio' => $trackerStats['ratio'],
+                'class' => $this->userClassForStats(
+                    $user,
+                    $trackerStats['downloaded'],
+                    $trackerStats['ratio']
+                ),
             ],
         ]);
+    }
+
+    /**
+     * @return array{uploaded: int, downloaded: int, ratio: float|null}
+     */
+    private function trackerStatsFor(User $user): array
+    {
+        $stats = DB::table('user_torrents')
+            ->where('user_id', $user->getKey())
+            ->selectRaw('COALESCE(SUM(uploaded), 0) as uploaded, COALESCE(SUM(downloaded), 0) as downloaded')
+            ->first();
+
+        $uploaded = (int) ($stats->uploaded ?? 0);
+        $downloaded = (int) ($stats->downloaded ?? 0);
+
+        return [
+            'uploaded' => $uploaded,
+            'downloaded' => $downloaded,
+            'ratio' => $downloaded === 0 ? null : $uploaded / $downloaded,
+        ];
+    }
+
+    private function userClassForStats(User $user, int $downloaded, ?float $ratio): string
+    {
+        if ($user->isStaff()) {
+            return 'Staff';
+        }
+
+        if ($user->isDisabled()) {
+            return 'Disabled';
+        }
+
+        if ($ratio === null) {
+            return 'User';
+        }
+
+        /** @var RatioSettings $ratioSettings */
+        $ratioSettings = app(RatioSettings::class);
+        $userMinRatio = $ratioSettings->userMinRatio();
+
+        return match (true) {
+            $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
+
+            $ratio >= $ratioSettings->powerUserMinRatio()
+                && $downloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
+
+            $ratio >= $userMinRatio => 'User',
+
+            default => 'Leech',
+        };
     }
 }

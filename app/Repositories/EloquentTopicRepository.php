@@ -14,6 +14,7 @@ class EloquentTopicRepository implements TopicRepositoryInterface
     {
         return Topic::query()
             ->with(['author.role'])
+            ->withCount('posts')
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->paginate($perPage);
