@@ -134,7 +134,7 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
         $response = $this->actingAs($user)->get(route('my.discovery'));
 
         $response->assertOk();
-        $response->assertSee('You have no follows yet');
+        $response->assertSee('Personalization starts with follows');
         $response->assertSee('Create your first follow');
     }
 
@@ -153,7 +153,7 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
         $response = $this->actingAs($user)->get(route('my.discovery'));
 
         $response->assertOk();
-        $response->assertSee('No relevant releases found');
+        $response->assertSee('No matches from your follows yet');
         $response->assertSee('Update follow preferences');
     }
 }
