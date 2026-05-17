@@ -142,7 +142,7 @@ final class UploadConsolidationTest extends TestCase
             'torrent_file' => UploadedFile::fake()->createWithContent('duplicate-again.torrent', $payload, 'application/x-bittorrent'),
         ])
             ->assertRedirect(route('torrents.show', $torrent->slug))
-            ->assertSessionHas('status', 'Torrent already exists – redirected to the existing entry.');
+            ->assertSessionHas('status', 'Exact duplicate found; you were redirected to the existing torrent entry.');
 
         $this->actingAs($user)->postJson(route('api.uploads.store'), [
             'name' => 'Duplicate Upload',
