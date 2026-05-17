@@ -129,47 +129,58 @@
                                 <span class="text-xs uppercase tracking-wide text-slate-400">{{ 1 + $family['alternatives']->count() }} versions</span>
                             </div>
 
-                            <div class="rounded-xl border border-brand/40 bg-slate-950/50 p-3">
-                                <div class="mb-1 text-xs uppercase tracking-wide text-brand">Best version</div>
-                                <a href="{{ route('torrents.show', $primary) }}" class="font-semibold text-white hover:text-brand">{{ $primary->name }}</a>
-                                <div class="mt-1 text-xs text-slate-400">
-                                    {{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($primaryMetadata) ?? '—' }} •
-                                    {{ $primary->formatted_size }} •
-                                    {{ optional($primary->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}
-                                </div>
-                                @if ($primaryQualityBadges !== [])
-                                    <div class="mt-2 flex flex-wrap gap-1.5">
-                                        @foreach ($primaryQualityBadges as $badge)
-                                            <span class="rounded-full border border-emerald-700/60 bg-emerald-950/40 px-2 py-0.5 text-xs uppercase tracking-wide text-emerald-200">{{ $badge }}</span>
-                                        @endforeach
+                            <div class="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 p-4 shadow-lg shadow-emerald-950/20">
+                                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                    <div class="min-w-0">
+                                        <div class="mb-2 inline-flex items-center rounded-full border border-emerald-300/50 bg-emerald-400/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-100">Best version</div>
+                                        <a href="{{ route('torrents.show', $primary) }}" class="block text-base font-semibold leading-6 text-white hover:text-brand">{{ $primary->name }}</a>
+                                        <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-300" aria-label="Best version quick facts">
+                                            <span class="rounded-full bg-slate-950/60 px-2.5 py-1">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($primaryMetadata) ?? 'Unknown type' }}</span>
+                                            <span class="rounded-full bg-slate-950/60 px-2.5 py-1">{{ $primary->formatted_size }}</span>
+                                            <span class="rounded-full bg-emerald-950/50 px-2.5 py-1 text-emerald-200">{{ number_format($primary->seeders) }} seeders</span>
+                                            <span class="rounded-full bg-amber-950/40 px-2.5 py-1 text-amber-200">{{ number_format($primary->leechers) }} leechers</span>
+                                        </div>
                                     </div>
-                                @endif
-                                @if ($primaryBadges !== [])
-                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                    <p class="text-xs leading-5 text-emerald-100/80 md:max-w-xs">Highlighted as the strongest release in this group based on normalized metadata and quality signals.</p>
+                                </div>
+                                @if ($primaryQualityBadges !== [] || $primaryBadges !== [])
+                                    <div class="mt-3 flex flex-wrap gap-1.5" aria-label="Best version badges">
+                                        @foreach ($primaryQualityBadges as $badge)
+                                            <span class="rounded-full border border-emerald-500/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-100">{{ $badge }}</span>
+                                        @endforeach
                                         @foreach ($primaryBadges as $badge)
-                                            <span class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                            <span class="rounded-full border border-slate-600 bg-slate-900/80 px-2.5 py-1 text-xs uppercase tracking-wide text-slate-200">{{ $badge }}</span>
                                         @endforeach
                                     </div>
                                 @endif
                             </div>
 
                             @if ($family['alternatives']->isNotEmpty())
-                                <div class="mt-3 space-y-2">
+                                <div class="mt-4 space-y-2" aria-label="Other versions in this release group">
+                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Other versions</p>
                                     @foreach ($family['alternatives'] as $alternative)
                                         @php
+                                            $alternativeMetadata = $torrentMetadata[$alternative->id] ?? [];
+                                            $alternativeMetadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($alternativeMetadata);
                                             $alternativeQuality = $torrentMetadataQuality[$alternative->id] ?? [];
                                             $alternativeBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($alternativeQuality, false);
                                         @endphp
-                                        <div class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-2 text-sm">
-                                            <div class="flex items-center justify-between gap-3">
-                                                <a href="{{ route('torrents.show', $alternative) }}" class="text-slate-200 hover:text-brand">{{ $alternative->name }}</a>
-                                                <span class="text-xs text-slate-400">{{ $alternative->formatted_size }}</span>
+                                        <div class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-3 text-sm hover:border-slate-700">
+                                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                                <a href="{{ route('torrents.show', $alternative) }}" class="font-medium leading-6 text-slate-100 hover:text-brand">{{ $alternative->name }}</a>
+                                                <div class="flex flex-wrap gap-2 text-xs text-slate-400 md:justify-end">
+                                                    <span>{{ $alternative->formatted_size }}</span>
+                                                    <span class="text-emerald-300">{{ number_format($alternative->seeders) }} seed</span>
+                                                    <span class="text-amber-300">{{ number_format($alternative->leechers) }} leech</span>
+                                                </div>
                                             </div>
-                                            <div class="mt-1 flex flex-wrap gap-1.5">
-                                                @foreach ($alternativeBadges as $badge)
-                                                    <span class="rounded-full border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
-                                                @endforeach
-                                            </div>
+                                            @if ($alternativeBadges !== [] || $alternativeMetadataBadges !== [])
+                                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                                    @foreach (array_merge($alternativeBadges, $alternativeMetadataBadges) as $badge)
+                                                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </div>
                                     @endforeach
                                 </div>
