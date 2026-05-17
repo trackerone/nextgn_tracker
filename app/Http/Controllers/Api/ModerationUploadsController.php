@@ -35,7 +35,24 @@ final class ModerationUploadsController extends Controller
         $status = (string) ($request->validated('status') ?? TorrentStatus::Pending->value);
 
         $query = Torrent::query()
-            ->with(['uploader', 'metadata'])
+            ->select([
+                'id',
+                'user_id',
+                'slug',
+                'name',
+                'status',
+                'type',
+                'source',
+                'resolution',
+                'imdb_id',
+                'tmdb_id',
+                'nfo_text',
+                'created_at',
+            ])
+            ->with([
+                'uploader:id,name',
+                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id,nfo,raw_payload',
+            ])
             ->latest('created_at');
 
         if ($status !== '') {

@@ -19,7 +19,7 @@ class SecurityEventController extends Controller
 
     public function index(Request $request): View
     {
-        $query = SecurityEvent::query()->with('user')->latest();
+        $query = SecurityEvent::query()->with('user:id,name')->latest();
 
         if ($request->filled('user_id')) {
             $query->where('user_id', (int) $request->input('user_id'));

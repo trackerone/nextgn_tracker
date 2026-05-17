@@ -10,6 +10,8 @@
     @php
         $torrentMetadata = $torrentMetadata ?? [];
         $metadataEnrichmentOutcome = $metadataEnrichmentOutcome ?? [];
+        $metadataBadgesByTorrent = $metadataBadgesByTorrent ?? [];
+        $metadataTypeLabelsByTorrent = $metadataTypeLabelsByTorrent ?? [];
         $releaseAdviceByTorrent = $releaseAdviceByTorrent ?? [];
         $moderationMetadataReview = $moderationMetadataReview ?? [];
     @endphp
@@ -42,7 +44,7 @@
                             $metadata = $torrentMetadata[$torrent->id] ?? [];
                             $enrichmentOutcome = $metadataEnrichmentOutcome[$torrent->id] ?? ['applied_fields' => [], 'conflicts' => []];
                             $releaseAdvice = $releaseAdviceByTorrent[$torrent->id] ?? [];
-                            $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
+                            $metadataBadges = $metadataBadgesByTorrent[$torrent->id] ?? [];
                             $review = $moderationMetadataReview[$torrent->id] ?? ['needs_review' => false, 'labels' => []];
                             $hasNfo = is_string($metadata['nfo'] ?? null) && trim((string) $metadata['nfo']) !== '';
                             $hasDescription = trim((string) ($torrent->description ?? '')) !== '';
@@ -80,7 +82,7 @@
                             </td>
                             <td class="px-4 py-3">
                                 <p class="font-semibold text-white">{{ $torrent->category?->name ?? 'Uncategorized' }}</p>
-                                <p class="mt-1 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? 'Type unknown' }}</p>
+                                <p class="mt-1 text-slate-300">{{ $metadataTypeLabelsByTorrent[$torrent->id] ?? 'Type unknown' }}</p>
                             </td>
                             <td class="px-4 py-3">
                                 @if (($review['needs_review'] ?? false) === true)
