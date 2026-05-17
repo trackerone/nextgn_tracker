@@ -244,7 +244,7 @@ final class TorrentFollowFlowTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index'));
 
         $response->assertOk();
-        $response->assertSee('My Follows', false);
+        $response->assertSee('Follows', false);
         $response->assertSee('>1<', false);
     }
 
@@ -255,7 +255,7 @@ final class TorrentFollowFlowTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index'));
 
         $response->assertOk();
-        $response->assertSee('My Follows', false);
+        $response->assertSee('Follows', false);
         $response->assertDontSee('text-emerald-200', false);
     }
 
@@ -264,7 +264,7 @@ final class TorrentFollowFlowTest extends TestCase
         $response = $this->get(route('torrents.index'));
 
         $response->assertRedirect(route('login'));
-        $response->assertDontSee('My Follows');
+        $response->assertDontSee('Follows');
     }
 
     public function test_navigation_badge_count_reuses_follow_inbox_logic(): void

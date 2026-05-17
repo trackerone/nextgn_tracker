@@ -40,6 +40,6 @@ class SnatchlistTest extends TestCase
         $response = $this->actingAs($user)->get('/account/snatches');
 
         $response->assertOk();
-        $response->assertSee('You have not completed any torrents yet.');
+        $response->assertSee('No completed torrents yet');
     }
 }
