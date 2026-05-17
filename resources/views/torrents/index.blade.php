@@ -7,6 +7,7 @@
     $categories = $categories ?? collect();
     $torrentMetadata = $torrentMetadata ?? [];
     $torrentMetadataQuality = $torrentMetadataQuality ?? [];
+    $torrentBrowseRows = $torrentBrowseRows ?? [];
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
 @endphp
@@ -126,10 +127,8 @@
                     @forelse ($releaseFamilies as $family)
                         @php
                             $primary = $family['primary'];
-                            $primaryMetadata = $torrentMetadata[$primary->id] ?? [];
-                            $primaryQuality = $torrentMetadataQuality[$primary->id] ?? [];
-                            $primaryQualityBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($primaryQuality, true);
-                            $familyRows = collect([$primary])->merge($family['alternatives']);
+                            $primaryQualityBadges = $torrentBrowseRows[$primary->id]['recommended_quality_badges'] ?? [];
+                            $familyRows = $family['torrents'] ?? collect([$primary])->merge($family['alternatives']);
                         @endphp
                         <section class="px-3 py-3">
                             <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2 px-1">
@@ -160,24 +159,25 @@
                                     <tbody class="divide-y divide-slate-800/80 text-slate-100">
                                         @foreach ($familyRows as $torrent)
                                             @php
-                                                $metadata = $torrentMetadata[$torrent->id] ?? [];
-                                                $quality = $torrentMetadataQuality[$torrent->id] ?? [];
-                                                $qualityBadges = $torrent->is($primary) ? $primaryQualityBadges : \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($quality, false);
-                                                $typeLabel = \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—';
-                                                $resolutionLabel = is_string($metadata['resolution'] ?? null) && trim($metadata['resolution']) !== '' ? strtolower(trim($metadata['resolution'])) : '—';
-                                                $releaseGroup = is_string($metadata['release_group'] ?? null) && trim($metadata['release_group']) !== '' ? strtoupper(trim($metadata['release_group'])) : '—';
-                                                $fileCount = (int) ($torrent->file_count ?? $torrent->files_count ?? 1);
-                                                $isFreeleech = (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false);
-                                                $seeders = (int) ($torrent->seeders ?? 0);
-                                                $leechers = (int) ($torrent->leechers ?? 0);
-                                                $completed = (int) ($torrent->completed ?? 0);
-                                                $swarmTone = $seeders >= 10 ? 'text-emerald-300' : ($seeders > 0 ? 'text-lime-300' : 'text-rose-300');
-                                                $rowTone = $torrent->is($primary) ? 'bg-emerald-500/[0.04]' : 'hover:bg-slate-800/35';
+                                                $row = $torrentBrowseRows[$torrent->id] ?? [];
+                                                $isPrimary = $torrent->is($primary);
+                                                $qualityBadges = $isPrimary ? $primaryQualityBadges : ($row['quality_badges'] ?? []);
+                                                $typeLabel = $row['type_label'] ?? '—';
+                                                $resolutionLabel = $row['resolution_label'] ?? '—';
+                                                $releaseGroup = $row['release_group'] ?? '—';
+                                                $fileCountFormatted = $row['file_count_formatted'] ?? '1';
+                                                $isFreeleech = (bool) ($row['is_freeleech'] ?? false);
+                                                $seedersFormatted = $row['seeders_formatted'] ?? '0';
+                                                $leechersFormatted = $row['leechers_formatted'] ?? '0';
+                                                $completedFormatted = $row['completed_formatted'] ?? '0';
+                                                $swarmTone = $row['swarm_tone'] ?? 'text-rose-300';
+                                                $uploadedDate = $row['uploaded_date'] ?? '—';
+                                                $rowTone = $isPrimary ? 'bg-emerald-500/[0.04]' : 'hover:bg-slate-800/35';
                                             @endphp
                                             <tr class="{{ $rowTone }}">
                                                 <td class="min-w-[22rem] px-3 py-2.5 align-top">
                                                     <div class="flex flex-wrap items-center gap-1.5">
-                                                        @if ($torrent->is($primary))
+                                                        @if ($isPrimary)
                                                             <span class="rounded border border-emerald-500/50 bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">Best</span>
                                                         @endif
                                                         @if ($isFreeleech)
@@ -195,11 +195,11 @@
                                                 </td>
                                                 <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ number_format(max(1, $fileCount)) }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ number_format($seeders) }} seeders">{{ number_format($seeders) }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ number_format($leechers) }} leechers">{{ number_format($leechers) }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ number_format($completed) }} completed snatches">{{ number_format($completed) }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->format('Y-m-d') ?? '—' }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ $fileCountFormatted }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ $completedFormatted }} completed snatches">{{ $completedFormatted }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                                 <td class="px-3 py-2.5 align-top text-xs font-semibold tracking-wide text-slate-200">{{ $releaseGroup }}</td>
                                             </tr>
                                         @endforeach
@@ -230,18 +230,18 @@
                         <tbody class="divide-y divide-slate-800 text-slate-100">
                             @forelse ($torrents as $torrent)
                                 @php
-                                    $metadata = $torrentMetadata[$torrent->id] ?? [];
-                                    $quality = $torrentMetadataQuality[$torrent->id] ?? [];
-                                    $qualityBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($quality, false);
-                                    $typeLabel = \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—';
-                                    $resolutionLabel = is_string($metadata['resolution'] ?? null) && trim($metadata['resolution']) !== '' ? strtolower(trim($metadata['resolution'])) : '—';
-                                    $releaseGroup = is_string($metadata['release_group'] ?? null) && trim($metadata['release_group']) !== '' ? strtoupper(trim($metadata['release_group'])) : '—';
-                                    $fileCount = (int) ($torrent->file_count ?? $torrent->files_count ?? 1);
-                                    $isFreeleech = (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false);
-                                    $seeders = (int) ($torrent->seeders ?? 0);
-                                    $leechers = (int) ($torrent->leechers ?? 0);
-                                    $completed = (int) ($torrent->completed ?? 0);
-                                    $swarmTone = $seeders >= 10 ? 'text-emerald-300' : ($seeders > 0 ? 'text-lime-300' : 'text-rose-300');
+                                    $row = $torrentBrowseRows[$torrent->id] ?? [];
+                                    $qualityBadges = $row['quality_badges'] ?? [];
+                                    $typeLabel = $row['type_label'] ?? '—';
+                                    $resolutionLabel = $row['resolution_label'] ?? '—';
+                                    $releaseGroup = $row['release_group'] ?? '—';
+                                    $fileCountFormatted = $row['file_count_formatted'] ?? '1';
+                                    $isFreeleech = (bool) ($row['is_freeleech'] ?? false);
+                                    $seedersFormatted = $row['seeders_formatted'] ?? '0';
+                                    $leechersFormatted = $row['leechers_formatted'] ?? '0';
+                                    $completedFormatted = $row['completed_formatted'] ?? '0';
+                                    $swarmTone = $row['swarm_tone'] ?? 'text-rose-300';
+                                    $uploadedDate = $row['uploaded_date'] ?? '—';
                                 @endphp
                                 <tr class="hover:bg-slate-800/35">
                                     <td class="min-w-[22rem] px-3 py-2.5 align-top">
@@ -261,11 +261,11 @@
                                     </td>
                                     <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ number_format(max(1, $fileCount)) }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ number_format($seeders) }} seeders">{{ number_format($seeders) }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ number_format($leechers) }} leechers">{{ number_format($leechers) }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ number_format($completed) }} completed snatches">{{ number_format($completed) }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->format('Y-m-d') ?? '—' }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ $fileCountFormatted }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ $completedFormatted }} completed snatches">{{ $completedFormatted }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                     <td class="px-3 py-2.5 align-top text-xs font-semibold tracking-wide text-slate-200">{{ $releaseGroup }}</td>
                                 </tr>
                             @empty
