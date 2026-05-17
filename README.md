@@ -129,3 +129,10 @@ Deployment expectations:
   dedicated scheduler process.
 - A lightweight readiness endpoint is available at `GET /health` and returns only
   a simple JSON status.
+
+## Production operations and troubleshooting
+
+Operational runbooks live in [`docs/PRODUCTION-OPERATIONS.md`](docs/PRODUCTION-OPERATIONS.md).
+Use it for deployment checklists, scheduler and queue worker expectations, failed
+job triage, cache rebuild commands, storage link verification, health checks,
+permissions checks, and the separation of security-sensitive logs.
