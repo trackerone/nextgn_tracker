@@ -37,11 +37,25 @@ final class TorrentFollowMatcher
             ->orderByDesc('id')
             ->get();
 
+        $metadataByTorrentId = TorrentMetadataView::mapByTorrentId($torrents);
+        $hasMetadataByTorrentId = $torrents
+            ->mapWithKeys(fn (Torrent $torrent): array => [
+                (int) $torrent->id => $torrent->getRelationValue('metadata') instanceof TorrentMetadata,
+            ])
+            ->all();
+
         /** @var array<int, Collection<int, Torrent>> $matches */
         $matches = [];
 
         foreach ($follows as $follow) {
-            $matched = $torrents->filter(fn (Torrent $torrent): bool => $this->matchesFollow($follow, $torrent))->values();
+            $matched = $torrents
+                ->filter(fn (Torrent $torrent): bool => $this->matchesFollowWithMetadata(
+                    $follow,
+                    $torrent,
+                    $metadataByTorrentId[(int) $torrent->id] ?? [],
+                    (bool) ($hasMetadataByTorrentId[(int) $torrent->id] ?? false),
+                ))
+                ->values();
             $matches[$follow->getKey()] = $matched;
         }
 
@@ -50,9 +64,23 @@ final class TorrentFollowMatcher
 
     public function matchesFollow(TorrentFollow $follow, Torrent $torrent): bool
     {
-        $metadata = TorrentMetadataView::forTorrent($torrent);
-        $hasMetadata = $torrent->getRelationValue('metadata') instanceof TorrentMetadata;
+        return $this->matchesFollowWithMetadata(
+            $follow,
+            $torrent,
+            TorrentMetadataView::forTorrent($torrent),
+            $torrent->getRelationValue('metadata') instanceof TorrentMetadata,
+        );
+    }
 
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function matchesFollowWithMetadata(
+        TorrentFollow $follow,
+        Torrent $torrent,
+        array $metadata,
+        bool $hasMetadata
+    ): bool {
         if (! $this->matchesTitle($follow, $torrent, $metadata)) {
             return false;
         }
