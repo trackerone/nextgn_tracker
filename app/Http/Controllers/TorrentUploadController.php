@@ -53,7 +53,7 @@ class TorrentUploadController extends Controller
 
         if (($torrentFile instanceof UploadedFile) === false) {
             throw ValidationException::withMessages([
-                'torrent_file' => 'A valid .torrent file is required.',
+                'torrent_file' => 'Choose a valid .torrent file before submitting.',
             ]);
         }
 
@@ -73,7 +73,7 @@ class TorrentUploadController extends Controller
             }
 
             throw ValidationException::withMessages([
-                'torrent_file' => 'Torrent already exists.',
+                'torrent_file' => 'Exact duplicate: the info hash matches an existing upload.',
             ]);
         }
 
@@ -94,7 +94,7 @@ class TorrentUploadController extends Controller
 
         if ($decision?->reason === UploadEligibilityReason::MissingMetadata) {
             throw ValidationException::withMessages([
-                'torrent_file' => 'Invalid torrent payload: missing required metadata.',
+                'torrent_file' => 'Missing release metadata: add a clearer name, type, source or resolution.',
             ]);
         }
 
@@ -105,7 +105,7 @@ class TorrentUploadController extends Controller
     {
         return redirect()
             ->route('torrents.show', $torrent->slug)
-            ->with('status', 'Torrent already exists – redirected to the existing entry.');
+            ->with('status', 'Exact duplicate found; you were redirected to the existing torrent entry.');
     }
 
     private function successfulUploadResponse(Torrent $torrent): RedirectResponse
@@ -116,7 +116,7 @@ class TorrentUploadController extends Controller
 
         return redirect()
             ->route('torrents.show', $torrent->slug)
-            ->with('status', 'Torrent uploaded and awaiting approval.')
+            ->with('status', 'Torrent submitted for moderation and hidden until any required approval is complete.')
             ->with('upload_metadata', $uploadMetadata);
     }
 }
