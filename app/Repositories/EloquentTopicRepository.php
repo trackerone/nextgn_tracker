@@ -18,7 +18,7 @@ class EloquentTopicRepository implements TopicRepositoryInterface
                 'author:id,name,role_id',
                 'author.role:id,name',
                 'latestPost' => static fn ($query) => $query
-                    ->select(['id', 'topic_id', 'user_id', 'created_at'])
+                    ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
                     ->with('author:id,name'),
             ])
             ->withCount('posts')
@@ -53,7 +53,7 @@ class EloquentTopicRepository implements TopicRepositoryInterface
             'author:id,name,role_id',
             'author.role:id,name',
             'latestPost' => static fn ($query) => $query
-                ->select(['id', 'topic_id', 'user_id', 'created_at'])
+                ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
                 ->with('author:id,name'),
         ]);
         $topic->loadCount('posts');
