@@ -61,7 +61,8 @@ final class TorrentReleaseFamilyGrouper
      *     type: string|null,
      *     season_episode: string|null,
      *     primary: Torrent,
-     *     alternatives: Collection<int, Torrent>
+     *     alternatives: Collection<int, Torrent>,
+     *     torrents: Collection<int, Torrent>
      * }>
      */
     public function group(Collection $torrents, array $metadataByTorrentId): array
@@ -117,6 +118,7 @@ final class TorrentReleaseFamilyGrouper
                 'season_episode' => $family['season_episode'],
                 'primary' => $primary,
                 'alternatives' => $ranked->slice(1)->values(),
+                'torrents' => $ranked,
             ];
         }
 

@@ -14,6 +14,7 @@ use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Tracker\DownloadEligibilityPolicy;
 use App\Support\Torrents\TorrentBrowseMetadataFilterOptions;
 use App\Support\Torrents\TorrentBrowseQuery;
+use App\Support\Torrents\TorrentBrowseRowPresenter;
 use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentModerationMetadataReview;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
@@ -35,17 +36,42 @@ final class TorrentController extends Controller
         BrowseTorrentsRequest $request,
         TorrentBrowseQuery $browseQuery,
         TorrentBrowseMetadataFilterOptions $metadataFilterOptions,
-        TorrentReleaseFamilyGrouper $releaseFamilyGrouper
+        TorrentReleaseFamilyGrouper $releaseFamilyGrouper,
+        TorrentBrowseRowPresenter $rowPresenter
     ): Response|JsonResponse {
         $filters = $request->filters();
         $query = $browseQuery->apply(
-            Torrent::query()->visible()->with('metadata'),
+            Torrent::query()->visible(),
             $filters
         );
 
         if ($request->expectsJson()) {
-            return response()->json($query->get());
+            return response()->json($query->with('metadata')->get());
         }
+
+        $query
+            ->select([
+                'id',
+                'name',
+                'slug',
+                'size_bytes',
+                'file_count',
+                'files_count',
+                'type',
+                'source',
+                'resolution',
+                'imdb_id',
+                'tmdb_id',
+                'nfo_text',
+                'seeders',
+                'leechers',
+                'completed',
+                'freeleech',
+                'is_freeleech',
+                'created_at',
+                'uploaded_at',
+            ])
+            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id']);
 
         $perPage = (int) config('torrents.per_page', 25);
         $groupedBrowse = $request->grouped();
@@ -57,6 +83,7 @@ final class TorrentController extends Controller
         $torrentCollection = $torrents->getCollection();
         $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrentCollection);
         $torrentMetadataQuality = TorrentMetadataQuality::mapByTorrentId($torrentCollection, $torrentMetadata);
+        $torrentBrowseRows = $rowPresenter->map($torrentCollection, $torrentMetadata, $torrentMetadataQuality);
         $releaseFamilies = $groupedBrowse
             ? $releaseFamilyGrouper->group($torrentCollection, $torrentMetadata)
             : [];
@@ -71,6 +98,7 @@ final class TorrentController extends Controller
             'torrents' => $torrents,
             'torrentMetadata' => $torrentMetadata,
             'torrentMetadataQuality' => $torrentMetadataQuality,
+            'torrentBrowseRows' => $torrentBrowseRows,
             'types' => $metadataFilterValues['types'],
             'resolutions' => $metadataFilterValues['resolutions'],
             'sources' => $metadataFilterValues['sources'],
