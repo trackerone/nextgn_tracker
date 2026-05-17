@@ -1,31 +1,27 @@
 # Torrent download flow
 
-The download endpoint serves the pristine *.torrent* files stored under `storage/app/torrents/{YYYY}/{MM}/{UUID}.torrent` (the exact path is persisted per record) and injects the requesting user's passkey into the `announce` URL before responding.
+The download endpoints serve stored `.torrent` payloads after personalizing the announce URL for the requesting user.
 
 ## Storage layout
 
-* Every upload is persisted through `TorrentIngestService`, which writes the raw payload to the configured torrents disk using a randomized directory layout (`torrents/{year}/{month}/{uuid}.torrent`). The resulting path is saved on each `Torrent` row (`storage_path`). Legacy rows without this value fall back to the old hash-based path.
-* The `Torrent` model exposes helpers:
-  * `torrentStoragePath()` – returns the stored relative path.
-  * `torrentFilePath()` / `hasTorrentFile()` – resolve the absolute file and check its presence using the configured disk.
+- New uploads are stored on the configured torrents disk under the configured upload directory, and the exact relative path is persisted on the `torrents.storage_path` column.
+- `Torrent::torrentStoragePath()` is the authoritative accessor. It uses `storage_path` for current rows and retains a hash-based fallback for older rows.
+- `Torrent::torrentFilePath()` and `Torrent::hasTorrentFile()` resolve/check files through the configured disk.
 
-## Endpoint
+## Endpoints
 
-* Route: `GET /torrents/{torrent:slug}/download` (`torrents.download`).
-* Middleware: `auth`, `verified`.
-* Controller: `TorrentDownloadController`.
-* Behaviour:
-  1. Only approved and non-banned torrents are downloadable.
-  2. The `.torrent` file is loaded via `TorrentDownloadService` and decoded with `BencodeService`.
-  3. The `announce` value is overwritten with the authenticated user's announce URL (`config('tracker.announce_url')` + passkey). Any multi-tracker lists are removed for now.
-  4. The modified payload is re-encoded and streamed back with `Content-Type: application/x-bittorrent`.
-  5. `UserTorrentService::recordGrab()` stores `first_grab_at` / `last_grab_at` timestamps in `user_torrents`.
+- Web: `GET /torrents/{torrent}/download` (`auth`, torrent download throttle).
+- API: `GET /api/torrents/{torrent}/download` (`api`, `auth`, torrent download throttle).
+- Magnet links are exposed by `GET /torrents/{torrent}/magnet`.
 
-## Tracker configuration
+## Behavior
 
-* `.env` exposes `TRACKER_ANNOUNCE_URL` (supports `%s` placeholder for the passkey). Example: `https://tracker.example.com/announce/%s`.
-* `User::announce_url` and `TorrentDownloadService` both respect this format, falling back to appending the passkey if no placeholder exists.
+1. Download authorization uses torrent policies/eligibility so regular users can download only approved, non-banned torrents.
+2. `TorrentDownloadService` loads the stored payload from the configured disk and decodes it with `BencodeService`.
+3. The top-level `announce` value is overwritten with `config('tracker.announce_url')` plus the authenticated user's passkey. If the config contains `%s`, it is formatted with the passkey; otherwise the passkey is appended as a path segment.
+4. Any `announce-list` is removed before re-encoding.
+5. The response uses `application/x-bittorrent`, and grab/snatch history is updated through user-torrent stats services.
 
-## UI
+## Configuration
 
-* `resources/views/torrents/show.blade.php` displays a "Download .torrent" button pointing at `torrents.download` and a note explaining that the personal passkey is embedded automatically.
+Set `TRACKER_ANNOUNCE_URL` to the public tracker announce base, usually with a `%s` placeholder, for example `https://tracker.example.com/announce/%s`.

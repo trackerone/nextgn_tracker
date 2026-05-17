@@ -1,53 +1,34 @@
 # Upload workflow
 
-This document outlines the v1 torrent upload pipeline.
+## Entry points
 
-## Categories
+- Web form: `GET /torrents/upload`, `POST /torrents` (`auth`, torrent upload throttle).
+- API submission: `POST /api/uploads` (`api`, `auth`, torrent upload throttle).
+- Both paths use `StoreTorrentRequest`/`UploadSubmissionRequest` validation and then call `SubmitTorrentUploadAction`.
 
-- Categories live in the `categories` table (`App\Models\Category`).
-- Torrents (`App\Models\Torrent`) belong to an optional category via `category_id`.
-- Seed basic categories via `php artisan db:seed --class=CategorySeeder` or the default `DatabaseSeeder`.
+## Accepted fields
 
-## Upload form
+Uploads require `name`, `type`, and `torrent_file`. Optional fields include `category_id`, `description`, `tags`/`tags_input`, `source`, `resolution`, `codecs`, `imdb_id`, `tmdb_id`, and either `nfo_file` or `nfo_text` (not both). `.torrent` uploads must match the configured BitTorrent MIME and extension rules; NFO uploads must be plain text `.nfo`/`.txt`.
 
-- Authenticated + verified users can visit `/torrents/upload`.
-- The form accepts:
-  - `name`: required release title (sanitized before persist).
-  - `type`: required enum (`movie`, `tv`, `music`, `game`, `software`, `other`).
-  - `torrent_file`: required `.torrent` file (`application/x-bittorrent`).
-  - `category_id`: optional, must exist in `categories`.
-  - `description`, `source`, `resolution`, `tags`, `codecs`, and optional NFO file/text.
-- Successful uploads redirect to the torrent show page with a flash banner (“awaiting approval”).
-- Duplicate info hashes redirect to the original torrent instead of creating a new record.
+## Ingest and metadata flow
 
-## TorrentIngestService
+1. `SubmitTorrentUploadAction` builds a preflight context from the uploaded torrent payload and optional NFO data.
+2. `UploadEligibilityService` evaluates duplicate torrents, missing metadata, and user eligibility. Duplicates redirect/return a conflict instead of creating a second torrent.
+3. `TorrentIngestService` decodes the torrent, computes the SHA1 info hash from the bencoded `info` dictionary, extracts size/file counts, sanitizes persisted fields, and stores the raw payload on the configured torrents disk under the configured upload directory.
+4. New torrents are created as `pending`, `is_approved=false`, `published_at=null`.
+5. Canonical release metadata is persisted to `torrent_metadata`; NFO content is stored through `NfoStorageService`.
+6. Upload success, duplicate, rejection, validation failure, and cleanup paths write audit/security telemetry without changing application behavior.
 
-`App\Services\Torrents\TorrentIngestService` parses uploaded files and persists torrents:
+## Moderation flow
 
-1. Decode the `.torrent` payload using `BencodeService::decode()`.
-2. Compute the SHA1 info hash from the bencoded `info` dictionary (stored uppercase to match existing rows).
-3. Extract:
-   - Name (`info['name']`).
-   - Size (`info['length']` or sum of multi-file entries).
-   - Files count (1 or the multi-file array length).
-4. Store the original `.torrent` file on the dedicated `torrents` disk under `torrents/{info_hash}.torrent`.
-5. Create the torrent with metadata (type, codecs, tags, sanitized description, category, filenames, timestamps, parsed IMDb/TMDB IDs, etc.).
-6. New uploads default to `is_approved = false` until staff moderation happens.
-
-## Staff moderation
-
-- Staff routes live under `/admin/torrents` (requires `role.min:8`).
-- Filters: pending, approved, banned.
-- List view shows uploader, category, filename, and timestamps.
-- Inline form toggles approval, bans, ban reasons, and freeleech state.
-- Updates redirect back to the filtered list with a success flash.
+- Staff moderation routes are under `/staff/torrents` and `/moderation/uploads`; API moderation routes are under `/api/moderation/uploads`.
+- Approval uses `PublishTorrentAction` and transitions only `pending -> published`, setting approval/publication fields.
+- Rejection uses `RejectTorrentAction` and transitions only `pending -> rejected`.
+- Soft delete is staff-only and marks torrents as `soft_deleted`.
+- Only published, approved, non-banned torrents are visible/downloadable to regular users; staff can inspect moderation states.
 
 ## Storage notes
 
-- Torrent binaries live on the `torrents` disk (configurable via `config/filesystems.php`).
-- Filenames are normalized to `{INFO_HASH}.torrent` for deterministic retrieval.
-
-## Testing
-
-- Unit tests cover `TorrentIngestService` parsing, sanitization, and duplicate handling.
-- Feature tests exercise the upload form, store endpoint, and admin moderation routes.
+- Torrent payloads use the `upload.torrents.disk` disk and `upload.torrents.directory` directory.
+- The persisted `storage_path` is authoritative for current rows; `Torrent::torrentStoragePath()` retains a hash-based fallback for old rows.
+- NFO payloads use the configured NFO disk/directory and are subject to size/character limits.

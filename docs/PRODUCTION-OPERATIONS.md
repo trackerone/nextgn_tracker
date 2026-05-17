@@ -4,26 +4,44 @@ Laravel-native runbook for production visibility and recovery.
 
 ## Runtime processes
 
-Run web, queue worker, and scheduler separately. Web uses `tools/entrypoint.sh`.
-Queue workers use `php artisan queue:work --tries=3 --timeout=90` with
-`QUEUE_CONNECTION=database` or another durable driver and the same release/env as
-web. Scheduler cron runs `php artisan schedule:run` once per minute. After every
-deployment, run `php artisan queue:restart` so workers reload code/configuration.
+Run web, queue worker, and scheduler separately.
+
+- **Web**: the Docker image runs as the non-root `nextgn` user and starts `tools/entrypoint.sh`, which validates production env, prepares writable directories, runs `storage:link`, warms config/route/view caches, and serves `public/` on `$PORT` (default `10000`).
+- **Queue worker**: use `php artisan queue:work --tries=3 --timeout=90` with the same release and environment as web. Run `php artisan queue:restart` after deployments.
+- **Scheduler**: run `php artisan schedule:run` once per minute from cron/platform scheduler. Current scheduled commands send private-message digests daily at 07:00 UTC and weekly on Monday at 07:30 UTC.
+
+## Required production environment
+
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `APP_KEY`
+- `APP_URL`
+- `DB_CONNECTION` and matching database settings for SQLite, MySQL/MariaDB, PostgreSQL, or SQL Server
+- `LOG_CHANNEL=stderr` is recommended for containers
 
 ## Deployment checklist
 
-1. Publish with production env vars: `APP_ENV=production`, `APP_DEBUG=false`,
-   `APP_KEY`, `APP_URL`, and database settings.
-2. Run `php artisan migrate --force` before serving traffic.
-3. Rebuild caches: `config:clear && config:cache`, `route:clear && route:cache`,
-   `view:clear && view:cache`, and `event:clear && event:cache`.
-4. Run `php artisan storage:link`, `php artisan queue:restart`, confirm scheduler
-   cron executes `php artisan schedule:run`, and verify `GET /health`.
+1. Build/install dependencies for PHP 8.4 and Node >=20 <26.
+2. Provide production secrets through the deployment platform, not the image.
+3. Run `php artisan migrate --force` before serving traffic.
+4. Start/restart queue workers and ensure scheduler execution if those features are enabled.
+5. Verify `GET /health` returns a minimal OK JSON response.
+
+## Writable paths
+
+The runtime user must be able to write:
+
+- `storage/app/public`
+- `storage/app/images`
+- `storage/app/torrents`
+- `storage/app/nfo`
+- `storage/framework/cache`, `storage/framework/views`, and `storage/framework/sessions`
+- `storage/logs`
+- `bootstrap/cache`
 
 ## Failed job visibility
 
-The repository includes `jobs` and `failed_jobs` migrations for database-backed
-queues after `php artisan migrate --force` has run. Common triage commands:
+The repository includes database queue and failed-job migrations. Common triage commands:
 
 ```bash
 php artisan queue:failed
@@ -32,24 +50,11 @@ php artisan queue:forget <failed-job-id>
 php artisan queue:flush
 ```
 
-Review `queue:failed` during incidents and after deploys touching notifications
-or external metadata enrichment. Retry only after the root cause is fixed. Failed
-external metadata enrichment logs include torrent id, queue attempt, and
-exception class, but never provider credentials or user secrets.
-
-## Scheduler expectations
-
-`app/Console/Kernel.php` schedules `pm:digest daily` every day at 07:00 UTC and
-`pm:digest weekly` every Monday at 07:30 UTC. Use `php artisan schedule:list`
-during deploy verification when available, and inspect scheduler/platform logs if
-expected digest notifications are missing.
+Review failed jobs during incidents and after deploys touching notifications or external metadata enrichment. Retry only after the root cause is fixed.
 
 ## Logs and security-sensitive events
 
-Use `LOG_CHANNEL=stderr` on containers. File logs use `storage/logs/laravel.log`.
-Security-sensitive events are separated through the `security` channel, admin
-audit/security surfaces, and `storage/logs/security.log`. Do not log passkeys, API
-keys, HMAC secrets, provider tokens, raw announce IDs, or plaintext passwords.
+Use `LOG_CHANNEL=stderr` on containers. File logs use `storage/logs/laravel.log`; security logs use `storage/logs/security.log`. Do not log passkeys, API keys, HMAC secrets, provider tokens, raw announce IDs, or plaintext passwords.
 
 ## Troubleshooting quick reference
 
@@ -60,6 +65,6 @@ keys, HMAC secrets, provider tokens, raw announce IDs, or plaintext passwords.
 | Queue jobs stuck | `php artisan queue:failed`; `php artisan queue:restart`; inspect worker logs. |
 | Scheduled work missing | `php artisan schedule:list`; verify cron runs `php artisan schedule:run` every minute. |
 | Public uploads 404 | `php artisan storage:link`; verify storage/public path permissions. |
-| Health check fails | Request `GET /health`; inspect web logs and database connectivity. |
+| Health check fails | Request `GET /health`; inspect web logs. |
 | Permission errors | Ensure runtime user can write `storage/` and `bootstrap/cache/`. |
 | Security review | Check admin audit/security views and the `security` log separately. |
