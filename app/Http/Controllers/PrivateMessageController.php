@@ -49,14 +49,14 @@ class PrivateMessageController extends Controller
             'userB:id,name',
             'messages' => static fn ($query) => $query
                 ->select([
-                    'id',
-                    'conversation_id',
-                    'sender_id',
-                    'body_md',
-                    'body_html',
-                    'read_at',
-                    'created_at',
-                    'updated_at',
+                    'messages.id',
+                    'messages.conversation_id',
+                    'messages.sender_id',
+                    'messages.body_md',
+                    'messages.body_html',
+                    'messages.read_at',
+                    'messages.created_at',
+                    'messages.updated_at',
                 ])
                 ->with('sender:id,name')
                 ->orderBy('created_at'),
