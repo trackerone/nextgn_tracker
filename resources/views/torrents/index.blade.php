@@ -21,170 +21,191 @@
 
 @section('content')
     <div class="space-y-8">
-        <div class="rounded-2xl bg-slate-900/70 p-6 shadow-xl shadow-slate-900/30">
-            <form method="GET" action="{{ route('torrents.index') }}" class="grid gap-4 md:grid-cols-6">
-                <label class="text-sm font-semibold text-slate-300">
-                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
-                    <input
-                        type="text"
-                        name="q"
-                        value="{{ $filters['q'] ?? '' }}"
-                        class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                        placeholder="Name or tag, e.g. rg:NTB source:BLURAY year:2024"
-                    >
-                    <span class="mt-1 block text-[11px] font-normal text-slate-500">Use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for metadata-aware search.</span>
-                </label>
-                <label class="text-sm font-semibold text-slate-300">
-                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Type</span>
-                    <select name="type" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                        <option value="">All types</option>
-                        @foreach ($types as $type)
-                            <option value="{{ $type }}" @selected(($filters['type'] ?? '') === $type)>{{ ucfirst($type) }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="text-sm font-semibold text-slate-300">
-                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Resolution</span>
-                    <select name="resolution" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                        <option value="">All resolutions</option>
-                        @foreach ($resolutions as $resolution)
-                            <option value="{{ $resolution }}" @selected(($filters['resolution'] ?? '') === $resolution)>{{ $resolution }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="text-sm font-semibold text-slate-300">
-                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Source</span>
-                    <select name="source" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                        <option value="">All sources</option>
-                        @foreach ($sources as $source)
-                            <option value="{{ $source }}" @selected(($filters['source'] ?? '') === $source)>{{ $source }}</option>
-                        @endforeach
-                    </select>
-                </label>
-                <label class="text-sm font-semibold text-slate-300">
-                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">View</span>
-                    <select name="grouped" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                        <option value="1" @selected(($filters['grouped'] ?? '1') !== '0')>Grouped</option>
-                        <option value="0" @selected(($filters['grouped'] ?? '1') === '0')>Flat</option>
-                    </select>
-                </label>
-                @if ($categories->isNotEmpty())
-                    <label class="text-sm font-semibold text-slate-300">
-                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Category</span>
-                        <select name="category_id" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                            <option value="">All categories</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>
-                                    {{ $category->name }}
-                                </option>
+        <div class="rounded-xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg shadow-slate-900/20">
+            <form method="GET" action="{{ route('torrents.index') }}" class="space-y-4">
+                <div class="grid gap-3 md:grid-cols-12">
+                    <label class="text-sm font-semibold text-slate-300 md:col-span-4">
+                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
+                        <input
+                            type="text"
+                            name="q"
+                            value="{{ $filters['q'] ?? '' }}"
+                            class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
+                            placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024"
+                        >
+                    </label>
+                    <label class="text-sm font-semibold text-slate-300 md:col-span-2">
+                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Type</span>
+                        <select name="type" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                            <option value="">All types</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type }}" @selected(($filters['type'] ?? '') === $type)>{{ ucfirst($type) }}</option>
                             @endforeach
                         </select>
                     </label>
-                @endif
-                <div class="grid gap-2 md:grid-cols-2">
-                    <label class="text-sm font-semibold text-slate-300">
-                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Order by</span>
-                        <select name="order" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                            <option value="created" @selected(($filters['order'] ?? 'created') === 'created')>Uploaded</option>
-                            <option value="size" @selected(($filters['order'] ?? '') === 'size')>Size</option>
-                            <option value="seeders" @selected(($filters['order'] ?? '') === 'seeders')>Seeders</option>
-                            <option value="leechers" @selected(($filters['order'] ?? '') === 'leechers')>Leechers</option>
-                            <option value="completed" @selected(($filters['order'] ?? '') === 'completed')>Completed</option>
+                    <label class="text-sm font-semibold text-slate-300 md:col-span-2">
+                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Resolution</span>
+                        <select name="resolution" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                            <option value="">All resolutions</option>
+                            @foreach ($resolutions as $resolution)
+                                <option value="{{ $resolution }}" @selected(($filters['resolution'] ?? '') === $resolution)>{{ $resolution }}</option>
+                            @endforeach
                         </select>
                     </label>
-                    <label class="text-sm font-semibold text-slate-300">
-                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Direction</span>
-                        <select name="direction" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
-                            <option value="desc" @selected(($filters['direction'] ?? 'desc') === 'desc')>Desc</option>
-                            <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
+                    <label class="text-sm font-semibold text-slate-300 md:col-span-2">
+                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Source</span>
+                        <select name="source" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                            <option value="">All sources</option>
+                            @foreach ($sources as $source)
+                                <option value="{{ $source }}" @selected(($filters['source'] ?? '') === $source)>{{ $source }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <label class="text-sm font-semibold text-slate-300 md:col-span-2">
+                        <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">View</span>
+                        <select name="grouped" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                            <option value="1" @selected(($filters['grouped'] ?? '1') !== '0')>Grouped</option>
+                            <option value="0" @selected(($filters['grouped'] ?? '1') === '0')>Flat</option>
                         </select>
                     </label>
                 </div>
-                <div class="md:col-span-5 flex flex-wrap gap-3 pt-2">
-                    <button type="submit" class="rounded-xl bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
-                    <a href="{{ route('torrents.index') }}" class="rounded-xl border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
+
+                <details class="rounded-lg border border-slate-800 bg-slate-950/30 p-3">
+                    <summary class="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/60">Advanced metadata filters</summary>
+                    <div class="mt-3 grid gap-3 md:grid-cols-12">
+                        @if ($categories->isNotEmpty())
+                            <label class="text-sm font-semibold text-slate-300 md:col-span-3">
+                                <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">Category</span>
+                                <select name="category_id" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                                    <option value="">All categories</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->id }}" @selected((string) ($filters['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        @endif
+                        <label class="text-sm font-semibold text-slate-300 md:col-span-3">
+                            <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">Order by</span>
+                            <select name="order" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                                <option value="created" @selected(($filters['order'] ?? 'created') === 'created')>Added</option>
+                                <option value="size" @selected(($filters['order'] ?? '') === 'size')>Size</option>
+                                <option value="seeders" @selected(($filters['order'] ?? '') === 'seeders')>Seeders</option>
+                                <option value="leechers" @selected(($filters['order'] ?? '') === 'leechers')>Leechers</option>
+                                <option value="completed" @selected(($filters['order'] ?? '') === 'completed')>Completed</option>
+                            </select>
+                        </label>
+                        <label class="text-sm font-semibold text-slate-300 md:col-span-2">
+                            <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">Direction</span>
+                            <select name="direction" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                                <option value="desc" @selected(($filters['direction'] ?? 'desc') === 'desc')>Desc</option>
+                                <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
+                            </select>
+                        </label>
+                        <div class="md:col-span-4">
+                            <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Row metadata kept secondary</span>
+                            <div class="flex flex-wrap gap-1.5 text-[11px] uppercase tracking-wide text-slate-400" aria-label="Secondary metadata facets">
+                                @foreach (['Language', 'Subtitles', 'Codec', 'HDR', 'Audio'] as $facet)
+                                    <span class="rounded border border-slate-800 bg-slate-900/70 px-2 py-1">{{ $facet }}</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit" class="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
+                    <a href="{{ route('torrents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
+                    <span class="text-[11px] text-slate-500">Tip: use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for precise tracker-style search.</span>
                 </div>
             </form>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-slate-900/30">
+        <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
             @if ($groupedBrowse)
                 <div class="divide-y divide-slate-800">
                     @forelse ($releaseFamilies as $family)
                         @php
                             $primary = $family['primary'];
                             $primaryMetadata = $torrentMetadata[$primary->id] ?? [];
-                            $primaryBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($primaryMetadata);
                             $primaryQuality = $torrentMetadataQuality[$primary->id] ?? [];
                             $primaryQualityBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($primaryQuality, true);
+                            $familyRows = collect([$primary])->merge($family['alternatives']);
                         @endphp
-                        <section class="p-4">
-                            <div class="mb-3 flex items-center justify-between gap-3">
-                                <h3 class="text-base font-semibold text-white">
+                        <section class="px-3 py-3">
+                            <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2 px-1">
+                                <h3 class="text-sm font-semibold tracking-tight text-white">
                                     {{ $family['title'] }}
                                     @if ($family['year'] !== null)
-                                        <span class="text-slate-400">({{ $family['year'] }})</span>
+                                        <span class="font-normal text-slate-400">({{ $family['year'] }})</span>
                                     @endif
                                 </h3>
-                                <span class="text-xs uppercase tracking-wide text-slate-400">{{ 1 + $family['alternatives']->count() }} versions</span>
+                                <span class="text-[11px] uppercase tracking-wide text-slate-500">{{ $familyRows->count() }} versions</span>
                             </div>
 
-                            <div class="rounded-2xl border border-emerald-400/50 bg-emerald-500/10 p-4 shadow-lg shadow-emerald-950/20">
-                                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                    <div class="min-w-0">
-                                        <div class="mb-2 inline-flex items-center rounded-full border border-emerald-300/50 bg-emerald-400/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-emerald-100">Best version</div>
-                                        <a href="{{ route('torrents.show', $primary) }}" class="block text-base font-semibold leading-6 text-white hover:text-brand">{{ $primary->name }}</a>
-                                        <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-300" aria-label="Best version quick facts">
-                                            <span class="rounded-full bg-slate-950/60 px-2.5 py-1">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($primaryMetadata) ?? 'Unknown type' }}</span>
-                                            <span class="rounded-full bg-slate-950/60 px-2.5 py-1">{{ $primary->formatted_size }}</span>
-                                            <span class="rounded-full bg-emerald-950/50 px-2.5 py-1 text-emerald-200">{{ number_format($primary->seeders) }} seeders</span>
-                                            <span class="rounded-full bg-amber-950/40 px-2.5 py-1 text-amber-200">{{ number_format($primary->leechers) }} leechers</span>
-                                        </div>
-                                    </div>
-                                    <p class="text-xs leading-5 text-emerald-100/80 md:max-w-xs">Highlighted as the strongest release in this group based on normalized metadata and quality signals.</p>
-                                </div>
-                                @if ($primaryQualityBadges !== [] || $primaryBadges !== [])
-                                    <div class="mt-3 flex flex-wrap gap-1.5" aria-label="Best version badges">
-                                        @foreach ($primaryQualityBadges as $badge)
-                                            <span class="rounded-full border border-emerald-500/60 bg-emerald-950/50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-100">{{ $badge }}</span>
+                            <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20">
+                                <table class="min-w-full text-sm">
+                                    <thead class="bg-slate-950/60 text-[11px] uppercase tracking-wide text-slate-500">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-semibold">Name / release title</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Type / res</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Size</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Files</th>
+                                            <th class="px-3 py-2 text-right font-semibold">S</th>
+                                            <th class="px-3 py-2 text-right font-semibold">L</th>
+                                            <th class="px-3 py-2 text-right font-semibold">C</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Added</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Group</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800/80 text-slate-100">
+                                        @foreach ($familyRows as $torrent)
+                                            @php
+                                                $metadata = $torrentMetadata[$torrent->id] ?? [];
+                                                $quality = $torrentMetadataQuality[$torrent->id] ?? [];
+                                                $qualityBadges = $torrent->is($primary) ? $primaryQualityBadges : \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($quality, false);
+                                                $typeLabel = \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—';
+                                                $resolutionLabel = is_string($metadata['resolution'] ?? null) && trim($metadata['resolution']) !== '' ? strtolower(trim($metadata['resolution'])) : '—';
+                                                $releaseGroup = is_string($metadata['release_group'] ?? null) && trim($metadata['release_group']) !== '' ? strtoupper(trim($metadata['release_group'])) : '—';
+                                                $fileCount = (int) ($torrent->file_count ?? $torrent->files_count ?? 1);
+                                                $isFreeleech = (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false);
+                                                $seeders = (int) ($torrent->seeders ?? 0);
+                                                $leechers = (int) ($torrent->leechers ?? 0);
+                                                $completed = (int) ($torrent->completed ?? 0);
+                                                $swarmTone = $seeders >= 10 ? 'text-emerald-300' : ($seeders > 0 ? 'text-lime-300' : 'text-rose-300');
+                                                $rowTone = $torrent->is($primary) ? 'bg-emerald-500/[0.04]' : 'hover:bg-slate-800/35';
+                                            @endphp
+                                            <tr class="{{ $rowTone }}">
+                                                <td class="min-w-[22rem] px-3 py-2.5 align-top">
+                                                    <div class="flex flex-wrap items-center gap-1.5">
+                                                        @if ($torrent->is($primary))
+                                                            <span class="rounded border border-emerald-500/50 bg-emerald-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-200">Best</span>
+                                                        @endif
+                                                        @if ($isFreeleech)
+                                                            <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
+                                                        @endif
+                                                        <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                                    </div>
+                                                    @if ($qualityBadges !== [])
+                                                        <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
+                                                            @foreach ($qualityBadges as $badge)
+                                                                <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ number_format(max(1, $fileCount)) }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ number_format($seeders) }} seeders">{{ number_format($seeders) }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ number_format($leechers) }} leechers">{{ number_format($leechers) }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ number_format($completed) }} completed snatches">{{ number_format($completed) }}</td>
+                                                <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->format('Y-m-d') ?? '—' }}</td>
+                                                <td class="px-3 py-2.5 align-top text-xs font-semibold tracking-wide text-slate-200">{{ $releaseGroup }}</td>
+                                            </tr>
                                         @endforeach
-                                        @foreach ($primaryBadges as $badge)
-                                            <span class="rounded-full border border-slate-600 bg-slate-900/80 px-2.5 py-1 text-xs uppercase tracking-wide text-slate-200">{{ $badge }}</span>
-                                        @endforeach
-                                    </div>
-                                @endif
+                                    </tbody>
+                                </table>
                             </div>
-
-                            @if ($family['alternatives']->isNotEmpty())
-                                <div class="mt-4 space-y-2" aria-label="Other versions in this release group">
-                                    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Other versions</p>
-                                    @foreach ($family['alternatives'] as $alternative)
-                                        @php
-                                            $alternativeMetadata = $torrentMetadata[$alternative->id] ?? [];
-                                            $alternativeMetadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($alternativeMetadata);
-                                            $alternativeQuality = $torrentMetadataQuality[$alternative->id] ?? [];
-                                            $alternativeBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($alternativeQuality, false);
-                                        @endphp
-                                        <div class="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-3 text-sm hover:border-slate-700">
-                                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                                <a href="{{ route('torrents.show', $alternative) }}" class="font-medium leading-6 text-slate-100 hover:text-brand">{{ $alternative->name }}</a>
-                                                <div class="flex flex-wrap gap-2 text-xs text-slate-400 md:justify-end">
-                                                    <span>{{ $alternative->formatted_size }}</span>
-                                                    <span class="text-emerald-300">{{ number_format($alternative->seeders) }} seed</span>
-                                                    <span class="text-amber-300">{{ number_format($alternative->leechers) }} leech</span>
-                                                </div>
-                                            </div>
-                                            @if ($alternativeBadges !== [] || $alternativeMetadataBadges !== [])
-                                                <div class="mt-2 flex flex-wrap gap-1.5">
-                                                    @foreach (array_merge($alternativeBadges, $alternativeMetadataBadges) as $badge)
-                                                        <span class="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
-                                                    @endforeach
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
                         </section>
                     @empty
                         <div class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</div>
@@ -193,46 +214,63 @@
             @else
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-800 text-sm">
-                        <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
+                        <thead class="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-500">
                             <tr>
-                                <th class="px-4 py-3 text-left">Name</th>
-                                <th class="px-4 py-3 text-left">Type</th>
-                                <th class="px-4 py-3 text-right">Size</th>
-                                <th class="px-4 py-3 text-right">Seed</th>
-                                <th class="px-4 py-3 text-right">Leech</th>
-                                <th class="px-4 py-3 text-right">Done</th>
-                                <th class="px-4 py-3 text-right">Uploaded</th>
+                                <th class="px-3 py-2 text-left">Name / release title</th>
+                                <th class="px-3 py-2 text-left">Type / res</th>
+                                <th class="px-3 py-2 text-right">Size</th>
+                                <th class="px-3 py-2 text-right">Files</th>
+                                <th class="px-3 py-2 text-right">S</th>
+                                <th class="px-3 py-2 text-right">L</th>
+                                <th class="px-3 py-2 text-right">C</th>
+                                <th class="px-3 py-2 text-right">Added</th>
+                                <th class="px-3 py-2 text-left">Group</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800 text-slate-100">
                             @forelse ($torrents as $torrent)
                                 @php
                                     $metadata = $torrentMetadata[$torrent->id] ?? [];
-                                    $metadataBadges = \App\Support\Torrents\TorrentMetadataPresenter::listingBadges($metadata);
+                                    $quality = $torrentMetadataQuality[$torrent->id] ?? [];
+                                    $qualityBadges = \App\Support\Torrents\TorrentReleaseBadgePresenter::browseBadges($quality, false);
+                                    $typeLabel = \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—';
+                                    $resolutionLabel = is_string($metadata['resolution'] ?? null) && trim($metadata['resolution']) !== '' ? strtolower(trim($metadata['resolution'])) : '—';
+                                    $releaseGroup = is_string($metadata['release_group'] ?? null) && trim($metadata['release_group']) !== '' ? strtoupper(trim($metadata['release_group'])) : '—';
+                                    $fileCount = (int) ($torrent->file_count ?? $torrent->files_count ?? 1);
+                                    $isFreeleech = (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false);
+                                    $seeders = (int) ($torrent->seeders ?? 0);
+                                    $leechers = (int) ($torrent->leechers ?? 0);
+                                    $completed = (int) ($torrent->completed ?? 0);
+                                    $swarmTone = $seeders >= 10 ? 'text-emerald-300' : ($seeders > 0 ? 'text-lime-300' : 'text-rose-300');
                                 @endphp
-                                <tr class="hover:bg-slate-800/50">
-                                    <td class="px-4 py-3">
-                                        <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold text-white hover:text-brand">
-                                            {{ $torrent->name }}
-                                        </a>
-                                        @if ($metadataBadges !== [])
-                                            <div class="mt-2 flex flex-wrap gap-1.5">
-                                                @foreach ($metadataBadges as $badge)
-                                                    <span class="rounded-full border border-slate-700 bg-slate-950/70 px-2 py-0.5 text-xs uppercase tracking-wide text-slate-300">{{ $badge }}</span>
+                                <tr class="hover:bg-slate-800/35">
+                                    <td class="min-w-[22rem] px-3 py-2.5 align-top">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            @if ($isFreeleech)
+                                                <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
+                                            @endif
+                                            <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                        </div>
+                                        @if ($qualityBadges !== [])
+                                            <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
+                                                @foreach ($qualityBadges as $badge)
+                                                    <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
                                                 @endforeach
                                             </div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-slate-300">{{ \App\Support\Torrents\TorrentMetadataPresenter::typeLabel($metadata) ?? '—' }}</td>
-                                    <td class="px-4 py-3 text-right font-semibold">{{ $torrent->formatted_size }}</td>
-                                    <td class="px-4 py-3 text-right text-emerald-400">{{ number_format($torrent->seeders) }}</td>
-                                    <td class="px-4 py-3 text-right text-amber-400">{{ number_format($torrent->leechers) }}</td>
-                                    <td class="px-4 py-3 text-right text-slate-200">{{ number_format($torrent->completed) }}</td>
-                                    <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->toDateTimeString() ?? '—' }}</td>
+                                    <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-300">{{ number_format(max(1, $fileCount)) }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold {{ $swarmTone }}" aria-label="{{ number_format($seeders) }} seeders">{{ number_format($seeders) }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ number_format($leechers) }} leechers">{{ number_format($leechers) }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-200" aria-label="{{ number_format($completed) }} completed snatches">{{ number_format($completed) }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ optional($torrent->uploadedAtForDisplay())->format('Y-m-d') ?? '—' }}</td>
+                                    <td class="px-3 py-2.5 align-top text-xs font-semibold tracking-wide text-slate-200">{{ $releaseGroup }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</td>
+                                    <td colspan="9" class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</td>
                                 </tr>
                             @endforelse
                         </tbody>
