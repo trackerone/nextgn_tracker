@@ -84,3 +84,48 @@ composer rector
 composer test
 npm run build
 ```
+
+## Production runtime readiness
+
+Use the container as a narrow Laravel runtime. The image starts as the `nextgn`
+non-root user and expects deployment platforms to provide production secrets via
+environment variables, not by baking them into the image.
+
+Required production environment:
+
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `APP_KEY` must be set to a generated Laravel application key before boot.
+- `APP_URL` should match the public HTTPS origin used by users and generated links.
+- Database configuration must be present. For SQLite set `DB_CONNECTION=sqlite`
+  and `DB_DATABASE` to a writable database path. For MySQL/MariaDB/PostgreSQL/SQL
+  Server set `DB_CONNECTION`, `DB_HOST`, `DB_DATABASE`, and `DB_USERNAME`;
+  set `DB_PASSWORD` when the database requires one.
+- `LOG_CHANNEL=stderr` is recommended for container platforms. File-backed logs
+  use `storage/logs/laravel.log`; security logs use `storage/logs/security.log`.
+
+Runtime writable paths:
+
+- `storage/app/public` for public uploaded assets.
+- `storage/app/images` for image storage exposed through `/storage/images`.
+- `storage/app/torrents` and `storage/app/nfo` for uploaded torrent/NFO files.
+- `storage/framework/cache`, `storage/framework/views`, and
+  `storage/framework/sessions` for Laravel runtime state.
+- `storage/logs` for file-backed application and security logs.
+- `bootstrap/cache` for production config, route, and view cache artifacts.
+
+Deployment expectations:
+
+- Run `php artisan migrate --force` as a release step before serving traffic.
+- The entrypoint runs `php artisan storage:link` so `public/storage` and
+  `public/storage/images` point at the configured public storage directories.
+- The entrypoint warms `config:cache`, `route:cache`, and `view:cache`; avoid
+  reading undeclared environment variables directly outside configuration files.
+- Queue workers are not started by the web container. If queued jobs are enabled,
+  run a separate worker process with `php artisan queue:work --tries=3` and the
+  same environment/secrets as the web runtime.
+- Scheduled tasks are not started by the web container. If schedules are added,
+  run `php artisan schedule:run` once per minute from the platform scheduler or a
+  dedicated scheduler process.
+- A lightweight readiness endpoint is available at `GET /health` and returns only
+  a simple JSON status.
