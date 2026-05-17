@@ -59,7 +59,7 @@ class TorrentUploadTest extends TestCase
 
         $this->assertNotNull($torrent);
         $response->assertRedirect(route('torrents.show', $torrent->slug));
-        $response->assertSessionHas('status', 'Torrent uploaded and awaiting approval.');
+        $response->assertSessionHas('status', 'Torrent submitted for moderation and hidden until any required approval is complete.');
         $this->assertSame('movie', $torrent->type);
         $this->assertSame($category->id, $torrent->category_id);
         $this->assertSame('tt1234567', $torrent->imdb_id);
@@ -219,7 +219,7 @@ class TorrentUploadTest extends TestCase
         ]);
 
         $response->assertRedirect(route('torrents.show', $existing->slug));
-        $response->assertSessionHas('status', 'Torrent already exists – redirected to the existing entry.');
+        $response->assertSessionHas('status', 'Exact duplicate found; you were redirected to the existing torrent entry.');
     }
 
     public function test_ingest_duplicate_conflict_redirects_with_same_feedback_as_preflight_duplicate(): void
@@ -262,7 +262,7 @@ class TorrentUploadTest extends TestCase
         ]);
 
         $response->assertRedirect(route('torrents.show', $existing->slug));
-        $response->assertSessionHas('status', 'Torrent already exists – redirected to the existing entry.');
+        $response->assertSessionHas('status', 'Exact duplicate found; you were redirected to the existing torrent entry.');
     }
 
     public function test_validation_errors_are_reported(): void
@@ -289,8 +289,9 @@ class TorrentUploadTest extends TestCase
             ],
         ]);
 
-        $response->assertSee('A better version already exists.');
-        $response->assertSee('Best version torrent ID: 1234');
+        $response->assertSee('Possible upgrade already exists.');
+        $response->assertSee('A technically stronger version is already visible in this release family.');
+        $response->assertSee('Best current torrent ID: 1234');
     }
 
     public function test_upload_page_hides_upgrade_warning_when_preflight_has_no_upgrade(): void
@@ -304,7 +305,7 @@ class TorrentUploadTest extends TestCase
             ],
         ]);
 
-        $response->assertDontSee('A better version already exists.');
+        $response->assertDontSee('Possible upgrade already exists.');
     }
 
     public function test_web_upload_endpoint_throttles_failed_uploads(): void
