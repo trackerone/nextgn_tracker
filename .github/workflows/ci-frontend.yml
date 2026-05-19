@@ -1,5 +1,8 @@
 name: CI Frontend
 
+permissions:
+  contents: read
+
 on:
   push:
     paths:
