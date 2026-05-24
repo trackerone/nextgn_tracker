@@ -12,7 +12,9 @@ use Throwable;
 
 final class OperationsHealthService
 {
-    public function __construct(private readonly ProductionSecurityReadinessService $productionReadinessService) {}
+    public function __construct(
+        private readonly ProductionSecurityReadinessService $productionReadinessService
+    ) {}
 
     public function collect(): array
     {
