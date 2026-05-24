@@ -1,70 +1,115 @@
-# Production operations
+# Production Operations
 
-Laravel-native runbook for production visibility and recovery.
+Laravel-native runbook for deployment, updates, and recovery.
 
-## Runtime processes
+## Recommended production platform
 
-Run web, queue worker, and scheduler separately.
-
-- **Web**: the Docker image runs as the non-root `nextgn` user and starts `tools/entrypoint.sh`, which validates production env, prepares writable directories, runs `storage:link`, warms config/route/view caches, and serves `public/` on `$PORT` (default `10000`).
-- **Queue worker**: use `php artisan queue:work --tries=3 --timeout=90` with the same release and environment as web. Run `php artisan queue:restart` after deployments.
-- **Scheduler**: run `php artisan schedule:run` once per minute from cron/platform scheduler. Current scheduled commands send private-message digests daily at 07:00 UTC and weekly on Monday at 07:30 UTC.
+- Ubuntu **24.04 LTS** host baseline.
+- PHP **8.4+** runtime (CLI/FPM).
+- Node **20.x–25.x** for asset builds.
+- Redis **7+** for production cache/queue.
+- MySQL/MariaDB/PostgreSQL recommended for production DB.
 
 ## Required production environment
 
-- `APP_ENV=production`
-- `APP_DEBUG=false`
-- `APP_KEY`
-- `APP_URL`
-- `DB_CONNECTION` and matching database settings for SQLite, MySQL/MariaDB, PostgreSQL, or SQL Server
-- `LOG_CHANNEL=stderr` is recommended for containers
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_KEY=base64:...
+APP_URL=https://your-domain.example
+NEXTGN_PRODUCTION_HARDENING=true
+```
 
-## Deployment checklist
+Set database/cache/queue/session values for your environment before boot.
 
-1. Build/install dependencies for PHP 8.4 and Node >=20 <26.
-2. Provide production secrets through the deployment platform, not the image.
-3. Run `php artisan migrate --force` before serving traffic.
-4. Start/restart queue workers and ensure scheduler execution if those features are enabled.
-5. Verify `GET /health` returns a minimal OK JSON response.
+## First production deployment (copy/paste order)
 
-## Writable paths
+```bash
+git clone https://github.com/trackerone/nextgn_tracker.git
+cd nextgn_tracker
+cp .env.example .env
+```
 
-The runtime user must be able to write:
+Set production env values in `.env` (or platform secret manager), then run:
 
-- `storage/app/public`
-- `storage/app/images`
-- `storage/app/torrents`
-- `storage/app/nfo`
-- `storage/framework/cache`, `storage/framework/views`, and `storage/framework/sessions`
-- `storage/logs`
-- `bootstrap/cache`
+```bash
+composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+npm ci
+npm run build
+php artisan key:generate --force
+php artisan migrate --force
+php artisan storage:link
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan nextgn:production-check
+```
 
-## Failed job visibility
+Common failure points and fixes:
+- `APP_KEY` error: rerun `php artisan key:generate --force` and persist value in secrets.
+- DB connection failed: verify host/user/password/database/port and network ACLs.
+- Production check fails: align settings from `docs/security/production-hardening.md` before go-live.
 
-The repository includes database queue and failed-job migrations. Common triage commands:
+## Runtime processes
+
+Run as separate processes/services:
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+php artisan queue:work --tries=3 --timeout=90
+php artisan schedule:run
+```
+
+- Queue workers: restart after each deploy with `php artisan queue:restart`.
+- Scheduler: run `schedule:run` every minute via cron/platform scheduler.
+
+## Updating an existing installation
+
+```bash
+cd /path/to/nextgn_tracker
+git fetch --all
+git checkout <release-branch-or-tag>
+git pull --ff-only
+composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+npm ci
+npm run build
+php artisan migrate --force
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan queue:restart
+php artisan nextgn:production-check
+```
+
+Common failure points and fixes:
+- Stale config/feature flags: run `php artisan config:clear` then `php artisan config:cache`.
+- Jobs not processing after deploy: confirm worker is running and restart queue workers.
+
+## Storage permissions and ownership
+
+If write failures appear (`Permission denied`):
+
+```bash
+sudo chown -R www-data:www-data storage bootstrap/cache
+sudo chmod -R ug+rwX storage bootstrap/cache
+```
+
+## Backups and log rotation baseline
+
+- Back up database daily (and before each release).
+- Back up `.env`/secret configuration through your platform secret manager policy.
+- Rotate and retain application/security logs via platform or OS logrotate policy.
+
+## Troubleshooting quick commands
 
 ```bash
 php artisan queue:failed
 php artisan queue:retry all
-php artisan queue:forget <failed-job-id>
-php artisan queue:flush
+php artisan config:clear
+php artisan cache:clear
+php artisan optimize:clear
+php artisan about
 ```
 
-Review failed jobs during incidents and after deploys touching notifications or external metadata enrichment. Retry only after the root cause is fixed.
-
-## Logs and security-sensitive events
-
-Use `LOG_CHANNEL=stderr` on containers. File logs use `storage/logs/laravel.log`; security logs use `storage/logs/security.log`. Do not log passkeys, API keys, HMAC secrets, provider tokens, raw announce IDs, or plaintext passwords.
-
-## Troubleshooting quick reference
-
-| Symptom | Commands/checks |
-| --- | --- |
-| App does not boot | `php artisan config:clear`; verify `APP_KEY`, production env flags, and database env vars. |
-| Stale routes/config/views | `php artisan optimize:clear`; rebuild config, route, and view caches. |
-| Queue jobs stuck | `php artisan queue:failed`; `php artisan queue:restart`; inspect worker logs. |
-| Scheduled work missing | `php artisan schedule:list`; verify cron runs `php artisan schedule:run` every minute. |
-| Public uploads 404 | `php artisan storage:link`; verify storage/public path permissions. |
-| Health check fails | Request `GET /health`; inspect web logs. |
-| Permission errors | Ensure runtime user can write `storage/` and `bootstrap/cache/`. |
-| Security review | Check admin audit/security views and the `security` log separately. |
+Use `GET /health` for basic runtime probe.

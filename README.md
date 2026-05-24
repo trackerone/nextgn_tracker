@@ -72,6 +72,32 @@ Instead, it separates operational torrent state from canonical release metadata.
 - [Production operations](docs/PRODUCTION-OPERATIONS.md)
 - [Frontend setup](docs/FRONTEND-SETUP.md)
 
+
+## Getting Started
+
+Use these guides in order:
+
+1. [Installation and first boot (Ubuntu 24.04 LTS)](docs/INSTALLATION.md)
+2. [Stack baseline and required versions](docs/STACK-BASELINE.md)
+3. [Frontend setup and build flow](docs/FRONTEND-SETUP.md)
+4. [Production operations (first deploy and updates)](docs/PRODUCTION-OPERATIONS.md)
+5. [Security overview](docs/SECURITY-OVERVIEW.md) and [security checklist](docs/SECURITY-CHECKLIST.md)
+6. [Production hardening controls](docs/security/production-hardening.md)
+
+Quick local bootstrap:
+
+```bash
+git clone https://github.com/trackerone/nextgn_tracker.git
+cd nextgn_tracker
+cp .env.example .env
+composer install
+npm install
+php artisan key:generate
+php artisan migrate
+php artisan serve --host=127.0.0.1 --port=8000
+npm run dev
+```
+
 ## Tech stack
 
 - PHP 8.4+

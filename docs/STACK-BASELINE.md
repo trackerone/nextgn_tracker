@@ -13,3 +13,15 @@
 - Keep Composer, Docker, Render, and CI runtime versions aligned when bumping PHP or Laravel.
 - Blade templates should use `@vite()`; do not reintroduce Laravel Mix assets.
 - Tracker announce/scrape, uploads, API HMAC, and health checks are documented in the focused docs linked from `README.md`.
+
+
+## Recommended production baseline (Ubuntu 24.04 LTS)
+
+- **OS**: Ubuntu 24.04 LTS.
+- **Web**: Nginx (TLS termination) in front of Laravel runtime.
+- **PHP runtime**: PHP 8.4 FPM/CLI aligned with Composer constraints.
+- **Database**: MySQL 8.0+/MariaDB 10.11+ or PostgreSQL 15+ (SQLite only for local/test).
+- **Cache/queue**: Redis 7+ for production queues/cache/session where needed.
+- **Process model**: separate web, queue worker, and scheduler processes.
+
+See `docs/INSTALLATION.md` for local bootstrap and `docs/PRODUCTION-OPERATIONS.md` for deployment/update runbooks.
