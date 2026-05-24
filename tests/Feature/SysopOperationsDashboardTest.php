@@ -7,7 +7,6 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Mockery;
 use Tests\TestCase;
 
 final class SysopOperationsDashboardTest extends TestCase

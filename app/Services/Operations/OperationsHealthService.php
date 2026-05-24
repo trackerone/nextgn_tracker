@@ -30,7 +30,7 @@ final class OperationsHealthService
         ];
 
         $warnings = collect($cards)->whereIn('status', ['warning', 'critical'])->flatMap(
-            fn (array $card): array => $card['next_actions']
+            fn(array $card): array => $card['next_actions']
         )->values()->all();
 
         return ['status' => $this->overallStatus($cards), 'cards' => $cards, 'warnings' => $warnings];
@@ -158,10 +158,10 @@ final class OperationsHealthService
 
     private function overallStatus(array $cards): string
     {
-        if (collect($cards)->contains(fn (array $card): bool => $card['status'] === 'critical')) {
+        if (collect($cards)->contains(fn(array $card): bool => $card['status'] === 'critical')) {
             return 'critical';
         }
-        if (collect($cards)->contains(fn (array $card): bool => $card['status'] === 'warning')) {
+        if (collect($cards)->contains(fn(array $card): bool => $card['status'] === 'warning')) {
             return 'warning';
         }
         return 'ok';

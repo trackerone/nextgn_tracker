@@ -115,7 +115,6 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
         Route::get('/security/{event}', [SecurityEventController::class, 'show'])->name('security.show');
     });
 
-
 Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
 });
