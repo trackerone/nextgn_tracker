@@ -22,7 +22,6 @@ final class SysopOperationsDashboardTest extends TestCase
         $this->actingAs($moderator)->get(route('sysop.operations.index'))->assertForbidden();
     }
 
-
     public function test_admin_without_sysop_role_is_denied(): void
     {
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'is_staff' => true]);
