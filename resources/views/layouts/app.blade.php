@@ -57,6 +57,9 @@
                         @if (auth()->user()?->isStaff())
                             <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Moderation</a>
                         @endif
+                        @if (auth()->user()?->isSysop())
+                            <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Operations</a>
+                        @endif
                     </nav>
                 @endauth
             </div>
