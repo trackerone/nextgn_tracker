@@ -198,7 +198,6 @@ class ApiKeyHmacMiddlewareTest extends TestCase
             ->assertJson(['message' => 'Unauthorized.']);
     }
 
-
     public function test_reused_nonce_is_rejected_for_same_api_key(): void
     {
         $plainKey = ApiKey::generateKey();
@@ -270,6 +269,7 @@ class ApiKeyHmacMiddlewareTest extends TestCase
             'X-Api-Signature' => hash_hmac('sha256', $canonical, $signingSecret),
         ])->getJson('/api/user')->assertOk();
     }
+
     /**
      * @return array<string, string>
      */
