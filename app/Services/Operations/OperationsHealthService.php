@@ -57,7 +57,7 @@ final class OperationsHealthService
             sprintf('Environment: %s', $env),
             sprintf('Debug mode: %s', $debug ? 'enabled' : 'disabled'),
             sprintf('Production hardening: %s', $hardening ? 'enabled' : 'disabled'),
-            sprintf('Version identifier: %s', (string) (config('app.version') ?? env('APP_GIT_SHA', 'unknown'))),
+            sprintf('Version identifier: %s', (string) config('app.version', 'unknown')),
         ], $actions);
     }
 
