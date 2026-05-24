@@ -27,3 +27,12 @@ NextGN Tracker assumes hostile network conditions and uses layered Laravel contr
 - Run migrations as an explicit release step before serving production traffic.
 - Run queue workers and the scheduler as separate processes when queued jobs or scheduled commands are enabled.
 - Rotate passkeys and API credentials if compromise is suspected, then review audit/security logs for related activity.
+
+
+## Production hardening controls to enforce
+
+- `NEXTGN_PRODUCTION_HARDENING=true` must be enabled in production.
+- HMAC API requests should enforce nonce replay protection with `API_REQUIRE_NONCE=true`.
+- Legacy API key compatibility (`SECURITY_API_ALLOW_LEGACY_KEYS`) should be disabled in production.
+- Scrape requests enforce a hard cap of 50 `info_hash` values per request.
+- Validate readiness with `php artisan nextgn:production-check` before public exposure.

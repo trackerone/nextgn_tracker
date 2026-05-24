@@ -1,45 +1,66 @@
 # Production Hardening
 
-This guide documents the production security controls for NextGN and how to validate them before public exposure.
+This guide documents required production safeguards and validation commands.
 
 ## Required baseline
-
-Set these environment values in production:
 
 ```env
 APP_ENV=production
 APP_DEBUG=false
 NEXTGN_PRODUCTION_HARDENING=true
+API_REQUIRE_NONCE=true
+SECURITY_API_ALLOW_LEGACY_KEYS=false
 ```
 
-## Security controls
+## Hardened controls
 
-- **Production hardening toggle**: `NEXTGN_PRODUCTION_HARDENING=true` enables production-hardening readiness expectations.
-- **HMAC nonce replay protection**: API HMAC requests require `X-Api-Nonce` when `API_REQUIRE_NONCE=true`, and nonce reuse for the same API key is rejected.
-- **Legacy API key compatibility enforcement**: `SECURITY_API_ALLOW_LEGACY_KEYS=true` can be used for staged migration, but production should set it to `false`.
-- **Scrape info_hash hard cap**: scrape requests are capped at **50** `info_hash` parameters per request.
-- **Production-safe defaults**: nonce enforcement defaults to enabled and allowed HMAC skew defaults to 120 seconds.
+- `NEXTGN_PRODUCTION_HARDENING=true` enables strict production expectations.
+- Nonce-based HMAC replay protection is enabled with `API_REQUIRE_NONCE=true`.
+- Legacy API keys should be disabled using `SECURITY_API_ALLOW_LEGACY_KEYS=false`.
+- Scrape endpoints cap requests at **50** `info_hash` values per request.
 
-## Validate with production-check
+## Validate deployment safety
 
-Run:
+Run after each production deployment or update:
 
 ```bash
 php artisan nextgn:production-check
 ```
 
-The command validates:
+The check validates:
 
 - production hardening enabled
-- `APP_ENV=production`
-- `APP_DEBUG=false`
-- HMAC nonce enforcement enabled
-- legacy API keys disabled
-- acceptable HMAC skew window (120 seconds or less)
+- production environment flags
+- HMAC nonce enforcement
+- legacy key compatibility disabled
+- acceptable HMAC skew window
 - no remaining legacy plaintext API keys
 
-If any check fails, fix configuration and key state before public exposure.
+## Fast fixes for common failures
 
-## Migration note
+### Production check fails on hardening toggle
 
-Legacy API key compatibility exists to support staged rollout. For production deployment, disable legacy keys (`SECURITY_API_ALLOW_LEGACY_KEYS=false`) before exposing the service publicly.
+```bash
+php artisan config:clear
+# set NEXTGN_PRODUCTION_HARDENING=true in env/secrets
+php artisan config:cache
+php artisan nextgn:production-check
+```
+
+### Production check fails on nonce requirement
+
+```bash
+php artisan config:clear
+# set API_REQUIRE_NONCE=true
+php artisan config:cache
+php artisan nextgn:production-check
+```
+
+### Production check fails on legacy key allowance
+
+```bash
+php artisan config:clear
+# set SECURITY_API_ALLOW_LEGACY_KEYS=false
+php artisan config:cache
+php artisan nextgn:production-check
+```
