@@ -70,6 +70,10 @@ Instead, it separates operational torrent state from canonical release metadata.
 - [API contract](docs/API_CONTRACT.md)
 - [Security overview](docs/SECURITY-OVERVIEW.md), [security checklist](docs/SECURITY-CHECKLIST.md), and [production hardening](docs/security/production-hardening.md)
 - [Production operations](docs/PRODUCTION-OPERATIONS.md)
+- [Upgrade runbook](docs/installation/upgrading.md)
+- [Backups and restore](docs/operations/backups-and-restore.md)
+- [Monitoring and alerting](docs/operations/monitoring-and-alerting.md)
+- [Process management](docs/operations/process-management.md)
 - [Frontend setup](docs/FRONTEND-SETUP.md)
 
 
@@ -81,8 +85,12 @@ Use these guides in order:
 2. [Stack baseline and required versions](docs/STACK-BASELINE.md)
 3. [Frontend setup and build flow](docs/FRONTEND-SETUP.md)
 4. [Production operations (first deploy and updates)](docs/PRODUCTION-OPERATIONS.md)
-5. [Security overview](docs/SECURITY-OVERVIEW.md) and [security checklist](docs/SECURITY-CHECKLIST.md)
-6. [Production hardening controls](docs/security/production-hardening.md)
+5. [Upgrade runbook](docs/installation/upgrading.md)
+6. [Backups and restore](docs/operations/backups-and-restore.md)
+7. [Monitoring and alerting](docs/operations/monitoring-and-alerting.md)
+8. [Process management](docs/operations/process-management.md)
+9. [Security overview](docs/SECURITY-OVERVIEW.md) and [security checklist](docs/SECURITY-CHECKLIST.md)
+10. [Production hardening controls](docs/security/production-hardening.md)
 
 Quick local bootstrap:
 
