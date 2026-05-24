@@ -36,7 +36,7 @@ final class NavigationAndModerationSmokeTest extends TestCase
             'is_staff' => false,
         ]);
 
-        $staffRole = Role::query()->where('slug', 'moderator')->firstOrFail();
+        $staffRole = Role::query()->whereIn('slug', ['mod1', 'mod2', 'admin1', 'admin2', 'sysop'])->firstOrFail();
         $staff = User::factory()->create([
             'role' => $staffRole->slug,
             'role_id' => $staffRole->getKey(),
