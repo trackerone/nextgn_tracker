@@ -11,6 +11,7 @@ use App\Notifications\PrivateMessageDigestNotification;
 use App\Services\MarkdownService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function (): void {
@@ -125,4 +126,31 @@ it('dispatches digest notifications for unread messages', function (): void {
     Artisan::call('pm:digest daily');
 
     Notification::assertSentToTimes($recipient, PrivateMessageDigestNotification::class, 1);
+});
+
+it('skips digest notifications when runtime toggle is disabled', function (): void {
+    Notification::fake();
+    Log::spy();
+
+    config()->set('runtime_jobs', [
+        [
+            'key' => 'notification.digest',
+            'critical' => false,
+            'sysop_controllable' => true,
+        ],
+    ]);
+
+    app(\App\Services\Settings\SiteSettingsRepository::class)
+        ->set('runtime.jobs.notification.digest.enabled', false, 'bool');
+
+    $exitCode = Artisan::call('pm:digest daily');
+
+    expect($exitCode)->toBe(0);
+
+    Notification::assertNothingSent();
+    Log::shouldHaveReceived('info')->withArgs(static function (string $message, array $context): bool {
+        return $message === 'Runtime job skipped because it is disabled by sysop toggle.'
+            && ($context['event'] ?? null) === 'runtime.job.skipped'
+            && ($context['job_key'] ?? null) === 'notification.digest';
+    })->once();
 });
