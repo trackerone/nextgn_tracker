@@ -14,8 +14,7 @@ final class OperationsHealthService
 {
     public function __construct(
         private readonly ProductionSecurityReadinessService $productionReadinessService,
-    ) {
-    }
+    ) {}
 
     public function collect(): array
     {
@@ -62,7 +61,7 @@ final class OperationsHealthService
             $actions[] = 'Disable APP_DEBUG in production deployments.';
         }
 
-        if ($env === 'production' && !$hardening) {
+        if ($env === 'production' && ! $hardening) {
             $status = $status === 'critical' ? 'critical' : 'warning';
 
             $actions[] = 'Enable NEXTGN_PRODUCTION_HARDENING for production.';
@@ -99,7 +98,7 @@ final class OperationsHealthService
         $actions = [];
         $status = 'ok';
 
-        if (!$requireNonce) {
+        if (! $requireNonce) {
             $status = 'critical';
 
             $actions[] = 'Enable API nonce requirement (API_REQUIRE_NONCE=true).';
