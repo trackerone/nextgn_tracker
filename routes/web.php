@@ -23,6 +23,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
+use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
@@ -117,6 +118,7 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
 
 Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
+    Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
 });
 Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(function (): void {
     Route::patch('/admin/users/{user}/role', [UserRoleController::class, 'update'])
