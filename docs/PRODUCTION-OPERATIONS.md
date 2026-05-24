@@ -113,3 +113,11 @@ php artisan about
 ```
 
 Use `GET /health` for basic runtime probe.
+
+
+## Related runbooks
+
+- [Upgrading safely](installation/upgrading.md)
+- [Backups and restore](operations/backups-and-restore.md)
+- [Monitoring and alerting](operations/monitoring-and-alerting.md)
+- [Process management](operations/process-management.md)
