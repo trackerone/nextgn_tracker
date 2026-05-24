@@ -226,7 +226,6 @@ class ScrapeTest extends TestCase
         ], $payload['files'][$torrent->info_hash] ?? null);
     }
 
-
     public function test_scrape_rejects_more_than_fifty_info_hash_values(): void
     {
         $user = User::factory()->create();
