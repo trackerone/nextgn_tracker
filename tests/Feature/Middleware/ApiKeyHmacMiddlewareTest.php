@@ -148,6 +148,7 @@ class ApiKeyHmacMiddlewareTest extends TestCase
     public function test_legacy_compatibility_emits_security_telemetry_without_raw_key_data(): void
     {
         Log::spy();
+        Log::shouldReceive('channel')->with('security')->andReturnSelf();
         config(['security.api.hmac_secret' => 'test-secret']);
 
         $plainKey = bin2hex(random_bytes(32));
