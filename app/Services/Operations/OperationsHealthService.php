@@ -25,6 +25,7 @@ final class OperationsHealthService
             $this->securityCard($securityReadiness),
             $this->databaseCard(),
             $this->cacheCard(),
+            $this->schedulerCard(),
             $this->queueCard(),
             $this->storageCard(),
             $this->trackerCard(),
@@ -191,47 +192,80 @@ final class OperationsHealthService
         }
     }
 
+    private function schedulerCard(): array
+    {
+        $items = ['Visibility only: scheduler actions are not available from this dashboard.'];
+        $actions = [];
+
+        try {
+            Artisan::call('schedule:list', ['--no-ansi' => true]);
+            $output = trim(Artisan::output());
+
+            if ($output === '') {
+                $items[] = 'Configured tasks: unavailable';
+            } else {
+                $lines = array_slice(
+                    array_values(
+                        array_filter(
+                            array_map('trim', preg_split('/\r\n|\r|\n/', $output) ?: []),
+                            static fn (string $line): bool => $line !== ''
+                        )
+                    ),
+                    0,
+                    5
+                );
+
+                $items[] = sprintf('Configured task lines visible: %d', count($lines));
+
+                foreach ($lines as $line) {
+                    $items[] = sprintf('Task: %s', $line);
+                }
+            }
+        } catch (Throwable) {
+            $items[] = 'Configured tasks: unavailable';
+            $actions[] = 'Validate cron is running php artisan schedule:run every minute.';
+        }
+
+        return $this->card('Scheduler', empty($actions) ? 'ok' : 'warning', $items, $actions);
+    }
+
     private function queueCard(): array
     {
         $items = [
-            sprintf(
-                'Queue connection: %s',
-                (string) config('queue.default')
-            ),
+            sprintf('Queue connection: %s', (string) config('queue.default')),
+            sprintf('Queue failed-job driver: %s', (string) config('queue.failed.driver', 'database-uuids')),
+            'Visibility only: retry/flush actions are intentionally disabled here.',
         ];
 
         $actions = [];
 
         try {
             $count = DB::table('failed_jobs')->count();
-
             $items[] = sprintf('Failed jobs: %d', $count);
 
             if ($count > 0) {
+                $recent = DB::table('failed_jobs')
+                    ->select(['queue', 'failed_at'])
+                    ->orderByDesc('failed_at')
+                    ->limit(3)
+                    ->get();
+
+                foreach ($recent as $job) {
+                    $items[] = sprintf(
+                        'Recent failure: queue=%s at %s',
+                        (string) ($job->queue ?? 'unknown'),
+                        (string) ($job->failed_at ?? 'unknown')
+                    );
+                }
+
                 $actions[] = 'Review failed jobs and worker logs on server.';
             }
         } catch (Throwable) {
             $items[] = 'Failed jobs: unavailable';
-
             $actions[] = 'Create/verify failed_jobs table and queue worker visibility.';
         }
 
-        try {
-            Artisan::call('schedule:list');
-
-            $items[] = 'Scheduler visibility: available';
-        } catch (Throwable) {
-            $items[] = 'Scheduler visibility: unavailable';
-
-            $actions[] = 'Validate cron is running php artisan schedule:run every minute.';
-        }
-
-        return $this->card(
-            'Queue',
-            empty($actions) ? 'ok' : 'warning',
-            $items,
-            array_values(array_unique($actions))
-        );
+        return $this->card('Queue', empty($actions) ? 'ok' : 'warning', $items, array_values(array_unique($actions)));
     }
 
     private function storageCard(): array
