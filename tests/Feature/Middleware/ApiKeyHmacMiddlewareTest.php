@@ -7,6 +7,7 @@ namespace Tests\Feature\Middleware;
 use App\Models\ApiKey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ApiKeyHmacMiddlewareTest extends TestCase
@@ -71,6 +72,23 @@ class ApiKeyHmacMiddlewareTest extends TestCase
         $response->assertOk();
     }
 
+    public function test_legacy_global_hmac_signature_format_is_rejected_when_legacy_compatibility_is_disabled(): void
+    {
+        config([
+            'security.api.hmac_secret' => 'test-secret',
+            'security.api.allow_legacy_keys' => false,
+        ]);
+
+        $plainKey = $this->legacyStructuredKey();
+        ApiKey::factory()->withPlainKey($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+
+        $this->withHeaders($this->signedHeaders($plainKey, $timestamp, 'test-secret'))
+            ->getJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Unauthorized.']);
+    }
+
     public function test_prefix_lookup_and_hash_verification_allow_access(): void
     {
         $plainKey = ApiKey::generateKey();
@@ -108,6 +126,57 @@ class ApiKeyHmacMiddlewareTest extends TestCase
         $this->assertSame(ApiKey::hashedAttributesForPlaintext($plainKey)['key_prefix'], $apiKey->key_prefix);
         $this->assertSame(ApiKey::hashedAttributesForPlaintext($plainKey)['key_hash'], $apiKey->key_hash);
         $this->assertTrue($apiKey->usesLegacyGlobalHmac());
+    }
+
+    public function test_legacy_plaintext_key_is_rejected_when_legacy_compatibility_is_disabled(): void
+    {
+        config([
+            'security.api.hmac_secret' => 'test-secret',
+            'security.api.allow_legacy_keys' => false,
+        ]);
+
+        $plainKey = bin2hex(random_bytes(32));
+        ApiKey::factory()->legacyPlaintext($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+
+        $this->withHeaders($this->signedHeaders($plainKey, $timestamp, 'test-secret'))
+            ->getJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Unauthorized.']);
+    }
+
+    public function test_legacy_compatibility_emits_security_telemetry_without_raw_key_data(): void
+    {
+        Log::spy();
+        config(['security.api.hmac_secret' => 'test-secret']);
+
+        $plainKey = bin2hex(random_bytes(32));
+        $apiKey = ApiKey::factory()->legacyPlaintext($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+
+        $this->withHeaders($this->signedHeaders($plainKey, $timestamp, 'test-secret'))
+            ->getJson('/api/user')
+            ->assertOk();
+
+        Log::shouldHaveReceived('channel')->with('security')->atLeast()->once();
+        Log::shouldHaveReceived('warning')
+            ->withArgs(function (string $message, array $context) use ($apiKey, $plainKey): bool {
+                if (! isset($context['event_type'], $context['api_key_id'], $context['mode'])) {
+                    return false;
+                }
+
+                if (! in_array($context['event_type'], ['api_hmac_legacy_plaintext_usage', 'api_hmac_legacy_global_usage'], true)) {
+                    return false;
+                }
+
+                if ((int) $context['api_key_id'] !== $apiKey->getKey()) {
+                    return false;
+                }
+
+                return $context['mode'] !== '' && ! str_contains($message, $plainKey);
+            })
+            ->atLeast()
+            ->times(2);
     }
 
     public function test_old_timestamp_is_rejected(): void
@@ -209,6 +278,15 @@ class ApiKeyHmacMiddlewareTest extends TestCase
         $this->withHeaders($headers)->getJson('/api/user')
             ->assertStatus(401)
             ->assertJson(['message' => 'Unauthorized.']);
+    }
+
+    public function test_legacy_plaintext_key_counter_reports_remaining_keys(): void
+    {
+        ApiKey::factory()->legacyPlaintext(bin2hex(random_bytes(32)))->for(User::factory())->create();
+        ApiKey::factory()->legacyPlaintext(bin2hex(random_bytes(32)))->for(User::factory())->create();
+        ApiKey::factory()->withPlainKey(ApiKey::generateKey())->for(User::factory())->create();
+
+        $this->assertSame(2, ApiKey::countLegacyPlaintextKeys());
     }
 
     public function test_same_request_with_different_nonce_is_accepted(): void

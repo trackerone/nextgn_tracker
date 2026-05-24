@@ -47,6 +47,15 @@ final class ApiKeyHmacMiddleware
             return $this->unauthorized();
         }
 
+        if ($this->legacyKeysAllowed() === false && $apiKey->usesLegacyPlaintextStorage()) {
+            $this->logSecurityEvent('api_hmac_legacy_plaintext_rejected', 'Legacy plaintext API key authentication is disabled.', [
+                'api_key_id' => $apiKey->getKey(),
+                'mode' => 'legacy-plaintext',
+            ]);
+
+            return $this->unauthorized();
+        }
+
         $secret = $this->signingSecretFor($apiKey, $key);
         if ($secret === null) {
             $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signing secret could not be resolved.', [
@@ -132,9 +141,25 @@ final class ApiKeyHmacMiddleware
         }
 
         if ($apiKey->usesLegacyGlobalHmac()) {
+            if ($this->legacyKeysAllowed() === false) {
+                $this->logSecurityEvent('api_hmac_legacy_global_rejected', 'Legacy global API HMAC authentication is disabled.', [
+                    'api_key_id' => $apiKey->getKey(),
+                    'mode' => 'legacy-global-hmac',
+                ]);
+
+                return $this->unauthorized();
+            }
+
             $this->logSecurityEvent('api_hmac_legacy_global_usage', 'Deprecated global API HMAC secret accepted.', [
                 'api_key_id' => $apiKey->getKey(),
-                'key_prefix' => $apiKey->key_prefix,
+                'mode' => 'legacy-global-hmac',
+            ]);
+        }
+
+        if ($apiKey->usesLegacyPlaintextStorage()) {
+            $this->logSecurityEvent('api_hmac_legacy_plaintext_usage', 'Deprecated plaintext API key storage path accepted.', [
+                'api_key_id' => $apiKey->getKey(),
+                'mode' => 'legacy-plaintext',
             ]);
         }
 
@@ -194,6 +219,11 @@ final class ApiKeyHmacMiddleware
     private function enforceNonce(): bool
     {
         return (bool) config('security.api.require_nonce', true);
+    }
+
+    private function legacyKeysAllowed(): bool
+    {
+        return (bool) config('security.api.allow_legacy_keys', true);
     }
 
     private function markNonceAsUsed(ApiKey $apiKey, string $nonce, int $ttlSeconds): bool
