@@ -4,6 +4,9 @@ Laravel-native runbook for deployment, updates, and recovery.
 
 ## Recommended production platform
 
+For detailed server/runtime requirements, use [STACK-BASELINE.md](STACK-BASELINE.md) as the canonical baseline.
+
+
 - Ubuntu **24.04 LTS** host baseline.
 - PHP **8.4+** runtime (CLI/FPM).
 - Node **20.x–25.x** for asset builds.
@@ -11,6 +14,9 @@ Laravel-native runbook for deployment, updates, and recovery.
 - MySQL/MariaDB/PostgreSQL recommended for production DB.
 
 ## Required production environment
+
+For hardening rationale and full controls, see [security/production-hardening.md](security/production-hardening.md).
+
 
 ```env
 APP_ENV=production
