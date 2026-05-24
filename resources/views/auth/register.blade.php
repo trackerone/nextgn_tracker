@@ -1,61 +1,62 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Join {{ config('app.name') }}</title>
-    <style>
-        :root { color-scheme: dark; }
-        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont; background: #020617; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
-        .card { background: #0f172a; padding: 2rem; border-radius: 1rem; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45); }
-        h1 { font-size: 1.75rem; margin-bottom: 1.5rem; }
-        form { display: flex; flex-direction: column; gap: 1rem; }
-        label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.95rem; color: #cbd5f5; }
-        input { padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #1e293b; background: #020617; color: #e2e8f0; font-size: 1rem; }
-        button { padding: 0.85rem; border-radius: 0.5rem; border: none; background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; font-weight: 600; cursor: pointer; font-size: 1rem; }
-        .error { color: #fecaca; font-size: 0.85rem; }
-        .hint { font-size: 0.85rem; color: #94a3b8; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h1>Create your account</h1>
-        <form method="POST" action="{{ url('/register') }}">
+@extends('layouts.app')
+
+@section('title', 'Register — '.config('app.name', 'NextGN Tracker'))
+
+@section('meta')
+    <meta name="robots" content="noindex, nofollow">
+@endsection
+
+@section('content')
+    <div class="mx-auto w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/50 md:p-8">
+        <div class="mb-6">
+            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Member access</p>
+            <h1 class="mt-2 text-2xl font-semibold text-white">Create your account</h1>
+            <p class="mt-2 text-sm text-slate-400">Use your invite code to join the private tracker community.</p>
+        </div>
+
+        <form method="POST" action="{{ url('/register') }}" class="space-y-4">
             @csrf
-            <label>
+            <label class="block text-sm font-medium text-slate-300">
                 Name
-                <input type="text" name="name" value="{{ old('name') }}" required autofocus>
+                <input type="text" name="name" value="{{ old('name') }}" required autofocus class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
                 @error('name')
-                    <span class="error">{{ $message }}</span>
+                    <span class="mt-1 block text-xs text-rose-300">{{ $message }}</span>
                 @enderror
             </label>
-            <label>
+
+            <label class="block text-sm font-medium text-slate-300">
                 Email
-                <input type="email" name="email" value="{{ old('email') }}" required>
+                <input type="email" name="email" value="{{ old('email') }}" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
                 @error('email')
-                    <span class="error">{{ $message }}</span>
+                    <span class="mt-1 block text-xs text-rose-300">{{ $message }}</span>
                 @enderror
             </label>
-            <label>
+
+            <label class="block text-sm font-medium text-slate-300">
                 Password
-                <input type="password" name="password" required>
+                <input type="password" name="password" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
                 @error('password')
-                    <span class="error">{{ $message }}</span>
+                    <span class="mt-1 block text-xs text-rose-300">{{ $message }}</span>
                 @enderror
             </label>
-            <label>
+
+            <label class="block text-sm font-medium text-slate-300">
                 Confirm password
-                <input type="password" name="password_confirmation" required>
+                <input type="password" name="password_confirmation" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
             </label>
-            <label>
+
+            <label class="block text-sm font-medium text-slate-300">
                 Invite code
-                <input type="text" name="invite_code" value="{{ old('invite_code') }}" @if (!app()->environment('local')) required @endif>
-                <span class="hint">Invites ensure we stay private. Paste the code you received from staff.</span>
+                <input type="text" name="invite_code" value="{{ old('invite_code') }}" @if (!app()->environment('local')) required @endif class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
+                <span class="mt-1 block text-xs text-slate-500">Invites ensure we stay private. Paste the code you received from staff.</span>
                 @error('invite_code')
-                    <span class="error">{{ $message }}</span>
+                    <span class="mt-1 block text-xs text-rose-300">{{ $message }}</span>
                 @enderror
             </label>
-            <button type="submit">Join the tracker</button>
+
+            <button type="submit" class="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20 transition hover:bg-brand/90">
+                Join the tracker
+            </button>
         </form>
     </div>
-</body>
-</html>
+@endsection
