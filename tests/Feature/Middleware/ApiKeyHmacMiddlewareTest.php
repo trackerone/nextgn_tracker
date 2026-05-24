@@ -198,12 +198,85 @@ class ApiKeyHmacMiddlewareTest extends TestCase
             ->assertJson(['message' => 'Unauthorized.']);
     }
 
+
+    public function test_reused_nonce_is_rejected_for_same_api_key(): void
+    {
+        $plainKey = ApiKey::generateKey();
+        ApiKey::factory()->withPlainKey($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+        $headers = $this->signedHeaders($plainKey, $timestamp);
+
+        $this->withHeaders($headers)->getJson('/api/user')->assertOk();
+        $this->withHeaders($headers)->getJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Unauthorized.']);
+    }
+
+    public function test_same_request_with_different_nonce_is_accepted(): void
+    {
+        $plainKey = ApiKey::generateKey();
+        ApiKey::factory()->withPlainKey($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+
+        $this->withHeaders($this->signedHeaders($plainKey, $timestamp))->getJson('/api/user')->assertOk();
+        $this->withHeaders($this->signedHeaders($plainKey, $timestamp))->getJson('/api/user')->assertOk();
+    }
+
+    public function test_missing_nonce_is_rejected_when_nonce_enforcement_is_enabled(): void
+    {
+        config(['security.api.require_nonce' => true]);
+
+        $plainKey = ApiKey::generateKey();
+        ApiKey::factory()->withPlainKey($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+        $headers = $this->signedHeaders($plainKey, $timestamp);
+        unset($headers['X-Api-Nonce']);
+
+        $this->withHeaders($headers)->getJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson(['message' => 'Unauthorized.']);
+    }
+
+    public function test_replay_protection_is_scoped_per_api_key(): void
+    {
+        $nonce = bin2hex(random_bytes(12));
+        $timestamp = (string) now()->getTimestamp();
+
+        $plainKeyA = ApiKey::generateKey();
+        $plainKeyB = ApiKey::generateKey();
+        ApiKey::factory()->withPlainKey($plainKeyA)->for(User::factory())->create();
+        ApiKey::factory()->withPlainKey($plainKeyB)->for(User::factory())->create();
+
+        $this->withHeaders($this->signedHeaders($plainKeyA, $timestamp, null, $nonce))->getJson('/api/user')->assertOk();
+        $this->withHeaders($this->signedHeaders($plainKeyB, $timestamp, null, $nonce))->getJson('/api/user')->assertOk();
+    }
+
+    public function test_missing_nonce_can_be_staged_when_enforcement_is_disabled(): void
+    {
+        config(['security.api.require_nonce' => false]);
+
+        $plainKey = ApiKey::generateKey();
+        ApiKey::factory()->withPlainKey($plainKey)->for(User::factory())->create();
+        $timestamp = (string) now()->getTimestamp();
+        $signingSecret = ApiKey::hmacSigningSecretForPlaintext($plainKey);
+
+        $this->assertIsString($signingSecret);
+
+        $canonical = implode("\n", ['GET', '/api/user', $timestamp, '']);
+
+        $this->withHeaders([
+            'X-Api-Key' => $plainKey,
+            'X-Api-Timestamp' => $timestamp,
+            'X-Api-Signature' => hash_hmac('sha256', $canonical, $signingSecret),
+        ])->getJson('/api/user')->assertOk();
+    }
     /**
      * @return array<string, string>
      */
-    private function signedHeaders(string $plainKey, string $timestamp, ?string $secret = null): array
+    private function signedHeaders(string $plainKey, string $timestamp, ?string $secret = null, ?string $nonce = null): array
     {
-        $canonical = implode("\n", ['GET', '/api/user', $timestamp, '']);
+        $nonce ??= bin2hex(random_bytes(12));
+        $canonical = implode("\n", ['GET', '/api/user', $timestamp, $nonce, '']);
         $signingSecret = $secret ?? ApiKey::hmacSigningSecretForPlaintext($plainKey);
 
         $this->assertIsString($signingSecret);
@@ -211,6 +284,7 @@ class ApiKeyHmacMiddlewareTest extends TestCase
         return [
             'X-Api-Key' => $plainKey,
             'X-Api-Timestamp' => $timestamp,
+            'X-Api-Nonce' => $nonce,
             'X-Api-Signature' => hash_hmac('sha256', $canonical, $signingSecret),
         ];
     }

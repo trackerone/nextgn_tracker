@@ -118,7 +118,8 @@ final class ApiAuthContractTest extends TestCase
      */
     private function signedHeaders(string $plainKey, string $timestamp): array
     {
-        $canonical = implode("\n", ['GET', '/api/user', $timestamp, '']);
+        $nonce = bin2hex(random_bytes(12));
+        $canonical = implode("\n", ['GET', '/api/user', $timestamp, $nonce, '']);
         $signingSecret = ApiKey::hmacSigningSecretForPlaintext($plainKey);
 
         $this->assertIsString($signingSecret);
@@ -126,6 +127,7 @@ final class ApiAuthContractTest extends TestCase
         return [
             'X-Api-Key' => $plainKey,
             'X-Api-Timestamp' => $timestamp,
+            'X-Api-Nonce' => $nonce,
             'X-Api-Signature' => hash_hmac('sha256', $canonical, $signingSecret),
         ];
     }
