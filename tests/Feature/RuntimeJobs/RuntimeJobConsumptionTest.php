@@ -25,6 +25,27 @@ it('allows each sysop controllable runtime job to run when enabled', function (s
     ['notification.digest', 'pm:digest daily'],
 ]);
 
+it('does not gate immutable runtime jobs through sysop toggles', function (string $jobKey, string $command): void {
+    Log::spy();
+
+    config()->set('runtime_jobs', [[
+        'key' => $jobKey,
+        'critical' => true,
+        'sysop_controllable' => false,
+    ]]);
+
+    app(\App\Services\Settings\SiteSettingsRepository::class)
+        ->set(sprintf('runtime.jobs.%s.enabled', $jobKey), false, 'bool');
+
+    $exitCode = Artisan::call($command);
+
+    expect($exitCode)->toBe(0);
+    Log::shouldNotHaveReceived('info');
+})->with([
+    ['tracker.announce.integrity', 'runtime:metadata-refresh'],
+    ['tracker.ratio.accounting', 'runtime:cache-warm'],
+]);
+
 it('skips each sysop controllable runtime job when disabled and logs skip event', function (string $jobKey, string $command): void {
     Log::spy();
 
