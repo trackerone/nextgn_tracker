@@ -68,7 +68,7 @@ Instead, it separates operational torrent state from canonical release metadata.
 - [Download flow](docs/DOWNLOAD-FLOW.md)
 - [Upload workflow](docs/UPLOAD-WORKFLOW.md)
 - [API contract](docs/API_CONTRACT.md)
-- [Security overview](docs/SECURITY-OVERVIEW.md) and [security checklist](docs/SECURITY-CHECKLIST.md)
+- [Security overview](docs/SECURITY-OVERVIEW.md), [security checklist](docs/SECURITY-CHECKLIST.md), and [production hardening](docs/security/production-hardening.md)
 - [Production operations](docs/PRODUCTION-OPERATIONS.md)
 - [Frontend setup](docs/FRONTEND-SETUP.md)
 
@@ -107,6 +107,43 @@ composer rector
 composer test
 npm run build
 ```
+
+## Production Hardening
+
+Use these baseline production settings:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+NEXTGN_PRODUCTION_HARDENING=true
+```
+
+Core controls:
+
+- `NEXTGN_PRODUCTION_HARDENING` enables strict production readiness checks.
+- `php artisan nextgn:production-check` validates deployment safety before exposure.
+- Nonce-based HMAC replay protection is enforced with `API_REQUIRE_NONCE=true`.
+- Legacy API key compatibility can be staged, but production should enforce `SECURITY_API_ALLOW_LEGACY_KEYS=false`.
+- Scrape requests enforce a hard cap of 50 `info_hash` values per request.
+- Production-safe defaults include nonce enforcement enabled and HMAC skew at 120 seconds.
+
+Validate production readiness:
+
+```bash
+php artisan nextgn:production-check
+```
+
+The production check validates:
+
+- production hardening enabled
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- HMAC nonce enforcement enabled
+- legacy API keys disabled
+- acceptable HMAC skew window (120 seconds or less)
+- no remaining legacy plaintext API keys
+
+Migration note: legacy API key compatibility exists for staged rollout, but production deployments should disable legacy keys before public exposure.
 
 ## Production runtime readiness
 
