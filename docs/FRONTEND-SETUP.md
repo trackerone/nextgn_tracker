@@ -4,6 +4,9 @@ The NextGN Tracker UI uses Vite + React + Tailwind. Keep Laravel running while V
 
 ## Requirements
 
+For complete local bootstrap and backend setup, see [INSTALLATION.md](INSTALLATION.md).
+
+
 - Node.js **20.x–25.x**
 - npm **10+**
 - Installed PHP dependencies (`composer install`)

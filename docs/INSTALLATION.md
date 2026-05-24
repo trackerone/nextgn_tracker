@@ -4,15 +4,16 @@ Operator-focused setup guide for a fresh local or test environment.
 
 ## 1) Prerequisites
 
-Use these minimum versions:
+Baseline platform for this guide: **Ubuntu 24.04 LTS**.
+
+For complete version and platform requirements, see [STACK-BASELINE.md](STACK-BASELINE.md).
+
+Local requirements summary:
 
 - PHP **8.4+** with extensions: `bcmath`, `ctype`, `fileinfo`, `json`, `mbstring`, `openssl`, `pdo`, `tokenizer`, `xml`.
 - Composer **2.7+**.
 - Node.js **20.x to 25.x** and npm **10+**.
 - A supported SQL database (MySQL/MariaDB, PostgreSQL, SQL Server, or SQLite).
-- Redis recommended for production cache/queue.
-
-Baseline platform for this guide: **Ubuntu 24.04 LTS**.
 
 ## 2) Clone repository
 
@@ -133,3 +134,9 @@ php artisan optimize:clear
 ```
 
 Use this after `.env` changes, DB driver changes, or route/config edits that do not appear to apply.
+
+
+## Related guides
+
+- For frontend/npm/Vite details, see [FRONTEND-SETUP.md](FRONTEND-SETUP.md).
+- For production deployment and runtime operations, see [PRODUCTION-OPERATIONS.md](PRODUCTION-OPERATIONS.md).

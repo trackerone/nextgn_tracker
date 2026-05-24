@@ -2,6 +2,8 @@
 
 Use this checklist before public deployment.
 
+For full hardening explanations and remediation flow, see [security/production-hardening.md](security/production-hardening.md).
+
 ## Configuration
 
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, valid `APP_KEY`, correct `APP_URL`.
