@@ -134,12 +134,21 @@ class ApiKey extends Model
         // TODO: Remove this plaintext compatibility lookup after deployed keys have
         // been migrated or rotated. Successful authentication upgrades legacy keys.
         /** @var self|null $legacyApiKey */
-        $legacyApiKey = self::query()
-            ->whereNull('key_hash')
+        $legacyApiKey = self::legacyPlaintextQuery()
             ->where('key', $plainKey)
             ->first();
 
         return $legacyApiKey;
+    }
+
+    public static function legacyPlaintextQuery()
+    {
+        return self::query()->whereNull('key_hash');
+    }
+
+    public static function countLegacyPlaintextKeys(): int
+    {
+        return self::legacyPlaintextQuery()->count();
     }
 
     public static function prefixForPlaintext(string $plainKey): string
@@ -170,7 +179,12 @@ class ApiKey extends Model
 
     public function usesLegacyGlobalHmac(): bool
     {
-        return $this->hmac_secret_hash === null || $this->hmac_secret_hash === '';
+        return ($this->hmac_version === 'legacy-global') || $this->hmac_secret_hash === null || $this->hmac_secret_hash === '';
+    }
+
+    public function usesLegacyPlaintextStorage(): bool
+    {
+        return $this->key_hash === null;
     }
 
     public function hmacSecretMatchesPlaintext(string $plainKey): bool
