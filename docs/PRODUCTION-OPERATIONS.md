@@ -127,3 +127,11 @@ Use `GET /health` for basic runtime probe.
 - [Backups and restore](operations/backups-and-restore.md)
 - [Monitoring and alerting](operations/monitoring-and-alerting.md)
 - [Process management](operations/process-management.md)
+
+## Operational responsibility model
+
+- **Admin/staff panel**: site/community workflows (moderation, users, invites, content, and metadata controls).
+- **Sysop operations dashboard**: read-only runtime visibility and operational warnings for production readiness.
+- **Root/server shell access**: deployments, package/composer/npm installs, migrations, backups/restores, OS maintenance, and service administration.
+
+The sysop dashboard is intentionally non-destructive and does not expose secrets, `.env` values, or command execution.
