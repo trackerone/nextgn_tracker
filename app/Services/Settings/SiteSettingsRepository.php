@@ -21,6 +21,12 @@ final class SiteSettingsRepository
         'metadata.enrichment.enabled' => ['value' => 'true', 'type' => 'bool'],
         'metadata.enrichment.auto_on_publish' => ['value' => 'true', 'type' => 'bool'],
         'metadata.enrichment.refresh_after_days' => ['value' => '30', 'type' => 'int'],
+        'runtime.jobs.metadata.refresh.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.cache.warm.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.notification.digest.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.health.snapshot.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.tracker.announce.integrity.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.tracker.ratio.accounting.enabled' => ['value' => 'true', 'type' => 'bool'],
     ];
 
     public function getBool(string $key): bool
