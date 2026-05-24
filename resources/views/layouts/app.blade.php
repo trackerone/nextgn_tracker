@@ -51,8 +51,8 @@
                             @endif
                         </a>
                         <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
-                        <a href="{{ route('home') }}#community" class="{{ $navLink }} {{ $inactiveNavLink }}">Forum</a>
-                        <a href="{{ route('home') }}#messages" class="{{ $navLink }} {{ $inactiveNavLink }}">PM</a>
+                        <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
+                        <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">PM</a>
                         <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio</a>
                         @if (auth()->user()?->isStaff())
                             <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Moderation</a>
