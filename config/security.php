@@ -101,7 +101,8 @@ return [
 
     'api' => [
         'hmac_secret' => env('API_HMAC_SECRET'),
-        'allowed_time_skew_seconds' => (int) env('API_ALLOWED_TIME_SKEW', 300),
+        'allowed_time_skew_seconds' => (int) env('API_ALLOWED_TIME_SKEW', 120),
+        'require_nonce' => (bool) env('API_REQUIRE_NONCE', true),
         'default_rate_limit' => env('API_DEFAULT_RATE_LIMIT', env('SECURITY_RATE_LIMIT_API', '60,1')),
     ],
 ];

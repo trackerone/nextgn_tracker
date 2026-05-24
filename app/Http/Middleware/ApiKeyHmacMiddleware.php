@@ -8,6 +8,7 @@ use App\Models\ApiKey;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -20,6 +21,7 @@ final class ApiKeyHmacMiddleware
         $key = (string) $request->header('X-Api-Key', '');
         $signature = (string) $request->header('X-Api-Signature', '');
         $timestamp = (string) $request->header('X-Api-Timestamp', '');
+        $nonce = (string) $request->header('X-Api-Nonce', '');
 
         if ($key === '' || $signature === '' || $timestamp === '') {
             $this->logSecurityEvent('api_hmac_missing_credentials', 'Missing API HMAC credentials.');
@@ -54,6 +56,14 @@ final class ApiKeyHmacMiddleware
             return $this->unauthorized();
         }
 
+        if ($this->enforceNonce() && $nonce === '') {
+            $this->logSecurityEvent('api_hmac_missing_nonce', 'API HMAC nonce is required but missing.', [
+                'api_key_id' => $apiKey->getKey(),
+            ]);
+
+            return $this->unauthorized();
+        }
+
         $method = strtoupper($request->getMethod());
 
         // Path variants (we accept several canonicalizations)
@@ -78,11 +88,20 @@ final class ApiKeyHmacMiddleware
         // Test signs GET with empty body, so enforce empty body for GET regardless of getContent().
         $body = $method === 'GET' ? '' : (string) $request->getContent();
 
-        // The test canonical is: METHOD \n PATH \n TIMESTAMP \n BODY
-        // Example: "GET\n/api/user\n<ts>\n"
+        $requireNonce = $this->enforceNonce();
+
+        // Canonical payload format (nonce rollout aware):
+        // METHOD \n PATH \n TIMESTAMP \n NONCE \n BODY
+        // Legacy format without nonce is allowed only when enforcement is disabled.
         $candidates = [];
         foreach ($paths as $path) {
-            $candidates[] = implode("\n", [$method, $path, $timestamp, $body]);
+            if ($requireNonce === false) {
+                $candidates[] = implode("\n", [$method, $path, $timestamp, $body]);
+            }
+
+            if ($nonce !== '') {
+                $candidates[] = implode("\n", [$method, $path, $timestamp, $nonce, $body]);
+            }
         }
 
         $ok = false;
@@ -99,6 +118,14 @@ final class ApiKeyHmacMiddleware
                 'api_key_id' => $apiKey->getKey(),
                 'key_prefix' => $apiKey->key_prefix,
                 'hmac_version' => $apiKey->hmac_version,
+            ]);
+
+            return $this->unauthorized();
+        }
+
+        if ($nonce !== '' && $this->markNonceAsUsed($apiKey, $nonce, $this->allowedSkewSeconds()) === false) {
+            $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC nonce replay detected.', [
+                'api_key_id' => $apiKey->getKey(),
             ]);
 
             return $this->unauthorized();
@@ -146,9 +173,7 @@ final class ApiKeyHmacMiddleware
 
     private function timestampIsFresh(int $timestamp): bool
     {
-        $allowedSkew = (int) config('security.api.allowed_time_skew_seconds', self::DEFAULT_ALLOWED_TIME_SKEW_SECONDS);
-
-        return abs(now()->timestamp - $timestamp) <= $allowedSkew;
+        return abs(now()->timestamp - $timestamp) <= $this->allowedSkewSeconds();
     }
 
     /**
@@ -159,6 +184,23 @@ final class ApiKeyHmacMiddleware
         Log::channel('security')->warning($message, $context + [
             'event_type' => $eventType,
         ]);
+    }
+
+    private function allowedSkewSeconds(): int
+    {
+        return (int) config('security.api.allowed_time_skew_seconds', self::DEFAULT_ALLOWED_TIME_SKEW_SECONDS);
+    }
+
+    private function enforceNonce(): bool
+    {
+        return (bool) config('security.api.require_nonce', true);
+    }
+
+    private function markNonceAsUsed(ApiKey $apiKey, string $nonce, int $ttlSeconds): bool
+    {
+        $cacheKey = sprintf('api:hmac:nonce:%s:%s', (string) $apiKey->getKey(), hash('sha256', $nonce));
+
+        return Cache::add($cacheKey, true, now()->addSeconds($ttlSeconds));
     }
 
     private function unauthorized(): Response
