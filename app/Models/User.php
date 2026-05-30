@@ -24,6 +24,7 @@ use Illuminate\Support\Str;
  * @property string $email
  * @property string $name
  * @property string $passkey
+ * @property string|null $rss_token
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -62,6 +63,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'remember_token',
         'passkey',
+        'rss_token',
     ];
 
     protected $casts = [
@@ -91,6 +93,26 @@ class User extends Authenticatable implements MustVerifyEmail
                 ]);
             }
         });
+    }
+
+    public function generateRssToken(): string
+    {
+        do {
+            $token = Str::random(64);
+        } while (self::query()->where('rss_token', $token)->exists());
+
+        return $token;
+    }
+
+    public function rotateRssToken(): string
+    {
+        $token = $this->generateRssToken();
+
+        $this->forceFill([
+            'rss_token' => $token,
+        ])->save();
+
+        return $token;
     }
 
     public function role(): BelongsTo

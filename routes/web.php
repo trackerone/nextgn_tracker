@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountInviteController;
+use App\Http\Controllers\AccountRssController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\MyUploadsController;
 use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
+use App\Http\Controllers\RssFeedController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
@@ -72,6 +74,9 @@ Route::middleware('guest')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::get('/health', HealthCheckController::class)->name('health.index');
+Route::get('/rss/{token}', RssFeedController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->name('rss.feed');
 
 /*
 |--------------------------------------------------------------------------
@@ -236,6 +241,8 @@ Route::middleware(['auth'])->group(function (): void {
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+    Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
+    Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
 });
 
 Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
