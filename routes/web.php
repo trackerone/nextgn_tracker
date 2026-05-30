@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountInviteController;
+use App\Http\Controllers\AccountNotificationController;
 use App\Http\Controllers\AccountRssController;
 use App\Http\Controllers\AccountRssPresetController;
 use App\Http\Controllers\AccountSnatchController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyUploadsController;
+use App\Http\Controllers\NotificationWatchPresetController;
 use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
@@ -251,6 +253,26 @@ Route::middleware(['auth'])->group(function (): void {
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+    Route::get('/account/notifications', [AccountNotificationController::class, 'index'])->name('account.notifications.index');
+    Route::post('/account/notifications/read-all', [AccountNotificationController::class, 'markAllRead'])
+        ->name('account.notifications.read_all');
+    Route::post('/account/notifications/{notification}/read', [AccountNotificationController::class, 'markRead'])
+        ->whereNumber('notification')
+        ->name('account.notifications.read');
+
+    Route::get('/account/watch-presets', [NotificationWatchPresetController::class, 'index'])->name('account.watch-presets.index');
+    Route::get('/account/watch-presets/create', [NotificationWatchPresetController::class, 'create'])->name('account.watch-presets.create');
+    Route::post('/account/watch-presets', [NotificationWatchPresetController::class, 'store'])->name('account.watch-presets.store');
+    Route::get('/account/watch-presets/{preset}/edit', [NotificationWatchPresetController::class, 'edit'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.edit');
+    Route::patch('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'update'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.update');
+    Route::delete('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'destroy'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.destroy');
+
     Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
     Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
     Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->name('account.rss.presets.create');

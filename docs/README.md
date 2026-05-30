@@ -28,6 +28,7 @@ Use this index to find the canonical document for each operational topic.
 - [Tracker engine](TRACKER-ENGINE.md)
 - [Download flow](DOWNLOAD-FLOW.md)
 - [RSS feeds](RSS-FEEDS.md)
+- [Notification watch presets](NOTIFICATION-WATCH-PRESETS.md)
 - [Upload workflow](UPLOAD-WORKFLOW.md)
 - [API contract](API_CONTRACT.md)
 - [Security overview](SECURITY-OVERVIEW.md)
