@@ -27,6 +27,7 @@ Use this index to find the canonical document for each operational topic.
 - [Architecture (repositories)](ARCHITECTURE-NEXTGN-REPOSITORIES.md)
 - [Tracker engine](TRACKER-ENGINE.md)
 - [Download flow](DOWNLOAD-FLOW.md)
+- [RSS feeds](RSS-FEEDS.md)
 - [Upload workflow](UPLOAD-WORKFLOW.md)
 - [API contract](API_CONTRACT.md)
 - [Security overview](SECURITY-OVERVIEW.md)
