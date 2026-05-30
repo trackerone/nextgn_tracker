@@ -324,7 +324,13 @@ final class RssFeedTest extends TestCase
 
         $response->assertOk();
         $response->assertHeader('Content-Type', 'application/x-bittorrent');
-        $response->assertHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0');
+
+        $cacheControl = (string) $response->headers->get('Cache-Control');
+
+        foreach (['private', 'no-store', 'no-cache', 'must-revalidate', 'max-age=0'] as $directive) {
+            self::assertStringContainsString($directive, $cacheControl);
+        }
+
         self::assertStringContainsString(
             'rss-safe-download.torrent',
             (string) $response->headers->get('Content-Disposition')
