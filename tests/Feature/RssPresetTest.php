@@ -28,6 +28,7 @@ final class RssPresetTest extends TestCase
                 'language' => 'DANISH',
                 'limit' => '1000',
                 'unsupported' => 'discard-me',
+                'public_id' => '00000000-0000-0000-0000-000000000000',
                 'user_id' => User::factory()->create()->id,
             ])
             ->assertRedirect(route('account.rss.index'));
@@ -36,6 +37,7 @@ final class RssPresetTest extends TestCase
 
         self::assertSame((int) $user->id, (int) $preset->user_id);
         self::assertNotEmpty($preset->public_id);
+        self::assertNotSame('00000000-0000-0000-0000-000000000000', $preset->public_id);
         self::assertSame([
             'type' => 'movie',
             'language' => 'DANISH',
@@ -43,9 +45,12 @@ final class RssPresetTest extends TestCase
         ], $preset->filters);
         self::assertArrayNotHasKey('unsupported', $preset->filters);
 
+        $originalPublicId = (string) $preset->public_id;
+
         $this->actingAs($user)
             ->patch(route('account.rss.presets.update', ['preset' => $preset]), [
                 'name' => 'Danish freeleech',
+                'public_id' => '11111111-1111-1111-1111-111111111111',
                 'freeleech' => '1',
                 'q' => 'matrix',
             ])
@@ -53,6 +58,7 @@ final class RssPresetTest extends TestCase
 
         $preset->refresh();
         self::assertSame('Danish freeleech', $preset->name);
+        self::assertSame($originalPublicId, $preset->public_id);
         self::assertSame([
             'q' => 'matrix',
             'freeleech' => true,

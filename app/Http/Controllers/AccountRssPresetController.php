@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 
 final class AccountRssPresetController extends Controller
 {
@@ -30,7 +31,10 @@ final class AccountRssPresetController extends Controller
         $user = $this->authenticatedUser($request);
         $payload = $request->presetPayload();
 
-        $user->rssFeedPresets()->create($payload);
+        $user->rssFeedPresets()->create([
+            ...$payload,
+            'public_id' => (string) Str::uuid(),
+        ]);
 
         return redirect()
             ->route('account.rss.index')
