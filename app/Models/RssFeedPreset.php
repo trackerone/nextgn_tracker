@@ -7,7 +7,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -34,13 +33,6 @@ final class RssFeedPreset extends Model
         'filters' => 'array',
         'is_default' => 'boolean',
     ];
-
-    public function setPublicIdAttribute(?string $value): void
-    {
-        $this->attributes['public_id'] = $value === null || $value === ''
-            ? (string) Str::uuid()
-            : $value;
-    }
 
     public function user(): BelongsTo
     {
