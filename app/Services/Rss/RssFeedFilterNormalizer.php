@@ -77,9 +77,13 @@ final class RssFeedFilterNormalizer
      * @param  array<string, mixed>  $input
      * @return array<string, mixed>
      */
-    public function normalizedForStorage(array $input): array
+    public function normalizedForStorage(array $input, bool $includeLimit = true): array
     {
         $filters = $this->normalize($input);
+
+        if (! $includeLimit) {
+            unset($filters['limit']);
+        }
 
         return array_filter(
             $filters,

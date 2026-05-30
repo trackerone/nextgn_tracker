@@ -53,8 +53,10 @@
                         <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
                         <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
                         <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">PM</a>
+                        <a href="{{ route('account.notifications.index') }}" class="{{ $navLink }} {{ request()->routeIs('account.notifications.*') ? $activeNavLink : $inactiveNavLink }}">Notifications</a>
                         <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio</a>
                         <a href="{{ route('account.rss.index') }}" class="{{ $navLink }} {{ request()->routeIs('account.rss.*') ? $activeNavLink : $inactiveNavLink }}">RSS</a>
+                        <a href="{{ route('account.watch-presets.index') }}" class="{{ $navLink }} {{ request()->routeIs('account.watch-presets.*') ? $activeNavLink : $inactiveNavLink }}">Watch Presets</a>
                         @if (auth()->user()?->isStaff())
                             <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Moderation</a>
                         @endif
