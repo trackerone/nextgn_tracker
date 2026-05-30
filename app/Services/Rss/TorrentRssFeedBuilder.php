@@ -15,13 +15,39 @@ use Illuminate\Support\Collection;
 
 final class TorrentRssFeedBuilder
 {
+    /**
+     * @var array<string, string>
+     */
+    private const LANGUAGE_ALIASES = [
+        'da' => 'da',
+        'danish' => 'da',
+        'dansk' => 'da',
+        'no' => 'no',
+        'norwegian' => 'no',
+        'norsk' => 'no',
+        'nb' => 'nb',
+        'bokmal' => 'nb',
+        'bokmaal' => 'nb',
+        'nn' => 'nn',
+        'nynorsk' => 'nn',
+        'sv' => 'sv',
+        'swedish' => 'sv',
+        'svensk' => 'sv',
+        'fi' => 'fi',
+        'finnish' => 'fi',
+        'suomi' => 'fi',
+        'en' => 'en',
+        'english' => 'en',
+        'engelsk' => 'en',
+    ];
+
     public function __construct(
         private readonly DownloadEligibilityService $visibilityEligibility,
         private readonly DownloadEligibilityPolicy $ratioEligibility,
     ) {}
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
      */
     public function build(User $user, array $filters): string
     {
@@ -48,7 +74,7 @@ final class TorrentRssFeedBuilder
     }
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
      * @return Collection<int, Torrent>
      */
     private function eligibleTorrents(User $user, array $filters): Collection
@@ -87,7 +113,7 @@ final class TorrentRssFeedBuilder
     }
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
      */
     private function matchesFilters(Torrent $torrent, array $filters): bool
     {
@@ -107,6 +133,16 @@ final class TorrentRssFeedBuilder
             }
         }
 
+        foreach (['language', 'audio_language', 'subtitle_language'] as $field) {
+            if ($filters[$field] !== '' && ! $this->languageFieldMatches((string) ($metadata[$field] ?? ''), $filters[$field])) {
+                return false;
+            }
+        }
+
+        if ($filters['subtitles'] !== '' && ! $this->languageFieldMatches((string) ($metadata['subtitles'] ?? ''), $filters['subtitles'])) {
+            return false;
+        }
+
         if ($filters['q'] === '') {
             return true;
         }
@@ -119,6 +155,47 @@ final class TorrentRssFeedBuilder
         ])));
 
         return str_contains($haystack, $needle);
+    }
+
+    private function languageFieldMatches(string $metadataValue, string $filterValue): bool
+    {
+        $metadataLanguages = $this->normalizeLanguages($metadataValue);
+
+        if ($metadataLanguages === []) {
+            return false;
+        }
+
+        foreach ($this->normalizeLanguages($filterValue) as $filterLanguage) {
+            if (in_array($filterLanguage, $metadataLanguages, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function normalizeLanguages(string $value): array
+    {
+        $normalized = [];
+
+        foreach (preg_split('/[,;\/|]+/', $value) ?: [] as $part) {
+            $language = mb_strtolower(trim($part));
+
+            if ($language === '') {
+                continue;
+            }
+
+            $language = str_replace(['_', '-'], ' ', $language);
+            $language = preg_replace('/\s+/', ' ', $language) ?? $language;
+            $language = self::LANGUAGE_ALIASES[$language] ?? $language;
+            $language = self::LANGUAGE_ALIASES[strtok($language, ' ') ?: $language] ?? $language;
+            $normalized[] = $language;
+        }
+
+        return array_values(array_unique($normalized));
     }
 
     private function canDownload(User $user, Torrent $torrent): bool
@@ -140,7 +217,7 @@ final class TorrentRssFeedBuilder
         $this->appendElement($document, $item, 'pubDate', ($torrent->uploadedAtForDisplay() ?? $torrent->created_at ?? now())->toRfc2822String());
         $this->appendElement($document, $item, 'description', $this->description($torrent, $metadata));
 
-        if (is_string($metadata['type'] ?? null) && $metadata['type'] !== '') {
+        if (is_string($metadata['type'] ?? null)) {
             $this->appendElement($document, $item, 'category', $metadata['type']);
         }
 
@@ -157,6 +234,10 @@ final class TorrentRssFeedBuilder
             'Resolution: '.(string) ($metadata['resolution'] ?? ''),
             'Source: '.(string) ($metadata['source'] ?? ''),
             'Release group: '.(string) ($metadata['release_group'] ?? ''),
+            'Language: '.(string) ($metadata['language'] ?? ''),
+            'Audio language: '.(string) ($metadata['audio_language'] ?? ''),
+            'Subtitle language: '.(string) ($metadata['subtitle_language'] ?? ''),
+            'Subtitles: '.(string) ($metadata['subtitles'] ?? ''),
             'Year: '.(string) ($metadata['year'] ?? ''),
             'Size: '.$torrent->formatted_size,
             ((bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false)) ? 'Freeleech: yes' : null,
