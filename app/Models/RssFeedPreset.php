@@ -37,7 +37,11 @@ final class RssFeedPreset extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (RssFeedPreset $preset): void {
+        static::creating(function (Model $preset): void {
+            if (! $preset instanceof RssFeedPreset) {
+                return;
+            }
+
             if ($preset->public_id === null || $preset->public_id === '') {
                 $preset->public_id = (string) Str::uuid();
             }
