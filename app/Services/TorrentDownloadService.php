@@ -8,10 +8,29 @@ use App\Models\Torrent;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TorrentDownloadService
 {
     public function __construct(private readonly BencodeService $bencode) {}
+
+    /**
+     * @param  array<string, string>  $headers
+     */
+    public function streamPayload(Torrent $torrent, string $payload, array $headers = []): StreamedResponse
+    {
+        $filename = ($torrent->slug ?: (string) $torrent->getKey()).'.torrent';
+
+        return response()->streamDownload(
+            static function () use ($payload): void {
+                echo $payload;
+            },
+            $filename,
+            array_merge([
+                'Content-Type' => 'application/x-bittorrent',
+            ], $headers)
+        );
+    }
 
     public function buildPersonalizedPayload(Torrent $torrent, User $user): string
     {

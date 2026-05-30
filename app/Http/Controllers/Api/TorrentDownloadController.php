@@ -52,16 +52,6 @@ final class TorrentDownloadController extends Controller
             abort(404);
         }
 
-        $filename = ($model->slug ?: (string) $model->getKey()).'.torrent';
-
-        return response()->streamDownload(
-            static function () use ($payload): void {
-                echo $payload;
-            },
-            $filename,
-            [
-                'Content-Type' => 'application/x-bittorrent',
-            ]
-        );
+        return $this->downloads->streamPayload($model, $payload);
     }
 }

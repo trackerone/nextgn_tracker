@@ -13,7 +13,7 @@ Each user can have one nullable `rss_token` on their account. The RSS token is:
 - separate from the tracker passkey;
 - rotated independently from API keys and passkeys.
 
-Users manage the token at `/account/rss`. Rotating the token invalidates old RSS subscriptions immediately.
+Users manage the token at `/account/rss`. Rotating the token invalidates old RSS subscriptions and RSS torrent download URLs immediately.
 
 ## Feed endpoint
 
@@ -24,6 +24,24 @@ GET /rss/{token}
 The token identifies the subscribing user. Invalid tokens return a not-found response and never fall back to passkeys or API keys.
 
 Default feed size is 50 items. The `limit` query parameter is capped at 100 items.
+
+## RSS torrent download links
+
+Eligible RSS items include a token-scoped torrent enclosure for autodl and torrent clients:
+
+```text
+GET /rss/{token}/download/{torrent}
+```
+
+The `{token}` value is the user RSS token, and `{torrent}` is the numeric torrent id. The route resolves the user from `rss_token`, re-checks torrent visibility and download eligibility, then serves the same personalized `.torrent` payload path used by normal downloads. The URL does not expose storage paths, direct file paths, or the tracker passkey.
+
+Example enclosure URL shape:
+
+```text
+https://tracker.example/rss/0123456789abcdef/download/12345
+```
+
+Rotating the RSS token invalidates both the feed URL and previously emitted enclosure/download URLs because old tokens no longer resolve to a user.
 
 ## Filters
 
@@ -68,9 +86,10 @@ RSS feeds must remain user-scoped:
 - RSS tokens are not tracker passkeys and are not API keys.
 - Invalid tokens are rejected.
 - Feeds only include visible torrents that the resolved user is eligible to download.
+- RSS enclosure URLs use the RSS token route and do not include tracker passkeys.
+- RSS downloads still enforce torrent visibility, approval, ban/deletion state, and ratio/freeleech/no-history eligibility before any `.torrent` payload is returned.
 - Torrent metadata shown in RSS items is normalized through `TorrentMetadataView`.
-- RSS currently links to the authenticated details page only. It intentionally does not add an RSS enclosure until a safe token-scoped download route exists.
 
 ## Output
 
-The endpoint returns RSS 2.0 XML with newest eligible torrents first. Items include a title, details link, GUID, publish date, normalized metadata summary, and type category when available.
+The endpoint returns RSS 2.0 XML with newest eligible torrents first. Items include a title, details link, GUID, publish date, normalized metadata summary, type category when available, and an `application/x-bittorrent` enclosure URL for eligible downloads.

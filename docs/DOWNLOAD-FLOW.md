@@ -12,11 +12,12 @@ The download endpoints serve stored `.torrent` payloads after personalizing the 
 
 - Web: `GET /torrents/{torrent}/download` (`auth`, torrent download throttle).
 - API: `GET /api/torrents/{torrent}/download` (`api`, `auth`, torrent download throttle).
+- RSS: `GET /rss/{token}/download/{torrent}` (public route, user resolved by RSS token).
 - Magnet links are exposed by `GET /torrents/{torrent}/magnet`.
 
 ## Behavior
 
-1. Download authorization uses torrent policies/eligibility so regular users can download only approved, non-banned torrents.
+1. Download authorization uses torrent policies/eligibility so regular users can download only approved, non-banned torrents. RSS downloads use the same ratio/freeleech/no-history eligibility policy and shared torrent payload service as normal downloads, after resolving the user by `rss_token`.
 2. `TorrentDownloadService` loads the stored payload from the configured disk and decodes it with `BencodeService`.
 3. The top-level `announce` value is overwritten with `config('tracker.announce_url')` plus the authenticated user's passkey. If the config contains `%s`, it is formatted with the passkey; otherwise the passkey is appended as a path segment.
 4. Any `announce-list` is removed before re-encoding.
