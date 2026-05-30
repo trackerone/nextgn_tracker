@@ -62,6 +62,27 @@ The first RSS slice supports these filters:
 | `category` | Numeric category id | `?category=2` |
 | `limit` | Number of RSS items, capped at 100 | `?limit=25` |
 
+
+## Saved RSS presets
+
+Authenticated users can manage saved presets from `/account/rss`. A preset stores a normalized, safe subset of the same filters supported by the query-string feed so common subscriptions can be reused without manually rebuilding the URL. Presets are convenience shortcuts only; they do not create scheduled matching, notifications, or an autodl/rules engine.
+
+Preset feed URL shape:
+
+```text
+GET /rss/{token}/presets/{presetPublicId}
+```
+
+Example:
+
+```text
+https://tracker.example/rss/0123456789abcdef/presets/1f2d3c4b-5a6e-4a8b-9c0d-123456789abc
+```
+
+The `{presetPublicId}` is a non-guessable UUID owned by the user. The route still resolves the subscriber from `{token}` first, then loads only presets belonging to that user. A token for one user cannot access another user's preset. Presets do not store RSS tokens; rotating the RSS token invalidates all preset feed URLs and emitted RSS download links naturally because old tokens no longer resolve.
+
+Saved presets support these filter keys: `q`, `type`, `resolution`, `source`, `release_group`, `freeleech`, `category`, `language`, `audio_language`, `subtitle_language`, `subtitles`, and `limit`. Unsupported request fields are not stored. A preset feed behaves like calling `/rss/{token}` with the same normalized filters in the query string, including the same visibility, download, ratio/freeleech/no-history, metadata, language/subtitle, and secure enclosure behavior.
+
 ## Examples
 
 ```text

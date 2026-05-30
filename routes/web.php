@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountInviteController;
 use App\Http\Controllers\AccountRssController;
+use App\Http\Controllers\AccountRssPresetController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\RssFeedController;
+use App\Http\Controllers\RssPresetFeedController;
 use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
@@ -78,6 +80,9 @@ Route::get('/health', HealthCheckController::class)->name('health.index');
 Route::get('/rss/{token}', RssFeedController::class)
     ->where('token', '[A-Za-z0-9]+')
     ->name('rss.feed');
+Route::get('/rss/{token}/presets/{preset}', RssPresetFeedController::class)
+    ->where(['token' => '[A-Za-z0-9]+', 'preset' => '[0-9a-fA-F-]{36}'])
+    ->name('rss.presets.feed');
 Route::get('/rss/{token}/download/{torrent}', RssTorrentDownloadController::class)
     ->middleware($torrentDownloadThrottle)
     ->where(['token' => '[A-Za-z0-9]+', 'torrent' => '[0-9]+'])
@@ -248,6 +253,11 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
     Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
     Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
+    Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->name('account.rss.presets.create');
+    Route::post('/account/rss/presets', [AccountRssPresetController::class, 'store'])->name('account.rss.presets.store');
+    Route::get('/account/rss/presets/{preset}/edit', [AccountRssPresetController::class, 'edit'])->whereNumber('preset')->name('account.rss.presets.edit');
+    Route::patch('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'update'])->whereNumber('preset')->name('account.rss.presets.update');
+    Route::delete('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'destroy'])->whereNumber('preset')->name('account.rss.presets.destroy');
 });
 
 Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
