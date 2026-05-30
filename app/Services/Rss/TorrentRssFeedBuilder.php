@@ -67,7 +67,7 @@ final class TorrentRssFeedBuilder
         $this->appendElement($document, $channel, 'lastBuildDate', now()->toRfc2822String());
 
         foreach ($torrents as $torrent) {
-            $this->appendItem($document, $channel, $torrent);
+            $this->appendItem($document, $channel, $torrent, $user);
         }
 
         return (string) $document->saveXML();
@@ -88,6 +88,7 @@ final class TorrentRssFeedBuilder
             /** @var Collection<int, Torrent> $torrents */
             $torrents = Torrent::query()
                 ->visible()
+                ->where('is_visible', true)
                 ->with('metadata')
                 ->latest('uploaded_at')
                 ->latest('id')
@@ -204,11 +205,15 @@ final class TorrentRssFeedBuilder
             && $this->ratioEligibility->check($user, $torrent)['allowed'];
     }
 
-    private function appendItem(DOMDocument $document, DOMElement $channel, Torrent $torrent): void
+    private function appendItem(DOMDocument $document, DOMElement $channel, Torrent $torrent, User $user): void
     {
         $metadata = TorrentMetadataView::forTorrent($torrent);
         $title = (string) ($metadata['title'] ?: $torrent->name);
         $detailsUrl = route('torrents.show', $torrent, true);
+        $downloadUrl = route('rss.torrents.download', [
+            'token' => (string) $user->rss_token,
+            'torrent' => (int) $torrent->getKey(),
+        ], true);
         $item = $this->appendElement($document, $channel, 'item');
 
         $this->appendElement($document, $item, 'title', $title);
@@ -221,7 +226,10 @@ final class TorrentRssFeedBuilder
             $this->appendElement($document, $item, 'category', $metadata['type']);
         }
 
-        // TODO: Add an enclosure once a safe token-scoped download route exists for RSS clients.
+        $enclosure = $this->appendElement($document, $item, 'enclosure');
+        $enclosure->setAttribute('url', $downloadUrl);
+        $enclosure->setAttribute('type', 'application/x-bittorrent');
+        $enclosure->setAttribute('length', (string) max(0, (int) $torrent->size_bytes));
     }
 
     /**

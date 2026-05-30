@@ -23,6 +23,7 @@ use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\RssFeedController;
+use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
@@ -77,6 +78,10 @@ Route::get('/health', HealthCheckController::class)->name('health.index');
 Route::get('/rss/{token}', RssFeedController::class)
     ->where('token', '[A-Za-z0-9]+')
     ->name('rss.feed');
+Route::get('/rss/{token}/download/{torrent}', RssTorrentDownloadController::class)
+    ->middleware($torrentDownloadThrottle)
+    ->where(['token' => '[A-Za-z0-9]+', 'torrent' => '[0-9]+'])
+    ->name('rss.torrents.download');
 
 /*
 |--------------------------------------------------------------------------

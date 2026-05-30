@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\SiteSetting;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Models\UserStat;
+use App\Services\BencodeService;
+use App\Services\Tracker\RatioRulesConfig;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 final class RssFeedTest extends TestCase
@@ -282,6 +286,167 @@ final class RssFeedTest extends TestCase
         $response->assertDontSee('Blocked Danish Ratio');
     }
 
+    public function test_rss_download_rejects_invalid_and_rotated_tokens(): void
+    {
+        Storage::fake('torrents');
+
+        $user = $this->rssUser();
+        $torrent = Torrent::factory()->create();
+        $this->storeTorrentPayload($torrent);
+        $oldToken = (string) $user->rss_token;
+
+        $this->get(route('rss.torrents.download', [
+            'token' => 'notarealtoken',
+            'torrent' => $torrent->id,
+        ]))->assertNotFound();
+
+        $user->rotateRssToken();
+
+        $this->get(route('rss.torrents.download', [
+            'token' => $oldToken,
+            'torrent' => $torrent->id,
+        ]))->assertNotFound();
+    }
+
+    public function test_rss_download_returns_personalized_torrent_for_eligible_torrent(): void
+    {
+        Storage::fake('torrents');
+        config()->set('tracker.announce_url', 'https://tracker.example/announce/%s');
+
+        $user = $this->rssUser();
+        $torrent = Torrent::factory()->create(['slug' => 'rss-safe-download']);
+        $this->storeTorrentPayload($torrent);
+
+        $response = $this->get(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $torrent->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/x-bittorrent');
+        $response->assertHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate, max-age=0');
+        self::assertStringContainsString(
+            'rss-safe-download.torrent',
+            (string) $response->headers->get('Content-Disposition')
+        );
+
+        $decoded = $this->decodeTorrentPayload($response->streamedContent());
+
+        self::assertSame(sprintf('https://tracker.example/announce/%s', $user->passkey), $decoded['announce'] ?? null);
+    }
+
+    public function test_rss_download_rejects_hidden_unapproved_and_ratio_blocked_torrents(): void
+    {
+        Storage::fake('torrents');
+        $this->setRatioSettings([
+            'enforcement_enabled' => true,
+            'minimum_download_ratio' => 0.5,
+            'freeleech_bypass_enabled' => false,
+            'no_history_grace_enabled' => false,
+        ]);
+
+        $user = $this->rssUser(uploadedBytes: 100, downloadedBytes: 1_000);
+        $hidden = Torrent::factory()->create(['is_visible' => false]);
+        $unapproved = Torrent::factory()->unapproved()->create();
+        $ratioBlocked = Torrent::factory()->create();
+
+        $this->storeTorrentPayload($hidden);
+        $this->storeTorrentPayload($unapproved);
+        $this->storeTorrentPayload($ratioBlocked);
+
+        $this->get(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $hidden->id,
+        ]))->assertNotFound();
+
+        $this->get(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $unapproved->id,
+        ]))->assertNotFound();
+
+        $this->get(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $ratioBlocked->id,
+        ]))->assertForbidden();
+    }
+
+    public function test_rss_download_allows_freeleech_when_ratio_bypass_applies(): void
+    {
+        Storage::fake('torrents');
+        $this->setRatioSettings([
+            'enforcement_enabled' => true,
+            'minimum_download_ratio' => 0.5,
+            'freeleech_bypass_enabled' => true,
+            'no_history_grace_enabled' => false,
+        ]);
+
+        $user = $this->rssUser(uploadedBytes: 100, downloadedBytes: 1_000);
+        $torrent = Torrent::factory()->create(['is_freeleech' => true, 'freeleech' => true]);
+        $this->storeTorrentPayload($torrent);
+
+        $this->get(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $torrent->id,
+        ]))->assertOk();
+    }
+
+    public function test_rss_xml_includes_safe_download_enclosure_for_eligible_items_only(): void
+    {
+        $user = $this->rssUser(uploadedBytes: 100, downloadedBytes: 1_000);
+        $eligible = Torrent::factory()->create([
+            'name' => 'Eligible RSS Freeleech',
+            'is_freeleech' => true,
+            'freeleech' => true,
+        ]);
+        $blocked = Torrent::factory()->create(['name' => 'Blocked RSS Torrent']);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token]));
+        $downloadUrl = route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $eligible->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee('Eligible RSS Freeleech');
+        $response->assertDontSee('Blocked RSS Torrent');
+        $response->assertSee('enclosure url="'.$downloadUrl.'"', false);
+        $response->assertSee('type="application/x-bittorrent"', false);
+        $response->assertDontSee((string) $user->passkey);
+        $response->assertDontSee('/torrents/'.$eligible->id.'/download');
+        $response->assertDontSee(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $blocked->id,
+        ]));
+    }
+
+    public function test_language_filters_include_download_links_for_matching_items(): void
+    {
+        $user = $this->rssUser();
+        $match = Torrent::factory()->create(['name' => 'Danish Linked Movie']);
+        $miss = Torrent::factory()->create(['name' => 'Swedish Linked Movie']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Danish Linked Movie',
+            'language' => 'da',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Swedish Linked Movie',
+            'language' => 'sv',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'language' => 'da']));
+
+        $response->assertOk();
+        $response->assertSee('Danish Linked Movie');
+        $response->assertDontSee('Swedish Linked Movie');
+        $response->assertSee(route('rss.torrents.download', [
+            'token' => $user->rss_token,
+            'torrent' => $match->id,
+        ]));
+    }
+
     public function test_rotating_rss_token_invalidates_old_feed_url(): void
     {
         $user = $this->rssUser();
@@ -296,6 +461,62 @@ final class RssFeedTest extends TestCase
         self::assertNotSame($oldToken, $user->rss_token);
         $this->get(route('rss.feed', ['token' => $oldToken]))->assertNotFound();
         $this->get(route('rss.feed', ['token' => $user->rss_token]))->assertOk();
+    }
+
+    private function storeTorrentPayload(Torrent $torrent): void
+    {
+        Storage::disk('torrents')->put(
+            $torrent->torrentStoragePath(),
+            app(BencodeService::class)->encode([
+                'announce' => 'https://tracker.invalid/announce',
+                'announce-list' => [
+                    ['https://leaked.invalid/announce'],
+                ],
+                'info' => ['name' => 'demo'],
+            ])
+        );
+    }
+
+    /**
+     * @return array<int|string, mixed>
+     */
+    private function decodeTorrentPayload(string $payload): array
+    {
+        $decoded = app(BencodeService::class)->decode($payload);
+
+        $this->assertIsArray($decoded);
+
+        return $decoded;
+    }
+
+    /**
+     * @param  array<string, bool|float>  $values
+     */
+    private function setRatioSettings(array $values): void
+    {
+        if (array_key_exists('enforcement_enabled', $values)) {
+            SiteSetting::query()->where('key', RatioRulesConfig::ENFORCEMENT_ENABLED)->update([
+                'value' => $values['enforcement_enabled'] ? 'true' : 'false',
+            ]);
+        }
+
+        if (array_key_exists('minimum_download_ratio', $values)) {
+            SiteSetting::query()->where('key', RatioRulesConfig::MINIMUM_DOWNLOAD_RATIO)->update([
+                'value' => (string) $values['minimum_download_ratio'],
+            ]);
+        }
+
+        if (array_key_exists('freeleech_bypass_enabled', $values)) {
+            SiteSetting::query()->where('key', RatioRulesConfig::FREELEECH_BYPASS_ENABLED)->update([
+                'value' => $values['freeleech_bypass_enabled'] ? 'true' : 'false',
+            ]);
+        }
+
+        if (array_key_exists('no_history_grace_enabled', $values)) {
+            SiteSetting::query()->where('key', RatioRulesConfig::NO_HISTORY_GRACE_ENABLED)->update([
+                'value' => $values['no_history_grace_enabled'] ? 'true' : 'false',
+            ]);
+        }
     }
 
     private function rssUser(int $uploadedBytes = 1_000_000, int $downloadedBytes = 1): User
