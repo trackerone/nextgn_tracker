@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Services\Rss\RssFeedFilterNormalizer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -62,21 +63,6 @@ final class RssFeedRequest extends FormRequest
         /** @var array<string, mixed> $validated */
         $validated = $this->validated();
 
-        $freeleech = $validated['freeleech'] ?? null;
-
-        return [
-            'q' => (string) ($validated['q'] ?? ''),
-            'type' => (string) ($validated['type'] ?? ''),
-            'resolution' => (string) ($validated['resolution'] ?? ''),
-            'source' => (string) ($validated['source'] ?? ''),
-            'release_group' => (string) ($validated['release_group'] ?? ''),
-            'language' => (string) ($validated['language'] ?? ''),
-            'audio_language' => (string) ($validated['audio_language'] ?? ''),
-            'subtitle_language' => (string) ($validated['subtitle_language'] ?? ''),
-            'subtitles' => (string) ($validated['subtitles'] ?? ''),
-            'freeleech' => $freeleech === null ? null : filter_var($freeleech, FILTER_VALIDATE_BOOLEAN),
-            'category' => isset($validated['category']) ? (int) $validated['category'] : null,
-            'limit' => min(100, max(1, (int) ($validated['limit'] ?? 50))),
-        ];
+        return app(RssFeedFilterNormalizer::class)->normalize($validated);
     }
 }

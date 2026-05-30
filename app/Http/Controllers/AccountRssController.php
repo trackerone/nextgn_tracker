@@ -20,6 +20,7 @@ final class AccountRssController extends Controller
         return response()->view('account.rss', [
             'user' => $user,
             'feedUrl' => $user->rss_token !== null ? route('rss.feed', ['token' => $user->rss_token]) : null,
+            'presets' => $user->rssFeedPresets()->latest()->get(),
         ]);
     }
 

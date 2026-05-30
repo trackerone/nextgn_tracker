@@ -169,6 +169,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TorrentFollow::class);
     }
 
+    public function rssFeedPresets(): HasMany
+    {
+        return $this->hasMany(RssFeedPreset::class);
+    }
+
     public function scopeStaff(Builder $query): Builder
     {
         return $query->where(function (Builder $builder): void {
