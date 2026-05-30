@@ -11,6 +11,7 @@ use App\Services\Rss\RssFeedFilterNormalizer;
 use App\Services\Rss\TorrentRssFilterMatcher;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 final class TorrentWatchPresetMatcher
@@ -35,7 +36,10 @@ final class TorrentWatchPresetMatcher
         $presets = $user->notificationWatchPresets()
             ->where('is_enabled', true)
             ->get()
-            ->filter(fn (NotificationWatchPreset $preset): bool => $this->presetMatches($preset, $torrent))
+            ->filter(function (Model $preset) use ($torrent): bool {
+                return $preset instanceof NotificationWatchPreset
+                    && $this->presetMatches($preset, $torrent);
+            })
             ->values();
 
         return $presets;
