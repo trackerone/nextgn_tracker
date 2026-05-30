@@ -35,17 +35,11 @@ final class RssFeedPreset extends Model
         'is_default' => 'boolean',
     ];
 
-    protected static function booted(): void
+    public function setPublicIdAttribute(?string $value): void
     {
-        static::creating(function (Model $preset): void {
-            if ($preset instanceof RssFeedPreset === false) {
-                return;
-            }
-
-            if ($preset->public_id === null || $preset->public_id === '') {
-                $preset->public_id = (string) Str::uuid();
-            }
-        });
+        $this->attributes['public_id'] = $value === null || $value === ''
+            ? (string) Str::uuid()
+            : $value;
     }
 
     public function user(): BelongsTo
