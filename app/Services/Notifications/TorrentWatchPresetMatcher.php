@@ -6,7 +6,6 @@ namespace App\Services\Notifications;
 
 use App\Models\NotificationWatchPreset;
 use App\Models\Torrent;
-use App\Models\TorrentWatchNotification;
 use App\Models\User;
 use App\Services\Rss\RssFeedFilterNormalizer;
 use App\Services\Rss\TorrentRssFilterMatcher;
@@ -34,7 +33,7 @@ final class TorrentWatchPresetMatcher
 
         /** @var Collection<int, NotificationWatchPreset> $presets */
         $presets = $user->notificationWatchPresets()
-            ->enabled()
+            ->where('is_enabled', true)
             ->get()
             ->filter(fn (NotificationWatchPreset $preset): bool => $this->presetMatches($preset, $torrent))
             ->values();
@@ -57,7 +56,7 @@ final class TorrentWatchPresetMatcher
             ->orderBy('id')
             ->chunkById(100, function (Collection $presets) use ($torrent, &$created): void {
                 foreach ($presets as $preset) {
-                    if (! $preset instanceof NotificationWatchPreset || ! $preset->user instanceof User) {
+                    if (! $preset->user instanceof User) {
                         continue;
                     }
 
