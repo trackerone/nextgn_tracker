@@ -36,6 +36,10 @@ The first RSS slice supports these filters:
 | `resolution` | Torrent metadata resolution | `?resolution=2160p` |
 | `source` | Torrent metadata source | `?source=bluray` |
 | `release_group` | Torrent metadata release group | `?release_group=NTB` |
+| `language` | General torrent metadata language, matched case-insensitively with common Nordic/English names normalized | `?language=da` |
+| `audio_language` | Torrent audio language metadata | `?audio_language=da` |
+| `subtitle_language` | Primary subtitle language metadata | `?subtitle_language=da` |
+| `subtitles` | Available subtitle languages; accepts comma-separated alternatives | `?subtitles=da,no,sv,fi` |
 | `freeleech` | Boolean freeleech filter | `?freeleech=1` |
 | `category` | Numeric category id | `?category=2` |
 | `limit` | Number of RSS items, capped at 100 | `?limit=25` |
@@ -47,7 +51,15 @@ The first RSS slice supports these filters:
 /rss/{token}?type=movie&resolution=2160p
 /rss/{token}?source=bluray&freeleech=1
 /rss/{token}?q=matrix&release_group=groupname
+/rss/{token}?language=da
+/rss/{token}?audio_language=da
+/rss/{token}?subtitle_language=da
+/rss/{token}?subtitles=da,no,sv,fi
+/rss/{token}?type=movie&audio_language=da
+/rss/{token}?type=movie&subtitle_language=da&resolution=2160p
 ```
+
+Language filters accept ISO-like short values such as `da`, `no`, `nb`, `nn`, `sv`, `fi`, and `en`, plus common names such as `danish`, `dansk`, `norwegian`, `svensk`, `swedish`, `finnish`, and `english`. Matching is case-insensitive.
 
 ## Security boundaries
 

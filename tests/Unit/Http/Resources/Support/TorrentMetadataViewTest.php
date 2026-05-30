@@ -33,6 +33,10 @@ final class TorrentMetadataViewTest extends TestCase
             'source' => 'BLURAY',
             'resolution' => '2160p',
             'release_group' => 'NXT',
+            'language' => 'da',
+            'audio_language' => 'da',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
             'imdb_id' => 'tt2000002',
             'tmdb_id' => 2002,
             'nfo' => 'persisted nfo',
@@ -48,6 +52,10 @@ final class TorrentMetadataViewTest extends TestCase
         $this->assertSame('BLURAY', $metadata['source']);
         $this->assertSame('2160p', $metadata['resolution']);
         $this->assertSame('NXT', $metadata['release_group']);
+        $this->assertSame('da', $metadata['language']);
+        $this->assertSame('da', $metadata['audio_language']);
+        $this->assertSame('no', $metadata['subtitle_language']);
+        $this->assertSame('da,no,sv', $metadata['subtitles']);
         $this->assertSame('tt2000002', $metadata['imdb_id']);
         $this->assertSame(2002, $metadata['tmdb_id']);
         $this->assertSame('persisted nfo', $metadata['nfo']);
@@ -92,6 +100,10 @@ final class TorrentMetadataViewTest extends TestCase
             'source' => null,
             'resolution' => '',
             'release_group' => '',
+            'language' => null,
+            'audio_language' => '',
+            'subtitle_language' => null,
+            'subtitles' => '',
             'imdb_id' => null,
             'tmdb_id' => null,
             'nfo' => null,
@@ -107,6 +119,10 @@ final class TorrentMetadataViewTest extends TestCase
         $this->assertNull($metadata['source']);
         $this->assertSame('', $metadata['resolution']);
         $this->assertSame('', $metadata['release_group']);
+        $this->assertNull($metadata['language']);
+        $this->assertSame('', $metadata['audio_language']);
+        $this->assertNull($metadata['subtitle_language']);
+        $this->assertSame('', $metadata['subtitles']);
         $this->assertNull($metadata['imdb_id']);
         $this->assertNull($metadata['tmdb_id']);
         $this->assertNull($metadata['nfo']);
@@ -133,6 +149,10 @@ final class TorrentMetadataViewTest extends TestCase
         $this->assertSame('HDTV', $metadata['source']);
         $this->assertSame('720p', $metadata['resolution']);
         $this->assertNull($metadata['release_group']);
+        $this->assertNull($metadata['language']);
+        $this->assertNull($metadata['audio_language']);
+        $this->assertNull($metadata['subtitle_language']);
+        $this->assertNull($metadata['subtitles']);
         $this->assertSame('tt4242424', $metadata['imdb_id']);
         $this->assertSame(4242, $metadata['tmdb_id']);
         $this->assertSame('legacy nfo fallback', $metadata['nfo']);

@@ -147,6 +147,141 @@ final class RssFeedTest extends TestCase
         $response->assertDontSee('Resolution: 720p');
     }
 
+    public function test_audio_language_filter_matches_danish_metadata(): void
+    {
+        $user = $this->rssUser();
+        $match = Torrent::factory()->create(['name' => 'Danish Audio Movie']);
+        $miss = Torrent::factory()->create(['name' => 'English Audio Movie']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Danish Audio Movie',
+            'audio_language' => 'da',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'English Audio Movie',
+            'audio_language' => 'en',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'audio_language' => 'da']));
+
+        $response->assertOk();
+        $response->assertSee('Danish Audio Movie');
+        $response->assertSee('Audio language: da');
+        $response->assertDontSee('English Audio Movie');
+    }
+
+    public function test_subtitle_language_filter_matches_danish_metadata(): void
+    {
+        $user = $this->rssUser();
+        $match = Torrent::factory()->create(['name' => 'Danish Subtitle Movie']);
+        $miss = Torrent::factory()->create(['name' => 'Norwegian Subtitle Movie']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Danish Subtitle Movie',
+            'subtitle_language' => 'da',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Norwegian Subtitle Movie',
+            'subtitle_language' => 'no',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'subtitle_language' => 'da']));
+
+        $response->assertOk();
+        $response->assertSee('Danish Subtitle Movie');
+        $response->assertSee('Subtitle language: da');
+        $response->assertDontSee('Norwegian Subtitle Movie');
+    }
+
+    public function test_subtitles_filter_accepts_comma_separated_languages(): void
+    {
+        $user = $this->rssUser();
+        $norwegian = Torrent::factory()->create(['name' => 'Nordic Norwegian Subs']);
+        $swedish = Torrent::factory()->create(['name' => 'Nordic Swedish Subs']);
+        $english = Torrent::factory()->create(['name' => 'English Subs']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $norwegian->id,
+            'title' => 'Nordic Norwegian Subs',
+            'subtitles' => 'no',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $swedish->id,
+            'title' => 'Nordic Swedish Subs',
+            'subtitles' => 'sv',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $english->id,
+            'title' => 'English Subs',
+            'subtitles' => 'en',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'subtitles' => 'da,no,sv']));
+
+        $response->assertOk();
+        $response->assertSee('Nordic Norwegian Subs');
+        $response->assertSee('Nordic Swedish Subs');
+        $response->assertSee('Subtitles: no');
+        $response->assertDontSee('English Subs');
+    }
+
+    public function test_language_filters_match_case_insensitive_names(): void
+    {
+        $user = $this->rssUser();
+        $match = Torrent::factory()->create(['name' => 'Dansk Language Movie']);
+        $miss = Torrent::factory()->create(['name' => 'Finnish Language Movie']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Dansk Language Movie',
+            'language' => 'Dansk',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Finnish Language Movie',
+            'language' => 'Finnish',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'language' => 'DANISH']));
+
+        $response->assertOk();
+        $response->assertSee('Dansk Language Movie');
+        $response->assertSee('Language: Dansk');
+        $response->assertDontSee('Finnish Language Movie');
+    }
+
+    public function test_language_filters_still_respect_torrent_eligibility(): void
+    {
+        $user = $this->rssUser(uploadedBytes: 1, downloadedBytes: 10);
+        $eligible = Torrent::factory()->create([
+            'name' => 'Eligible Danish Freeleech',
+            'is_freeleech' => true,
+            'freeleech' => true,
+        ]);
+        $blocked = Torrent::factory()->create(['name' => 'Blocked Danish Ratio']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $eligible->id,
+            'title' => 'Eligible Danish Freeleech',
+            'language' => 'da',
+        ]);
+        TorrentMetadata::query()->create([
+            'torrent_id' => $blocked->id,
+            'title' => 'Blocked Danish Ratio',
+            'language' => 'da',
+        ]);
+
+        $response = $this->get(route('rss.feed', ['token' => $user->rss_token, 'language' => 'da']));
+
+        $response->assertOk();
+        $response->assertSee('Eligible Danish Freeleech');
+        $response->assertDontSee('Blocked Danish Ratio');
+    }
+
     public function test_rotating_rss_token_invalidates_old_feed_url(): void
     {
         $user = $this->rssUser();
