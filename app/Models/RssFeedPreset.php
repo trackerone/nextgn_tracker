@@ -38,7 +38,7 @@ final class RssFeedPreset extends Model
     protected static function booted(): void
     {
         static::creating(function (Model $preset): void {
-            if (!$preset instanceof RssFeedPreset) {
+            if ($preset instanceof RssFeedPreset === false) {
                 return;
             }
 
