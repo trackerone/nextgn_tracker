@@ -41,41 +41,9 @@ jobs:
             exit 1
           fi
 
-      - name: Smoke test FrankenPHP startup
-        run: |
-          set -eu
-          container_id="$(docker run -d \
-            -p 127.0.0.1::10000 \
-            -e APP_ENV=production \
-            -e APP_DEBUG=false \
-            -e APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
-            -e DB_CONNECTION=sqlite \
-            -e DB_DATABASE=/tmp/nextgn-smoke.sqlite \
-            -e PORT=10000 \
-            nextgn-tracker:test \
-            sh -c 'touch /tmp/nextgn-smoke.sqlite && exec sh /app/tools/entrypoint.sh')"
-
-          cleanup() {
-            docker logs "$container_id" || true
-            docker stop "$container_id" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-
-          host_port="$(docker port "$container_id" 10000/tcp | sed 's/.*://')"
-
-          for attempt in $(seq 1 30); do
-            if [ "$(docker inspect -f '{{.State.Running}}' "$container_id" 2>/dev/null || echo false)" != "true" ]; then
-              echo "Container exited before the HTTP server accepted a request." >&2
-              exit 1
-            fi
-
-            if curl --silent --show-error --output /dev/null --max-time 5 "http://127.0.0.1:${host_port}/" \
-              || curl --silent --show-error --output /dev/null --max-time 5 "http://127.0.0.1:${host_port}/login"; then
-              exit 0
-            fi
-
-            sleep 1
-          done
-
-          echo "Timed out waiting for FrankenPHP to accept an HTTP request." >&2
-          exit 1
+      - name: Validate FrankenPHP Caddy config
+        run: >
+          docker run --rm nextgn-tracker:test
+          frankenphp validate
+          --config /app/deploy/frankenphp/Caddyfile
+          --adapter caddyfile
