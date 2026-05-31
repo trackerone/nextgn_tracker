@@ -38,6 +38,10 @@ php artisan serve --host=127.0.0.1 --port=8000
 npm run dev
 ```
 
+## Production runtime
+
+The production Docker image uses FrankenPHP/Caddy to serve the Laravel application from `public/`. Laravel worker mode is intentionally not enabled in this runtime slice; it can be evaluated later after compatibility and load testing. Local development can continue to use `php artisan serve` with Vite as shown above.
+
 ## Documentation index
 
 Use [docs/README.md](docs/README.md) for the full documentation map.

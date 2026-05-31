@@ -1,34 +1,42 @@
 # Dockerfile
-FROM php:8.4-cli
+FROM dunglas/frankenphp:1-php8.4-bookworm
 
 ARG APP_UID=1000
 ARG APP_GID=1000
 
-# System deps
+# System deps used by Composer and runtime tooling.
 RUN apt-get update && apt-get install -y \
-    git unzip libzip-dev libicu-dev libonig-dev libsqlite3-dev \
+    git unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# PHP extensions som Laravel forventer
-RUN docker-php-ext-install \
-    zip intl mbstring bcmath pdo pdo_mysql pdo_sqlite opcache
+# PHP extensions required by Laravel, application dependencies, and supported databases.
+RUN install-php-extensions \
+    zip \
+    intl \
+    mbstring \
+    bcmath \
+    pdo_mysql \
+    pdo_sqlite \
+    opcache \
+    gd \
+    curl \
+    dom
 
-# Runtime user
+# Runtime user.
 RUN groupadd --gid ${APP_GID} nextgn \
     && useradd --uid ${APP_UID} --gid nextgn --create-home --shell /bin/sh nextgn
 
-# Composer
+# Composer.
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY . /app
 
-
-# Installér afhængigheder i build (fail fast!)
+# Install production dependencies during the image build so failures happen early.
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-# Forbered writeable dirs – selvheal hvis 'bootstrap/cache' er file
+# Prepare writable dirs; self-heal if bootstrap/cache is accidentally a file.
 RUN set -eu; \
     ensure_dir() { p="$1"; if [ -e "$p" ] && [ ! -d "$p" ]; then rm -f "$p"; fi; mkdir -p "$p"; }; \
     ensure_dir storage/app/public; \
@@ -40,19 +48,16 @@ RUN set -eu; \
     ensure_dir storage/framework/sessions; \
     ensure_dir storage/logs; \
     ensure_dir bootstrap/cache; \
-    chown -R nextgn:nextgn /app; \
-    chmod -R u+rwX,g+rwX storage bootstrap/cache
+    ensure_dir /config/caddy; \
+    ensure_dir /data/caddy; \
+    chown -R nextgn:nextgn /app /config/caddy /data/caddy; \
+    chmod -R u+rwX,g+rwX storage bootstrap/cache /config/caddy /data/caddy
 
-
-# (Valgfrit) PHP-ini
-# COPY tools/php.ini /usr/local/etc/php/conf.d/zzz-custom.ini
-
-# Runtime platforms can provide $PORT; keep a local default
+# Runtime platforms can provide $PORT; keep a local default.
 ENV PORT=10000
 EXPOSE 10000
 
 USER nextgn
 
-# Runtime sker i entrypoint
-CMD ["sh","/app/tools/entrypoint.sh"]
-
+# Runtime starts in the entrypoint after Laravel production validation/cache warmup.
+CMD ["sh", "/app/tools/entrypoint.sh"]
