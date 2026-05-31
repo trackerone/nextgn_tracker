@@ -17,21 +17,13 @@
   <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-docker.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-docker.yml/badge.svg" alt="Docker Build Smoke" /></a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-pr-review.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-pr-review.yml/badge.svg" alt="Codex PR Review" /></a>
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-issue-implementation.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-issue-implementation.yml/badge.svg" alt="Codex Issue Implementation Intake" /></a>
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-nightly-maintenance.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-nightly-maintenance.yml/badge.svg" alt="Codex Nightly Maintenance" /></a>
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/pint-fix.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/pint-fix.yml/badge.svg" alt="Pint Fix" /></a>
-  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/lockfile-update.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/lockfile-update.yml/badge.svg" alt="Repair composer.lock (Laravel 12 baseline)" /></a>
-</p>
-
 ## Overview
 
 NextGN Tracker is a modern Laravel-based BitTorrent platform under active development.
 
 ## CI status
 
-The badges above mirror the active GitHub Actions workflows for PHP linting, static analysis, tests, backend checks, frontend asset compilation, Docker/runtime validation, and repository automation.
+The badges above mirror the active GitHub Actions workflows for project health: backend checks, PHP linting, static analysis, tests, frontend asset compilation, and Docker build validation.
 
 ## Core model
 
