@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo 'No root ESLint configured; use frontend/package-specific checks instead'"
+    "lint": "echo 'No frontend lint configured yet'"
   },
   "dependencies": {
     "dompurify": "3.4.2",

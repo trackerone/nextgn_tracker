@@ -62,7 +62,7 @@ All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage
 - Run `composer lint` (Laravel Pint) before every push; the codebase treats lint violations as blockers.
 - Execute `composer analyse` (Larastan at high level) and resolve or justify all findings.
 - Ensure `composer test` (Pest/PHPUnit) passes locally and add coverage for new behavior.
-- Frontend changes must satisfy ESLint/Prettier configs and ship with `npm run build` proof.
+- Frontend changes must ship with `npm run build` proof; no frontend lint gate is configured yet.
 
 ## Security & Responsible Disclosure
 - Never introduce raw SQL that touches user input; use the query builder or parameterized statements.
@@ -81,7 +81,7 @@ All contributors must follow the [Code of Conduct](./CODE_OF_CONDUCT.md). Engage
 ## Style Guidelines (PHP, Blade, JS, Markdown)
 - **PHP**: Prefer constructor injection, typed properties, and small service classes. Avoid facades in domain logic. Keep methods focused and document complex decisions inline.
 - **Blade**: Escape everything with `{{ }}` by default, leverage components/slots, and keep inline scripts minimal. Use `@vite` helpers for assets.
-- **JavaScript/TypeScript**: Use functional components with hooks, keep state localized, and follow the repo ESLint/Prettier setup. Import icons from `lucide-react` and shared UI from shadcn components.
+- **JavaScript/TypeScript**: Use functional components with hooks, keep state localized, and keep formatting consistent with nearby files. Import icons from `lucide-react` and shared UI from shadcn components.
 - **Markdown**: Use sentence case headings, keep paragraphs short, and favor relative links for local references.
 
 ## Becoming a Maintainer
