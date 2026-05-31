@@ -7,10 +7,31 @@
   <img src="https://img.shields.io/badge/Vite-Assets-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite Assets" />
   <img src="https://img.shields.io/badge/License-MIT-3B82F6?style=flat-square" alt="License MIT" />
 </p>
+<p align="center">
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-backend.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-backend.yml/badge.svg" alt="CI Backend" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php.yml/badge.svg" alt="CI-PHP" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-lint-pint.yml/badge.svg" alt="PHP Lint (Pint)" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-static-analysis.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-static-analysis.yml/badge.svg" alt="PHP Static Analysis (Larastan)" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-tests-pest.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-php-tests-pest.yml/badge.svg" alt="PHPUnit Test (Pest)" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-frontend-vite.yml/badge.svg" alt="Compile Assets (Vite)" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-docker.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/ci-docker.yml/badge.svg" alt="Docker Build Smoke" /></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-pr-review.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-pr-review.yml/badge.svg" alt="Codex PR Review" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-issue-implementation.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-issue-implementation.yml/badge.svg" alt="Codex Issue Implementation Intake" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-nightly-maintenance.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/codex-nightly-maintenance.yml/badge.svg" alt="Codex Nightly Maintenance" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/pint-fix.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/pint-fix.yml/badge.svg" alt="Pint Fix" /></a>
+  <a href="https://github.com/trackerone/nextgn_tracker/actions/workflows/lockfile-update.yml"><img src="https://github.com/trackerone/nextgn_tracker/actions/workflows/lockfile-update.yml/badge.svg" alt="Repair composer.lock (Laravel 12 baseline)" /></a>
+</p>
 
 ## Overview
 
 NextGN Tracker is a modern Laravel-based BitTorrent platform under active development.
+
+## CI status
+
+The badges above mirror the active GitHub Actions workflows for PHP linting, static analysis, tests, backend checks, frontend asset compilation, Docker/runtime validation, and repository automation.
 
 ## Core model
 
