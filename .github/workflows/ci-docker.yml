@@ -64,17 +64,18 @@ jobs:
           host_port="$(docker port "$container_id" 10000/tcp | sed 's/.*://')"
 
           for attempt in $(seq 1 30); do
-            if curl --fail --silent --show-error "http://127.0.0.1:${host_port}/health"; then
-              exit 0
+            if [ "$(docker inspect -f '{{.State.Running}}' "$container_id" 2>/dev/null || echo false)" != "true" ]; then
+              echo "Container exited before the HTTP server accepted a request." >&2
+              exit 1
             fi
 
-            if [ "$(docker inspect -f '{{.State.Running}}' "$container_id" 2>/dev/null || echo false)" != "true" ]; then
-              echo "Container exited before health check succeeded." >&2
-              exit 1
+            if curl --silent --show-error --output /dev/null --max-time 5 "http://127.0.0.1:${host_port}/" \
+              || curl --silent --show-error --output /dev/null --max-time 5 "http://127.0.0.1:${host_port}/login"; then
+              exit 0
             fi
 
             sleep 1
           done
 
-          echo "Timed out waiting for FrankenPHP startup." >&2
+          echo "Timed out waiting for FrankenPHP to accept an HTTP request." >&2
           exit 1
