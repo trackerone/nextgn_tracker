@@ -23,8 +23,6 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /app
 COPY . /app
 
-# Sørg for at overlay deployes ind i app-strukturen (din kode bor her)
-RUN [ -d /app/overlay ] && cp -R /app/overlay/* /app/ || true
 
 # Installér afhængigheder i build (fail fast!)
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -49,7 +47,7 @@ RUN set -eu; \
 # (Valgfrit) PHP-ini
 # COPY tools/php.ini /usr/local/etc/php/conf.d/zzz-custom.ini
 
-# Render lytter på $PORT; vi sætter en default
+# Runtime platforms can provide $PORT; keep a local default
 ENV PORT=10000
 EXPOSE 10000
 

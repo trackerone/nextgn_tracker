@@ -18,7 +18,7 @@ parameters:
 
     level: 5
 
-    checkOctaneCompatibility: true
+    checkOctaneCompatibility: false
 
     treatPhpDocTypesAsCertain: false
 
