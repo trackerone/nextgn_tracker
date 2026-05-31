@@ -8,7 +8,7 @@ For detailed server/runtime requirements, use [STACK-BASELINE.md](STACK-BASELINE
 
 
 - Ubuntu **24.04 LTS** host baseline.
-- PHP **8.4+** runtime (CLI/FPM).
+- Production Docker web runtime: **FrankenPHP/Caddy** with PHP **8.4+**.
 - Node **20.x–25.x** for asset builds.
 - Redis **7+** for production cache/queue.
 - MySQL/MariaDB/PostgreSQL recommended for production DB.
@@ -58,14 +58,16 @@ Common failure points and fixes:
 
 ## Runtime processes
 
-Run as separate processes/services:
+Run the web, queue, and scheduler as separate processes/services. The production Docker image starts the web process through FrankenPHP/Caddy after the entrypoint validates production environment variables and warms Laravel caches. It serves the application from `public/` and honors the platform-provided `PORT` environment variable, defaulting to `10000`.
 
 ```bash
-php artisan serve --host=0.0.0.0 --port=8000
+sh /app/tools/entrypoint.sh
 php artisan queue:work --tries=3 --timeout=90
 php artisan schedule:run
 ```
 
+- The web process must not use PHP's built-in development server in production.
+- FrankenPHP worker mode is intentionally not enabled in this slice; evaluate it later only after compatibility and load testing.
 - Queue workers: restart after each deploy with `php artisan queue:restart`.
 - Scheduler: run `schedule:run` every minute via cron/platform scheduler.
 

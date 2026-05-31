@@ -87,6 +87,8 @@ Common failures:
 
 ## 6) Start local services
 
+These commands are for local development. Production Docker deployments use FrankenPHP/Caddy as the web runtime and do not rely on PHP's built-in development server. FrankenPHP worker mode is not enabled yet.
+
 Terminal 1:
 
 ```bash

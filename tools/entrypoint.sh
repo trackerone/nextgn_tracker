@@ -75,4 +75,6 @@ php artisan route:cache
 php artisan view:cache
 
 : "${PORT:=10000}"
-exec php -S 0.0.0.0:${PORT} -t public
+export PORT
+
+exec frankenphp run --config /app/deploy/frankenphp/Caddyfile
