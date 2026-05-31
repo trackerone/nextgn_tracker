@@ -48,4 +48,5 @@ Thumbs.db
 
 /var/
 
-/var/
+# Generated Codex workflow output
+.codex/runs/

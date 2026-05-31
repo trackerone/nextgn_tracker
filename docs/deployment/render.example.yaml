@@ -1,0 +1,7 @@
+# Generic Render.com example only.
+# Copy this content into your Render service settings or a private deployment file;
+# do not place a real service-specific render.yaml at the repository root.
+services:
+  - type: web
+    name: nextgn-tracker
+    env: docker
