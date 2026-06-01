@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Web;
 
 use App\Http\Requests\StoreTorrentRequest;
-use Illuminate\Validation\Validator as LaravelValidator;
+use Closure;
 
 final class TorrentUploadStoreRequest extends StoreTorrentRequest
 {
@@ -14,26 +14,38 @@ final class TorrentUploadStoreRequest extends StoreTorrentRequest
      */
     public function rules(): array
     {
-        return parent::rules();
-    }
+        $rules = parent::rules();
 
-    public function withValidator(LaravelValidator $validator): void
-    {
-        parent::withValidator($validator);
-
-        $validator->after(function (LaravelValidator $validator): void {
-            foreach (['language', 'audio_language', 'subtitle_language', 'subtitles'] as $field) {
-                $value = $this->input($field);
-
-                if (! is_string($value)) {
-                    continue;
+        $safeLanguageMetadata = [
+            'nullable',
+            'string',
+            'max:255',
+            static function (string $attribute, mixed $value, Closure $fail): void {
+                if ($value === null || $value === '') {
+                    return;
                 }
 
-                if ((str_contains($value, '<') || str_contains($value, '>')) && ! $validator->errors()->has($field)) {
-                    $validator->errors()->add($field, 'The '.$field.' field contains invalid characters.');
+                if (!is_string($value)) {
+                    return;
                 }
-            }
-        });
+
+                if (str_contains($value, '<') || str_contains($value, '>')) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+
+                    return;
+                }
+
+                if (preg_match('#^[A-Za-z0-9 .,_/;-]+$#', $value) !== 1) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+                }
+            },
+        ];
+
+        foreach (['language', 'audio_language', 'subtitle_language', 'subtitles'] as $field) {
+            $rules[$field] = $safeLanguageMetadata;
+        }
+
+        return $rules;
     }
 
     protected function prepareForValidation(): void

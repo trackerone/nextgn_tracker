@@ -38,13 +38,13 @@ trait ValidatesTorrentUpload
         $input = $this->all();
 
         foreach ($fields as $field) {
-            if (! array_key_exists($field, $input)) {
+            if (!array_key_exists($field, $input)) {
                 continue;
             }
 
             $value = $input[$field];
 
-            if (! is_string($value)) {
+            if (!is_string($value)) {
                 continue;
             }
 
@@ -92,11 +92,14 @@ trait ValidatesTorrentUpload
             foreach (self::languageMetadataFields() as $field) {
                 $value = $this->input($field);
 
-                if (! is_string($value)) {
+                if (!is_string($value)) {
                     continue;
                 }
 
-                if (str_contains($value, '<') || str_contains($value, '>')) {
+                if (
+                    (str_contains($value, '<') || str_contains($value, '>'))
+                    && !$validator->errors()->has($field)
+                ) {
                     $validator->errors()->add($field, 'The '.$field.' field contains invalid characters.');
                 }
             }
