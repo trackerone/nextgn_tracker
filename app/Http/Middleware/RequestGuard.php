@@ -130,11 +130,12 @@ final class RequestGuard
 
     private function isTorrentUploadRequest(Request $request): bool
     {
-        if ($request->routeIs('torrents.store')) {
+        if ($request->routeIs('torrents.store') || $request->routeIs('api.uploads.store')) {
             return true;
         }
 
-        return $request->isMethod('POST') && $request->is('torrents');
+        return $request->isMethod('POST')
+            && ($request->is('torrents') || $request->is('api/uploads'));
     }
 
     /**

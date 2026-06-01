@@ -126,15 +126,19 @@ final class RequestGuardTest extends TestCase
         $this->assertStringContainsString('sha256:'.hash('sha256', $maliciousValue), $securityLog);
     }
 
-    public function test_it_preserves_torrent_upload_language_metadata_for_validation_only(): void
+    /**
+     * @dataProvider torrentUploadRouteProvider
+     */
+    public function test_it_preserves_torrent_upload_language_metadata_for_validation_only(string $uri, string $routeName): void
     {
-        $this->registerRequestGuardRoute('/torrents', 'torrents.store');
+        $this->registerRequestGuardRoute($uri, $routeName);
 
-        $response = $this->postJson('/torrents', [
+        $response = $this->postJson($uri, [
             'language' => '<script>alert(1)</script>',
             'audio_language' => '<script>alert(1)</script>',
             'subtitle_language' => '<script>alert(1)</script>',
             'subtitles' => '<script>alert(1)</script>',
+            'nested' => ['language' => '<script>alert(1)</script><strong>safe</strong>'],
             'description' => '<script>alert(1)</script><strong>safe</strong>',
         ]);
 
@@ -144,8 +148,20 @@ final class RequestGuardTest extends TestCase
                 'audio_language' => '<script>alert(1)</script>',
                 'subtitle_language' => '<script>alert(1)</script>',
                 'subtitles' => '<script>alert(1)</script>',
+                'nested' => ['language' => '<strong>safe</strong>'],
                 'description' => '<strong>safe</strong>',
             ]);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function torrentUploadRouteProvider(): array
+    {
+        return [
+            'web upload' => ['/torrents', 'torrents.store'],
+            'api upload' => ['/api/uploads', 'api.uploads.store'],
+        ];
     }
 
     /**
