@@ -175,7 +175,7 @@ final class RequestGuard
             'key' => implode('.', $keyPath),
         ];
 
-        if (! $isSensitive) {
+        if (!$isSensitive) {
             $incident['value'] = $this->truncateForLog($value);
 
             return $incident;
@@ -191,10 +191,10 @@ final class RequestGuard
 
     private function isSensitiveKey(string $key): bool
     {
-        $normalizedKey = Str::lower(str_replace(['-', ' '], '_', $key));
+        $normalized = Str::lower($key);
 
         foreach (self::SENSITIVE_KEY_TERMS as $term) {
-            if (str_contains($normalizedKey, $term)) {
+            if (str_contains($normalized, $term)) {
                 return true;
             }
         }
@@ -204,7 +204,7 @@ final class RequestGuard
 
     private function truncateForLog(string $value): string
     {
-        return Str::limit($value, 120);
+        return Str::limit($value, 120, '...');
     }
 
     /**
@@ -212,13 +212,10 @@ final class RequestGuard
      */
     private function logIncident(Request $request, array $incidents): void
     {
-        Log::build([
-            'driver' => 'single',
-            'path' => storage_path('logs/security.log'),
-            'level' => 'warning',
-        ])->warning('RequestGuard blocked payload', [
-            'ip' => $request->ip(),
+        Log::warning('request_guard.malicious_payload_detected', [
             'path' => $request->path(),
+            'method' => $request->method(),
+            'ip' => $request->ip(),
             'incidents' => $incidents,
         ]);
     }
