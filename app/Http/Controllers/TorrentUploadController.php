@@ -49,6 +49,8 @@ class TorrentUploadController extends Controller
 
     public function store(TorrentUploadStoreRequest $request): RedirectResponse
     {
+        $this->rejectHtmlLikeLanguageMetadata($request);
+
         $torrentFile = $request->file('torrent_file');
 
         if (($torrentFile instanceof UploadedFile) === false) {
@@ -86,6 +88,23 @@ class TorrentUploadController extends Controller
         }
 
         return $this->successfulUploadResponse($result->torrent);
+    }
+
+    private function rejectHtmlLikeLanguageMetadata(TorrentUploadStoreRequest $request): void
+    {
+        foreach (['language', 'audio_language', 'subtitle_language', 'subtitles'] as $field) {
+            $value = $request->input($field);
+
+            if (!is_string($value)) {
+                continue;
+            }
+
+            if (str_contains($value, '<') || str_contains($value, '>')) {
+                throw ValidationException::withMessages([
+                    $field => 'The '.$field.' field contains invalid characters.',
+                ]);
+            }
+        }
     }
 
     private function handleDeniedUploadResult(SubmitTorrentUploadResult $result): RedirectResponse

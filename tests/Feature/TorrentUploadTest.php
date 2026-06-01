@@ -304,6 +304,10 @@ class TorrentUploadTest extends TestCase
             ])
             ->assertRedirect(route('torrents.upload'))
             ->assertSessionHasErrors(['language']);
+
+        $this->assertDatabaseMissing('torrents', [
+            'name' => 'Unsafe Metadata Upload',
+        ]);
     }
 
     public function test_uploaded_audio_and_subtitle_metadata_powers_rss_and_watch_matching(): void
