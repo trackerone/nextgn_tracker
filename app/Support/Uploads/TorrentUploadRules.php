@@ -16,7 +16,7 @@ final class TorrentUploadRules
         $nfoMimeRule = 'mimetypes:'.implode(',', self::configList('upload.nfo.allowed_mimes'));
         $nfoExtensionRule = 'extensions:'.implode(',', self::configList('upload.nfo.allowed_extensions'));
 
-        $safeMetadataText = ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9 .,_\\\/|;-]+$/'];
+        $safeMetadataText = ['nullable', 'string', 'max:255', 'regex:#^[A-Za-z0-9 .,_/|;-]+$#'];
 
         return [
             'name' => ['required', 'string', 'max:255'],
