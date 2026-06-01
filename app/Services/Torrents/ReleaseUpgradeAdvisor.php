@@ -55,7 +55,7 @@ final class ReleaseUpgradeAdvisor
                 'published_at',
             ])
             ->whereIn('id', $completedTorrentIds)
-            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id'])
+            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id'])
             ->get();
 
         if ($completedTorrents->isEmpty()) {

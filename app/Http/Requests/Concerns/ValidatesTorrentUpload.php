@@ -11,6 +11,60 @@ use Illuminate\Validation\Validator as LaravelValidator;
 
 trait ValidatesTorrentUpload
 {
+    protected function prepareForValidation(): void
+    {
+        $this->merge($this->normalizedOptionalMetadataInput());
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    private function normalizedOptionalMetadataInput(): array
+    {
+        $fields = [
+            'title',
+            'year',
+            'release_group',
+            'imdb_id',
+            'tmdb_id',
+            'language',
+            'audio_language',
+            'subtitle_language',
+            'subtitles',
+        ];
+
+        $normalized = [];
+
+        $input = $this->all();
+
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $input)) {
+                continue;
+            }
+
+            $value = $input[$field];
+
+            if (! is_string($value)) {
+                continue;
+            }
+
+            $value = trim($value);
+
+            if (in_array($field, ['language', 'audio_language', 'subtitle_language', 'subtitles'], true)) {
+                $value = preg_replace('/\s*([,;\/|])\s*/', '$1', $value) ?? $value;
+            }
+
+            if ($value === '') {
+                $normalized[$field] = null;
+                continue;
+            }
+
+            $normalized[$field] = $field === 'year' && ctype_digit($value) ? (int) $value : $value;
+        }
+
+        return $normalized;
+    }
+
     /**
      * @return array<string, mixed>
      */

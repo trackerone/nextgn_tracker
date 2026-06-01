@@ -71,7 +71,7 @@ final class TorrentController extends Controller
                 'created_at',
                 'uploaded_at',
             ])
-            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id']);
+            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id']);
 
         $perPage = (int) config('torrents.per_page', 25);
         $groupedBrowse = $request->grouped();
@@ -172,6 +172,10 @@ final class TorrentController extends Controller
             $metadata['resolution'] ?? null,
             $metadata['source'] ?? null,
             $metadata['release_group'] ?? null,
+            $metadata['language'] ?? null,
+            $metadata['audio_language'] ?? null,
+            $metadata['subtitle_language'] ?? null,
+            $metadata['subtitles'] ?? null,
             $metadata['imdb_id'] ?? null,
             $metadata['tmdb_id'] ?? null,
             $metadata['nfo'] ?? null,
