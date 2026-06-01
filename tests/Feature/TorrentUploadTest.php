@@ -243,12 +243,12 @@ class TorrentUploadTest extends TestCase
             'language' => 'en',
             'audio_language' => 'da',
             'subtitle_language' => 'no',
-            'subtitles' => 'da, no, sv',
+            'subtitles' => 'da,no,sv',
             'nfo' => 'Uploaded NFO',
         ]);
 
         self::assertSame('da', TorrentMetadataView::forTorrent($torrent->load('metadata'))['audio_language']);
-        self::assertSame('da, no, sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
+        self::assertSame('da,no,sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
     }
 
     public function test_blank_optional_upload_metadata_persists_as_null(): void
@@ -304,6 +304,37 @@ class TorrentUploadTest extends TestCase
             ])
             ->assertRedirect(route('torrents.upload'))
             ->assertSessionHasErrors(['language']);
+
+        $this->assertDatabaseCount('torrents', 0);
+    }
+
+    public function test_valid_language_metadata_variations_are_accepted_and_normalized(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Valid.Language.Metadata.Upload', 2048);
+
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Valid Language Metadata Upload',
+            'type' => 'movie',
+            'language' => 'da',
+            'audio_language' => 'da,no,sv',
+            'subtitle_language' => 'da, no, sv',
+            'subtitles' => 'da, no, sv',
+            'torrent_file' => UploadedFile::fake()->createWithContent('valid-language-metadata.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
+
+        $torrent = Torrent::query()->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('torrent_metadata', [
+            'torrent_id' => $torrent->id,
+            'language' => 'da',
+            'audio_language' => 'da,no,sv',
+            'subtitle_language' => 'da,no,sv',
+            'subtitles' => 'da,no,sv',
+        ]);
     }
 
     public function test_uploaded_audio_and_subtitle_metadata_powers_rss_and_watch_matching(): void

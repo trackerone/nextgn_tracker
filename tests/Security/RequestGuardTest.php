@@ -127,6 +127,44 @@ final class RequestGuardTest extends TestCase
     }
 
     /**
+     * @dataProvider torrentUploadRouteProvider
+     */
+    public function test_it_preserves_torrent_upload_language_metadata_for_validation_only(string $uri, string $routeName): void
+    {
+        $this->registerRequestGuardRoute($uri, $routeName);
+
+        $response = $this->postJson($uri, [
+            'language' => '<script>alert(1)</script>',
+            'audio_language' => '<script>alert(1)</script>',
+            'subtitle_language' => '<script>alert(1)</script>',
+            'subtitles' => '<script>alert(1)</script>',
+            'nested' => ['language' => '<script>alert(1)</script><strong>safe</strong>'],
+            'description' => '<script>alert(1)</script><strong>safe</strong>',
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'language' => '<script>alert(1)</script>',
+                'audio_language' => '<script>alert(1)</script>',
+                'subtitle_language' => '<script>alert(1)</script>',
+                'subtitles' => '<script>alert(1)</script>',
+                'nested' => ['language' => '<strong>safe</strong>'],
+                'description' => '<strong>safe</strong>',
+            ]);
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public static function torrentUploadRouteProvider(): array
+    {
+        return [
+            'web upload' => ['/torrents', 'torrents.store'],
+            'api upload' => ['/api/uploads', 'api.uploads.store'],
+        ];
+    }
+
+    /**
      * @return array<string, array{0: string}>
      */
     public static function sensitiveMaliciousPayloadProvider(): array
@@ -140,11 +178,15 @@ final class RequestGuardTest extends TestCase
         ];
     }
 
-    private function registerRequestGuardRoute(string $uri): void
+    private function registerRequestGuardRoute(string $uri, ?string $name = null): void
     {
-        Route::post($uri, function (Request $request) {
+        $route = Route::post($uri, function (Request $request) {
             return response()->json($request->all());
         });
+
+        if ($name !== null) {
+            $route->name($name);
+        }
     }
 
     private function clearSecurityLog(): void
