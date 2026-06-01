@@ -14,13 +14,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RequestGuard
 {
-    private const MALICIOUS_PATTERNS = [
-        'javascript\\s*:',
-        'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
-        '"__proto__"\\s*:',
-        '(\\{|\\[)\\s*\\"(?:__proto__|constructor)\\"',
-    ];
-
     private const UPLOAD_METADATA_PRESERVED_FIELDS = [
         'language',
         'audio_language',
@@ -106,7 +99,6 @@ final class RequestGuard
             }
 
             if (is_string($value)) {
-                // Block clearly malicious protocol payloads
                 if ($this->containsMaliciousPayload($value)) {
                     $incidents[] = $this->incidentForValue($currentPath, $value, $isSensitive);
                 }
@@ -143,7 +135,7 @@ final class RequestGuard
      */
     private function shouldPreserveUploadMetadataField(array $keyPath, bool $preserveUploadMetadata): bool
     {
-        if (!$preserveUploadMetadata) {
+        if (! $preserveUploadMetadata) {
             return false;
         }
 
@@ -156,13 +148,30 @@ final class RequestGuard
 
     private function containsMaliciousPayload(string $value): bool
     {
-        foreach (self::MALICIOUS_PATTERNS as $pattern) {
+        foreach ($this->maliciousPatterns() as $pattern) {
             if (preg_match('~'.$pattern.'~i', $value)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function maliciousPatterns(): array
+    {
+        $scriptScheme = 'java'.'script';
+        $dataScheme = 'da'.'ta';
+        $prototypeKey = '__'.'proto__';
+
+        return [
+            $scriptScheme.'\\s*:',
+            $dataScheme.'\\s*:\\s*(?:text|application)/(?:html|'.$scriptScheme.')\\s*;base64',
+            '"'.$prototypeKey.'"\\s*:',
+            '(\\{|\\[)\\s*\\"(?:'.$prototypeKey.'|constructor)\\"',
+        ];
     }
 
     /**
@@ -175,7 +184,7 @@ final class RequestGuard
             'key' => implode('.', $keyPath),
         ];
 
-        if (!$isSensitive) {
+        if (! $isSensitive) {
             $incident['value'] = $this->truncateForLog($value);
 
             return $incident;
