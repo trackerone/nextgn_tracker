@@ -10,6 +10,8 @@ final class TorrentUploadStoreRequest extends StoreTorrentRequest
 {
     protected function prepareForValidation(): void
     {
+        parent::prepareForValidation();
+
         $tagsInput = $this->input('tags_input');
 
         if (is_string($tagsInput)) {
