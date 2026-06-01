@@ -143,7 +143,7 @@ final class RequestGuard
      */
     private function shouldPreserveUploadMetadataField(array $keyPath, bool $preserveUploadMetadata): bool
     {
-        if (! $preserveUploadMetadata) {
+        if (!$preserveUploadMetadata) {
             return false;
         }
 
