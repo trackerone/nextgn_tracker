@@ -243,12 +243,12 @@ class TorrentUploadTest extends TestCase
             'language' => 'en',
             'audio_language' => 'da',
             'subtitle_language' => 'no',
-            'subtitles' => 'da,no,sv',
+            'subtitles' => 'da, no, sv',
             'nfo' => 'Uploaded NFO',
         ]);
 
         self::assertSame('da', TorrentMetadataView::forTorrent($torrent->load('metadata'))['audio_language']);
-        self::assertSame('da,no,sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
+        self::assertSame('da, no, sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
     }
 
     public function test_blank_optional_upload_metadata_persists_as_null(): void
