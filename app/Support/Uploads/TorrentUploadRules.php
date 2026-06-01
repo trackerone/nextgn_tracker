@@ -16,7 +16,30 @@ final class TorrentUploadRules
         $nfoMimeRule = 'mimetypes:'.implode(',', self::configList('upload.nfo.allowed_mimes'));
         $nfoExtensionRule = 'extensions:'.implode(',', self::configList('upload.nfo.allowed_extensions'));
 
-        $safeMetadataText = ['nullable', 'string', 'max:255', 'regex:#^[A-Za-z0-9 .,_/;-]+$#'];
+        $safeMetadataText = [
+            'nullable',
+            'string',
+            'max:255',
+            static function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value === null || $value === '') {
+                    return;
+                }
+
+                if (! is_string($value)) {
+                    return;
+                }
+
+                if (str_contains($value, '<') || str_contains($value, '>')) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+
+                    return;
+                }
+
+                if (preg_match('#^[A-Za-z0-9 .,_/;-]+$#', $value) !== 1) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+                }
+            },
+        ];
 
         return [
             'name' => ['required', 'string', 'max:255'],
