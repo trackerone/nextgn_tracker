@@ -51,6 +51,11 @@ trait ValidatesTorrentUpload
             $value = trim($value);
 
             if (in_array($field, ['language', 'audio_language', 'subtitle_language', 'subtitles'], true)) {
+                if (str_contains($value, '<') || str_contains($value, '>')) {
+                    $normalized[$field] = $value;
+                    continue;
+                }
+
                 $value = preg_replace('/\s*([,;\/|])\s*/', '$1', $value) ?? $value;
             }
 
