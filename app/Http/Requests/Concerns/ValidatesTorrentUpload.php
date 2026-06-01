@@ -50,7 +50,7 @@ trait ValidatesTorrentUpload
 
             $value = trim($value);
 
-            if (in_array($field, ['language', 'audio_language', 'subtitle_language', 'subtitles'], true)) {
+            if (in_array($field, self::languageMetadataFields(), true)) {
                 if (str_contains($value, '<') || str_contains($value, '>')) {
                     $normalized[$field] = $value;
                     continue;
@@ -89,6 +89,18 @@ trait ValidatesTorrentUpload
     public function withValidator(LaravelValidator $validator): void
     {
         $validator->after(function (LaravelValidator $validator): void {
+            foreach (self::languageMetadataFields() as $field) {
+                $value = $this->input($field);
+
+                if (! is_string($value)) {
+                    continue;
+                }
+
+                if (str_contains($value, '<') || str_contains($value, '>')) {
+                    $validator->errors()->add($field, 'The '.$field.' field contains invalid characters.');
+                }
+            }
+
             if ($this->file('nfo_file') !== null && $this->filled('nfo_text')) {
                 $validator->errors()->add('nfo_text', 'Provide either an NFO file or inline text, not both.');
             }
@@ -103,5 +115,18 @@ trait ValidatesTorrentUpload
         ]);
 
         parent::failedValidation($validator);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function languageMetadataFields(): array
+    {
+        return [
+            'language',
+            'audio_language',
+            'subtitle_language',
+            'subtitles',
+        ];
     }
 }
