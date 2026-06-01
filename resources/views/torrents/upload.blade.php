@@ -61,6 +61,8 @@
                 <legend class="px-1 text-base font-semibold text-white">2. Release metadata</legend>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label for="name">Release name</label><input type="text" id="name" name="name" value="{{ old('name') }}" required></div>
+                    <div><label for="title">Title</label><input type="text" id="title" name="title" value="{{ old('title') }}" placeholder="Movie or series title"></div>
+                    <div><label for="year">Year</label><input type="number" id="year" name="year" value="{{ old('year') }}" min="1900" max="{{ now()->year + 2 }}" placeholder="2026"></div>
                     <div>
                         <label for="category_id">Category</label>
                         <select id="category_id" name="category_id"><option value="">Select a category</option>@foreach ($categories as $category)<option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select>
@@ -68,10 +70,18 @@
                     <div><label for="type">Type</label><select id="type" name="type" required>@php($types = ['movie', 'tv', 'music', 'game', 'software', 'other'])@foreach ($types as $type)<option value="{{ $type }}" @selected(old('type', 'movie') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></div>
                     <div><label for="source">Source</label><input type="text" id="source" name="source" value="{{ old('source') }}" placeholder="WEB, BluRay, HDTV"></div>
                     <div><label for="resolution">Resolution</label><input type="text" id="resolution" name="resolution" value="{{ old('resolution') }}" placeholder="2160p, 1080p, 720p"></div>
+                    <div><label for="release_group">Release group</label><input type="text" id="release_group" name="release_group" value="{{ old('release_group') }}" placeholder="NTB, FLUX, GRP"></div>
+                    <div><label for="imdb_id">IMDb ID</label><input type="text" id="imdb_id" name="imdb_id" value="{{ old('imdb_id') }}" placeholder="tt1234567"></div>
+                    <div><label for="tmdb_id">TMDB ID</label><input type="text" id="tmdb_id" name="tmdb_id" value="{{ old('tmdb_id') }}" placeholder="9988"></div>
                     <div><label for="tags_input">Tags</label><input type="text" id="tags_input" name="tags_input" value="{{ old('tags_input') }}" placeholder="scene, remux, internal"></div>
                     <div><label for="codecs_video">Video codec</label><input type="text" id="codecs_video" name="codecs[video]" value="{{ old('codecs.video') }}" placeholder="H.264, H.265, AV1"></div>
                     <div><label for="codecs_audio">Audio codec</label><input type="text" id="codecs_audio" name="codecs[audio]" value="{{ old('codecs.audio') }}" placeholder="AAC, DTS, FLAC"></div>
+                    <div><label for="language">Language</label><input type="text" id="language" name="language" value="{{ old('language') }}" placeholder="da"></div>
+                    <div><label for="audio_language">Audio language</label><input type="text" id="audio_language" name="audio_language" value="{{ old('audio_language') }}" placeholder="da"></div>
+                    <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="da"></div>
+                    <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="da,no,sv"></div>
                 </div>
+                <p class="mt-3 text-xs text-slate-500">Use short codes such as da, no, nb, nn, sv, fi, en. For multiple subtitles use comma-separated values, e.g. da,no,sv.</p>
                 <div class="mt-4"><label for="description">Description (Markdown supported)</label><textarea id="description" name="description" rows="6">{{ old('description') }}</textarea></div>
             </fieldset>
 

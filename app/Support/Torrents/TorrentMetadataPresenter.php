@@ -18,6 +18,10 @@ final class TorrentMetadataPresenter
             self::fact('Source', self::formatText($metadata['source'] ?? null)),
             self::fact('Release group', self::formatText($metadata['release_group'] ?? null)),
             self::fact('Year', self::formatYear($metadata['year'] ?? null)),
+            self::fact('Language', self::formatText($metadata['language'] ?? null)),
+            self::fact('Audio language', self::formatText($metadata['audio_language'] ?? null)),
+            self::fact('Subtitle language', self::formatText($metadata['subtitle_language'] ?? null)),
+            self::fact('Subtitles', self::formatText($metadata['subtitles'] ?? null)),
         ];
 
         return array_values(array_filter($rows));

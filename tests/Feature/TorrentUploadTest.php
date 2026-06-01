@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Actions\Torrents\PublishTorrentAction;
+use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
+use App\Models\NotificationWatchPreset;
 use App\Models\Torrent;
+use App\Models\TorrentWatchNotification;
 use App\Models\User;
+use App\Models\UserStat;
 use App\Services\Torrents\UploadPreflightContext;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use Illuminate\Contracts\Filesystem\Filesystem;
@@ -197,6 +202,152 @@ class TorrentUploadTest extends TestCase
         ]);
     }
 
+    public function test_successful_upload_persists_full_release_metadata(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Uploaded.Metadata.2025.1080p.WEB-DL.x264-GRP', 2048);
+
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Uploaded Metadata Release',
+            'title' => 'Uploaded Metadata',
+            'year' => '2025',
+            'type' => 'movie',
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'release_group' => 'GRP',
+            'imdb_id' => 'tt7654321',
+            'tmdb_id' => '12345',
+            'language' => 'en',
+            'audio_language' => 'da',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da, no, sv',
+            'torrent_file' => UploadedFile::fake()->createWithContent('metadata.torrent', $payload, 'application/x-bittorrent'),
+            'nfo_text' => 'Uploaded NFO',
+        ])->assertRedirect();
+
+        $torrent = Torrent::query()->latest('id')->firstOrFail();
+
+        $this->assertDatabaseHas('torrent_metadata', [
+            'torrent_id' => $torrent->id,
+            'title' => 'Uploaded Metadata',
+            'year' => 2025,
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'release_group' => 'GRP',
+            'imdb_id' => 'tt7654321',
+            'tmdb_id' => 12345,
+            'language' => 'en',
+            'audio_language' => 'da',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
+            'nfo' => 'Uploaded NFO',
+        ]);
+
+        self::assertSame('da', TorrentMetadataView::forTorrent($torrent->load('metadata'))['audio_language']);
+        self::assertSame('da,no,sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
+    }
+
+    public function test_blank_optional_upload_metadata_persists_as_null(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Blank.Metadata.Upload', 2048);
+
+        $this->actingAs($user)->post(route('torrents.store'), [
+            'name' => 'Blank Metadata Upload',
+            'title' => ' ',
+            'year' => '',
+            'type' => 'movie',
+            'release_group' => '',
+            'imdb_id' => '',
+            'tmdb_id' => '',
+            'language' => '',
+            'audio_language' => '',
+            'subtitle_language' => '',
+            'subtitles' => '',
+            'torrent_file' => UploadedFile::fake()->createWithContent('blank-metadata.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
+
+        $metadata = Torrent::query()->latest('id')->firstOrFail()->metadata()->firstOrFail();
+
+        self::assertNull($metadata->title);
+        self::assertNull($metadata->year);
+        self::assertNull($metadata->release_group);
+        self::assertNull($metadata->imdb_id);
+        self::assertNull($metadata->tmdb_id);
+        self::assertNull($metadata->language);
+        self::assertNull($metadata->audio_language);
+        self::assertNull($metadata->subtitle_language);
+        self::assertNull($metadata->subtitles);
+    }
+
+    public function test_html_like_language_metadata_is_rejected(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+        $payload = $this->sampleTorrentPayload('Unsafe.Metadata.Upload', 2048);
+
+        $this->actingAs($user)
+            ->from(route('torrents.upload'))
+            ->post(route('torrents.store'), [
+                'name' => 'Unsafe Metadata Upload',
+                'type' => 'movie',
+                'language' => '<script>alert(1)</script>',
+                'torrent_file' => UploadedFile::fake()->createWithContent('unsafe-metadata.torrent', $payload, 'application/x-bittorrent'),
+            ])
+            ->assertRedirect(route('torrents.upload'))
+            ->assertSessionHasErrors(['language']);
+    }
+
+    public function test_uploaded_audio_and_subtitle_metadata_powers_rss_and_watch_matching(): void
+    {
+        Storage::fake('torrents');
+        Storage::fake('nfo');
+
+        $uploader = User::factory()->create();
+        $moderator = User::factory()->staff()->create();
+        $watcher = $this->rssUser();
+        NotificationWatchPreset::factory()->create([
+            'user_id' => $watcher->id,
+            'name' => 'Danish subtitles',
+            'filters' => ['subtitles' => 'da'],
+        ]);
+        $payload = $this->sampleTorrentPayload('Nordic.Upload.2026.1080p.WEB-DL.x264-GRP', 2048);
+
+        $this->actingAs($uploader)->post(route('torrents.store'), [
+            'name' => 'Nordic Upload',
+            'title' => 'Nordic Upload',
+            'type' => 'movie',
+            'audio_language' => 'da',
+            'subtitles' => 'da,no,sv',
+            'torrent_file' => UploadedFile::fake()->createWithContent('nordic-upload.torrent', $payload, 'application/x-bittorrent'),
+        ])->assertRedirect();
+
+        $torrent = Torrent::query()->latest('id')->firstOrFail();
+        app(PublishTorrentAction::class)->execute($torrent, $moderator);
+
+        $response = $this->get(route('rss.feed', [
+            'token' => $watcher->rss_token,
+            'audio_language' => 'da',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Nordic Upload');
+        $response->assertSee('Audio language: da');
+        $this->assertDatabaseHas('torrent_watch_notifications', [
+            'user_id' => $watcher->id,
+            'torrent_id' => $torrent->id,
+        ]);
+        self::assertSame(1, TorrentWatchNotification::query()->count());
+    }
+
     public function test_duplicate_info_hash_redirects_to_existing_record(): void
     {
         Storage::fake('torrents');
@@ -324,6 +475,20 @@ class TorrentUploadTest extends TestCase
             ->from(route('torrents.upload'))
             ->post(route('torrents.store'), [])
             ->assertTooManyRequests();
+    }
+
+    private function rssUser(int $uploadedBytes = 1_000_000, int $downloadedBytes = 1): User
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+
+        UserStat::query()->create([
+            'user_id' => $user->id,
+            'uploaded_bytes' => $uploadedBytes,
+            'downloaded_bytes' => $downloadedBytes,
+        ]);
+
+        return $user->refresh();
     }
 
     private function sampleTorrentPayload(string $name, int $length): string
