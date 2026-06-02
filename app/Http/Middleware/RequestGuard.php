@@ -14,6 +14,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class RequestGuard
 {
+    private const MALICIOUS_PATTERNS = [
+        'javascript\s*:',
+        'data\s*:\s*(?:text|application)/(?:html|javascript)\s*;base64',
+        '"__proto__"\s*:',
+        '(\{|\[)\s*\"(?:__proto__|constructor)\"',
+    ];
+
     private const UPLOAD_METADATA_PRESERVED_FIELDS = [
         'language',
         'audio_language',
@@ -68,8 +75,7 @@ final class RequestGuard
         array $keyPath = [],
         bool $sensitiveAncestor = false,
         bool $preserveUploadMetadata = false,
-    ): array
-    {
+    ): array {
         $sanitized = [];
         $incidents = [];
 
@@ -148,30 +154,13 @@ final class RequestGuard
 
     private function containsMaliciousPayload(string $value): bool
     {
-        foreach ($this->maliciousPatterns() as $pattern) {
+        foreach (self::MALICIOUS_PATTERNS as $pattern) {
             if (preg_match('~'.$pattern.'~i', $value)) {
                 return true;
             }
         }
 
         return false;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function maliciousPatterns(): array
-    {
-        $scriptScheme = 'java'.'script';
-        $dataScheme = 'da'.'ta';
-        $prototypeKey = '__'.'proto__';
-
-        return [
-            $scriptScheme.'\\s*:',
-            $dataScheme.'\\s*:\\s*(?:text|application)/(?:html|'.$scriptScheme.')\\s*;base64',
-            '"'.$prototypeKey.'"\\s*:',
-            '(\\{|\\[)\\s*\\"(?:'.$prototypeKey.'|constructor)\\"',
-        ];
     }
 
     /**
