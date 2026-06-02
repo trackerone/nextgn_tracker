@@ -53,6 +53,7 @@ trait ValidatesTorrentUpload
             if (in_array($field, self::languageMetadataFields(), true)) {
                 if (str_contains($value, '<') || str_contains($value, '>')) {
                     $normalized[$field] = $value;
+
                     continue;
                 }
 
@@ -61,6 +62,7 @@ trait ValidatesTorrentUpload
 
             if ($value === '') {
                 $normalized[$field] = null;
+
                 continue;
             }
 
