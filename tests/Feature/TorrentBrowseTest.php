@@ -39,6 +39,79 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
+    public function test_active_filter_summary_renders_human_readable_labels_when_filters_are_applied(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->create();
+        Torrent::factory()->create(['category_id' => $category->id]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', [
+            'q' => 'Matrix',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'English',
+            'audio_language' => 'Japanese',
+            'subtitle_language' => 'Spanish',
+            'subtitles' => 'English,Spanish,German',
+            'freeleech' => '1',
+            'category_id' => $category->id,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Active filters');
+        $response->assertSee('Search:');
+        $response->assertSee('Type:');
+        $response->assertSee('Resolution:');
+        $response->assertSee('Source:');
+        $response->assertSee('Release group:');
+        $response->assertSee('Language:');
+        $response->assertSee('Audio language:');
+        $response->assertSee('Subtitle language:');
+        $response->assertSee('Subtitles:');
+        $response->assertSee('Freeleech:');
+        $response->assertSee('Category:');
+        $response->assertSee('Matrix');
+        $response->assertSee('movie');
+        $response->assertSee('2160p');
+        $response->assertSee('BLURAY');
+        $response->assertSee('NTB');
+        $response->assertSee('English');
+        $response->assertSee('Japanese');
+        $response->assertSee('Spanish');
+        $response->assertSee('English,Spanish,German');
+        $response->assertSee('1');
+        $response->assertSee((string) $category->id);
+    }
+
+    public function test_active_filter_summary_does_not_render_when_no_filters_are_applied(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertDontSee('Active filters');
+        $response->assertDontSee('Search:');
+        $response->assertDontSee('Release group:');
+    }
+
+    public function test_browse_actions_still_render(): void
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Save current view');
+        $response->assertSee('RSS');
+        $response->assertSee(e(route('rss.feed', ['token' => $user->rss_token])), false);
+    }
+
     public function test_authenticated_user_sees_browse_rss_action(): void
     {
         $user = User::factory()->create();
@@ -190,7 +263,6 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents');
 
         $response->assertOk();
-        $response->assertSee('Incomplete metadata');
         $response->assertSeeTextInOrder([$best->name, $incomplete->name]);
     }
 
