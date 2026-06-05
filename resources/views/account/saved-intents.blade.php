@@ -20,6 +20,19 @@
         @else
             <div class="grid gap-4">
                 @foreach ($savedIntents as $savedIntent)
+                    @php
+                        $watchPresetCriteria = array_intersect_key($savedIntent->criteria, array_flip([
+                            'q',
+                            'type',
+                            'resolution',
+                            'source',
+                            'release_group',
+                            'language',
+                            'audio_language',
+                            'subtitle_language',
+                            'subtitles',
+                        ]));
+                    @endphp
                     <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                         <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
@@ -37,6 +50,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <a href="{{ route('account.saved-intents.apply', ['savedIntent' => $savedIntent]) }}" class="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90">Apply saved view</a>
+                                <a href="{{ route('account.watch-presets.create', $watchPresetCriteria) }}" class="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand">Create watch preset</a>
                                 <form method="POST" action="{{ route('account.saved-intents.destroy', ['savedIntent' => $savedIntent]) }}">
                                     @csrf
                                     @method('DELETE')
