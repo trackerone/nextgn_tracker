@@ -26,7 +26,6 @@
         @endif
 
         @php($releaseAdvice = is_array($releaseAdvice ?? null) ? $releaseAdvice : [])
-        @php($languageOptions = \App\Support\Languages\LanguageMetadataOptions::labels())
         @php($languageExamples = \App\Support\Languages\LanguageMetadataOptions::examples())
         @if (($releaseAdvice['exact_duplicate_exists'] ?? false) === true)
             <div class="mt-5 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-100">
@@ -83,8 +82,7 @@
                     <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="Spanish or es"></div>
                     <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="English, Japanese, Spanish"></div>
                 </div>
-                <p class="mt-3 text-xs text-slate-500">Language examples: {{ implode(', ', $languageExamples) }}. The registry accepts labels or free-text codes, and multiple subtitles can still be comma-separated.</p>
-                <p class="mt-1 text-xs text-slate-500">Available language options: {{ implode(', ', $languageOptions) }}.</p>
+                <p class="mt-3 text-xs text-slate-500">Examples: {{ implode(', ', $languageExamples) }}. Use labels or short codes; multiple subtitles can be comma-separated.</p>
                 <div class="mt-4"><label for="description">Description (Markdown supported)</label><textarea id="description" name="description" rows="6">{{ old('description') }}</textarea></div>
             </fieldset>
 
