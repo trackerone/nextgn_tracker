@@ -24,8 +24,8 @@ final class DiscoveryDashboardTest extends TestCase
             ->assertSee('Discovery dashboard')
             ->assertSee('Latest uploads')
             ->assertSee('Popular releases')
-            ->assertSee('Danish releases')
-            ->assertSee('Nordic releases')
+            ->assertSee('Releases with language metadata')
+            ->assertSee('Releases with audio metadata')
             ->assertSee('Releases with subtitles');
     }
 
@@ -44,7 +44,7 @@ final class DiscoveryDashboardTest extends TestCase
             'resolution' => '1080p',
             'source' => 'WEB-DL',
             'language' => 'en',
-            'audio_language' => 'da',
+            'audio_language' => 'ja',
         ]);
 
         $this->actingAs($user)
@@ -56,47 +56,43 @@ final class DiscoveryDashboardTest extends TestCase
             ->assertSee('WEB-DL')
             ->assertSee('2026')
             ->assertSee('Language: EN')
-            ->assertSee('Audio: DA');
+            ->assertSee('Audio: JA');
     }
 
-    public function test_discovery_dashboard_renders_danish_releases(): void
+    public function test_discovery_dashboard_renders_language_metadata_section(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create(['name' => 'Danish Release 2026']);
+        $torrent = Torrent::factory()->create(['name' => 'Language Metadata Release 2026']);
         $this->metadata($torrent, [
-            'title' => 'Danish Release',
+            'title' => 'Language Metadata Release',
             'type' => 'movie',
-            'language' => 'Danish',
-            'audio_language' => 'da',
+            'language' => 'English',
         ]);
 
         $this->actingAs($user)
             ->get(route('my.discovery'))
             ->assertOk()
-            ->assertSee('Danish releases')
-            ->assertSee('Danish Release')
-            ->assertSee('Language: DANISH')
-            ->assertSee('Audio: DA');
+            ->assertSee('Releases with language metadata')
+            ->assertSee('Language Metadata Release')
+            ->assertSee('Language: ENGLISH');
     }
 
-    public function test_discovery_dashboard_renders_nordic_releases(): void
+    public function test_discovery_dashboard_renders_audio_metadata_section(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create(['name' => 'Swedish Nordic Release 2026']);
+        $torrent = Torrent::factory()->create(['name' => 'Audio Metadata Release 2026']);
         $this->metadata($torrent, [
-            'title' => 'Swedish Nordic Release',
+            'title' => 'Audio Metadata Release',
             'type' => 'tv',
-            'language' => 'sv',
-            'subtitle_language' => 'Norwegian',
+            'audio_language' => 'Japanese',
         ]);
 
         $this->actingAs($user)
             ->get(route('my.discovery'))
             ->assertOk()
-            ->assertSee('Nordic releases')
-            ->assertSee('Swedish Nordic Release')
-            ->assertSee('Language: SV')
-            ->assertSee('Subtitle language: NORWEGIAN');
+            ->assertSee('Releases with audio metadata')
+            ->assertSee('Audio Metadata Release')
+            ->assertSee('Audio: JAPANESE');
     }
 
     public function test_discovery_dashboard_renders_subtitles_section(): void
@@ -106,8 +102,8 @@ final class DiscoveryDashboardTest extends TestCase
         $this->metadata($torrent, [
             'title' => 'Subtitle Rich Release',
             'type' => 'movie',
-            'subtitle_language' => 'da',
-            'subtitles' => 'da,no,sv',
+            'subtitle_language' => 'Spanish',
+            'subtitles' => 'English, Spanish, German',
         ]);
 
         $this->actingAs($user)
@@ -115,8 +111,8 @@ final class DiscoveryDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Releases with subtitles')
             ->assertSee('Subtitle Rich Release')
-            ->assertSee('Subtitle language: DA')
-            ->assertSee('Subtitles: DA,NO,SV');
+            ->assertSee('Subtitle language: SPANISH')
+            ->assertSee('Subtitles: ENGLISH,SPANISH,GERMAN');
     }
 
     public function test_discovery_dashboard_renders_empty_states(): void
@@ -128,8 +124,8 @@ final class DiscoveryDashboardTest extends TestCase
             ->assertOk()
             ->assertSee('No latest uploads are visible yet.')
             ->assertSee('No popular releases are visible yet.')
-            ->assertSee('No Danish releases are visible yet.')
-            ->assertSee('No Nordic releases are visible yet.')
+            ->assertSee('No releases with language metadata are visible yet.')
+            ->assertSee('No releases with audio metadata are visible yet.')
             ->assertSee('No releases with subtitle metadata are visible yet.');
     }
 
