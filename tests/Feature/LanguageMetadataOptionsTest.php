@@ -76,7 +76,7 @@ class LanguageMetadataOptionsTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = \App\Models\User::factory()->create();
+        $user = createUserWithRole('user1');
 
         $response = $this->actingAs($user)->get(route('torrents.upload'));
 
@@ -93,7 +93,7 @@ class LanguageMetadataOptionsTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = \App\Models\User::factory()->create();
+        $user = createUserWithRole('user1');
 
         $response = $this->actingAs($user)->get(route('torrents.upload'));
 
