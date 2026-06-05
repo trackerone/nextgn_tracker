@@ -4,7 +4,18 @@
 
 @section('content')
     @php
-        $filters = $preset?->filters ?? [];
+        $queryFilters = request()->only([
+            'q',
+            'type',
+            'resolution',
+            'source',
+            'release_group',
+            'language',
+            'audio_language',
+            'subtitle_language',
+            'subtitles',
+        ]);
+        $filters = $preset?->filters ?? $queryFilters;
         $value = static fn (string $key, mixed $default = '') => old($key, $filters[$key] ?? $default);
         $freeleechValue = old('freeleech', array_key_exists('freeleech', $filters) ? ($filters['freeleech'] ? '1' : '0') : '');
         $enabledValue = old('is_enabled', $preset === null || $preset->is_enabled ? '1' : '0');
