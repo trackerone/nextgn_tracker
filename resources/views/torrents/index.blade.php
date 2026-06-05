@@ -116,8 +116,29 @@
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="submit" class="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
                     <a href="{{ route('torrents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
+                    <a href="{{ route('account.saved-intents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">My saved views</a>
                     <span class="text-[11px] text-slate-500">Tip: use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for precise tracker-style search.</span>
                 </div>
+            </form>
+
+            <form method="POST" action="{{ route('account.saved-intents.store') }}" class="mt-4 flex flex-col gap-3 border-t border-slate-800 pt-4 md:flex-row md:items-end">
+                @csrf
+                @foreach (['q', 'type', 'resolution', 'source', 'category_id', 'order', 'direction', 'grouped'] as $key)
+                    @if (($filters[$key] ?? '') !== '' && ($filters[$key] ?? null) !== null)
+                        <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
+                    @endif
+                @endforeach
+                <label class="text-sm font-semibold text-slate-300 md:w-72">
+                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Saved view name</span>
+                    <input
+                        type="text"
+                        name="name"
+                        class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
+                        placeholder="Nordic 2160p movies"
+                        required
+                    >
+                </label>
+                <button type="submit" class="rounded-lg border border-brand/70 px-5 py-2 text-sm font-semibold text-brand hover:bg-brand/10">Save current view</button>
             </form>
         </div>
 
