@@ -23,6 +23,23 @@
             <div class="grid gap-4">
                 @foreach ($savedIntents as $savedIntent)
                     @php
+                        $labelMap = [
+                            'q' => 'Search',
+                            'type' => 'Type',
+                            'resolution' => 'Resolution',
+                            'source' => 'Source',
+                            'release_group' => 'Release group',
+                            'language' => 'Language',
+                            'audio_language' => 'Audio language',
+                            'subtitle_language' => 'Subtitle language',
+                            'subtitles' => 'Subtitles',
+                            'freeleech' => 'Freeleech',
+                            'category' => 'Category',
+                            'category_id' => 'Category',
+                        ];
+
+                        $formatCriteriaLabel = static fn (string $key): string => $labelMap[$key] ?? ucfirst(str_replace('_', ' ', $key));
+
                         $watchPresetCriteria = array_intersect_key($savedIntent->criteria, array_flip([
                             'q',
                             'type',
@@ -60,7 +77,7 @@
                                 <p class="mt-1 text-sm leading-6 text-slate-300">
                                     @forelse ($savedIntent->criteria as $key => $value)
                                         <span class="mr-2 inline-block">
-                                            <span class="text-slate-500">{{ str_replace('_', ' ', $key) }}:</span>
+                                            <span class="text-slate-500">{{ $formatCriteriaLabel($key) }}:</span>
                                             <span class="text-slate-100">{{ is_bool($value) ? ($value ? 'yes' : 'no') : $value }}</span>
                                         </span>
                                     @empty
