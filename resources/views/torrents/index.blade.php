@@ -29,6 +29,26 @@
         $rssQuery['category'] = $rssCategory;
     }
 
+    $activeFilterLabels = [
+        'q' => 'Search',
+        'type' => 'Type',
+        'resolution' => 'Resolution',
+        'source' => 'Source',
+        'release_group' => 'Release group',
+        'language' => 'Language',
+        'audio_language' => 'Audio language',
+        'subtitle_language' => 'Subtitle language',
+        'subtitles' => 'Subtitles',
+        'freeleech' => 'Freeleech',
+        'category' => 'Category',
+        'category_id' => 'Category',
+    ];
+
+    $activeFilters = collect($activeFilterLabels)
+        ->map(fn (string $label, string $key) => [$label, $filters[$key] ?? request()->query($key)])
+        ->filter(static fn (array $item): bool => filled($item[1]))
+        ->values();
+
     $rssUrl = $browseUser?->rss_token !== null
         ? route('rss.feed', array_merge(['token' => (string) $browseUser->rss_token], $rssQuery))
         : route('account.rss.index');
@@ -49,13 +69,7 @@
                 <div class="grid gap-3 md:grid-cols-12">
                     <label class="text-sm font-semibold text-slate-300 md:col-span-4">
                         <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
-                        <input
-                            type="text"
-                            name="q"
-                            value="{{ $filters['q'] ?? '' }}"
-                            class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                            placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024"
-                        >
+                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none" placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024">
                     </label>
                     <label class="text-sm font-semibold text-slate-300 md:col-span-2">
                         <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Type</span>
@@ -124,16 +138,20 @@
                                 <option value="asc" @selected(($filters['direction'] ?? 'desc') === 'asc')>Asc</option>
                             </select>
                         </label>
-                        <div class="md:col-span-4">
-                            <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Row metadata kept secondary</span>
-                            <div class="flex flex-wrap gap-1.5 text-[11px] uppercase tracking-wide text-slate-400" aria-label="Secondary metadata facets">
-                                @foreach (['Language', 'Subtitles', 'Codec', 'HDR', 'Audio'] as $facet)
-                                    <span class="rounded border border-slate-800 bg-slate-900/70 px-2 py-1">{{ $facet }}</span>
-                                @endforeach
-                            </div>
-                        </div>
                     </div>
                 </details>
+
+                @if ($activeFilters->isNotEmpty())
+                    <div class="rounded-lg border border-slate-800 bg-slate-950/30 px-3 py-2 text-xs leading-5 text-slate-400">
+                        <span class="font-semibold uppercase tracking-wide text-slate-500">Active filters</span>
+                        <span class="mx-2 text-slate-600">•</span>
+                        <span>
+                            @foreach ($activeFilters as [$label, $value])
+                                <span>{{ $label }}: <span class="text-slate-200">{{ $value }}</span></span>@if (! $loop->last)<span class="text-slate-600">; </span>@endif
+                            @endforeach
+                        </span>
+                    </div>
+                @endif
 
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="submit" class="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
@@ -154,15 +172,12 @@
                 @endforeach
                 <label class="text-sm font-semibold text-slate-300 md:w-72">
                     <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Saved view name</span>
-                    <input
-                        type="text"
-                        name="name"
-                        class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                        placeholder="Nordic 2160p movies"
-                        required
-                    >
+                    <input type="text" name="name" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none" placeholder="Browse view" required>
                 </label>
-                <button type="submit" class="rounded-lg border border-brand/70 px-5 py-2 text-sm font-semibold text-brand hover:bg-brand/10">Save current view</button>
+                <div class="flex flex-col gap-1">
+                    <button type="submit" class="rounded-lg border border-brand/70 px-5 py-2 text-sm font-semibold text-brand hover:bg-brand/10">Save current view</button>
+                    <span class="text-xs text-slate-500">Save these filters as a reusable view.</span>
+                </div>
             </form>
         </div>
 
@@ -172,7 +187,6 @@
                     @forelse ($releaseFamilies as $family)
                         @php
                             $primary = $family['primary'];
-                            $primaryQualityBadges = $torrentBrowseRows[$primary->id]['recommended_quality_badges'] ?? [];
                             $familyRows = $family['torrents'] ?? collect([$primary])->merge($family['alternatives']);
                         @endphp
                         <section class="px-3 py-3">
@@ -206,7 +220,6 @@
                                             @php
                                                 $row = $torrentBrowseRows[$torrent->id] ?? [];
                                                 $isPrimary = $torrent->is($primary);
-                                                $qualityBadges = $isPrimary ? $primaryQualityBadges : ($row['quality_badges'] ?? []);
                                                 $typeLabel = $row['type_label'] ?? '—';
                                                 $resolutionLabel = $row['resolution_label'] ?? '—';
                                                 $releaseGroup = $row['release_group'] ?? '—';
@@ -230,13 +243,6 @@
                                                         @endif
                                                         <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                     </div>
-                                                    @if ($qualityBadges !== [])
-                                                        <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
-                                                            @foreach ($qualityBadges as $badge)
-                                                                <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
                                                 </td>
                                                 <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
@@ -276,7 +282,6 @@
                             @forelse ($torrents as $torrent)
                                 @php
                                     $row = $torrentBrowseRows[$torrent->id] ?? [];
-                                    $qualityBadges = $row['quality_badges'] ?? [];
                                     $typeLabel = $row['type_label'] ?? '—';
                                     $resolutionLabel = $row['resolution_label'] ?? '—';
                                     $releaseGroup = $row['release_group'] ?? '—';
@@ -296,13 +301,6 @@
                                             @endif
                                             <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                         </div>
-                                        @if ($qualityBadges !== [])
-                                            <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
-                                                @foreach ($qualityBadges as $badge)
-                                                    <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
-                                                @endforeach
-                                            </div>
-                                        @endif
                                     </td>
                                     <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
