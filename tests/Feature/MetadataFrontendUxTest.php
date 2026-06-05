@@ -7,10 +7,10 @@ use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use Illuminate\Support\ViewErrorBag;
 
-it('surfaces torrent metadata on browse rows and details', function (): void {
+it('keeps browse rows clean while preserving metadata on details', function (): void {
     $user = createUserWithRole('user1');
     $torrent = Torrent::factory()->create([
-        'name' => 'Nordic.Release.2026.1080p.WEB-DL-GRP',
+        'name' => 'Feature.Film.2026.1080p.WEB-DL-GRP',
         'type' => 'movie',
         'resolution' => '1080p',
         'source' => 'web',
@@ -19,36 +19,36 @@ it('surfaces torrent metadata on browse rows and details', function (): void {
 
     TorrentMetadata::query()->create([
         'torrent_id' => $torrent->id,
-        'title' => 'Nordic Release',
+        'title' => 'Feature Film',
         'year' => 2026,
         'type' => 'movie',
         'resolution' => '1080p',
         'source' => 'web',
         'release_group' => 'grp',
-        'language' => 'da',
-        'audio_language' => 'en',
-        'subtitle_language' => 'da',
-        'subtitles' => 'da,no',
+        'language' => 'en',
+        'audio_language' => 'ja',
+        'subtitle_language' => 'es',
+        'subtitles' => 'en,ja,es',
     ]);
 
     $this->actingAs($user)
         ->get(route('torrents.index', ['grouped' => '0']))
         ->assertOk()
-        ->assertSee('Nordic.Release.2026.1080p.WEB-DL-GRP')
-        ->assertSee('Lang: DA')
-        ->assertSee('Audio: EN')
-        ->assertSee('Subs: DA,NO');
+        ->assertSee('Feature.Film.2026.1080p.WEB-DL-GRP')
+        ->assertDontSee('Lang: EN')
+        ->assertDontSee('Audio: JA')
+        ->assertDontSee('Subs: EN,JA,ES');
 
     $this->actingAs($user)
         ->get(route('torrents.show', ['torrent' => $torrent]))
         ->assertOk()
         ->assertSee('Release metadata')
         ->assertSee('Language')
-        ->assertSee('DA')
-        ->assertSee('Audio language')
         ->assertSee('EN')
+        ->assertSee('Audio language')
+        ->assertSee('JA')
         ->assertSee('Subtitles')
-        ->assertSee('DA,NO');
+        ->assertSee('EN,JA,ES');
 });
 
 it('exposes upload metadata language fields', function (): void {
