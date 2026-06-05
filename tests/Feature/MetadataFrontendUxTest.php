@@ -58,7 +58,7 @@ it('exposes upload metadata language fields', function (): void {
     $this->actingAs($user)
         ->view('torrents.upload', [
             'categories' => Category::query()->get(),
-            'errors' => new ViewErrorBag(),
+            'errors' => new ViewErrorBag,
             'releaseAdvice' => [],
         ])
         ->assertSee('name="language"', false)
