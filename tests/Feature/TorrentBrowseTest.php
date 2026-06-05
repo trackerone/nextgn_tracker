@@ -39,6 +39,28 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
+    public function test_authenticated_user_sees_browse_save_view_action(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Save current view');
+    }
+
+    public function test_authenticated_user_sees_browse_save_view_helper_text(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Save these filters as a reusable view.');
+    }
+
     public function test_authenticated_user_sees_browse_rss_action(): void
     {
         $user = User::factory()->create();
