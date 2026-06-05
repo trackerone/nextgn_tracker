@@ -40,35 +40,18 @@ final class DiscoveryDashboardBuilder
                     'torrents' => $this->present($this->popularReleases()),
                 ],
                 [
-                    'key' => 'danish',
-                    'title' => 'Danish releases',
-                    'summary' => 'Releases tagged with Danish language, audio, or subtitle metadata.',
-                    'empty' => 'No Danish releases are visible yet.',
-                    'torrents' => $this->present($this->localizedReleases(['da', 'danish', 'dansk'])),
+                    'key' => 'language-metadata',
+                    'title' => 'Releases with language metadata',
+                    'summary' => 'Releases with populated language metadata in any supported language.',
+                    'empty' => 'No releases with language metadata are visible yet.',
+                    'torrents' => $this->present($this->releasesWithMetadata(['language'])),
                 ],
                 [
-                    'key' => 'nordic',
-                    'title' => 'Nordic releases',
-                    'summary' => 'Releases carrying Danish, Swedish, Norwegian, Finnish, Icelandic, or Nordic metadata.',
-                    'empty' => 'No Nordic releases are visible yet.',
-                    'torrents' => $this->present($this->localizedReleases([
-                        'da',
-                        'danish',
-                        'dansk',
-                        'sv',
-                        'swedish',
-                        'svenska',
-                        'no',
-                        'norwegian',
-                        'norsk',
-                        'fi',
-                        'finnish',
-                        'suomi',
-                        'is',
-                        'icelandic',
-                        'islenska',
-                        'nordic',
-                    ])),
+                    'key' => 'audio-metadata',
+                    'title' => 'Releases with audio metadata',
+                    'summary' => 'Releases with populated audio language metadata in any supported language.',
+                    'empty' => 'No releases with audio metadata are visible yet.',
+                    'torrents' => $this->present($this->releasesWithMetadata(['audio_language'])),
                 ],
                 [
                     'key' => 'subtitles',
@@ -114,20 +97,17 @@ final class DiscoveryDashboardBuilder
     }
 
     /**
-     * @param  array<int, string>  $tokens
+     * @param  array<int, string>  $columns
      * @return Collection<int, Torrent>
      */
-    private function localizedReleases(array $tokens): Collection
+    private function releasesWithMetadata(array $columns): Collection
     {
         /** @var Collection<int, Torrent> $torrents */
         $torrents = $this->baseQuery()
-            ->whereHas('metadata', function (Builder $query) use ($tokens): void {
-                $this->whereMetadataContainsAny($query, [
-                    'language',
-                    'audio_language',
-                    'subtitle_language',
-                    'subtitles',
-                ], $tokens);
+            ->whereHas('metadata', function (Builder $query) use ($columns): void {
+                foreach ($columns as $column) {
+                    $query->whereNotNull($column)->where($column, '!=', '');
+                }
             })
             ->orderByDesc('uploaded_at')
             ->orderByDesc('created_at')
