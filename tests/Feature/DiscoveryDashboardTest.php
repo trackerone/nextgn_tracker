@@ -112,7 +112,7 @@ final class DiscoveryDashboardTest extends TestCase
             ->assertSee('Releases with subtitles')
             ->assertSee('Subtitle Rich Release')
             ->assertSee('Subtitle language: SPANISH')
-            ->assertSee('Subtitles: ENGLISH,SPANISH,GERMAN');
+            ->assertSee('Subtitles: ENGLISH, SPANISH, GERMAN');
     }
 
     public function test_discovery_dashboard_renders_empty_states(): void
