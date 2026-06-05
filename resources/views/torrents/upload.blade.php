@@ -26,6 +26,8 @@
         @endif
 
         @php($releaseAdvice = is_array($releaseAdvice ?? null) ? $releaseAdvice : [])
+        @php($languageOptions = \App\Support\Languages\LanguageMetadataOptions::labels())
+        @php($languageExamples = \App\Support\Languages\LanguageMetadataOptions::examples())
         @if (($releaseAdvice['exact_duplicate_exists'] ?? false) === true)
             <div class="mt-5 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-100">
                 <strong>Exact duplicate detected.</strong>
@@ -76,12 +78,13 @@
                     <div><label for="tags_input">Tags</label><input type="text" id="tags_input" name="tags_input" value="{{ old('tags_input') }}" placeholder="scene, remux, internal"></div>
                     <div><label for="codecs_video">Video codec</label><input type="text" id="codecs_video" name="codecs[video]" value="{{ old('codecs.video') }}" placeholder="H.264, H.265, AV1"></div>
                     <div><label for="codecs_audio">Audio codec</label><input type="text" id="codecs_audio" name="codecs[audio]" value="{{ old('codecs.audio') }}" placeholder="AAC, DTS, FLAC"></div>
-                    <div><label for="language">Language</label><input type="text" id="language" name="language" value="{{ old('language') }}" placeholder="da"></div>
-                    <div><label for="audio_language">Audio language</label><input type="text" id="audio_language" name="audio_language" value="{{ old('audio_language') }}" placeholder="da"></div>
-                    <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="da"></div>
-                    <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="da,no,sv"></div>
+                    <div><label for="language">Language</label><input type="text" id="language" name="language" value="{{ old('language') }}" placeholder="English or en"></div>
+                    <div><label for="audio_language">Audio language</label><input type="text" id="audio_language" name="audio_language" value="{{ old('audio_language') }}" placeholder="Japanese or ja"></div>
+                    <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="Spanish or es"></div>
+                    <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="English, Japanese, Spanish"></div>
                 </div>
-                <p class="mt-3 text-xs text-slate-500">Use short codes such as da, no, nb, nn, sv, fi, en. For multiple subtitles use comma-separated values, e.g. da,no,sv.</p>
+                <p class="mt-3 text-xs text-slate-500">Language examples: {{ implode(', ', $languageExamples) }}. The registry accepts labels or free-text codes, and multiple subtitles can still be comma-separated.</p>
+                <p class="mt-1 text-xs text-slate-500">Available language options: {{ implode(', ', $languageOptions) }}.</p>
                 <div class="mt-4"><label for="description">Description (Markdown supported)</label><textarea id="description" name="description" rows="6">{{ old('description') }}</textarea></div>
             </fieldset>
 
