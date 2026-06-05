@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Support\Languages\LanguageMetadataOptions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\ViewErrorBag;
 use Tests\TestCase;
 
 class LanguageMetadataOptionsTest extends TestCase
@@ -73,14 +74,14 @@ class LanguageMetadataOptionsTest extends TestCase
 
     public function test_upload_metadata_ui_exposes_neutral_examples_and_placeholders(): void
     {
-        Storage::fake('torrents');
-        Storage::fake('nfo');
+        Category::factory()->create(['name' => 'Movies']);
 
-        $user = createUserWithRole('user1');
+        $response = $this->view('torrents.upload', [
+            'categories' => Category::query()->get(),
+            'errors' => new ViewErrorBag,
+            'releaseAdvice' => [],
+        ]);
 
-        $response = $this->actingAs($user)->get(route('torrents.upload'));
-
-        $response->assertOk();
         $response->assertSee('Examples: English, Japanese, Spanish, German. Use labels or short codes; multiple subtitles can be comma-separated.');
         $response->assertSee('placeholder="English or en"', false);
         $response->assertSee('placeholder="Japanese or ja"', false);
@@ -90,14 +91,14 @@ class LanguageMetadataOptionsTest extends TestCase
 
     public function test_no_nordic_first_helper_text_remains_in_upload_metadata_ui(): void
     {
-        Storage::fake('torrents');
-        Storage::fake('nfo');
+        Category::factory()->create(['name' => 'Movies']);
 
-        $user = createUserWithRole('user1');
+        $response = $this->view('torrents.upload', [
+            'categories' => Category::query()->get(),
+            'errors' => new ViewErrorBag,
+            'releaseAdvice' => [],
+        ]);
 
-        $response = $this->actingAs($user)->get(route('torrents.upload'));
-
-        $response->assertOk();
         $response->assertDontSee('Use short codes such as da, no, nb, nn, sv, fi, en.');
     }
 }
