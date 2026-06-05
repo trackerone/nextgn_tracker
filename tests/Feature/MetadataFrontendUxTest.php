@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
+use Illuminate\Support\ViewErrorBag;
 
 it('surfaces torrent metadata on browse rows and details', function (): void {
     $user = createUserWithRole('user1');
@@ -57,6 +58,7 @@ it('exposes upload metadata language fields', function (): void {
     $this->actingAs($user)
         ->view('torrents.upload', [
             'categories' => Category::query()->get(),
+            'errors' => new ViewErrorBag(),
             'releaseAdvice' => [],
         ])
         ->assertSee('name="language"', false)
