@@ -191,7 +191,6 @@ final class DiscoveryDashboardBuilder
     }
 
     /**
-     * @param  Builder<TorrentMetadata>  $query
      * @param  array<int, string>  $columns
      * @param  array<int, string>  $tokens
      */
