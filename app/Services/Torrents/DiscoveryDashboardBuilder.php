@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Torrents;
 
 use App\Models\Torrent;
+use App\Models\TorrentMetadata;
 use App\Support\Torrents\TorrentMetadataPresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -86,11 +87,14 @@ final class DiscoveryDashboardBuilder
      */
     private function latestUploads(): Collection
     {
-        return $this->baseQuery()
+        /** @var Collection<int, Torrent> $torrents */
+        $torrents = $this->baseQuery()
             ->orderByDesc('uploaded_at')
             ->orderByDesc('created_at')
             ->limit(self::SECTION_LIMIT)
             ->get();
+
+        return $torrents;
     }
 
     /**
@@ -98,12 +102,15 @@ final class DiscoveryDashboardBuilder
      */
     private function popularReleases(): Collection
     {
-        return $this->baseQuery()
+        /** @var Collection<int, Torrent> $torrents */
+        $torrents = $this->baseQuery()
             ->orderByDesc('seeders')
             ->orderByDesc('completed')
             ->orderByDesc('created_at')
             ->limit(self::SECTION_LIMIT)
             ->get();
+
+        return $torrents;
     }
 
     /**
@@ -112,7 +119,8 @@ final class DiscoveryDashboardBuilder
      */
     private function localizedReleases(array $tokens): Collection
     {
-        return $this->baseQuery()
+        /** @var Collection<int, Torrent> $torrents */
+        $torrents = $this->baseQuery()
             ->whereHas('metadata', function (Builder $query) use ($tokens): void {
                 $this->whereMetadataContainsAny($query, [
                     'language',
@@ -125,6 +133,8 @@ final class DiscoveryDashboardBuilder
             ->orderByDesc('created_at')
             ->limit(self::SECTION_LIMIT)
             ->get();
+
+        return $torrents;
     }
 
     /**
@@ -132,7 +142,8 @@ final class DiscoveryDashboardBuilder
      */
     private function subtitleReleases(): Collection
     {
-        return $this->baseQuery()
+        /** @var Collection<int, Torrent> $torrents */
+        $torrents = $this->baseQuery()
             ->whereHas('metadata', function (Builder $query): void {
                 $query
                     ->whereNotNull('subtitle_language')
@@ -147,8 +158,13 @@ final class DiscoveryDashboardBuilder
             ->orderByDesc('created_at')
             ->limit(self::SECTION_LIMIT)
             ->get();
+
+        return $torrents;
     }
 
+    /**
+     * @return Builder<Torrent>
+     */
     private function baseQuery(): Builder
     {
         return Torrent::query()
@@ -175,6 +191,7 @@ final class DiscoveryDashboardBuilder
     }
 
     /**
+     * @param  Builder<TorrentMetadata>  $query
      * @param  array<int, string>  $columns
      * @param  array<int, string>  $tokens
      */
@@ -198,16 +215,18 @@ final class DiscoveryDashboardBuilder
         return $torrents->map(function (Torrent $torrent): array {
             $metadata = $this->metadataArray($torrent);
             $title = trim((string) ($metadata['title'] ?? '')) ?: $torrent->name;
+            /** @var array<int, array{label: string, value: string}> $meta */
+            $meta = [
+                ['label' => 'Seeders', 'value' => number_format((int) $torrent->seeders)],
+                ['label' => 'Completed', 'value' => number_format((int) $torrent->completed)],
+                ['label' => 'Uploaded', 'value' => $torrent->uploadedAtForDisplay()?->format('Y-m-d') ?? 'recently'],
+            ];
 
             return [
                 'torrent' => $torrent,
                 'title' => $title,
                 'badges' => $this->metadataBadges($metadata),
-                'meta' => [
-                    ['label' => 'Seeders', 'value' => number_format((int) $torrent->seeders)],
-                    ['label' => 'Completed', 'value' => number_format((int) $torrent->completed)],
-                    ['label' => 'Uploaded', 'value' => $torrent->uploadedAtForDisplay()?->format('Y-m-d') ?? 'recently'],
-                ],
+                'meta' => $meta,
             ];
         });
     }
@@ -217,9 +236,9 @@ final class DiscoveryDashboardBuilder
      */
     private function metadataArray(Torrent $torrent): array
     {
-        $metadata = $torrent->metadata;
+        $metadata = $torrent->getRelation('metadata');
 
-        if ($metadata === null) {
+        if (! $metadata instanceof TorrentMetadata) {
             return [];
         }
 
@@ -274,7 +293,8 @@ final class DiscoveryDashboardBuilder
      */
     private function metadataCategories(): Collection
     {
-        return Torrent::query()
+        /** @var Collection<int, Torrent> $rows */
+        $rows = Torrent::query()
             ->visible()
             ->join('torrent_metadata', 'torrent_metadata.torrent_id', '=', 'torrents.id')
             ->whereNotNull('torrent_metadata.type')
@@ -283,10 +303,11 @@ final class DiscoveryDashboardBuilder
             ->groupBy('torrent_metadata.type')
             ->orderByDesc('latest_activity')
             ->limit(6)
-            ->get()
-            ->map(fn (Torrent $row): array => [
-                'type' => ucfirst(Str::lower((string) $row->getAttribute('type'))),
-                'count' => (int) $row->getAttribute('total'),
-            ]);
+            ->get();
+
+        return $rows->map(fn (Torrent $row): array => [
+            'type' => ucfirst(Str::lower((string) $row->getAttribute('type'))),
+            'count' => (int) $row->getAttribute('total'),
+        ]);
     }
 }
