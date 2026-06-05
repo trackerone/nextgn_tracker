@@ -110,6 +110,69 @@ final class SavedIntentTest extends TestCase
             ->assertDontSee('grouped=0');
     }
 
+    public function test_saved_intent_page_shows_create_rss_preset_action(): void
+    {
+        $user = User::factory()->create();
+
+        SavedIntent::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'RSS ready view',
+            'criteria' => ['q' => 'matrix'],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee('Create RSS preset');
+    }
+
+    public function test_saved_intent_rss_preset_action_includes_supported_criteria_only(): void
+    {
+        $user = User::factory()->create();
+
+        SavedIntent::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'All-language RSS movies',
+            'criteria' => [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
+                'freeleech' => '1',
+                'category_id' => '42',
+                'title' => 'ignored-title',
+                'grouped' => '0',
+            ],
+        ]);
+
+        $expectedUrl = route('account.rss.presets.create', [
+            'q' => 'matrix',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'WEB-DL',
+            'release_group' => 'NTB',
+            'language' => 'English',
+            'audio_language' => 'Japanese',
+            'subtitle_language' => 'Spanish',
+            'subtitles' => 'English, Spanish, German',
+            'freeleech' => '1',
+            'category' => '42',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee($expectedUrl)
+            ->assertDontSee('title=ignored-title')
+            ->assertDontSee('grouped=0')
+            ->assertDontSee('category_id=42');
+    }
+
     public function test_watch_preset_create_page_prefills_supported_query_values(): void
     {
         $user = User::factory()->create();
@@ -138,6 +201,42 @@ final class SavedIntentTest extends TestCase
             ->assertSee('value="English"', false)
             ->assertSee('value="Swedish"', false)
             ->assertSee('value="Danish, Swedish"', false)
+            ->assertDontSee('ignored-title')
+            ->assertDontSee('grouped');
+    }
+
+    public function test_rss_preset_create_page_prefills_supported_query_values(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('account.rss.presets.create', [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
+                'freeleech' => '1',
+                'category' => '42',
+                'title' => 'ignored-title',
+                'grouped' => '0',
+            ]))
+            ->assertOk()
+            ->assertSee('value="matrix"', false)
+            ->assertSee('value="movie"', false)
+            ->assertSee('value="2160p"', false)
+            ->assertSee('value="WEB-DL"', false)
+            ->assertSee('value="NTB"', false)
+            ->assertSee('value="42"', false)
+            ->assertSee('value="English"', false)
+            ->assertSee('value="Japanese"', false)
+            ->assertSee('value="Spanish"', false)
+            ->assertSee('value="English, Spanish, German"', false)
+            ->assertSee('<option value="1" selected>Yes</option>', false)
             ->assertDontSee('ignored-title')
             ->assertDontSee('grouped');
     }
