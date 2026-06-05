@@ -4,7 +4,20 @@
 
 @section('content')
     @php
-        $filters = $preset?->filters ?? [];
+        $queryFilters = request()->only([
+            'q',
+            'type',
+            'resolution',
+            'source',
+            'release_group',
+            'category',
+            'language',
+            'audio_language',
+            'subtitle_language',
+            'subtitles',
+            'freeleech',
+        ]);
+        $filters = $preset?->filters ?? $queryFilters;
         $value = static fn (string $key, mixed $default = '') => old($key, $filters[$key] ?? $default);
         $freeleechValue = old('freeleech', array_key_exists('freeleech', $filters) ? ($filters['freeleech'] ? '1' : '0') : '');
     @endphp
