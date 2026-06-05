@@ -67,6 +67,75 @@ final class SavedIntentTest extends TestCase
             ->assertDontSee('BLURAY');
     }
 
+    public function test_saved_intent_page_shows_intent_hub_explanation(): void
+    {
+        $user = User::factory()->create();
+
+        SavedIntent::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'All-language WEB movies',
+            'criteria' => [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee('Saved views let you reuse the same metadata intent across browse, RSS, and watch presets.');
+    }
+
+    public function test_saved_view_actions_render_together(): void
+    {
+        $user = User::factory()->create();
+
+        SavedIntent::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'All-language RSS movies',
+            'criteria' => [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
+                'freeleech' => '1',
+                'category_id' => '42',
+            ],
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee('Apply saved view')
+            ->assertSee('Create watch preset')
+            ->assertSee('Create RSS preset')
+            ->assertSee('Delete');
+    }
+
+    public function test_empty_state_links_to_browse(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee('Saved views are created from browse filters, then reused here for RSS and watch presets.')
+            ->assertSee(route('torrents.index'))
+            ->assertSee('Go to Browse');
+    }
+
     public function test_saved_intent_page_shows_create_watch_preset_action_with_supported_criteria(): void
     {
         $user = User::factory()->create();
