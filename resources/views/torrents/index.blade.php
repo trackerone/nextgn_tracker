@@ -11,13 +11,24 @@
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
     $browseUser = auth()->user();
-    $rssQuery = collect([
-        'q' => $filters['q'] ?? null,
-        'type' => $filters['type'] ?? null,
-        'resolution' => $filters['resolution'] ?? null,
-        'source' => $filters['source'] ?? null,
-        'category' => $filters['category_id'] ?? ($filters['category'] ?? null),
-    ])->filter(static fn ($value): bool => filled($value))->all();
+    $rssQuery = collect(request()->only([
+        'q',
+        'type',
+        'resolution',
+        'source',
+        'release_group',
+        'language',
+        'audio_language',
+        'subtitle_language',
+        'subtitles',
+        'freeleech',
+    ]))->filter(static fn ($value): bool => filled($value))->all();
+    $rssCategory = request()->query('category', request()->query('category_id'));
+
+    if (filled($rssCategory)) {
+        $rssQuery['category'] = $rssCategory;
+    }
+
     $rssUrl = $browseUser?->rss_token !== null
         ? route('rss.feed', array_merge(['token' => (string) $browseUser->rss_token], $rssQuery))
         : route('account.rss.index');
