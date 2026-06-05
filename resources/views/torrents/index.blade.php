@@ -49,13 +49,7 @@
                 <div class="grid gap-3 md:grid-cols-12">
                     <label class="text-sm font-semibold text-slate-300 md:col-span-4">
                         <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Search</span>
-                        <input
-                            type="text"
-                            name="q"
-                            value="{{ $filters['q'] ?? '' }}"
-                            class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                            placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024"
-                        >
+                        <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none" placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024">
                     </label>
                     <label class="text-sm font-semibold text-slate-300 md:col-span-2">
                         <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Type</span>
@@ -175,7 +169,6 @@
                     @forelse ($releaseFamilies as $family)
                         @php
                             $primary = $family['primary'];
-                            $primaryQualityBadges = $torrentBrowseRows[$primary->id]['recommended_quality_badges'] ?? [];
                             $familyRows = $family['torrents'] ?? collect([$primary])->merge($family['alternatives']);
                         @endphp
                         <section class="px-3 py-3">
@@ -209,7 +202,6 @@
                                             @php
                                                 $row = $torrentBrowseRows[$torrent->id] ?? [];
                                                 $isPrimary = $torrent->is($primary);
-                                                $qualityBadges = $isPrimary ? $primaryQualityBadges : ($row['quality_badges'] ?? []);
                                                 $typeLabel = $row['type_label'] ?? '—';
                                                 $resolutionLabel = $row['resolution_label'] ?? '—';
                                                 $releaseGroup = $row['release_group'] ?? '—';
@@ -233,13 +225,6 @@
                                                         @endif
                                                         <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                     </div>
-                                                    @if ($qualityBadges !== [])
-                                                        <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
-                                                            @foreach ($qualityBadges as $badge)
-                                                                <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
-                                                            @endforeach
-                                                        </div>
-                                                    @endif
                                                 </td>
                                                 <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
@@ -279,7 +264,6 @@
                             @forelse ($torrents as $torrent)
                                 @php
                                     $row = $torrentBrowseRows[$torrent->id] ?? [];
-                                    $qualityBadges = $row['quality_badges'] ?? [];
                                     $typeLabel = $row['type_label'] ?? '—';
                                     $resolutionLabel = $row['resolution_label'] ?? '—';
                                     $releaseGroup = $row['release_group'] ?? '—';
@@ -299,13 +283,6 @@
                                             @endif
                                             <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                         </div>
-                                        @if ($qualityBadges !== [])
-                                            <div class="mt-1 flex flex-wrap gap-1.5" aria-label="Release quality badges">
-                                                @foreach ($qualityBadges as $badge)
-                                                    <span class="rounded border border-slate-700 bg-slate-950/60 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-400">{{ $badge }}</span>
-                                                @endforeach
-                                            </div>
-                                        @endif
                                     </td>
                                     <td class="px-3 py-2.5 align-top text-xs text-slate-300"><span class="font-medium text-slate-200">{{ $typeLabel }}</span><span class="text-slate-600"> / </span>{{ $resolutionLabel }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
