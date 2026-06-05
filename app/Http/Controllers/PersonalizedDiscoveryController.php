@@ -14,9 +14,8 @@ final class PersonalizedDiscoveryController extends Controller
     public function __invoke(
         Request $request,
         DiscoveryDashboardBuilder $dashboardBuilder,
-        PersonalizedDiscoveryFeedBuilder $feedBuilder
-    ): View
-    {
+        PersonalizedDiscoveryFeedBuilder $feedBuilder,
+    ): View {
         return view('account.discovery', array_merge(
             $dashboardBuilder->build(),
             $feedBuilder->buildFor($request->user())
