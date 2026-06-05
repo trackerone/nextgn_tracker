@@ -132,17 +132,17 @@ final class SavedIntentTest extends TestCase
 
         SavedIntent::factory()->create([
             'user_id' => $user->id,
-            'name' => 'Nordic RSS movies',
+            'name' => 'All-language RSS movies',
             'criteria' => [
                 'q' => 'matrix',
                 'type' => 'movie',
                 'resolution' => '2160p',
                 'source' => 'WEB-DL',
                 'release_group' => 'NTB',
-                'language' => 'Danish',
-                'audio_language' => 'English',
-                'subtitle_language' => 'Swedish',
-                'subtitles' => 'Danish, Swedish',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
                 'freeleech' => '1',
                 'category_id' => '42',
                 'title' => 'ignored-title',
@@ -156,10 +156,10 @@ final class SavedIntentTest extends TestCase
             'resolution' => '2160p',
             'source' => 'WEB-DL',
             'release_group' => 'NTB',
-            'language' => 'Danish',
-            'audio_language' => 'English',
-            'subtitle_language' => 'Swedish',
-            'subtitles' => 'Danish, Swedish',
+            'language' => 'English',
+            'audio_language' => 'Japanese',
+            'subtitle_language' => 'Spanish',
+            'subtitles' => 'English, Spanish, German',
             'freeleech' => '1',
             'category' => '42',
         ]);
@@ -216,10 +216,10 @@ final class SavedIntentTest extends TestCase
                 'resolution' => '2160p',
                 'source' => 'WEB-DL',
                 'release_group' => 'NTB',
-                'language' => 'Danish',
-                'audio_language' => 'English',
-                'subtitle_language' => 'Swedish',
-                'subtitles' => 'Danish, Swedish',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
                 'freeleech' => '1',
                 'category' => '42',
                 'title' => 'ignored-title',
@@ -232,10 +232,10 @@ final class SavedIntentTest extends TestCase
             ->assertSee('value="WEB-DL"', false)
             ->assertSee('value="NTB"', false)
             ->assertSee('value="42"', false)
-            ->assertSee('value="Danish"', false)
             ->assertSee('value="English"', false)
-            ->assertSee('value="Swedish"', false)
-            ->assertSee('value="Danish, Swedish"', false)
+            ->assertSee('value="Japanese"', false)
+            ->assertSee('value="Spanish"', false)
+            ->assertSee('value="English, Spanish, German"', false)
             ->assertSee('<option value="1" selected>Yes</option>', false)
             ->assertDontSee('ignored-title')
             ->assertDontSee('grouped');
