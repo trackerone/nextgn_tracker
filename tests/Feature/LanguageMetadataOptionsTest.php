@@ -82,7 +82,7 @@ class LanguageMetadataOptionsTest extends TestCase
             'releaseAdvice' => [],
         ]);
 
-        $response->assertSee('Examples: English, Japanese, Spanish, German. Use labels or short codes; multiple subtitles can be comma-separated.');
+        $response->assertSee('Examples: English, Japanese, Spanish, German, Danish, Norwegian Bokmål, Panjabi. Use labels or short codes; multiple subtitles can be comma-separated.');
         $response->assertSee('placeholder="English or en"', false);
         $response->assertSee('placeholder="Japanese or ja"', false);
         $response->assertSee('placeholder="Spanish or es"', false);
