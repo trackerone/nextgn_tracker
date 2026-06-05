@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use App\Models\User;
@@ -36,6 +37,74 @@ final class TorrentBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('<meta name="robots" content="noindex, nofollow">', false);
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
+    }
+
+    public function test_authenticated_user_sees_browse_rss_action(): void
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('RSS');
+        $response->assertSee(e(route('rss.feed', ['token' => $user->rss_token])), false);
+        $response->assertSee('RSS uses your current filters.');
+    }
+
+    public function test_browse_rss_action_preserves_supported_query_parameters(): void
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+        $category = Category::factory()->create();
+        Torrent::factory()->create(['category_id' => $category->id]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', [
+            'q' => 'Matrix rg:NTB',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'da',
+            'audio_language' => 'Danish',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
+            'freeleech' => '1',
+            'category_id' => $category->id,
+            'order' => 'seeders',
+            'direction' => 'asc',
+            'grouped' => '0',
+        ]));
+
+        $expected = route('rss.feed', [
+            'token' => $user->rss_token,
+            'q' => 'Matrix rg:NTB',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'da',
+            'audio_language' => 'Danish',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
+            'freeleech' => '1',
+            'category' => $category->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee(e($expected), false);
+    }
+
+    public function test_browse_rss_action_falls_back_to_account_rss_without_token(): void
+    {
+        $user = User::factory()->create(['rss_token' => null]);
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee(e(route('account.rss.index')), false);
     }
 
     public function test_grouped_browse_renders_release_families_with_compact_best_marker(): void
