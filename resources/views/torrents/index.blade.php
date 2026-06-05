@@ -10,6 +10,17 @@
     $torrentBrowseRows = $torrentBrowseRows ?? [];
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
+    $browseUser = auth()->user();
+    $rssQuery = collect([
+        'q' => $filters['q'] ?? null,
+        'type' => $filters['type'] ?? null,
+        'resolution' => $filters['resolution'] ?? null,
+        'source' => $filters['source'] ?? null,
+        'category' => $filters['category_id'] ?? ($filters['category'] ?? null),
+    ])->filter(static fn ($value): bool => filled($value))->all();
+    $rssUrl = $browseUser?->rss_token !== null
+        ? route('rss.feed', array_merge(['token' => (string) $browseUser->rss_token], $rssQuery))
+        : route('account.rss.index');
 @endphp
 
 @extends('layouts.app')
@@ -117,6 +128,8 @@
                     <button type="submit" class="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
                     <a href="{{ route('torrents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
                     <a href="{{ route('account.saved-intents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">My saved views</a>
+                    <a href="{{ $rssUrl }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">RSS</a>
+                    <span class="text-[11px] text-slate-500">RSS uses your current filters.</span>
                     <span class="text-[11px] text-slate-500">Tip: use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for precise tracker-style search.</span>
                 </div>
             </form>
