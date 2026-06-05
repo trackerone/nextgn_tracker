@@ -171,21 +171,6 @@ final class DiscoveryDashboardBuilder
     }
 
     /**
-     * @param  array<int, string>  $columns
-     * @param  array<int, string>  $tokens
-     */
-    private function whereMetadataContainsAny(Builder $query, array $columns, array $tokens): void
-    {
-        $query->where(function (Builder $outer) use ($columns, $tokens): void {
-            foreach ($columns as $column) {
-                foreach ($tokens as $token) {
-                    $outer->orWhereRaw(sprintf('LOWER(%s) LIKE ?', $column), ['%'.Str::lower($token).'%']);
-                }
-            }
-        });
-    }
-
-    /**
      * @param  Collection<int, Torrent>  $torrents
      * @return Collection<int, array{torrent: Torrent, title: string, badges: array<int, string>, meta: array<int, array{label: string, value: string}>}>
      */
