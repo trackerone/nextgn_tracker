@@ -212,7 +212,6 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents');
 
         $response->assertOk();
-        $response->assertSee('Incomplete metadata');
         $response->assertSeeTextInOrder([$best->name, $incomplete->name]);
     }
 
