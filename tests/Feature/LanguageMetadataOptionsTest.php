@@ -71,7 +71,7 @@ class LanguageMetadataOptionsTest extends TestCase
         $this->assertContains('Panjabi', $labels);
     }
 
-    public function test_upload_metadata_ui_exposes_all_language_options_and_examples(): void
+    public function test_upload_metadata_ui_exposes_neutral_examples_and_placeholders(): void
     {
         Storage::fake('torrents');
         Storage::fake('nfo');
@@ -81,11 +81,11 @@ class LanguageMetadataOptionsTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.upload'));
 
         $response->assertOk();
-        $response->assertSee('Language examples: English, Japanese, Spanish, German, Danish, Norwegian Bokmål, Panjabi.');
-        $response->assertSee('Available language options: English, German, French, Portuguese, Spanish, Dutch, Finnish, Russian, Vietnamese, Chinese, Italian, Swedish, Norwegian, Norwegian Bokmål, Danish, Japanese, Thai, Korean, Greek, Arabic, Indonesian, Polish, Turkish, Bulgarian, Hebrew, Romanian, Icelandic, Hungarian, Czech, Estonian, Hindi, Lithuanian, Latvian, Malay, Slovak, Slovenian, Tamil, Telugu, Ukrainian, Croatian, Persian, Panjabi.');
+        $response->assertSee('Examples: English, Japanese, Spanish, German. Use labels or short codes; multiple subtitles can be comma-separated.');
         $response->assertSee('placeholder="English or en"', false);
         $response->assertSee('placeholder="Japanese or ja"', false);
         $response->assertSee('placeholder="Spanish or es"', false);
+        $response->assertDontSee('Available language options:');
     }
 
     public function test_no_nordic_first_helper_text_remains_in_upload_metadata_ui(): void
