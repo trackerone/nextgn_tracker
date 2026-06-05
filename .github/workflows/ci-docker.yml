@@ -1,0 +1,49 @@
+name: Docker Build Smoke
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  push:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  docker-build-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build production Docker image
+        run: docker build -t nextgn-tracker:test .
+
+      - name: Verify PHP is available
+        run: docker run --rm nextgn-tracker:test php -v
+
+      - name: Verify FrankenPHP is available
+        run: |
+          docker run --rm nextgn-tracker:test frankenphp version \
+            || docker run --rm nextgn-tracker:test frankenphp --version
+
+      - name: Verify runtime user is not root
+        run: |
+          runtime_user="$(docker run --rm --entrypoint id nextgn-tracker:test)"
+          echo "$runtime_user"
+          if echo "$runtime_user" | grep -q 'uid=0'; then
+            echo "Docker image must not start as root." >&2
+            exit 1
+          fi
+
+      - name: Validate FrankenPHP Caddy config
+        run: >
+          docker run --rm nextgn-tracker:test
+          frankenphp validate
+          --config /app/deploy/frankenphp/Caddyfile
+          --adapter caddyfile

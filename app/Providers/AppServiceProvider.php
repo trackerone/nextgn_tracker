@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\SecurityAuditLog;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Metadata\ExternalMetadataEnricher;
@@ -14,6 +15,7 @@ use App\Services\Metadata\Providers\TraktMetadataProvider;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
+use App\Support\Security\LoginThrottleKey;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -84,6 +86,7 @@ class AppServiceProvider extends ServiceProvider
             'session.same_site' => config('session.same_site', 'strict'),
         ]);
 
+        $this->registerAuthRateLimiters();
         $this->registerTorrentRateLimiters();
 
         View::composer('layouts.app', function ($view): void {
@@ -103,6 +106,26 @@ class AppServiceProvider extends ServiceProvider
                 'followNavNewCount',
                 $badge->unseenCountFor($user)
             );
+        });
+    }
+
+    private function registerAuthRateLimiters(): void
+    {
+        RateLimiter::for('login', function (Request $request): Limit {
+            [$maxAttempts, $decayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.login', '5,1')
+            );
+
+            return Limit::perMinutes($decayMinutes, $maxAttempts)
+                ->by(LoginThrottleKey::fromRequest($request))
+                ->response(function (Request $request, array $headers): \Symfony\Component\HttpFoundation\Response {
+                    SecurityAuditLog::logAndWarn(null, 'auth.login.throttled', [
+                        'email' => $this->normalizedEmail($request),
+                        'ip' => $request->ip(),
+                    ]);
+
+                    return response('Too Many Attempts.', 429, $headers);
+                });
         });
     }
 
@@ -132,6 +155,14 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        RateLimiter::for('torrent-upload', function (Request $request): Limit {
+            return $this->limitFromConfig(
+                (string) config('security.rate_limits.torrent_upload', '10,60'),
+                $request,
+                'torrent-upload'
+            );
+        });
+
         RateLimiter::for('torrent-moderation', function (Request $request): Limit {
             return $this->limitFromConfig(
                 (string) config(
@@ -146,19 +177,31 @@ class AppServiceProvider extends ServiceProvider
 
     private function limitFromConfig(string $value, Request $request, string $prefix): Limit
     {
-        [$maxAttempts, $decayMinutes] = array_pad(
-            array_map('intval', explode(',', $value, 2)),
-            2,
-            1
-        );
-
-        $maxAttempts = max(1, $maxAttempts);
-        $decayMinutes = max(1, $decayMinutes);
+        [$maxAttempts, $decayMinutes] = $this->rateLimitConfig($value);
 
         $key = $request->user()?->id
             ? sprintf('%s:user:%s', $prefix, (string) $request->user()->id)
             : sprintf('%s:ip:%s', $prefix, (string) $request->ip());
 
         return Limit::perMinutes($decayMinutes, $maxAttempts)->by($key);
+    }
+
+    /**
+     * @return array{0: int, 1: int}
+     */
+    private function rateLimitConfig(string $value): array
+    {
+        [$maxAttempts, $decayMinutes] = array_pad(
+            array_map('intval', explode(',', $value, 2)),
+            2,
+            1
+        );
+
+        return [max(1, $maxAttempts), max(1, $decayMinutes)];
+    }
+
+    private function normalizedEmail(Request $request): string
+    {
+        return mb_strtolower((string) $request->input('email', ''));
     }
 }

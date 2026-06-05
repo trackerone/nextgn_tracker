@@ -8,6 +8,7 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ScrapeTest extends TestCase
@@ -122,6 +123,170 @@ class ScrapeTest extends TestCase
         );
     }
 
+    public function test_pending_torrent_scrape_returns_zero_stats_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->unapproved()->create([
+            'seeders' => 9,
+            'leechers' => 5,
+            'completed' => 42,
+        ]);
+
+        $payload = $this->scrapePayload($user, $torrent);
+
+        $this->assertSame([
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ], $payload['files'][$torrent->info_hash] ?? null);
+    }
+
+    public function test_banned_torrent_scrape_returns_zero_stats_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->banned()->create([
+            'seeders' => 9,
+            'leechers' => 5,
+            'completed' => 42,
+        ]);
+
+        $payload = $this->scrapePayload($user, $torrent);
+
+        $this->assertSame([
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ], $payload['files'][$torrent->info_hash] ?? null);
+    }
+
+    public function test_rejected_and_soft_deleted_torrent_scrapes_return_zero_stats_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $rejected = Torrent::factory()->rejected()->create([
+            'seeders' => 9,
+            'leechers' => 5,
+            'completed' => 42,
+        ]);
+        $softDeleted = Torrent::factory()->softDeleted()->create([
+            'seeders' => 7,
+            'leechers' => 3,
+            'completed' => 21,
+        ]);
+
+        $rejectedPayload = $this->scrapePayload($user, $rejected);
+        $softDeletedPayload = $this->scrapePayload($user, $softDeleted);
+
+        $this->assertSame([
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ], $rejectedPayload['files'][$rejected->info_hash] ?? null);
+        $this->assertSame([
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ], $softDeletedPayload['files'][$softDeleted->info_hash] ?? null);
+    }
+
+    public function test_hidden_torrent_scrape_returns_zero_stats_for_regular_user(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'is_visible' => false,
+            'seeders' => 9,
+            'leechers' => 5,
+            'completed' => 42,
+        ]);
+
+        $payload = $this->scrapePayload($user, $torrent);
+
+        $this->assertSame([
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ], $payload['files'][$torrent->info_hash] ?? null);
+    }
+
+    public function test_staff_can_scrape_non_public_torrent_stats(): void
+    {
+        $staff = User::factory()->staff()->create();
+        $torrent = Torrent::factory()->unapproved()->create([
+            'is_visible' => false,
+            'seeders' => 9,
+            'leechers' => 5,
+            'completed' => 42,
+        ]);
+
+        $payload = $this->scrapePayload($staff, $torrent);
+
+        $this->assertSame([
+            'complete' => 9,
+            'downloaded' => 42,
+            'incomplete' => 5,
+        ], $payload['files'][$torrent->info_hash] ?? null);
+    }
+
+    public function test_scrape_rejects_more_than_fifty_info_hash_values(): void
+    {
+        $user = User::factory()->create();
+
+        $hashes = [];
+
+        for ($i = 0; $i < 51; $i++) {
+            $hashes[] = rawurlencode(random_bytes(20));
+        }
+
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?'.implode('&', array_map(
+            static fn (string $hash): string => 'info_hash='.$hash,
+            $hashes,
+        )));
+
+        $response->assertOk();
+
+        $this->assertSame(
+            app(BencodeService::class)->encode(['failure reason' => 'Too many info_hash values requested.']),
+            $response->getContent(),
+        );
+    }
+
+    public function test_scrape_accepts_fifty_info_hash_values(): void
+    {
+        $user = User::factory()->create();
+
+        $torrents = Torrent::factory()->count(50)->create();
+        $query = $torrents
+            ->map(static fn (Torrent $torrent): string => 'info_hash='.rawurlencode((string) hex2bin($torrent->info_hash)))
+            ->implode('&');
+
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?'.$query);
+        $response->assertOk();
+
+        $payload = app(BencodeService::class)->decode((string) $response->getContent());
+        $this->assertIsArray($payload);
+        $this->assertCount(50, $payload['files'] ?? []);
+    }
+
+    public function test_scrape_uses_bounded_query_count_for_many_hashes(): void
+    {
+        $user = User::factory()->create();
+
+        $torrents = Torrent::factory()->count(50)->create();
+        $query = $torrents
+            ->map(static fn (Torrent $torrent): string => 'info_hash='.rawurlencode((string) hex2bin($torrent->info_hash)))
+            ->implode('&');
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?'.$query);
+        $response->assertOk();
+
+        $torrentQueries = collect(DB::getQueryLog())
+            ->filter(static fn (array $entry): bool => str_contains(strtolower((string) ($entry['query'] ?? '')), 'from "torrents"'));
+
+        $this->assertLessThanOrEqual(1, $torrentQueries->count());
+    }
+
     public function test_invalid_passkey_is_rejected_for_scrape(): void
     {
         $response = $this->get('/scrape/invalid-passkey');
@@ -161,5 +326,23 @@ class ScrapeTest extends TestCase
         $this->assertArrayNotHasKey('category', $payload);
         $this->assertArrayNotHasKey('uploader', $payload);
         $this->assertArrayNotHasKey('release', $payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function scrapePayload(User $user, Torrent $torrent): array
+    {
+        $binaryHash = hex2bin($torrent->info_hash);
+        $this->assertIsString($binaryHash);
+
+        $response = $this->get('/scrape/'.$user->ensurePasskey().'?info_hash='.urlencode($binaryHash));
+        $response->assertOk();
+
+        $decoded = app(BencodeService::class)->decode((string) $response->getContent());
+        $this->assertIsArray($decoded);
+
+        /** @var array<string, mixed> $decoded */
+        return $decoded;
     }
 }

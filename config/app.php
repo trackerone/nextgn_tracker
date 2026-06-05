@@ -12,6 +12,7 @@ return [
     'locale' => env('APP_LOCALE', 'en'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'version' => env('APP_GIT_SHA', 'unknown'),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
@@ -45,7 +46,7 @@ return [
         App\Providers\AppServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
-        // App\Providers\RouteServiceProvider::class, // valgfri i L11 hvis du bruger default routes
+        // App\Providers\RouteServiceProvider::class, // optional in L11 if you use default routes
     ],
 
     'aliases' => [

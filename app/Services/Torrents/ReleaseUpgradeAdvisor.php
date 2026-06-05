@@ -42,8 +42,20 @@ final class ReleaseUpgradeAdvisor
         }
 
         $completedTorrents = Torrent::query()
+            ->select([
+                'id',
+                'name',
+                'type',
+                'source',
+                'resolution',
+                'imdb_id',
+                'tmdb_id',
+                'nfo_text',
+                'created_at',
+                'published_at',
+            ])
             ->whereIn('id', $completedTorrentIds)
-            ->with('metadata')
+            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id'])
             ->get();
 
         if ($completedTorrents->isEmpty()) {

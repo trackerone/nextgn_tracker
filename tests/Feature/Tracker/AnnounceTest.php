@@ -255,6 +255,72 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_peer_identity_is_scoped_to_user_for_matching_peer_ids(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-user-scoped-peer-id');
+        $peerIdHex = $this->makePeerIdHex('shared-peer-id');
+        $peerIdBinary = hex2bin($peerIdHex);
+
+        $this->announce($userA, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ])->assertOk();
+
+        $this->announce($userB, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('peers', 2);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userA->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ]);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userB->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ]);
+
+        $this->announce($userB, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'stopped',
+            'uploaded' => 400,
+            'downloaded' => 500,
+            'left' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('peers', 1);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userA->id,
+            'peer_id' => $peerIdBinary,
+            'uploaded' => 100,
+            'downloaded' => 200,
+            'left' => 300,
+        ]);
+        $this->assertDatabaseMissing('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $userB->id,
+            'peer_id' => $peerIdBinary,
+        ]);
+    }
+
     public function test_announce_without_event_updates_existing_peer_and_left_zero_sets_seeder(): void
     {
         $user = User::factory()->create();
@@ -321,6 +387,84 @@ class AnnounceTest extends TestCase
         $torrent->refresh();
 
         $this->assertSame(1, $torrent->completed);
+    }
+
+    public function test_completed_event_from_different_peer_ids_increments_counter_once(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-completed-counter-different-peers');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-completed-counter-one'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $firstCompletedAt = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->value('completed_at');
+
+        $this->travel(5)->minutes();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-completed-counter-two'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+
+        $this->assertSame(1, $torrent->completed);
+        $this->assertDatabaseCount('user_torrents', 1);
+        $this->assertEquals(
+            $firstCompletedAt,
+            UserTorrent::query()
+                ->where('user_id', $user->id)
+                ->where('torrent_id', $torrent->id)
+                ->value('completed_at')
+        );
+    }
+
+    public function test_completed_event_sequence_with_existing_incomplete_snatch_is_idempotent(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-completed-counter-existing-snatch');
+
+        UserTorrent::query()->create([
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'completed_at' => null,
+        ]);
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-existing-snatch-one'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $this->makePeerIdHex('peer-existing-snatch-two'),
+            'event' => 'completed',
+            'left' => 0,
+        ])->assertOk();
+
+        $torrent->refresh();
+
+        $this->assertSame(1, $torrent->completed);
+        $this->assertDatabaseHas('user_torrents', [
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+        ]);
+
+        $completedAt = UserTorrent::query()
+            ->where('user_id', $user->id)
+            ->where('torrent_id', $torrent->id)
+            ->value('completed_at');
+
+        $this->assertNotNull($completedAt);
     }
 
     public function test_ratio_stats_accumulate_only_positive_deltas(): void
@@ -481,6 +625,128 @@ class AnnounceTest extends TestCase
         $this->assertDatabaseHas('torrent_user_stats', [
             'user_id' => $user->id,
             'torrent_id' => $torrent->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $this->assertDatabaseHas('security_events', [
+            'user_id' => $user->id,
+            'event_type' => 'tracker.announce.suspicious_delta',
+        ]);
+    }
+
+    public function test_excessive_upload_delta_is_not_credited_and_is_logged(): void
+    {
+        config()->set('tracker.credit.max_upload_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-excessive-upload', [
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-excessive-upload');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10_000,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $event = SecurityEvent::query()
+            ->where('event_type', 'tracker.announce.suspicious_delta')
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($event);
+        $this->assertContains('uploaded_implausible', $event->context['reasons'] ?? []);
+        $this->assertSame(0, $event->context['credited_uploaded_delta'] ?? null);
+    }
+
+    public function test_excessive_download_delta_is_not_credited_and_is_logged(): void
+    {
+        config()->set('tracker.credit.max_download_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-excessive-download', [
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-excessive-download');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 0,
+            'downloaded' => 10_000,
+            'left' => 400,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 0,
+            'downloaded_bytes' => 0,
+        ]);
+
+        $event = SecurityEvent::query()
+            ->where('event_type', 'tracker.announce.suspicious_delta')
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        $this->assertNotNull($event);
+        $this->assertContains('downloaded_implausible', $event->context['reasons'] ?? []);
+        $this->assertSame(0, $event->context['credited_downloaded_delta'] ?? null);
+    }
+
+    public function test_freeleech_excessive_upload_delta_is_not_credited(): void
+    {
+        config()->set('tracker.credit.max_upload_bytes_per_second', 100);
+
+        $user = User::factory()->create();
+        [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-ratio-freeleech-excessive-upload', [
+            'is_freeleech' => true,
+            'size_bytes' => 1_000_000,
+        ]);
+        $peerIdHex = $this->makePeerIdHex('peer-ratio-freeleech-excessive-upload');
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'event' => 'started',
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $infoHashHex, [
+            'peer_id' => $peerIdHex,
+            'uploaded' => 10_000,
+            'downloaded' => 10_000,
+            'left' => 400,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
             'uploaded_bytes' => 0,
             'downloaded_bytes' => 0,
         ]);

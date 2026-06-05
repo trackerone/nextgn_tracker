@@ -33,9 +33,7 @@ final class TorrentAccessResolver
             return AnnounceResult::failure('Invalid info_hash.');
         }
 
-        $isStaff = $this->isStaff($user);
-
-        if ($torrent->isBanned() && ! $isStaff) {
+        if ($torrent->isBanned() && ! $this->isStaff($user)) {
             $this->securityLogger->log(
                 request: $request,
                 user: $user,
@@ -48,11 +46,20 @@ final class TorrentAccessResolver
             return AnnounceResult::failure('Torrent is banned.');
         }
 
-        if (! $torrent->isApproved() && ! $isStaff) {
+        if (! $torrent->isApproved() && ! $this->isStaff($user)) {
             return AnnounceResult::failure('Torrent is not approved yet.');
         }
 
         return $torrent;
+    }
+
+    public function canAccess(User $user, Torrent $torrent): bool
+    {
+        if ($this->isStaff($user)) {
+            return true;
+        }
+
+        return ! $torrent->isBanned() && $torrent->isApproved();
     }
 
     private function isStaff(User $user): bool

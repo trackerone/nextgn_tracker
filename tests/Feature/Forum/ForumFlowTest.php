@@ -30,25 +30,25 @@ it('allows forum interactions with proper permissions', function (): void {
 
     $topic = Topic::query()->create([
         'user_id' => $existingAuthor->getKey(),
-        'slug' => $slugger->generate('Velkommen'),
-        'title' => 'Velkommen',
+        'slug' => $slugger->generate('Welcome'),
+        'title' => 'Welcome',
     ]);
 
     $topic->posts()->create([
         'user_id' => $existingAuthor->getKey(),
-        'body_md' => 'Første indlæg',
-        'body_html' => $markdown->render('Første indlæg'),
+        'body_md' => 'First post',
+        'body_html' => $markdown->render('First post'),
     ]);
 
     $this->actingAs($existingAuthor)
         ->getJson('/topics')
         ->assertOk()
-        ->assertJsonFragment(['title' => 'Velkommen']);
+        ->assertJsonFragment(['title' => 'Welcome']);
 
     $this->actingAs($existingAuthor)
         ->getJson('/topics/'.$topic->slug)
         ->assertOk()
-        ->assertJsonFragment(['title' => 'Velkommen']);
+        ->assertJsonFragment(['title' => 'Welcome']);
 
     $writer = User::factory()->create([
         'role' => $authorRole->slug,
@@ -57,8 +57,8 @@ it('allows forum interactions with proper permissions', function (): void {
 
     $createResponse = $this->actingAs($writer)
         ->postJson('/topics', [
-            'title' => 'Test emne',
-            'body_md' => '# Overskrift',
+            'title' => 'Test topic',
+            'body_md' => '# Heading',
         ])
         ->assertCreated();
 
@@ -68,7 +68,7 @@ it('allows forum interactions with proper permissions', function (): void {
     expect($createdTopicSlug)->not()->toBeNull();
 
     $replyResponse = $this->postJson("/topics/{$createdTopicId}/posts", [
-        'body_md' => 'Hej verden',
+        'body_md' => 'Hello world',
     ])->assertCreated();
 
     $postId = $replyResponse->json('id');
@@ -119,14 +119,14 @@ it('allows forum interactions with proper permissions', function (): void {
 
     $restoreTopic = Topic::query()->create([
         'user_id' => $writer->getKey(),
-        'slug' => $slugger->generate('Restore test emne'),
-        'title' => 'Restore test emne',
+        'slug' => $slugger->generate('Restore test topic'),
+        'title' => 'Restore test topic',
     ]);
 
     $restorePost = $restoreTopic->posts()->create([
         'user_id' => $writer->getKey(),
-        'body_md' => 'Skal gendannes',
-        'body_html' => $markdown->render('Skal gendannes'),
+        'body_md' => 'Should be restored',
+        'body_html' => $markdown->render('Should be restored'),
     ]);
 
     $this->actingAs($writer)
@@ -138,7 +138,7 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertOk()
         ->assertJsonFragment([
             'id' => $restorePost->id,
-            'body_md' => 'Skal gendannes',
+            'body_md' => 'Should be restored',
         ]);
 
     expect($restorePost->fresh()?->deleted_at)->toBeNull();

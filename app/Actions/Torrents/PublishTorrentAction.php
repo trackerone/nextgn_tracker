@@ -10,12 +10,16 @@ use App\Jobs\EnrichTorrentExternalMetadata;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Notifications\TorrentWatchPresetMatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 final class PublishTorrentAction
 {
-    public function __construct(private readonly ExternalMetadataConfig $metadataConfig) {}
+    public function __construct(
+        private readonly ExternalMetadataConfig $metadataConfig,
+        private readonly TorrentWatchPresetMatcher $watchPresetMatcher,
+    ) {}
 
     public function execute(Torrent $torrent, User $moderator): Torrent
     {
@@ -40,6 +44,8 @@ final class PublishTorrentAction
         }
 
         $torrent->forceFill($attributes)->save();
+
+        $this->watchPresetMatcher->notifyMatchesForTorrent($torrent->refresh());
 
         if ($this->metadataConfig->enrichmentEnabled() && $this->metadataConfig->autoOnPublishEnabled()) {
             try {

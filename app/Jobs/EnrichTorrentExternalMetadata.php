@@ -27,6 +27,10 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
         $torrent = Torrent::query()->with(['metadata', 'externalMetadata'])->find($this->torrentId);
 
         if (! $torrent instanceof Torrent) {
+            Log::info('External metadata enrichment skipped because torrent was not found.', [
+                'torrent_id' => $this->torrentId,
+            ]);
+
             return;
         }
 
@@ -37,6 +41,8 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
     {
         Log::warning('External metadata enrichment failed.', [
             'torrent_id' => $this->torrentId,
+            'attempts' => $this->attempts(),
+            'exception' => $exception::class,
             'error' => $exception->getMessage(),
         ]);
     }

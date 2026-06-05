@@ -15,11 +15,23 @@ class EloquentConversationRepository implements ConversationRepositoryInterface
     public function paginateForUser(User $user, int $perPage = 50): LengthAwarePaginator
     {
         return Conversation::query()
+            ->select(['id', 'user_a_id', 'user_b_id', 'last_message_at', 'created_at', 'updated_at'])
             ->forUser((int) $user->getKey())
             ->with([
                 'userA:id,name',
                 'userB:id,name',
-                'lastMessage.sender:id,name',
+                'lastMessage' => static fn ($query) => $query
+                    ->select([
+                        'messages.id',
+                        'messages.conversation_id',
+                        'messages.sender_id',
+                        'messages.body_md',
+                        'messages.body_html',
+                        'messages.read_at',
+                        'messages.created_at',
+                        'messages.updated_at',
+                    ])
+                    ->with('sender:id,name'),
             ])
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')

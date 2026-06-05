@@ -25,7 +25,7 @@ export function usePrivateMessages() {
       const result = await fetchJson<ConversationItem[]>('/pm');
       setConversations(sortConversations(result));
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke hente beskeder.');
+      setError(exception instanceof Error ? exception.message : 'Could not fetch messages.');
     }
   }, []);
 
@@ -35,14 +35,27 @@ export function usePrivateMessages() {
 
     try {
       const conversation = await fetchJson<ConversationItem>(`/pm/${conversationId}`);
-      setSelectedConversation(conversation);
-      setMessages(conversation.messages ?? []);
+      const loadedMessages = conversation.messages ?? [];
+      const latestMessage = loadedMessages.at(-1) ?? conversation.last_message;
+
+      setSelectedConversation({
+        ...conversation,
+        last_message: latestMessage,
+        last_message_at: latestMessage?.created_at ?? conversation.last_message_at,
+      });
+      setMessages(loadedMessages);
       setConversations((current) => {
-        const updated = current.map((item) => (item.id === conversation.id ? { ...conversation, messages: undefined } : item));
+        const updated = current.map((item) => (item.id === conversation.id ? {
+          ...conversation,
+          last_message: latestMessage,
+          last_message_at: latestMessage?.created_at ?? conversation.last_message_at,
+          messages: undefined,
+        } : item));
+
         return sortConversations(updated);
       });
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke hente tråden.');
+      setError(exception instanceof Error ? exception.message : 'Could not fetch the thread.');
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +94,7 @@ export function usePrivateMessages() {
       setSelectedConversation({ ...response.conversation, messages: [response.message] });
       setMessages([response.message]);
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke starte besked.');
+      setError(exception instanceof Error ? exception.message : 'Could not start the message.');
       throw exception;
     }
   }, []);
@@ -113,7 +126,7 @@ export function usePrivateMessages() {
 
       return message;
     } catch (exception) {
-      setError(exception instanceof Error ? exception.message : 'Kunne ikke sende besked.');
+      setError(exception instanceof Error ? exception.message : 'Could not send the message.');
       throw exception;
     }
   }, []);

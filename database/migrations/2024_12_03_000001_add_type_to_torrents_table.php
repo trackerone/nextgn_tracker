@@ -12,7 +12,7 @@ return new class extends Migration
     {
         if (! Schema::hasColumn('torrents', 'type')) {
             Schema::table('torrents', function (Blueprint $table): void {
-                // placeret logisk efter files_count – 'after' ignoreres i SQLite, så det er safe
+                // Placed logically after files_count; SQLite ignores 'after', so this is safe
                 $table->string('type', 32)
                     ->default('other')
                     ->index()

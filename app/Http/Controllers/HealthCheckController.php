@@ -12,8 +12,6 @@ final class HealthCheckController extends Controller
     {
         return new JsonResponse([
             'status' => 'ok',
-            'timestamp' => now()->toIso8601String(),
-            'service' => config('app.name'),
         ]);
     }
 }

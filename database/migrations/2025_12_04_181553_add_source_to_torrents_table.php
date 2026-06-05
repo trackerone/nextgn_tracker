@@ -12,7 +12,7 @@ return new class extends Migration
     {
         Schema::table('torrents', function (Blueprint $table): void {
             // Kilde/scene-type: fx bluray, web, hdtv osv.
-            // Ligger lige efter type for at matche INSERT-ordenen
+            // Placed right after type to match the INSERT order
             $table->string('source', 32)->nullable()->after('type');
         });
     }

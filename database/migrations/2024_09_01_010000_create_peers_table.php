@@ -28,7 +28,7 @@ return new class extends Migration
             $table->timestamp('last_announce_at');
             $table->timestamps();
 
-            $table->unique(['torrent_id', 'peer_id']);
+            $table->unique(['torrent_id', 'user_id', 'peer_id']);
             $table->index(['torrent_id', 'is_seeder']);
         });
     }

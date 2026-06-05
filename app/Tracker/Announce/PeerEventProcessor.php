@@ -8,8 +8,8 @@ use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Tracker\AnnounceCreditPolicy;
 use App\Services\Tracker\AnnounceIntegrityEvaluation;
-use App\Services\Tracker\AnnounceIntegrityEvaluator;
 use App\Services\Tracker\UserRatioStatsRecorder;
 use App\Services\UserTorrentService;
 use Illuminate\Http\Request;
@@ -26,7 +26,7 @@ final class PeerEventProcessor
         private readonly AnnounceResponseBuilder $responseBuilder,
         private readonly TwentyByteParamDecoder $decoder,
         private readonly UserRatioStatsRecorder $ratioStatsRecorder,
-        private readonly AnnounceIntegrityEvaluator $integrityEvaluator,
+        private readonly AnnounceCreditPolicy $creditPolicy,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -47,6 +47,7 @@ final class PeerEventProcessor
         $result = DB::transaction(function () use ($request, $user, $torrent, $data, $peerId): array {
             $oldPeer = Peer::query()
                 ->where('torrent_id', $torrent->getKey())
+                ->where('user_id', $user->getKey())
                 ->where('peer_id', $peerId)
                 ->lockForUpdate()
                 ->first();
@@ -64,10 +65,14 @@ final class PeerEventProcessor
                 return ['short_circuit' => true];
             }
 
-            $integrity = $this->integrityEvaluator->evaluate($oldPeer, $data);
+            $integrity = $this->creditPolicy->evaluate($oldPeer, $data, $torrent);
 
             $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
-            $this->persistUserTorrentState($user, $torrent, $data);
+
+            if ($this->persistUserTorrentState($user, $torrent, $data)) {
+                $torrent->increment('completed');
+            }
+
             $this->ratioStatsRecorder->record($user, $torrent, $integrity);
 
             return [
@@ -100,6 +105,7 @@ final class PeerEventProcessor
         if ($data->event === 'stopped') {
             Peer::query()
                 ->where('torrent_id', $torrent->getKey())
+                ->where('user_id', $user->getKey())
                 ->where('peer_id', $peerId)
                 ->delete();
 
@@ -111,6 +117,7 @@ final class PeerEventProcessor
 
         $peer = $existingPeer ?? new Peer([
             'torrent_id' => $torrent->getKey(),
+            'user_id' => $user->getKey(),
             'peer_id' => $peerId,
         ]);
 
@@ -123,17 +130,13 @@ final class PeerEventProcessor
         $peer->is_seeder = $data->left === 0;
         $peer->last_announce_at = $now;
         $peer->save();
-
-        if ($data->event === 'completed' && $this->shouldIncrementCompletedCounter($user, $torrent)) {
-            $torrent->increment('completed');
-        }
     }
 
-    private function persistUserTorrentState(User $user, Torrent $torrent, AnnounceRequestData $data): void
+    private function persistUserTorrentState(User $user, Torrent $torrent, AnnounceRequestData $data): bool
     {
         $now = now();
 
-        $this->userTorrents->updateFromAnnounce(
+        $userTorrent = $this->userTorrents->updateFromAnnounce(
             $user,
             $torrent,
             $data->uploaded,
@@ -141,6 +144,8 @@ final class PeerEventProcessor
             $data->event,
             $now,
         );
+
+        return $data->event === 'completed' && $userTorrent->wasChanged('completed_at');
     }
 
     private function shouldShortCircuitDuplicateAnnounce(Request $request, AnnounceRequestData $data, ?Peer $peer): bool
@@ -156,16 +161,6 @@ final class PeerEventProcessor
             && (int) $peer->downloaded === $data->downloaded
             && (int) $peer->left === $data->left
             && (string) $peer->ip === $ip;
-    }
-
-    private function shouldIncrementCompletedCounter(User $user, Torrent $torrent): bool
-    {
-        $completedAt = DB::table('user_torrents')
-            ->where('user_id', $user->getKey())
-            ->where('torrent_id', $torrent->getKey())
-            ->value('completed_at');
-
-        return $completedAt === null;
     }
 
     private function isStaff(User $user): bool
@@ -206,6 +201,11 @@ final class PeerEventProcessor
             'old_left' => $oldPeer instanceof Peer ? (int) $oldPeer->left : null,
             'new_left' => $newState->left,
             'reasons' => $integrity->reasons,
+            'elapsed_seconds' => $integrity->elapsedSeconds,
+            'max_uploaded_delta' => $integrity->maxUploadedDelta,
+            'max_downloaded_delta' => $integrity->maxDownloadedDelta,
+            'credited_uploaded_delta' => $integrity->uploadedDelta,
+            'credited_downloaded_delta' => $integrity->downloadedDelta,
         ];
 
         $this->securityLogger->log(

@@ -15,7 +15,13 @@ export interface TopicSummary {
   is_locked: boolean;
   is_pinned: boolean;
   created_at: string;
+  posts_count?: number;
   author: ForumUser;
+  latest_post?: {
+    id: number;
+    created_at: string;
+    author?: ForumUser | null;
+  } | null;
 }
 
 export interface TopicResponse {

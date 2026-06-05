@@ -24,6 +24,7 @@ use Illuminate\Support\Str;
  * @property string $email
  * @property string $name
  * @property string $passkey
+ * @property string|null $rss_token
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
@@ -55,19 +56,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
-        'role',
-        'role_id',
         'invited_by_id',
-        'passkey',
-        'is_banned',
-        'is_disabled',
-        'is_staff',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
         'passkey',
+        'rss_token',
     ];
 
     protected $casts = [
@@ -97,6 +93,26 @@ class User extends Authenticatable implements MustVerifyEmail
                 ]);
             }
         });
+    }
+
+    public function generateRssToken(): string
+    {
+        do {
+            $token = Str::random(64);
+        } while (self::query()->where('rss_token', $token)->exists());
+
+        return $token;
+    }
+
+    public function rotateRssToken(): string
+    {
+        $token = $this->generateRssToken();
+
+        $this->forceFill([
+            'rss_token' => $token,
+        ])->save();
+
+        return $token;
     }
 
     public function role(): BelongsTo
@@ -153,6 +169,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(TorrentFollow::class);
     }
 
+    public function rssFeedPresets(): HasMany
+    {
+        return $this->hasMany(RssFeedPreset::class);
+    }
+
+    public function notificationWatchPresets(): HasMany
+    {
+        return $this->hasMany(NotificationWatchPreset::class);
+    }
+
+    public function torrentWatchNotifications(): HasMany
+    {
+        return $this->hasMany(TorrentWatchNotification::class);
+    }
+
     public function scopeStaff(Builder $query): Builder
     {
         return $query->where(function (Builder $builder): void {
@@ -167,7 +198,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isStaff(): bool
     {
-        // Explicit staff-flag override (bruges i moderation flows / tests)
+        // Explicit staff-flag override (used in moderation flows / tests)
         if ((bool) $this->is_staff) {
             return true;
         }
@@ -339,7 +370,7 @@ class User extends Authenticatable implements MustVerifyEmail
     private static function staffRoles(): array
     {
         return [
-            // Normaliserede roller
+            // Normalized roles
             self::ROLE_MODERATOR,
             self::ROLE_ADMIN,
             self::ROLE_SYSOP,
@@ -357,13 +388,13 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $roleAttribute = $this->getAttribute('role');
 
-        // Hvis role-attributten er sat til noget andet end default, så er den autoritativ.
+        // If the role attribute is set to something other than the default, it is authoritative.
         if (is_string($roleAttribute) && $roleAttribute !== '' && $roleAttribute !== self::ROLE_USER) {
             return $roleAttribute;
         }
 
-        // Hvis role-attributten er default (typisk 'user'), men vi har en Role relation/role_id,
-        // så skal relationen have forrang (bruges i moderation/staff flows).
+        // If the role attribute is the default (usually 'user'), but we have a Role relation/role_id,
+        // the relation must take precedence (used in moderation/staff flows).
         $roleRelation = $this->getRelationValue('role');
 
         if ($roleRelation instanceof Role) {
@@ -374,7 +405,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $roleRelation->name;
         }
 
-        // Hvis der ikke er relation, men role-attributten findes (og er default), returnér den.
+        // If there is no relation, but the role attribute exists (and is the default), return it.
         if (is_string($roleAttribute) && $roleAttribute !== '') {
             return $roleAttribute;
         }

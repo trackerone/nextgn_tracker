@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use App\Models\User;
@@ -38,12 +39,90 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
-    public function test_grouped_browse_renders_release_families_with_best_version(): void
+    public function test_authenticated_user_sees_browse_rss_action(): void
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('RSS');
+        $response->assertSee(e(route('rss.feed', ['token' => $user->rss_token])), false);
+        $response->assertSee('RSS uses your current filters.');
+    }
+
+    public function test_browse_rss_action_preserves_supported_query_parameters(): void
+    {
+        $user = User::factory()->create();
+        $user->rotateRssToken();
+        $category = Category::factory()->create();
+        Torrent::factory()->create(['category_id' => $category->id]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', [
+            'q' => 'Matrix rg:NTB',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'da',
+            'audio_language' => 'Danish',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
+            'freeleech' => '1',
+            'category_id' => $category->id,
+            'order' => 'seeders',
+            'direction' => 'asc',
+            'grouped' => '0',
+        ]));
+
+        $expected = route('rss.feed', [
+            'token' => $user->rss_token,
+            'q' => 'Matrix rg:NTB',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'da',
+            'audio_language' => 'Danish',
+            'subtitle_language' => 'no',
+            'subtitles' => 'da,no,sv',
+            'freeleech' => '1',
+            'category' => $category->id,
+        ]);
+
+        $response->assertOk();
+        $response->assertSee(e($expected), false);
+    }
+
+    public function test_browse_rss_action_falls_back_to_account_rss_without_token(): void
+    {
+        $user = User::factory()->create(['rss_token' => null]);
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee(e(route('account.rss.index')), false);
+    }
+
+    public function test_grouped_browse_renders_release_families_with_compact_best_marker(): void
     {
         $user = User::factory()->create();
 
-        $best = Torrent::factory()->create(['name' => 'Dune 2024 2160p BluRay']);
-        $alternative = Torrent::factory()->create(['name' => 'Dune 2024 1080p WEB-DL']);
+        $best = Torrent::factory()->create([
+            'name' => 'Dune 2024 2160p BluRay',
+            'seeders' => 87,
+            'leechers' => 13,
+            'completed' => 52,
+        ]);
+        $alternative = Torrent::factory()->create([
+            'name' => 'Dune 2024 1080p WEB-DL',
+            'seeders' => 26,
+            'leechers' => 8,
+            'completed' => 14,
+        ]);
 
         TorrentMetadata::query()->create([
             'torrent_id' => $best->id,
@@ -68,11 +147,19 @@ final class TorrentBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('Dune Part Two');
         $response->assertSee('(2024)', false);
-        $response->assertSee('Best version');
-        $response->assertSee('Recommended');
-        $response->assertSee('High quality');
-        $response->assertSee('Medium quality');
-        $response->assertSeeTextInOrder([$best->name, $alternative->name]);
+        $response->assertSee('Best');
+        $response->assertDontSee('Best version');
+        $response->assertSee('Type / res');
+        $response->assertSee('2160p');
+        $response->assertSee('1080p');
+        $response->assertSeeTextInOrder(['Type / res', 'Size', 'Files', 'S', 'L', 'C', 'Added', 'Group']);
+        $response->assertSee('87 seeders');
+        $response->assertSee('13 leechers');
+        $response->assertSee('52 completed snatches');
+        $response->assertSee('26 seeders');
+        $response->assertSee('8 leechers');
+        $response->assertSee('14 completed snatches');
+        $response->assertSeeTextInOrder(['Best', $best->name, $alternative->name]);
     }
 
     public function test_grouped_browse_shows_incomplete_metadata_warning_for_missing_critical_fields(): void

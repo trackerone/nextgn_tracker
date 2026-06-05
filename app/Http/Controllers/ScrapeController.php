@@ -4,19 +4,24 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Contracts\TorrentRepositoryInterface;
+use App\Models\Torrent;
+use App\Models\User;
 use App\Services\BencodeService;
 use App\Tracker\Announce\AnnounceResult;
 use App\Tracker\Announce\PasskeyUserResolver;
+use App\Tracker\Announce\TorrentAccessResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 
 final class ScrapeController extends Controller
 {
+    private const MAX_INFO_HASHES = 50;
+
     public function __construct(
         private readonly BencodeService $bencode,
-        private readonly TorrentRepositoryInterface $torrents,
         private readonly PasskeyUserResolver $passkeyUserResolver,
+        private readonly TorrentAccessResolver $torrentAccessResolver,
     ) {}
 
     public function __invoke(Request $request, string $passkey): Response
@@ -33,24 +38,34 @@ final class ScrapeController extends Controller
 
         $hashes = $this->allInfoHashParams($request);
 
-        /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */
-        $files = [];
+        if (count($hashes) > self::MAX_INFO_HASHES) {
+            return response(
+                $this->bencode->encode(['failure reason' => 'Too many info_hash values requested.']),
+                200,
+                ['Content-Type' => 'text/plain; charset=utf-8'],
+            );
+        }
+
+        $normalizedHashes = [];
 
         foreach ($hashes as $hash) {
             $keyHex = $this->toInfoHashHexKey($hash);
-            if ($keyHex === null) {
-                continue;
+
+            if ($keyHex !== null) {
+                $normalizedHashes[] = $keyHex;
             }
+        }
 
-            $torrent = $this->torrents->findByInfoHash(strtolower($keyHex))
-                ?? $this->torrents->findByInfoHash(strtoupper($keyHex));
+        $torrentsByUpperHash = $this->resolveTorrentsByHash($normalizedHashes);
 
-            if ($torrent === null) {
-                $files[$keyHex] = [
-                    'complete' => 0,
-                    'downloaded' => 0,
-                    'incomplete' => 0,
-                ];
+        /** @var array<string, array{complete:int,downloaded:int,incomplete:int}> $files */
+        $files = [];
+
+        foreach ($normalizedHashes as $keyHex) {
+            $torrent = $torrentsByUpperHash->get($keyHex);
+
+            if (! $torrent instanceof Torrent || ! $this->canScrapeTorrent($resolvedUser, $torrent)) {
+                $files[$keyHex] = $this->emptyStats();
 
                 continue;
             }
@@ -67,6 +82,27 @@ final class ScrapeController extends Controller
             200,
             ['Content-Type' => 'text/plain; charset=utf-8'],
         );
+    }
+
+    /**
+     * @return array{complete:int,downloaded:int,incomplete:int}
+     */
+    private function emptyStats(): array
+    {
+        return [
+            'complete' => 0,
+            'downloaded' => 0,
+            'incomplete' => 0,
+        ];
+    }
+
+    private function canScrapeTorrent(User $user, Torrent $torrent): bool
+    {
+        if ($this->torrentAccessResolver->canAccess($user, $torrent) === false) {
+            return false;
+        }
+
+        return $user->isStaff() || (bool) $torrent->is_visible;
     }
 
     /**
@@ -110,6 +146,36 @@ final class ScrapeController extends Controller
         }
 
         return is_string($parsedValue) ? [$parsedValue] : [];
+    }
+
+    /**
+     * @param  array<int, string>  $hashes
+     * @return Collection<string, Torrent>
+     */
+    private function resolveTorrentsByHash(array $hashes): Collection
+    {
+        $uniqueHashes = array_values(array_unique($hashes));
+
+        if ($uniqueHashes === []) {
+            return collect();
+        }
+
+        $variants = [];
+
+        foreach ($uniqueHashes as $hash) {
+            $variants[] = strtoupper($hash);
+            $variants[] = strtolower($hash);
+        }
+
+        /** @var Collection<int, Torrent> $torrents */
+        $torrents = Torrent::query()
+            ->whereIn('info_hash', array_values(array_unique($variants)))
+            ->get();
+
+        /** @var Collection<string, Torrent> $mapped */
+        $mapped = $torrents->keyBy(static fn (Torrent $torrent): string => strtoupper((string) $torrent->info_hash));
+
+        return $mapped;
     }
 
     /**

@@ -17,13 +17,14 @@ it('promotes a user to the target role', function (): void {
     $initialRoleId = Role::query()->where('slug', 'newbie')->value('id');
     $targetRole = Role::query()->where('slug', 'admin1')->firstOrFail();
 
-    $user = User::query()->create([
+    $user = User::factory()->create([
         'name' => 'Promo Tester',
         'email' => 'promo@example.com',
-        'password' => 'password',
-        'role_id' => $initialRoleId,
-        'email_verified_at' => now(),
     ]);
+    $user->forceFill([
+        'role_id' => $initialRoleId,
+        'role' => User::ROLE_USER,
+    ])->save();
 
     artisan('user:promote', [
         'email' => $user->email,
@@ -38,13 +39,14 @@ it('promotes a user to the target role', function (): void {
 it('fails when the target role is missing', function (): void {
     $initialRoleId = Role::query()->where('slug', 'user1')->value('id');
 
-    $user = User::query()->create([
+    $user = User::factory()->create([
         'name' => 'Missing Role Tester',
         'email' => 'missing-role@example.com',
-        'password' => 'password',
-        'role_id' => $initialRoleId,
-        'email_verified_at' => now(),
     ]);
+    $user->forceFill([
+        'role_id' => $initialRoleId,
+        'role' => User::ROLE_USER,
+    ])->save();
 
     artisan('user:promote', [
         'email' => $user->email,

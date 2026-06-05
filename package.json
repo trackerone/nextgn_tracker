@@ -3,10 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "engines": {
     "node": ">=20 <26"
   },
@@ -14,7 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "echo 'No root ESLint configured; use frontend/package-specific checks instead'"
+    "lint": "echo 'No frontend lint configured yet'"
   },
   "dependencies": {
     "dompurify": "3.4.2",
@@ -25,13 +21,13 @@
   "devDependencies": {
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.2",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^6.0.0",
     "autoprefixer": "^10.4.20",
-    "laravel-vite-plugin": "^1.0.4",
+    "laravel-vite-plugin": "^3.1.0",
     "postcss": "^8.4.41",
     "shadcn-ui": "^0.8.0",
     "tailwindcss": "^3.4.9",
     "typescript": "^5.5.4",
-    "vite": "^5.2.13"
+    "vite": "^8.0.13"
   }
 }

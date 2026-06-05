@@ -2,7 +2,7 @@
 
 Date: 2026-04-24  
 Repository: `nextgn_tracker`  
-Scope: full repository static audit (`app/`, `routes/`, `resources/`, `config/`, `tests/`, `overlay/`, CI/workflow surface)
+Scope: full repository static audit (`app/`, `routes/`, `resources/`, `config/`, `tests/`, historical `overlay/`, CI/workflow surface)
 
 ---
 
@@ -71,15 +71,14 @@ This audit found a **mixed architecture state**: most active paths are modern La
 - **Recommended action**: Remove if there is no upcoming admin-torrents page plan.
 - **Removal status**: **Needs human review**.
 
-### 5) Legacy overlay scaffold appears unused in current runtime
-- **Evidence**: `overlay/` contains starter routes/views referencing older paths and a `TrackerController` pattern not part of active `routes/*.php`; only Dockerfile copy step mentions it.
-- **Files**:
-  - `overlay/routes/web.php`
-  - `overlay/resources/views/home.blade.php`
-  - `Dockerfile`
-- **Risk**: **Medium**
-- **Recommended action**: Decide whether `overlay/` is still deployment-critical; if not, remove in isolated PR.
-- **Removal status**: **Needs human review**.
+### 5) Legacy overlay scaffold was removed from current runtime
+- **Historical evidence**: the removed scaffold contained starter routes/views referencing older paths and a `TrackerController` pattern that was not part of active `routes/*.php`.
+- **Files removed after this audit**:
+  - historical `overlay/routes/web.php`
+  - historical `overlay/resources/views/home.blade.php`
+- **Risk**: **Resolved**
+- **Current status**: the scaffold is no longer part of the application or deployment flow; do not reintroduce it unless active runtime code requires a new, reviewed design.
+- **Removal status**: **Removed as legacy**.
 
 ---
 
@@ -163,11 +162,11 @@ This audit found a **mixed architecture state**: most active paths are modern La
 - **Action**: keep one canonical path and deprecate alias with redirect policy if needed.
 - **Removal status**: **Needs human review**.
 
-### 15) Repository has active app + legacy overlay app skeleton simultaneously
-- **Evidence**: Main runtime routes/controllers live in `routes/` + `app/`; separate overlay routes/views suggest historical bootstrap layer.
-- **Risk**: **Medium**
-- **Action**: document if overlay is deployment-only artifact; otherwise remove to reduce cognitive overhead.
-- **Removal status**: **Needs human review**.
+### 15) Repository previously had active app + legacy overlay app skeleton simultaneously
+- **Historical evidence**: Main runtime routes/controllers lived in `routes/` + `app/`, while a separate removed scaffold suggested a historical bootstrap layer.
+- **Risk**: **Resolved**
+- **Action**: no current action; the historical scaffold has been removed and is not current deployment guidance.
+- **Removal status**: **Removed as legacy**.
 
 ---
 
@@ -179,7 +178,7 @@ This audit found a **mixed architecture state**: most active paths are modern La
 4. **PR 4 (content safety consolidation):** select canonical markdown/sanitization stack; remove duplicate helpers after regression tests.  
 5. **PR 5 (settings convergence):** unify ratio settings persistence (`Setting` vs `SiteSetting`) behind one contract and migrate usages.  
 6. **PR 6 (logging convergence):** rationalize `SecurityEventLogger`, `AnnounceSecurityLogger`, and `SecurityAuditLog` boundaries.  
-7. **PR 7 (overlay decision):** retain-and-document overlay purpose or remove legacy scaffold directory.
+7. **PR 7 (overlay decision):** completed separately; the legacy scaffold was removed and is not current runtime/deployment guidance.
 
 ---
 

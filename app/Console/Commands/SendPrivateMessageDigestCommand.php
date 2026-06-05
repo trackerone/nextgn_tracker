@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\PrivateMessageDigestNotification;
+use App\Services\Operations\RuntimeJobGate;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
@@ -17,9 +18,15 @@ class SendPrivateMessageDigestCommand extends Command
 
     protected $description = 'Send a digest of unread private messages to users.';
 
-    public function handle(): int
+    public function handle(RuntimeJobGate $runtimeJobGate): int
     {
         $frequency = (string) $this->argument('frequency');
+
+        if (! $runtimeJobGate->canRun('notification.digest', ['frequency' => $frequency])) {
+            $this->info('Notification digest skipped: runtime toggle is disabled.');
+
+            return self::SUCCESS;
+        }
 
         if (! in_array($frequency, ['daily', 'weekly'], true)) {
             $this->error('Frequency must be daily or weekly.');

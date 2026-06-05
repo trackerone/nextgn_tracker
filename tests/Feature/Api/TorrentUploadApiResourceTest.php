@@ -11,9 +11,12 @@ use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Torrents\UploadPreflightContext;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
+use Mockery;
 use Tests\TestCase;
 
 final class TorrentUploadApiResourceTest extends TestCase
@@ -54,6 +57,59 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonMissingPath('data.user_id');
         $response->assertJsonPath('metadata_enrichment_applied_fields', []);
         $response->assertJsonPath('metadata_enrichment_conflicts', []);
+    }
+
+    public function test_upload_submission_storage_failure_removes_database_row(): void
+    {
+        $disk = Mockery::mock(Filesystem::class);
+        $disk->shouldReceive('put')
+            ->once()
+            ->with(Mockery::type('string'), Mockery::type('string'))
+            ->andReturnFalse();
+        $disk->shouldReceive('delete')
+            ->once()
+            ->with(Mockery::type('string'))
+            ->andReturnTrue();
+
+        Storage::shouldReceive('disk')->with('torrents')->twice()->andReturn($disk);
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/api/uploads', [
+            'name' => 'API Broken Storage',
+            'type' => 'movie',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-broken-storage.torrent',
+                $this->sampleTorrentPayload('API Broken Storage'),
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $response->assertStatus(500);
+        $this->assertDatabaseCount('torrents', 0);
+    }
+
+    public function test_html_like_language_metadata_is_rejected(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson(route('api.uploads.store'), [
+            'name' => 'API Unsafe Metadata Upload',
+            'type' => 'movie',
+            'language' => '<script>alert(1)</script>',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-unsafe-metadata.torrent',
+                $this->sampleTorrentPayload('API Unsafe Metadata Upload'),
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['language']);
+
+        $this->assertDatabaseCount('torrents', 0);
     }
 
     public function test_my_uploads_response_exposes_only_expected_fields(): void
@@ -322,6 +378,22 @@ final class TorrentUploadApiResourceTest extends TestCase
         $response->assertJsonPath('metadata_enrichment_applied_fields', ['imdb_id', 'tmdb_id']);
         $response->assertJsonPath('metadata_enrichment_conflicts', ['title']);
         $response->assertJsonPath('release_advice.family_exists', false);
+    }
+
+    public function test_api_upload_endpoint_throttles_failed_uploads(): void
+    {
+        config()->set('security.rate_limits.torrent_upload', '1,1');
+
+        $user = User::factory()->create();
+        RateLimiter::clear(sprintf('torrent-upload:user:%s', (string) $user->id));
+
+        $this->actingAs($user)
+            ->postJson(route('api.uploads.store'), [])
+            ->assertUnprocessable();
+
+        $this->actingAs($user)
+            ->postJson(route('api.uploads.store'), [])
+            ->assertTooManyRequests();
     }
 
     private function sampleTorrentPayload(string $infoName = 'API Upload', string $piecesSeed = 'a'): string

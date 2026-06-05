@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use Illuminate\Testing\Fluent\AssertableJson;
 use Tests\TestCase;
 
 final class HealthCheckTest extends TestCase
@@ -15,9 +14,8 @@ final class HealthCheckTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertJson(fn (AssertableJson $json) => $json
-                ->where('status', 'ok')
-                ->etc()
-            );
+            ->assertExactJson([
+                'status' => 'ok',
+            ]);
     }
 }

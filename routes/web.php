@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AccountInviteController;
+use App\Http\Controllers\AccountNotificationController;
+use App\Http\Controllers\AccountRssController;
+use App\Http\Controllers\AccountRssPresetController;
 use App\Http\Controllers\AccountSnatchController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -16,17 +19,26 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyUploadsController;
+use App\Http\Controllers\NotificationWatchPresetController;
 use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
+use App\Http\Controllers\RssFeedController;
+use App\Http\Controllers\RssPresetFeedController;
+use App\Http\Controllers\RssTorrentDownloadController;
+use App\Http\Controllers\SavedIntentController;
 use App\Http\Controllers\ScrapeController;
+use App\Http\Controllers\Sysop\OperationsDashboardController;
+use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
 use App\Http\Controllers\TorrentFollowController;
 use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
+use App\Http\Controllers\WatchCenterController;
 use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
@@ -47,10 +59,10 @@ $moderationThrottle = sprintf(
 Route::get('/', static fn () => redirect('/login'));
 
 Route::get('/login', [LoginController::class, 'show'])->name('login');
-Route::post('/login', [LoginController::class, 'store']);
+Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
 
-Route::middleware('auth')->get('/home', static fn () => response('Dashboard', 200));
+Route::middleware('auth')->get('/home', HomeController::class)->name('home');
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +81,16 @@ Route::middleware('guest')->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::get('/health', HealthCheckController::class)->name('health.index');
+Route::get('/rss/{token}', RssFeedController::class)
+    ->where('token', '[A-Za-z0-9]+')
+    ->name('rss.feed');
+Route::get('/rss/{token}/presets/{preset}', RssPresetFeedController::class)
+    ->where(['token' => '[A-Za-z0-9]+', 'preset' => '[0-9a-fA-F-]{36}'])
+    ->name('rss.presets.feed');
+Route::get('/rss/{token}/download/{torrent}', RssTorrentDownloadController::class)
+    ->middleware($torrentDownloadThrottle)
+    ->where(['token' => '[A-Za-z0-9]+', 'torrent' => '[0-9]+'])
+    ->name('rss.torrents.download');
 
 /*
 |--------------------------------------------------------------------------
@@ -113,6 +135,10 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
         Route::get('/security/{event}', [SecurityEventController::class, 'show'])->name('security.show');
     });
 
+Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
+    Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
+    Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
+});
 Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(function (): void {
     Route::patch('/admin/users/{user}/role', [UserRoleController::class, 'update'])
         ->name('admin.users.role.update');
@@ -218,15 +244,53 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
 */
 Route::middleware(['auth'])->group(function (): void {
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
-    Route::post('/torrents', [TorrentUploadController::class, 'store'])->name('torrents.store');
+    Route::post('/torrents', [TorrentUploadController::class, 'store'])
+        ->middleware('throttle:torrent-upload')
+        ->name('torrents.store');
     Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
     Route::get('/my/discovery', PersonalizedDiscoveryController::class)->name('my.discovery');
     Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
     Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
+    Route::get('/my/watch-center', WatchCenterController::class)->name('my.watch-center');
+    Route::get('/my/saved-views', [SavedIntentController::class, 'index'])->name('account.saved-intents.index');
+    Route::post('/my/saved-views', [SavedIntentController::class, 'store'])->name('account.saved-intents.store');
+    Route::get('/my/saved-views/{savedIntent}/apply', [SavedIntentController::class, 'apply'])
+        ->whereNumber('savedIntent')
+        ->name('account.saved-intents.apply');
+    Route::delete('/my/saved-views/{savedIntent}', [SavedIntentController::class, 'destroy'])
+        ->whereNumber('savedIntent')
+        ->name('account.saved-intents.destroy');
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+    Route::get('/account/notifications', [AccountNotificationController::class, 'index'])->name('account.notifications.index');
+    Route::post('/account/notifications/read-all', [AccountNotificationController::class, 'markAllRead'])
+        ->name('account.notifications.read_all');
+    Route::post('/account/notifications/{notification}/read', [AccountNotificationController::class, 'markRead'])
+        ->whereNumber('notification')
+        ->name('account.notifications.read');
+
+    Route::get('/account/watch-presets', [NotificationWatchPresetController::class, 'index'])->name('account.watch-presets.index');
+    Route::get('/account/watch-presets/create', [NotificationWatchPresetController::class, 'create'])->name('account.watch-presets.create');
+    Route::post('/account/watch-presets', [NotificationWatchPresetController::class, 'store'])->name('account.watch-presets.store');
+    Route::get('/account/watch-presets/{preset}/edit', [NotificationWatchPresetController::class, 'edit'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.edit');
+    Route::patch('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'update'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.update');
+    Route::delete('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'destroy'])
+        ->whereNumber('preset')
+        ->name('account.watch-presets.destroy');
+
+    Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
+    Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
+    Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->name('account.rss.presets.create');
+    Route::post('/account/rss/presets', [AccountRssPresetController::class, 'store'])->name('account.rss.presets.store');
+    Route::get('/account/rss/presets/{preset}/edit', [AccountRssPresetController::class, 'edit'])->whereNumber('preset')->name('account.rss.presets.edit');
+    Route::patch('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'update'])->whereNumber('preset')->name('account.rss.presets.update');
+    Route::delete('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'destroy'])->whereNumber('preset')->name('account.rss.presets.destroy');
 });
 
 Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])

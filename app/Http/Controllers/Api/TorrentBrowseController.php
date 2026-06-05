@@ -23,8 +23,35 @@ final class TorrentBrowseController extends Controller
         ReleaseUpgradeAdvisor $upgradeAdvisor
     ): JsonResponse {
         $query = Torrent::query()
+            ->select([
+                'id',
+                'category_id',
+                'user_id',
+                'name',
+                'slug',
+                'size_bytes',
+                'type',
+                'source',
+                'resolution',
+                'imdb_id',
+                'tmdb_id',
+                'nfo_text',
+                'seeders',
+                'leechers',
+                'completed',
+                'freeleech',
+                'is_freeleech',
+                'created_at',
+                'published_at',
+                'uploaded_at',
+            ])
             ->visible()
-            ->with(['category', 'uploader', 'metadata', 'externalMetadata']);
+            ->with([
+                'category:id,name,slug',
+                'uploader:id,name',
+                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id,nfo',
+                'externalMetadata:id,torrent_id,imdb_id,tmdb_id,trakt_id,trakt_slug,title,year,media_type,overview,poster_url,backdrop_url,tmdb_url,imdb_url,trakt_url,enrichment_status',
+            ]);
 
         $filters = $request->filters();
 

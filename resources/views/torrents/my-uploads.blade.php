@@ -54,8 +54,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-slate-400">
-                                You have not uploaded anything yet. Submit your first torrent to start the moderation flow.
+                            <td colspan="4" class="px-4 py-10 text-center">
+                                <div class="mx-auto max-w-xl">
+                                    <h2 class="text-lg font-semibold text-white">No uploads submitted yet</h2>
+                                    <p class="mt-2 text-sm text-slate-400">Share a clean release with metadata and files ready for review. Your moderation status and feedback will appear here.</p>
+                                    <a href="{{ route('torrents.upload') }}" class="mt-4 inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Upload your first torrent</a>
+                                </div>
                             </td>
                         </tr>
                     @endforelse

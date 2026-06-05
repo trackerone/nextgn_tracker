@@ -1,7 +1,0 @@
-services:
-  - type: web
-    name: pu239-nextgn
-    env: docker
-    envVars:
-      - key: TMPDIR
-        value: /tmp

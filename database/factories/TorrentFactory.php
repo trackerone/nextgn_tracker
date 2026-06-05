@@ -50,7 +50,7 @@ class TorrentFactory extends Factory
             'leechers' => 0,
             'completed' => 0,
 
-            // Default = approved + visible (så alle “happy path” tests virker uden ekstra state)
+            // Default = approved + visible, so all happy-path tests work without extra state
             'is_visible' => true,
             'is_approved' => true,
             'is_banned' => false,

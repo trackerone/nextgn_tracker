@@ -61,9 +61,14 @@ final class SavedIntentTest extends TestCase
             ->get(route('account.saved-intents.index'))
             ->assertOk()
             ->assertSee('My WEB view')
+<<<<<< codex/feat-saved-intent-labels
             ->assertSee('Source:')
             ->assertSee('WEB-DL')
             ->assertDontSee('source:')
+=======
+            ->assertSee('source:')
+            ->assertSee('WEB-DL')
+>>>>>> main
             ->assertDontSee('Other private view')
             ->assertDontSee('BLURAY');
     }
@@ -91,6 +96,7 @@ final class SavedIntentTest extends TestCase
         $this->actingAs($user)
             ->get(route('account.saved-intents.index'))
             ->assertOk()
+<<<<<< codex/feat-saved-intent-labels
             ->assertSee('Saved views let you reuse the same metadata intent across browse, RSS, and watch presets.')
             ->assertSee('Search:')
             ->assertSee('Type:')
@@ -104,6 +110,9 @@ final class SavedIntentTest extends TestCase
             ->assertSee('matrix')
             ->assertSee('Japanese')
             ->assertSee('Spanish');
+=======
+            ->assertSee('Saved views let you reuse the same metadata intent across browse, RSS, and watch presets.');
+>>>>>> main
     }
 
     public function test_saved_view_actions_render_together(): void

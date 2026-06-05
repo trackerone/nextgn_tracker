@@ -8,30 +8,69 @@ use App\Models\ApiKey;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 final class ApiKeyHmacMiddleware
 {
+    private const DEFAULT_ALLOWED_TIME_SKEW_SECONDS = 300;
+
     public function handle(Request $request, Closure $next): Response
     {
         $key = (string) $request->header('X-Api-Key', '');
         $signature = (string) $request->header('X-Api-Signature', '');
         $timestamp = (string) $request->header('X-Api-Timestamp', '');
+        $nonce = (string) $request->header('X-Api-Nonce', '');
 
         if ($key === '' || $signature === '' || $timestamp === '') {
-            return response()->json(['message' => 'Missing API signature.'], 401);
+            $this->logSecurityEvent('api_hmac_missing_credentials', 'Missing API HMAC credentials.');
+
+            return $this->unauthorized();
         }
 
-        /** @var ApiKey|null $apiKey */
-        $apiKey = ApiKey::query()->where('key', $key)->first();
+        if (ctype_digit($timestamp) === false || $this->timestampIsFresh((int) $timestamp) === false) {
+            $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC timestamp failed freshness validation.', [
+                'timestamp' => $timestamp,
+            ]);
+
+            return $this->unauthorized();
+        }
+
+        $apiKey = ApiKey::findForPlaintext($key);
 
         if ($apiKey === null) {
-            return response()->json(['message' => 'Invalid API key.'], 401);
+            $this->logSecurityEvent('api_hmac_unknown_key_prefix', 'API HMAC key prefix could not be resolved.', [
+                'key_prefix' => ApiKey::prefixForPlaintext($key),
+            ]);
+
+            return $this->unauthorized();
         }
 
-        $secret = (string) config('security.api.hmac_secret', '');
-        if ($secret === '') {
-            return response()->json(['message' => 'Server HMAC secret not configured.'], 401);
+        if ($this->legacyKeysAllowed() === false && $apiKey->usesLegacyPlaintextStorage()) {
+            $this->logSecurityEvent('api_hmac_legacy_plaintext_rejected', 'Legacy plaintext API key authentication is disabled.', [
+                'api_key_id' => $apiKey->getKey(),
+                'mode' => 'legacy-plaintext',
+            ]);
+
+            return $this->unauthorized();
+        }
+
+        $secret = $this->signingSecretFor($apiKey, $key);
+        if ($secret === null) {
+            $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signing secret could not be resolved.', [
+                'api_key_id' => $apiKey->getKey(),
+            ]);
+
+            return $this->unauthorized();
+        }
+
+        if ($this->enforceNonce() && $nonce === '') {
+            $this->logSecurityEvent('api_hmac_missing_nonce', 'API HMAC nonce is required but missing.', [
+                'api_key_id' => $apiKey->getKey(),
+            ]);
+
+            return $this->unauthorized();
         }
 
         $method = strtoupper($request->getMethod());
@@ -58,11 +97,20 @@ final class ApiKeyHmacMiddleware
         // Test signs GET with empty body, so enforce empty body for GET regardless of getContent().
         $body = $method === 'GET' ? '' : (string) $request->getContent();
 
-        // The test canonical is: METHOD \n PATH \n TIMESTAMP \n BODY
-        // Example: "GET\n/api/user\n<ts>\n"
+        $requireNonce = $this->enforceNonce();
+
+        // Canonical payload format (nonce rollout aware):
+        // METHOD \n PATH \n TIMESTAMP \n NONCE \n BODY
+        // Legacy format without nonce is allowed only when enforcement is disabled.
         $candidates = [];
         foreach ($paths as $path) {
-            $candidates[] = implode("\n", [$method, $path, $timestamp, $body]);
+            if ($requireNonce === false) {
+                $candidates[] = implode("\n", [$method, $path, $timestamp, $body]);
+            }
+
+            if ($nonce !== '') {
+                $candidates[] = implode("\n", [$method, $path, $timestamp, $nonce, $body]);
+            }
         }
 
         $ok = false;
@@ -74,19 +122,119 @@ final class ApiKeyHmacMiddleware
             }
         }
 
-        if (! $ok) {
-            return response()->json(['message' => 'Invalid signature.'], 401);
+        if ($ok === false) {
+            $this->logSecurityEvent('api_hmac_invalid_signature', 'API HMAC signature validation failed.', [
+                'api_key_id' => $apiKey->getKey(),
+                'key_prefix' => $apiKey->key_prefix,
+                'hmac_version' => $apiKey->hmac_version,
+            ]);
+
+            return $this->unauthorized();
         }
+
+        if ($nonce !== '' && $this->markNonceAsUsed($apiKey, $nonce, $this->allowedSkewSeconds()) === false) {
+            $this->logSecurityEvent('api_hmac_replay_attempt', 'API HMAC nonce replay detected.', [
+                'api_key_id' => $apiKey->getKey(),
+            ]);
+
+            return $this->unauthorized();
+        }
+
+        if ($apiKey->usesLegacyGlobalHmac()) {
+            if ($this->legacyKeysAllowed() === false) {
+                $this->logSecurityEvent('api_hmac_legacy_global_rejected', 'Legacy global API HMAC authentication is disabled.', [
+                    'api_key_id' => $apiKey->getKey(),
+                    'mode' => 'legacy-global-hmac',
+                ]);
+
+                return $this->unauthorized();
+            }
+
+            $this->logSecurityEvent('api_hmac_legacy_global_usage', 'Deprecated global API HMAC secret accepted.', [
+                'api_key_id' => $apiKey->getKey(),
+                'mode' => 'legacy-global-hmac',
+            ]);
+        }
+
+        if ($apiKey->usesLegacyPlaintextStorage()) {
+            $this->logSecurityEvent('api_hmac_legacy_plaintext_usage', 'Deprecated plaintext API key storage path accepted.', [
+                'api_key_id' => $apiKey->getKey(),
+                'mode' => 'legacy-plaintext',
+            ]);
+        }
+
+        $apiKey->upgradeFromPlaintextIfNeeded($key);
 
         $user = $apiKey->user;
 
         if ($user !== null) {
             /** @var \App\Models\User $user */
+            if ($user->isBanned() || $user->isDisabled()) {
+                return response()->json(['message' => 'Forbidden.'], 403);
+            }
+
             Auth::setUser($user);
             $request->setUserResolver(static fn () => $user);
             $request->attributes->set('api_key', $apiKey);
         }
 
         return $next($request);
+    }
+
+    private function signingSecretFor(ApiKey $apiKey, string $plainKey): ?string
+    {
+        if ($apiKey->usesLegacyGlobalHmac() === false) {
+            if ($apiKey->hmacSecretMatchesPlaintext($plainKey) === false) {
+                return null;
+            }
+
+            return ApiKey::hmacSigningSecretForPlaintext($plainKey);
+        }
+
+        $secret = (string) config('security.api.hmac_secret', '');
+
+        return $secret === '' ? null : $secret;
+    }
+
+    private function timestampIsFresh(int $timestamp): bool
+    {
+        return abs(now()->timestamp - $timestamp) <= $this->allowedSkewSeconds();
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    private function logSecurityEvent(string $eventType, string $message, array $context = []): void
+    {
+        Log::channel('security')->warning($message, $context + [
+            'event_type' => $eventType,
+        ]);
+    }
+
+    private function allowedSkewSeconds(): int
+    {
+        return (int) config('security.api.allowed_time_skew_seconds', self::DEFAULT_ALLOWED_TIME_SKEW_SECONDS);
+    }
+
+    private function enforceNonce(): bool
+    {
+        return (bool) config('security.api.require_nonce', true);
+    }
+
+    private function legacyKeysAllowed(): bool
+    {
+        return (bool) config('security.api.allow_legacy_keys', true);
+    }
+
+    private function markNonceAsUsed(ApiKey $apiKey, string $nonce, int $ttlSeconds): bool
+    {
+        $cacheKey = sprintf('api:hmac:nonce:%s:%s', (string) $apiKey->getKey(), hash('sha256', $nonce));
+
+        return Cache::add($cacheKey, true, now()->addSeconds($ttlSeconds));
+    }
+
+    private function unauthorized(): Response
+    {
+        return response()->json(['message' => 'Unauthorized.'], 401);
     }
 }

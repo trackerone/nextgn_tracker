@@ -99,9 +99,13 @@ return [
         'torrent_moderation' => env('SECURITY_RATE_LIMIT_TORRENT_MODERATION', env('SECURITY_RATE_LIMIT_MODERATION', '60,1')),
     ],
 
+    'production_hardening_enabled' => (bool) env('NEXTGN_PRODUCTION_HARDENING', false),
+
     'api' => [
+        'allow_legacy_keys' => (bool) env('SECURITY_API_ALLOW_LEGACY_KEYS', true),
         'hmac_secret' => env('API_HMAC_SECRET'),
-        'allowed_time_skew_seconds' => (int) env('API_ALLOWED_TIME_SKEW', 300),
+        'allowed_time_skew_seconds' => (int) env('API_ALLOWED_TIME_SKEW', 120),
+        'require_nonce' => (bool) env('API_REQUIRE_NONCE', true),
         'default_rate_limit' => env('API_DEFAULT_RATE_LIMIT', env('SECURITY_RATE_LIMIT_API', '60,1')),
     ],
 ];

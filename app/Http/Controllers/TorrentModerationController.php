@@ -12,6 +12,7 @@ use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Services\Logging\AuditLogger;
+use App\Support\Torrents\TorrentMetadataPresenter;
 use App\Support\Torrents\TorrentModerationMetadataReview;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -31,13 +32,41 @@ class TorrentModerationController extends Controller
         $this->authorize('viewModerationListings', Torrent::class);
 
         $pending = Torrent::query()
-            ->with(['uploader', 'metadata'])
+            ->select([
+                'id',
+                'user_id',
+                'category_id',
+                'name',
+                'slug',
+                'description',
+                'type',
+                'source',
+                'resolution',
+                'size_bytes',
+                'file_count',
+                'status',
+                'original_filename',
+                'uploaded_at',
+                'updated_at',
+                'imdb_id',
+                'tmdb_id',
+                'nfo_text',
+            ])
+            ->with([
+                'category:id,name',
+                'uploader:id,name',
+                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id,nfo,raw_payload',
+            ])
             ->pending()
             ->orderByDesc('uploaded_at')
             ->paginate(25);
 
+        $pendingRows = $pending->getCollection();
+        $metadata = TorrentMetadataView::mapByTorrentId($pendingRows);
+
         $recent = Torrent::query()
-            ->with(['uploader', 'moderator'])
+            ->select(['id', 'moderated_by', 'name', 'slug', 'status', 'moderated_at', 'moderated_reason'])
+            ->with(['moderator:id,name'])
             ->moderated()
             ->latest('moderated_at')
             ->limit(10)
@@ -46,14 +75,46 @@ class TorrentModerationController extends Controller
         return view('staff.torrents.moderation.index', [
             'pendingTorrents' => $pending,
             'recentTorrents' => $recent,
-            'torrentMetadata' => $metadata = TorrentMetadataView::mapByTorrentId($pending->getCollection()),
-            'metadataEnrichmentOutcome' => TorrentMetadataView::enrichmentOutcomeMapByTorrentId($pending->getCollection()),
-            'releaseAdviceByTorrent' => TorrentMetadataView::releaseAdviceMapByTorrentId($pending->getCollection()),
+            'torrentMetadata' => $metadata,
+            'metadataBadgesByTorrent' => $this->metadataBadgesByTorrentId($metadata),
+            'metadataTypeLabelsByTorrent' => $this->metadataTypeLabelsByTorrentId($metadata),
+            'metadataEnrichmentOutcome' => TorrentMetadataView::enrichmentOutcomeMapByTorrentId($pendingRows),
+            'releaseAdviceByTorrent' => TorrentMetadataView::releaseAdviceMapByTorrentId($pendingRows),
             'moderationMetadataReview' => TorrentModerationMetadataReview::mapByTorrentId(
-                $pending->getCollection(),
+                $pendingRows,
                 $metadata
             ),
         ]);
+    }
+
+    /**
+     * @param  array<int, array<string, int|string|null>>  $metadataByTorrentId
+     * @return array<int, array<int, string>>
+     */
+    private function metadataBadgesByTorrentId(array $metadataByTorrentId): array
+    {
+        $badges = [];
+
+        foreach ($metadataByTorrentId as $torrentId => $metadata) {
+            $badges[$torrentId] = TorrentMetadataPresenter::listingBadges($metadata);
+        }
+
+        return $badges;
+    }
+
+    /**
+     * @param  array<int, array<string, int|string|null>>  $metadataByTorrentId
+     * @return array<int, string|null>
+     */
+    private function metadataTypeLabelsByTorrentId(array $metadataByTorrentId): array
+    {
+        $labels = [];
+
+        foreach ($metadataByTorrentId as $torrentId => $metadata) {
+            $labels[$torrentId] = TorrentMetadataPresenter::typeLabel($metadata);
+        }
+
+        return $labels;
     }
 
     public function approve(Request $request, Torrent $torrent): RedirectResponse

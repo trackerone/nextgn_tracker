@@ -13,7 +13,15 @@ class EloquentTopicRepository implements TopicRepositoryInterface
     public function paginate(int $perPage = 50): LengthAwarePaginator
     {
         return Topic::query()
-            ->with(['author.role'])
+            ->select(['id', 'user_id', 'slug', 'title', 'is_locked', 'is_pinned', 'created_at', 'updated_at'])
+            ->with([
+                'author:id,name,role_id',
+                'author.role:id,name',
+                'latestPost' => static fn ($query) => $query
+                    ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
+                    ->with('author:id,name'),
+            ])
+            ->withCount('posts')
             ->orderByDesc('is_pinned')
             ->orderByDesc('created_at')
             ->paginate($perPage);
@@ -28,7 +36,7 @@ class EloquentTopicRepository implements TopicRepositoryInterface
     {
         $topic = Topic::query()->create($attributes);
 
-        return $topic->fresh(['author.role']);
+        return $this->loadSummaryRelations($topic);
     }
 
     public function update(Topic $topic, array $attributes): Topic
@@ -36,6 +44,20 @@ class EloquentTopicRepository implements TopicRepositoryInterface
         $topic->fill($attributes);
         $topic->save();
 
-        return $topic->fresh(['author.role']);
+        return $this->loadSummaryRelations($topic);
+    }
+
+    private function loadSummaryRelations(Topic $topic): Topic
+    {
+        $topic->load([
+            'author:id,name,role_id',
+            'author.role:id,name',
+            'latestPost' => static fn ($query) => $query
+                ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
+                ->with('author:id,name'),
+        ]);
+        $topic->loadCount('posts');
+
+        return $topic;
     }
 }
