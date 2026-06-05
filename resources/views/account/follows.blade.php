@@ -83,7 +83,7 @@
         @empty
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-center">
                 <h2 class="text-lg font-semibold text-white">No follow preferences yet</h2>
-                <p class="mx-auto mt-2 max-w-xl text-sm text-slate-400">Create a follow for a title, type, resolution, source, or year. Matching releases will show up here and in For You.</p>
+                <p class="mx-auto mt-2 max-w-xl text-sm text-slate-400">Create a follow for a title, type, resolution, source, or year. Matching releases will show up here and in Discovery.</p>
             </section>
         @endforelse
     </div>
