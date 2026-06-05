@@ -158,11 +158,14 @@
                         type="text"
                         name="name"
                         class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                        placeholder="Nordic 2160p movies"
+                        placeholder="Browse view"
                         required
                     >
                 </label>
-                <button type="submit" class="rounded-lg border border-brand/70 px-5 py-2 text-sm font-semibold text-brand hover:bg-brand/10">Save current view</button>
+                <div class="flex flex-col gap-1">
+                    <button type="submit" class="rounded-lg border border-brand/70 px-5 py-2 text-sm font-semibold text-brand hover:bg-brand/10">Save current view</button>
+                    <span class="text-xs text-slate-500">Save these filters as a reusable view.</span>
+                </div>
             </form>
         </div>
 
