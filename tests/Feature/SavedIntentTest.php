@@ -16,7 +16,7 @@ final class SavedIntentTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('account.saved-intents.store'), [
-                'name' => 'Nordic 2160p movies',
+                'name' => 'All-language 2160p movies',
                 'q' => 'matrix rg:NTB',
                 'type' => 'movie',
                 'resolution' => '2160p',
@@ -30,7 +30,7 @@ final class SavedIntentTest extends TestCase
         $savedIntent = SavedIntent::query()->firstOrFail();
 
         self::assertSame((int) $user->id, (int) $savedIntent->user_id);
-        self::assertSame('Nordic 2160p movies', $savedIntent->name);
+        self::assertSame('All-language 2160p movies', $savedIntent->name);
         self::assertSame([
             'q' => 'matrix rg:NTB',
             'type' => 'movie',
@@ -73,17 +73,17 @@ final class SavedIntentTest extends TestCase
 
         SavedIntent::factory()->create([
             'user_id' => $user->id,
-            'name' => 'Nordic WEB movies',
+            'name' => 'All-language WEB movies',
             'criteria' => [
                 'q' => 'matrix',
                 'type' => 'movie',
                 'resolution' => '2160p',
                 'source' => 'WEB-DL',
                 'release_group' => 'NTB',
-                'language' => 'Danish',
-                'audio_language' => 'English',
-                'subtitle_language' => 'Swedish',
-                'subtitles' => 'Danish, Swedish',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
                 'title' => 'ignored-title',
                 'grouped' => '0',
             ],
@@ -95,10 +95,10 @@ final class SavedIntentTest extends TestCase
             'resolution' => '2160p',
             'source' => 'WEB-DL',
             'release_group' => 'NTB',
-            'language' => 'Danish',
-            'audio_language' => 'English',
-            'subtitle_language' => 'Swedish',
-            'subtitles' => 'Danish, Swedish',
+            'language' => 'English',
+            'audio_language' => 'Japanese',
+            'subtitle_language' => 'Spanish',
+            'subtitles' => 'English, Spanish, German',
         ]);
 
         $this->actingAs($user)
@@ -184,10 +184,10 @@ final class SavedIntentTest extends TestCase
                 'resolution' => '2160p',
                 'source' => 'WEB-DL',
                 'release_group' => 'NTB',
-                'language' => 'Danish',
-                'audio_language' => 'English',
-                'subtitle_language' => 'Swedish',
-                'subtitles' => 'Danish, Swedish',
+                'language' => 'English',
+                'audio_language' => 'Japanese',
+                'subtitle_language' => 'Spanish',
+                'subtitles' => 'English, Spanish, German',
                 'title' => 'ignored-title',
                 'grouped' => '0',
             ]))
@@ -197,10 +197,10 @@ final class SavedIntentTest extends TestCase
             ->assertSee('value="2160p"', false)
             ->assertSee('value="WEB-DL"', false)
             ->assertSee('value="NTB"', false)
-            ->assertSee('value="Danish"', false)
             ->assertSee('value="English"', false)
-            ->assertSee('value="Swedish"', false)
-            ->assertSee('value="Danish, Swedish"', false)
+            ->assertSee('value="Japanese"', false)
+            ->assertSee('value="Spanish"', false)
+            ->assertSee('value="English, Spanish, German"', false)
             ->assertDontSee('ignored-title')
             ->assertDontSee('grouped');
     }
