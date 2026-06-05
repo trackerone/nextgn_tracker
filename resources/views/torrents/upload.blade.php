@@ -54,7 +54,7 @@
                 <p class="mb-3 text-xs text-slate-400">Upload the private <code>.torrent</code> file first.</p>
                 <label for="torrent_file">Torrent file (.torrent)</label><input type="file" name="torrent_file" id="torrent_file" accept=".torrent,application/x-bittorrent" required aria-describedby="torrent_file_help">
                 <p class="mt-1 text-xs text-slate-500" id="torrent_file_help">Use an unmodified <code>.torrent</code> file with a valid bencoded payload.</p>
-                @error('torrent_file')<p class="mt-1 text-xs text-rose-300">{{ $message }}</p>@enderror
+                @if (isset($errors) && $errors->has('torrent_file'))<p class="mt-1 text-xs text-rose-300">{{ $errors->first('torrent_file') }}</p>@endif
             </fieldset>
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
