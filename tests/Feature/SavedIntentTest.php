@@ -67,6 +67,81 @@ final class SavedIntentTest extends TestCase
             ->assertDontSee('BLURAY');
     }
 
+    public function test_saved_intent_page_shows_create_watch_preset_action_with_supported_criteria(): void
+    {
+        $user = User::factory()->create();
+
+        SavedIntent::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Nordic WEB movies',
+            'criteria' => [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'Danish',
+                'audio_language' => 'English',
+                'subtitle_language' => 'Swedish',
+                'subtitles' => 'Danish, Swedish',
+                'title' => 'ignored-title',
+                'grouped' => '0',
+            ],
+        ]);
+
+        $expectedUrl = route('account.watch-presets.create', [
+            'q' => 'matrix',
+            'type' => 'movie',
+            'resolution' => '2160p',
+            'source' => 'WEB-DL',
+            'release_group' => 'NTB',
+            'language' => 'Danish',
+            'audio_language' => 'English',
+            'subtitle_language' => 'Swedish',
+            'subtitles' => 'Danish, Swedish',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('account.saved-intents.index'))
+            ->assertOk()
+            ->assertSee('Create watch preset')
+            ->assertSee($expectedUrl)
+            ->assertDontSee('title=ignored-title')
+            ->assertDontSee('grouped=0');
+    }
+
+    public function test_watch_preset_create_page_prefills_supported_query_values(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('account.watch-presets.create', [
+                'q' => 'matrix',
+                'type' => 'movie',
+                'resolution' => '2160p',
+                'source' => 'WEB-DL',
+                'release_group' => 'NTB',
+                'language' => 'Danish',
+                'audio_language' => 'English',
+                'subtitle_language' => 'Swedish',
+                'subtitles' => 'Danish, Swedish',
+                'title' => 'ignored-title',
+                'grouped' => '0',
+            ]))
+            ->assertOk()
+            ->assertSee('value="matrix"', false)
+            ->assertSee('value="movie"', false)
+            ->assertSee('value="2160p"', false)
+            ->assertSee('value="WEB-DL"', false)
+            ->assertSee('value="NTB"', false)
+            ->assertSee('value="Danish"', false)
+            ->assertSee('value="English"', false)
+            ->assertSee('value="Swedish"', false)
+            ->assertSee('value="Danish, Swedish"', false)
+            ->assertDontSee('ignored-title')
+            ->assertDontSee('grouped');
+    }
+
     public function test_user_cannot_see_or_delete_another_users_saved_intent(): void
     {
         $owner = User::factory()->create();
