@@ -29,6 +29,7 @@ use App\Http\Controllers\RssFeedController;
 use App\Http\Controllers\RssPresetFeedController;
 use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\ScrapeController;
+use App\Http\Controllers\SavedIntentController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\TopicController;
@@ -252,6 +253,14 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
     Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
     Route::get('/my/watch-center', WatchCenterController::class)->name('my.watch-center');
+    Route::get('/my/saved-views', [SavedIntentController::class, 'index'])->name('account.saved-intents.index');
+    Route::post('/my/saved-views', [SavedIntentController::class, 'store'])->name('account.saved-intents.store');
+    Route::get('/my/saved-views/{savedIntent}/apply', [SavedIntentController::class, 'apply'])
+        ->whereNumber('savedIntent')
+        ->name('account.saved-intents.apply');
+    Route::delete('/my/saved-views/{savedIntent}', [SavedIntentController::class, 'destroy'])
+        ->whereNumber('savedIntent')
+        ->name('account.saved-intents.destroy');
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
