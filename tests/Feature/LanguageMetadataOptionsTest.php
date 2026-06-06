@@ -94,7 +94,7 @@ class LanguageMetadataOptionsTest extends TestCase
         Category::factory()->create(['name' => 'Movies']);
 
         $rss = $this->view('account.rss-preset-form', [
-            'action' => route('account.rss.store'),
+            'action' => route('account.rss.presets.store'),
             'method' => 'POST',
             'preset' => null,
         ]);
