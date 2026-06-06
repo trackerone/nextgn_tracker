@@ -55,6 +55,142 @@ final class DiscoveryTrendingApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_trending_discovery_defaults_to_a_30_day_window(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+
+        $includedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(30),
+        ]);
+        $excludedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(31),
+        ]);
+
+        $this->createMetadata($includedTorrent, [
+            'source' => 'Within Default Window',
+            'resolution' => '1080p',
+            'release_group' => 'DefaultWindow',
+        ]);
+
+        $this->createMetadata($excludedTorrent, [
+            'source' => 'Outside Default Window',
+            'resolution' => '720p',
+            'release_group' => 'OutsideWindow',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending'));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [
+                ['value' => 'Within Default Window', 'count' => 1],
+            ],
+            'resolutions' => [
+                ['value' => '1080p', 'count' => 1],
+            ],
+            'release_groups' => [
+                ['value' => 'DefaultWindow', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_trending_discovery_supports_a_7_day_window(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+
+        $includedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(7),
+        ]);
+        $excludedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(8),
+        ]);
+
+        $this->createMetadata($includedTorrent, [
+            'source' => 'Within Seven Days',
+            'resolution' => '1080p',
+            'release_group' => 'SevenDayGroup',
+        ]);
+
+        $this->createMetadata($excludedTorrent, [
+            'source' => 'Outside Seven Days',
+            'resolution' => '720p',
+            'release_group' => 'OutsideSevenDayGroup',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['window' => '7d']));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [
+                ['value' => 'Within Seven Days', 'count' => 1],
+            ],
+            'resolutions' => [
+                ['value' => '1080p', 'count' => 1],
+            ],
+            'release_groups' => [
+                ['value' => 'SevenDayGroup', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_trending_discovery_supports_a_90_day_window(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+
+        $includedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(90),
+        ]);
+        $excludedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(91),
+        ]);
+
+        $this->createMetadata($includedTorrent, [
+            'source' => 'Within Ninety Days',
+            'resolution' => '1080p',
+            'release_group' => 'NinetyDayGroup',
+        ]);
+
+        $this->createMetadata($excludedTorrent, [
+            'source' => 'Outside Ninety Days',
+            'resolution' => '720p',
+            'release_group' => 'OutsideNinetyDayGroup',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['window' => '90d']));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [
+                ['value' => 'Within Ninety Days', 'count' => 1],
+            ],
+            'resolutions' => [
+                ['value' => '1080p', 'count' => 1],
+            ],
+            'release_groups' => [
+                ['value' => 'NinetyDayGroup', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_invalid_window_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['window' => '14d']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['window']);
+    }
+
     public function test_trending_discovery_returns_recent_visible_metadata_only_with_expected_ordering(): void
     {
         Carbon::setTestNow('2026-06-01 12:00:00');
@@ -216,7 +352,7 @@ final class DiscoveryTrendingApiTest extends TestCase
         }
 
         $response = $this->actingAs($user)
-            ->getJson(route('api.discovery.trending'));
+            ->getJson(route('api.discovery.trending', ['window' => '90d']));
 
         $response->assertOk();
 
@@ -251,7 +387,7 @@ final class DiscoveryTrendingApiTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->getJson(route('api.discovery.trending'));
+            ->getJson(route('api.discovery.trending', ['window' => '7d']));
 
         $response->assertOk();
         $response->assertExactJson([
