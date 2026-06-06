@@ -34,6 +34,7 @@ final class TorrentBrowseFiltersTest extends TestCase
             'subtitle_language' => 'danish,english,german',
             'resolution' => '1080p',
             'source' => 'WEB-DL',
+            'year' => null,
             'category_id' => 12,
             'order' => 'seeders',
             'direction' => 'asc',
