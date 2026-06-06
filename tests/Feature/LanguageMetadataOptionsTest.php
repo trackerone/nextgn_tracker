@@ -93,16 +93,19 @@ class LanguageMetadataOptionsTest extends TestCase
     {
         Category::factory()->create(['name' => 'Movies']);
 
-        $rss = $this->view('account.rss-preset-form', [
+        $viewData = [
+            'errors' => new ViewErrorBag,
+            'preset' => null,
+        ];
+
+        $rss = $this->view('account.rss-preset-form', $viewData + [
             'action' => route('account.rss.presets.store'),
             'method' => 'POST',
-            'preset' => null,
         ]);
 
-        $watch = $this->view('account.notification-watch-preset-form', [
+        $watch = $this->view('account.notification-watch-preset-form', $viewData + [
             'action' => route('account.watch-presets.store'),
             'method' => 'POST',
-            'preset' => null,
         ]);
 
         foreach ([$rss, $watch] as $response) {
