@@ -343,6 +343,48 @@ final class TorrentBrowseTest extends TestCase
         $response->assertDontSee($miss->name);
     }
 
+    public function test_explicit_query_parameters_override_alias_tokens_in_q(): void
+    {
+        $user = User::factory()->create();
+        $explicitMatch = Torrent::factory()->create(['name' => 'Matrix Explicit Match']);
+        $overridden = Torrent::factory()->create(['name' => 'Matrix Overridden Match']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $explicitMatch->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'BLURAY',
+            'release_group' => 'NTB',
+            'language' => 'english',
+            'audio_language' => 'japanese',
+            'subtitle_language' => 'danish',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $overridden->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'release_group' => 'NTB',
+            'language' => 'english',
+            'audio_language' => 'japanese',
+            'subtitle_language' => 'danish',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', [
+            'q' => 'matrix source:web-dl',
+            'source' => 'BLURAY',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee($explicitMatch->name);
+        $response->assertDontSee($overridden->name);
+    }
+
     public function test_search_aliases_support_language_audio_and_subtitle_filters(): void
     {
         $user = User::factory()->create();
