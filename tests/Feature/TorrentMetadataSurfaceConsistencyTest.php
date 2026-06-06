@@ -122,6 +122,10 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         $browseResponse->assertSee('Filter first, then browse');
         $browseResponse->assertSee('Search');
         $browseResponse->assertSee('Core filters');
+<< codex/hotfix-torrent-metadata-surface-consistency
+        $browseResponse->assertSee('Order by');
+=======
+>> main
         $browseResponse->assertSee('Metadata filters');
         $browseResponse->assertSee('Saved views');
         $browseResponse->assertSee('RSS');
