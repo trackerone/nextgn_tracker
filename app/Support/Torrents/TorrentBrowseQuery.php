@@ -55,6 +55,12 @@ final class TorrentBrowseQuery
             $this->applyMetadataFilter($query, 'source', $filters->source);
         }
 
+        if ($filters->year !== null) {
+            $query->whereHas('metadata', function (Builder $metadataQuery) use ($filters): void {
+                $metadataQuery->where('year', $filters->year);
+            });
+        }
+
         if ($filters->categoryId !== null) {
             $query->where('category_id', $filters->categoryId);
         }
