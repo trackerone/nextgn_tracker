@@ -51,7 +51,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Metadata filters');
         $response->assertSee('Saved views');
         $response->assertSee('RSS');
-        $response->assertSee('placeholder="Try: source:web-dl res:1080p rg:<release-group> sub:<language>"', false);
+        $response->assertSee('placeholder="Try: source:web-dl res:1080p rg:&lt;release-group&gt; sub:&lt;language&gt;"', false);
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void
