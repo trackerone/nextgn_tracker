@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Support\Torrents\TorrentBrowseFilters;
+use App\Support\Torrents\TorrentSearchExpression;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,12 +35,20 @@ final class BrowseTorrentsRequest extends FormRequest
     {
         $category = $this->input('category');
         $categoryId = $this->input('category_id', $category);
+        $searchExpression = TorrentSearchExpression::fromQuery(
+            is_string($this->input('q')) ? trim($this->string('q')->value()) : ''
+        );
 
         $this->merge([
-            'q' => is_string($this->input('q')) ? trim($this->string('q')->value()) : $this->input('q'),
+            'q' => $searchExpression->text,
             'type' => is_string($this->input('type')) ? trim($this->string('type')->value()) : $this->input('type'),
-            'resolution' => is_string($this->input('resolution')) ? trim($this->string('resolution')->value()) : $this->input('resolution'),
-            'source' => is_string($this->input('source')) ? trim($this->string('source')->value()) : $this->input('source'),
+            'release_group' => $this->stringOrNull('release_group') ?? $searchExpression->releaseGroup,
+            'language' => $this->stringOrNull('language') ?? $searchExpression->language,
+            'audio_language' => $this->stringOrNull('audio_language') ?? $searchExpression->audioLanguage,
+            'subtitle_language' => $this->stringOrNull('subtitle_language') ?? $searchExpression->subtitleLanguage,
+            'resolution' => $this->stringOrNull('resolution') ?? $searchExpression->resolution,
+            'source' => $this->stringOrNull('source') ?? $searchExpression->source,
+            'year' => $this->input('year') ?? $searchExpression->year,
             'direction' => is_string($this->input('direction'))
                 ? strtolower(trim($this->string('direction')->value()))
                 : $this->input('direction'),
@@ -59,8 +68,13 @@ final class BrowseTorrentsRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(self::TYPES)],
+            'release_group' => ['nullable', 'string', 'max:80'],
+            'language' => ['nullable', 'string', 'max:80'],
+            'audio_language' => ['nullable', 'string', 'max:80'],
+            'subtitle_language' => ['nullable', 'string', 'max:255'],
             'resolution' => ['nullable', 'string', 'max:32'],
             'source' => ['nullable', 'string', 'max:32'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'category' => ['nullable', 'integer', 'exists:categories,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'sort' => ['nullable', Rule::in(self::ORDER_OPTIONS)],
@@ -102,5 +116,18 @@ final class BrowseTorrentsRequest extends FormRequest
         }
 
         return filter_var($grouped, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
+    }
+
+    private function stringOrNull(string $key): ?string
+    {
+        $value = $this->input($key);
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value !== '' ? $value : null;
     }
 }

@@ -11,6 +11,9 @@ final class TorrentSearchExpression
         public readonly ?string $releaseGroup,
         public readonly ?string $source,
         public readonly ?string $resolution,
+        public readonly ?string $language,
+        public readonly ?string $audioLanguage,
+        public readonly ?string $subtitleLanguage,
         public readonly ?int $year,
     ) {}
 
@@ -22,6 +25,9 @@ final class TorrentSearchExpression
         $releaseGroup = null;
         $source = null;
         $resolution = null;
+        $language = null;
+        $audioLanguage = null;
+        $subtitleLanguage = null;
         $year = null;
 
         foreach ($tokens as $token) {
@@ -43,17 +49,32 @@ final class TorrentSearchExpression
                 case 'rg':
                 case 'group':
                 case 'release_group':
-                    $releaseGroup = mb_strtoupper($value);
+                    $releaseGroup = self::normalizeUppercase($value);
                     break;
 
                 case 'source':
                 case 'src':
-                    $source = mb_strtoupper($value);
+                    $source = self::normalizeUppercase($value);
                     break;
 
                 case 'resolution':
                 case 'res':
-                    $resolution = mb_strtolower($value);
+                    $resolution = self::normalizeLowercase($value);
+                    break;
+
+                case 'lang':
+                case 'language':
+                    $language = self::normalizeLowercase($value);
+                    break;
+
+                case 'audio':
+                case 'audio_language':
+                    $audioLanguage = self::normalizeLowercase($value);
+                    break;
+
+                case 'sub':
+                case 'subtitle_language':
+                    $subtitleLanguage = self::normalizeCommaSeparatedLowercase($value);
                     break;
 
                 case 'year':
@@ -77,6 +98,9 @@ final class TorrentSearchExpression
             releaseGroup: $releaseGroup,
             source: $source,
             resolution: $resolution,
+            language: $language,
+            audioLanguage: $audioLanguage,
+            subtitleLanguage: $subtitleLanguage,
             year: $year,
         );
     }
@@ -86,6 +110,9 @@ final class TorrentSearchExpression
         return $this->releaseGroup !== null
             || $this->source !== null
             || $this->resolution !== null
+            || $this->language !== null
+            || $this->audioLanguage !== null
+            || $this->subtitleLanguage !== null
             || $this->year !== null;
     }
 
@@ -108,5 +135,31 @@ final class TorrentSearchExpression
         }
 
         return [$key, $value];
+    }
+
+    private static function normalizeUppercase(string $value): ?string
+    {
+        $normalized = trim(mb_strtoupper($value));
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private static function normalizeLowercase(string $value): ?string
+    {
+        $normalized = trim(mb_strtolower($value));
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private static function normalizeCommaSeparatedLowercase(string $value): ?string
+    {
+        $parts = array_map(static fn (string $part): string => trim(mb_strtolower($part)), explode(',', $value));
+        $parts = array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
+
+        if ($parts === []) {
+            return null;
+        }
+
+        return implode(',', $parts);
     }
 }

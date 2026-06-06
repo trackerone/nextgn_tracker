@@ -309,6 +309,156 @@ final class TorrentBrowseTest extends TestCase
         $response->assertDontSee($wrongYear->name);
     }
 
+    public function test_search_aliases_map_to_metadata_filters_and_leave_plain_text_query(): void
+    {
+        $user = User::factory()->create();
+        $match = Torrent::factory()->create(['name' => 'Matrix Alias Match']);
+        $miss = Torrent::factory()->create(['name' => 'Matrix Alias Miss']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'release_group' => 'NTB',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
+            'release_group' => 'FLUX',
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=matrix source:web-dl res:1080p rg:ntb');
+
+        $response->assertOk();
+        $response->assertSee('value="matrix"', false);
+        $response->assertSee($match->name);
+        $response->assertDontSee($miss->name);
+    }
+
+    public function test_search_aliases_support_language_audio_and_subtitle_filters(): void
+    {
+        $user = User::factory()->create();
+        $match = Torrent::factory()->create(['name' => 'Matrix Language Match']);
+        $miss = Torrent::factory()->create(['name' => 'Matrix Language Miss']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'language' => 'english',
+            'audio_language' => 'japanese',
+            'subtitle_language' => 'danish',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'language' => 'french',
+            'audio_language' => 'japanese',
+            'subtitle_language' => 'danish',
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=matrix lang:english audio:japanese sub:danish');
+
+        $response->assertOk();
+        $response->assertSee('value="matrix"', false);
+        $response->assertSee($match->name);
+        $response->assertDontSee($miss->name);
+    }
+
+    public function test_search_aliases_preserve_multiple_subtitle_language_values(): void
+    {
+        $user = User::factory()->create();
+        $danish = Torrent::factory()->create(['name' => 'Matrix Danish Match']);
+        $english = Torrent::factory()->create(['name' => 'Matrix English Match']);
+        $miss = Torrent::factory()->create(['name' => 'Matrix Subtitle Miss']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $danish->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'subtitle_language' => 'danish',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $english->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'subtitle_language' => 'english',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'subtitle_language' => 'french',
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=matrix sub:danish,english');
+
+        $response->assertOk();
+        $response->assertSee('value="matrix"', false);
+        $response->assertSee($danish->name);
+        $response->assertSee($english->name);
+        $response->assertDontSee($miss->name);
+    }
+
+    public function test_unknown_tokens_remain_in_query_text(): void
+    {
+        $user = User::factory()->create();
+        $match = Torrent::factory()->create(['name' => 'Matrix subs:gold special']);
+        $miss = Torrent::factory()->create(['name' => 'Matrix Regular']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $match->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $miss->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+        ]);
+
+        $response = $this->actingAs($user)->get('/torrents?q=matrix subs:gold');
+
+        $response->assertOk();
+        $response->assertSee('value="matrix subs:gold"', false);
+        $response->assertSee($match->name);
+        $response->assertDontSee($miss->name);
+    }
+
     public function test_type_filter_works_with_normalized_metadata(): void
     {
         $user = User::factory()->create();
