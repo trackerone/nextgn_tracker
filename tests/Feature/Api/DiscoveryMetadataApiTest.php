@@ -53,17 +53,20 @@ final class DiscoveryMetadataApiTest extends TestCase
             ->assertUnauthorized();
     }
 
-    public function test_metadata_discovery_returns_grouped_counts_and_ignores_null_and_empty_values(): void
+    public function test_metadata_discovery_returns_the_expected_contract_shape_and_ordering(): void
     {
         $user = User::factory()->create();
 
-        $firstTorrent = Torrent::factory()->create();
-        $secondTorrent = Torrent::factory()->create();
-        $thirdTorrent = Torrent::factory()->create();
-        $hiddenTorrent = Torrent::factory()->unapproved()->create();
+        $primaryTorrent = Torrent::factory()->create();
+        $secondaryTorrent = Torrent::factory()->create();
+        $alphaTieTorrent = Torrent::factory()->create();
+        $betaTieTorrent = Torrent::factory()->create();
+        $emptyValueTorrent = Torrent::factory()->create();
+        $nullValueTorrent = Torrent::factory()->create();
+        $hiddenTorrent = Torrent::factory()->banned()->create();
+        $unapprovedTorrent = Torrent::factory()->unapproved()->create();
 
-        TorrentMetadata::query()->create([
-            'torrent_id' => $firstTorrent->id,
+        $this->createMetadata($primaryTorrent, [
             'source' => 'WEB-DL',
             'resolution' => '1080p',
             'language' => 'english',
@@ -72,8 +75,7 @@ final class DiscoveryMetadataApiTest extends TestCase
             'release_group' => 'NTB',
         ]);
 
-        TorrentMetadata::query()->create([
-            'torrent_id' => $secondTorrent->id,
+        $this->createMetadata($secondaryTorrent, [
             'source' => 'WEB-DL',
             'resolution' => '1080p',
             'language' => 'english',
@@ -82,55 +84,138 @@ final class DiscoveryMetadataApiTest extends TestCase
             'release_group' => 'NTB',
         ]);
 
-        TorrentMetadata::query()->create([
-            'torrent_id' => $thirdTorrent->id,
+        $this->createMetadata($alphaTieTorrent, [
+            'source' => 'BluRay',
+            'resolution' => '2160p',
+            'language' => 'french',
+            'audio_language' => 'english',
+            'subtitle_language' => 'english',
+            'release_group' => 'Alpha',
+        ]);
+
+        $this->createMetadata($betaTieTorrent, [
+            'source' => 'HDTV',
+            'resolution' => '720p',
+            'language' => 'german',
+            'audio_language' => 'french',
+            'subtitle_language' => 'french',
+            'release_group' => 'Beta',
+        ]);
+
+        $this->createMetadata($emptyValueTorrent, [
             'source' => '',
-            'resolution' => null,
-            'language' => 'spanish',
+            'resolution' => '',
+            'language' => '',
             'audio_language' => '',
-            'subtitle_language' => null,
-            'release_group' => 'GRP',
+            'subtitle_language' => '',
+            'release_group' => '',
         ]);
 
-        TorrentMetadata::query()->create([
-            'torrent_id' => $hiddenTorrent->id,
-            'source' => 'WEB-DL',
-            'resolution' => '1080p',
-            'language' => 'english',
-            'audio_language' => 'japanese',
-            'subtitle_language' => 'danish',
-            'release_group' => 'NTB',
+        $this->createMetadata($nullValueTorrent, [
+            'source' => null,
+            'resolution' => null,
+            'language' => null,
+            'audio_language' => null,
+            'subtitle_language' => null,
+            'release_group' => null,
+        ]);
+
+        $this->createMetadata($hiddenTorrent, [
+            'source' => 'CAM',
+            'resolution' => '480p',
+            'language' => 'italian',
+            'audio_language' => 'italian',
+            'subtitle_language' => 'italian',
+            'release_group' => 'Hidden',
+        ]);
+
+        $this->createMetadata($unapprovedTorrent, [
+            'source' => 'DVDRip',
+            'resolution' => '576p',
+            'language' => 'portuguese',
+            'audio_language' => 'portuguese',
+            'subtitle_language' => 'portuguese',
+            'release_group' => 'Pending',
         ]);
 
         $response = $this->actingAs($user)
             ->getJson(route('api.discovery.metadata'));
 
         $response->assertOk();
+
+        $payload = $response->json();
+
+        $this->assertSame([
+            'sources',
+            'resolutions',
+            'languages',
+            'audio_languages',
+            'subtitle_languages',
+            'release_groups',
+        ], array_keys($payload));
+
         $response->assertExactJson([
             'sources' => [
                 ['value' => 'WEB-DL', 'count' => 2],
+                ['value' => 'BluRay', 'count' => 1],
+                ['value' => 'HDTV', 'count' => 1],
             ],
             'resolutions' => [
                 ['value' => '1080p', 'count' => 2],
+                ['value' => '2160p', 'count' => 1],
+                ['value' => '720p', 'count' => 1],
             ],
             'languages' => [
                 ['value' => 'english', 'count' => 2],
-                ['value' => 'spanish', 'count' => 1],
+                ['value' => 'french', 'count' => 1],
+                ['value' => 'german', 'count' => 1],
             ],
             'audio_languages' => [
                 ['value' => 'japanese', 'count' => 2],
+                ['value' => 'english', 'count' => 1],
+                ['value' => 'french', 'count' => 1],
             ],
             'subtitle_languages' => [
                 ['value' => 'danish', 'count' => 2],
+                ['value' => 'english', 'count' => 1],
+                ['value' => 'french', 'count' => 1],
             ],
             'release_groups' => [
                 ['value' => 'NTB', 'count' => 2],
-                ['value' => 'GRP', 'count' => 1],
+                ['value' => 'Alpha', 'count' => 1],
+                ['value' => 'Beta', 'count' => 1],
             ],
         ]);
 
-        $this->assertIsArray($response->json('sources'));
-        $this->assertSame(['value', 'count'], array_keys($response->json('sources.0')));
-        $this->assertSame(['value', 'count'], array_keys($response->json('languages.0')));
+        foreach ($payload as $entries) {
+            $this->assertIsArray($entries);
+
+            foreach ($entries as $entry) {
+                $this->assertIsArray($entry);
+                $this->assertSame(['value', 'count'], array_keys($entry));
+                $this->assertIsInt($entry['count']);
+            }
+        }
+    }
+
+    public function test_metadata_discovery_endpoint_is_readonly(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
+            $this->actingAs($user)
+                ->json($method, route('api.discovery.metadata'))
+                ->assertStatus(405);
+        }
+    }
+
+    /**
+     * @param  array<string, string|null>  $attributes
+     */
+    private function createMetadata(Torrent $torrent, array $attributes): void
+    {
+        TorrentMetadata::query()->create(array_merge([
+            'torrent_id' => $torrent->id,
+        ], $attributes));
     }
 }
