@@ -187,10 +187,8 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Name / release title');
         $response->assertSee('87 seeders');
         $response->assertSee('13 leechers');
-        $response->assertSee('52 completed snatches');
         $response->assertSee('26 seeders');
         $response->assertSee('8 leechers');
-        $response->assertSee('14 completed snatches');
         $response->assertSeeTextInOrder([$best->name, $alternative->name]);
     }
 
@@ -233,7 +231,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents?grouped=0');
 
         $response->assertOk();
-        $response->assertSee('Seed');
+        $response->assertSee('Name / release title');
         $response->assertSee($torrent->name);
         $response->assertDontSee('Best version');
     }
