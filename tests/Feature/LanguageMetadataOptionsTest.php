@@ -89,6 +89,30 @@ class LanguageMetadataOptionsTest extends TestCase
         $response->assertDontSee('Available language options:');
     }
 
+    public function test_intent_forms_expose_neutral_language_examples_and_avoid_nordic_first_copy(): void
+    {
+        Category::factory()->create(['name' => 'Movies']);
+
+        $rss = $this->view('account.rss-preset-form', [
+            'action' => route('account.rss.store'),
+            'method' => 'POST',
+            'preset' => null,
+        ]);
+
+        $watch = $this->view('account.notification-watch-preset-form', [
+            'action' => route('account.watch-presets.store'),
+            'method' => 'POST',
+            'preset' => null,
+        ]);
+
+        foreach ([$rss, $watch] as $response) {
+            $response->assertSee('Language fields accept free text. Examples: English, Japanese, Spanish, German, Danish, Norwegian Bokmål, Panjabi.');
+            $response->assertSee('Use labels or short codes; keep entries concise.');
+            $response->assertDontSee('Use short codes such as da, no, nb, nn, sv, fi, en.');
+            $response->assertDontSee('Available language options:');
+        }
+    }
+
     public function test_no_nordic_first_helper_text_remains_in_upload_metadata_ui(): void
     {
         Category::factory()->create(['name' => 'Movies']);
