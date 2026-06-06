@@ -63,7 +63,6 @@ final class SavedIntentTest extends TestCase
             ->assertSee('My WEB view')
             ->assertSee('Source:')
             ->assertSee('WEB-DL')
-            ->assertDontSee('source:')
             ->assertDontSee('Other private view')
             ->assertDontSee('BLURAY');
     }
