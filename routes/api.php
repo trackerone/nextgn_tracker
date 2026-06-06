@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
+use App\Http\Controllers\Api\DiscoveryTrendingController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
@@ -54,6 +55,9 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/m
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
+
+    Route::get('/discovery/trending', DiscoveryTrendingController::class)
+        ->name('api.discovery.trending');
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
