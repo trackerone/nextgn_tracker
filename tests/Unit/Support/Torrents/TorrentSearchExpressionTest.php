@@ -24,6 +24,19 @@ final class TorrentSearchExpressionTest extends TestCase
         $this->assertTrue($expression->hasMetadataDirectives());
     }
 
+    public function test_it_is_case_insensitive_and_preserves_unknown_alias_tokens(): void
+    {
+        $expression = TorrentSearchExpression::fromQuery('Matrix RG:ntb SoUrCe:web-dl Foo:Bar LANG:ENGLISH AUDIO:JAPANESE SuB:DANISH,ENGLISH');
+
+        $this->assertSame('Matrix Foo:Bar', $expression->text);
+        $this->assertSame('NTB', $expression->releaseGroup);
+        $this->assertSame('WEB-DL', $expression->source);
+        $this->assertSame('english', $expression->language);
+        $this->assertSame('japanese', $expression->audioLanguage);
+        $this->assertSame('danish,english', $expression->subtitleLanguage);
+        $this->assertTrue($expression->hasMetadataDirectives());
+    }
+
     public function test_it_parses_language_audio_and_subtitle_aliases(): void
     {
         $expression = TorrentSearchExpression::fromQuery('matrix lang:english audio:japanese sub:danish,english,german');
