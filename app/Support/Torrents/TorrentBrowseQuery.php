@@ -157,6 +157,22 @@ final class TorrentBrowseQuery
 
     private function applyMetadataFilter(Builder $query, string $column, string $value): void
     {
+        if ($column === 'type') {
+            $query->where(function (Builder $innerQuery) use ($value): void {
+                $innerQuery
+                    ->whereHas('metadata', function (Builder $metadataQuery) use ($value): void {
+                        $metadataQuery->where('type', $value);
+                    })
+                    ->orWhere(function (Builder $fallbackQuery) use ($value): void {
+                        $fallbackQuery
+                            ->whereDoesntHave('metadata')
+                            ->where('torrents.type', $value);
+                    });
+            });
+
+            return;
+        }
+
         if ($column === 'source') {
             $query->where(function (Builder $innerQuery) use ($value): void {
                 $innerQuery
