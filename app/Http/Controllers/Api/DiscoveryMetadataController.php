@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Torrent;
 use App\Models\TorrentMetadata;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 
 final class DiscoveryMetadataController extends Controller
@@ -32,9 +32,7 @@ final class DiscoveryMetadataController extends Controller
             ->selectRaw(sprintf('%s as value, COUNT(*) as count', $field))
             ->whereNotNull($field)
             ->where($field, '!=', '')
-            ->whereHas('torrent', static function (Builder $query): void {
-                $query->visible();
-            })
+            ->whereIn('torrent_id', Torrent::query()->visible()->select('id'))
             ->groupBy($field)
             ->orderByDesc('count')
             ->orderBy($field)
