@@ -216,6 +216,56 @@ final class DiscoveryMetadataApiTest extends TestCase
         }
     }
 
+    public function test_metadata_discovery_limits_sources_to_the_top_25_entries(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (range(1, 3) as $iteration) {
+            $this->createMetadata(Torrent::factory()->create(), [
+                'source' => 'Top Alpha',
+            ]);
+        }
+
+        foreach (range(1, 2) as $iteration) {
+            $this->createMetadata(Torrent::factory()->create(), [
+                'source' => 'Top Beta',
+            ]);
+        }
+
+        foreach (range(1, 26) as $index) {
+            $this->createMetadata(Torrent::factory()->create(), [
+                'source' => sprintf('Source %02d', $index),
+            ]);
+        }
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.metadata'));
+
+        $response->assertOk();
+
+        $expectedSources = [
+            ['value' => 'Top Alpha', 'count' => 3],
+            ['value' => 'Top Beta', 'count' => 2],
+        ];
+
+        foreach (range(1, 23) as $index) {
+            $expectedSources[] = [
+                'value' => sprintf('Source %02d', $index),
+                'count' => 1,
+            ];
+        }
+
+        $response->assertJsonCount(25, 'sources');
+        $response->assertExactJson([
+            'sources' => $expectedSources,
+            'resolutions' => [],
+            'languages' => [],
+            'audio_languages' => [],
+            'subtitle_languages' => [],
+            'release_groups' => [],
+        ]);
+    }
+
     public function test_metadata_discovery_endpoint_is_readonly(): void
     {
         $user = User::factory()->create();
