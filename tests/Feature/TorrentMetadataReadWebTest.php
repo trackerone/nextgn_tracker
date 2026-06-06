@@ -80,7 +80,7 @@ final class TorrentMetadataReadWebTest extends TestCase
         $response->assertDontSee('Unknown');
     }
 
-    public function test_torrent_browse_renders_type_from_metadata_view_without_lazy_loading(): void
+    public function test_torrent_browse_renders_metadata_filters_without_lazy_loading(): void
     {
         $user = User::factory()->create();
 
@@ -107,11 +107,18 @@ final class TorrentMetadataReadWebTest extends TestCase
         }
 
         $response->assertOk();
-        $response->assertSeeInOrder(['Web Browse Metadata', 'Tv']);
+        $response->assertSee('Filter first, then browse');
+        $response->assertSee('Core filters');
+        $response->assertSee('Metadata filters');
+        $response->assertSee('Type');
+        $response->assertSee('Resolution');
+        $response->assertSee('Source');
+        $response->assertSee('Tv');
         $response->assertSee('1080p');
-        $response->assertSee('BLURAY');
-        $response->assertSee('FLUX');
+        $response->assertSee('bluray');
+        $response->assertSee('Web Browse Metadata');
         $response->assertSee('2025');
+        $response->assertDontSee('FLUX');
     }
 
     public function test_torrent_detail_falls_back_to_legacy_columns_when_metadata_row_is_missing(): void
