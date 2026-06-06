@@ -296,17 +296,28 @@ final class TorrentBrowseTest extends TestCase
     public function test_search_aliases_preserve_multiple_subtitle_language_values(): void
     {
         $user = User::factory()->create();
-        $match = Torrent::factory()->create(['name' => 'Matrix Subtitle Match']);
+        $danish = Torrent::factory()->create(['name' => 'Matrix Danish Match']);
+        $english = Torrent::factory()->create(['name' => 'Matrix English Match']);
         $miss = Torrent::factory()->create(['name' => 'Matrix Subtitle Miss']);
 
         TorrentMetadata::query()->create([
-            'torrent_id' => $match->id,
+            'torrent_id' => $danish->id,
             'title' => 'Matrix',
             'type' => 'movie',
             'year' => 1999,
             'resolution' => '1080p',
             'source' => 'WEB-DL',
-            'subtitle_language' => 'danish,english,german',
+            'subtitle_language' => 'danish',
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $english->id,
+            'title' => 'Matrix',
+            'type' => 'movie',
+            'year' => 1999,
+            'resolution' => '1080p',
+            'source' => 'WEB-DL',
+            'subtitle_language' => 'english',
         ]);
 
         TorrentMetadata::query()->create([
@@ -316,17 +327,18 @@ final class TorrentBrowseTest extends TestCase
             'year' => 1999,
             'resolution' => '1080p',
             'source' => 'WEB-DL',
-            'subtitle_language' => 'danish,english',
+            'subtitle_language' => 'french',
         ]);
 
-        $response = $this->actingAs($user)->get('/torrents?q=matrix sub:danish,english,german');
+        $response = $this->actingAs($user)->get('/torrents?q=matrix sub:danish,english');
 
         $response->assertOk();
         $response->assertViewHas('filters', function (array $filters): bool {
             return $filters['q'] === 'matrix'
-                && $filters['subtitle_language'] === 'danish,english,german';
+                && $filters['subtitle_language'] === 'danish,english';
         });
-        $response->assertSee($match->name);
+        $response->assertSee($danish->name);
+        $response->assertSee($english->name);
         $response->assertDontSee($miss->name);
     }
 
