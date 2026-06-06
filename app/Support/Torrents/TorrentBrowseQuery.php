@@ -44,7 +44,7 @@ final class TorrentBrowseQuery
         }
 
         if ($filters->subtitleLanguage !== '') {
-            $this->applyMetadataWhereHas($query, 'subtitle_language', $filters->subtitleLanguage);
+            $this->applyMetadataAnyHas($query, 'subtitle_language', $filters->subtitleLanguage);
         }
 
         if ($filters->resolution !== '') {
@@ -102,7 +102,7 @@ final class TorrentBrowseQuery
         }
 
         if ($searchExpression->subtitleLanguage !== null) {
-            $this->applyMetadataWhereHas($query, 'subtitle_language', $searchExpression->subtitleLanguage);
+            $this->applyMetadataAnyHas($query, 'subtitle_language', $searchExpression->subtitleLanguage);
         }
 
         if ($searchExpression->year !== null) {
@@ -116,6 +116,31 @@ final class TorrentBrowseQuery
     {
         $query->whereHas('metadata', function (Builder $metadataQuery) use ($column, $value): void {
             $metadataQuery->where($column, $value);
+        });
+    }
+
+    /**
+     * @param  list<string>  $values
+     */
+    private function applyMetadataAnyHas(Builder $query, string $column, string $values): void
+    {
+        $candidates = array_values(array_filter(array_map(
+            static fn (string $value): string => trim(mb_strtolower($value)),
+            explode(',', $values)
+        ), static fn (string $value): bool => $value !== ''));
+
+        if ($candidates === []) {
+            return;
+        }
+
+        $query->where(function (Builder $innerQuery) use ($column, $candidates): void {
+            foreach ($candidates as $index => $value) {
+                $method = $index === 0 ? 'whereHas' : 'orWhereHas';
+
+                $innerQuery->{$method}('metadata', function (Builder $metadataQuery) use ($column, $value): void {
+                    $metadataQuery->whereRaw('LOWER('.$column.') = ?', [$value]);
+                });
+            }
         });
     }
 
