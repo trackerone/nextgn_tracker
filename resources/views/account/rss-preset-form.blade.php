@@ -20,6 +20,7 @@
         $filters = $preset?->filters ?? $queryFilters;
         $value = static fn (string $key, mixed $default = '') => old($key, $filters[$key] ?? $default);
         $freeleechValue = old('freeleech', array_key_exists('freeleech', $filters) ? ($filters['freeleech'] ? '1' : '0') : '');
+        $languageExamples = \App\Support\Languages\LanguageMetadataOptions::examples();
     @endphp
 
     <section class="space-y-6">
@@ -63,6 +64,11 @@
                         @error($field) <p class="mt-1 text-sm text-red-300">{{ $message }}</p> @enderror
                     </div>
                 @endforeach
+
+                <div class="md:col-span-2 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-400">
+                    <p>Language fields accept free text. Examples: {{ implode(', ', $languageExamples) }}.</p>
+                    <p class="mt-1">Use labels or short codes; keep entries concise.</p>
+                </div>
 
                 <div>
                     <label for="freeleech" class="block text-sm font-medium text-slate-300">Freeleech</label>
