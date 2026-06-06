@@ -8,7 +8,7 @@
             <div>
                 <p class="text-sm font-semibold uppercase tracking-wide text-brand">Account</p>
                 <h1 class="mt-2 text-3xl font-bold text-white">My saved views</h1>
-                <p class="mt-2 max-w-3xl text-sm text-slate-400">Saved views let you reuse the same metadata intent across browse, RSS, and watch presets. Alias examples stay consistent: <code>source:web-dl</code>, <code>res:1080p</code>, <code>rg:ntb</code>, and <code>sub:danish,english</code>.</p>
+                <p class="mt-2 max-w-3xl text-sm text-slate-400">Saved views let you reuse the same metadata intent across browse, RSS, and watch presets. Search aliases: <code>source:</code>, <code>res:</code>, <code>rg:</code>, <code>sub:</code>.</p>
             </div>
             <a href="{{ route('torrents.index') }}" class="rounded-full border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-100 hover:border-brand">Browse torrents</a>
         </div>
@@ -16,7 +16,7 @@
         @if ($savedIntents->isEmpty())
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-sm text-slate-300">
                 <p>No saved views yet.</p>
-                <p class="mt-2 text-slate-400">Saved views are created from browse filters, then reused here for RSS and watch presets. Start with examples like <code>source:web-dl</code>, <code>res:1080p</code>, <code>rg:ntb</code>, or <code>sub:danish,english</code>.</p>
+                <p class="mt-2 text-slate-400">Saved views are created from browse filters, then reused here for RSS and watch presets. Start with aliases like <code>source:web-dl</code>, <code>res:1080p</code>, <code>rg:&lt;release-group&gt;</code>, or <code>sub:&lt;language&gt;</code>.</p>
                 <a href="{{ route('torrents.index') }}" class="mt-4 inline-flex rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand">Go to Browse</a>
             </div>
         @else
