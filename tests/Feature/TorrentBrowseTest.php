@@ -51,7 +51,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Metadata filters');
         $response->assertSee('Saved views');
         $response->assertSee('RSS');
-        $response->assertSee('placeholder="Try: source:web-dl res:1080p rg:ntb sub:danish,english"', false);
+        $response->assertSee('placeholder="Try: source:web-dl res:1080p rg:<release-group> sub:<language>"', false);
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void
@@ -90,8 +90,8 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('RSS uses your current filters.');
         $response->assertSee('source:web-dl');
         $response->assertSee('res:1080p');
-        $response->assertSee('rg:ntb');
-        $response->assertSee('sub:danish,english');
+        $response->assertSee('rg:<release-group>');
+        $response->assertSee('sub:<language>');
     }
 
     public function test_browse_rss_action_preserves_supported_query_parameters(): void
@@ -650,7 +650,7 @@ final class TorrentBrowseTest extends TestCase
     public function test_pending_torrents_are_hidden_from_index(): void
     {
         $user = User::factory()->create();
-        $approved = Torrent::factory()->create();
+        $approved = Torrent::factory()->create(['status' => Torrent::STATUS_PENDING]);
         $pending = Torrent::factory()->create(['status' => Torrent::STATUS_PENDING]);
 
         $response = $this->actingAs($user)->get('/torrents');
