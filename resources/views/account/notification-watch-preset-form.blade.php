@@ -60,7 +60,7 @@
                         <label for="{{ $field }}" class="block text-sm font-medium text-slate-300">{{ $label }}</label>
                         <input id="{{ $field }}" name="{{ $field }}" value="{{ $value($field) }}" @if ($field === 'q') placeholder="Try: source:web-dl res:1080p rg:<release-group> sub:<language>" @endif class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500">
                         @if ($field === 'q')
-                            <p class="mt-1 text-xs text-slate-500">Search aliases: <code>source:</code>, <code>res:</code>, <code>rg:</code>, <code>sub:</code>.</p>
+                            <p class="mt-1 text-xs text-slate-500">@include('partials.search-alias-guidance')</p>
                         @endif
                         @error($field) <p class="mt-1 text-sm text-red-300">{{ $message }}</p> @enderror
                     </div>
