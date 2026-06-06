@@ -31,6 +31,22 @@ final class TorrentBrowseQuery
             $this->applyMetadataFilter($query, 'type', $filters->type);
         }
 
+        if ($filters->releaseGroup !== '') {
+            $this->applyMetadataWhereHas($query, 'release_group', $filters->releaseGroup);
+        }
+
+        if ($filters->language !== '') {
+            $this->applyMetadataWhereHas($query, 'language', $filters->language);
+        }
+
+        if ($filters->audioLanguage !== '') {
+            $this->applyMetadataWhereHas($query, 'audio_language', $filters->audioLanguage);
+        }
+
+        if ($filters->subtitleLanguage !== '') {
+            $this->applyMetadataWhereHas($query, 'subtitle_language', $filters->subtitleLanguage);
+        }
+
         if ($filters->resolution !== '') {
             $this->applyMetadataFilter($query, 'resolution', $filters->resolution);
         }
@@ -66,9 +82,7 @@ final class TorrentBrowseQuery
     private function applySearchMetadataDirectives(Builder $query, TorrentSearchExpression $searchExpression): void
     {
         if ($searchExpression->releaseGroup !== null) {
-            $query->whereHas('metadata', function (Builder $metadataQuery) use ($searchExpression): void {
-                $metadataQuery->whereRaw('LOWER(release_group) = ?', [mb_strtolower($searchExpression->releaseGroup)]);
-            });
+            $this->applyMetadataWhereHas($query, 'release_group', $searchExpression->releaseGroup);
         }
 
         if ($searchExpression->source !== null) {
@@ -79,11 +93,30 @@ final class TorrentBrowseQuery
             $this->applyMetadataFilter($query, 'resolution', $searchExpression->resolution);
         }
 
+        if ($searchExpression->language !== null) {
+            $this->applyMetadataWhereHas($query, 'language', $searchExpression->language);
+        }
+
+        if ($searchExpression->audioLanguage !== null) {
+            $this->applyMetadataWhereHas($query, 'audio_language', $searchExpression->audioLanguage);
+        }
+
+        if ($searchExpression->subtitleLanguage !== null) {
+            $this->applyMetadataWhereHas($query, 'subtitle_language', $searchExpression->subtitleLanguage);
+        }
+
         if ($searchExpression->year !== null) {
             $query->whereHas('metadata', function (Builder $metadataQuery) use ($searchExpression): void {
                 $metadataQuery->where('year', $searchExpression->year);
             });
         }
+    }
+
+    private function applyMetadataWhereHas(Builder $query, string $column, string $value): void
+    {
+        $query->whereHas('metadata', function (Builder $metadataQuery) use ($column, $value): void {
+            $metadataQuery->where($column, $value);
+        });
     }
 
     private function applyMetadataFilter(Builder $query, string $column, string $value): void
