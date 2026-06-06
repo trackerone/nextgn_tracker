@@ -77,7 +77,7 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         $webResponse->assertDontSee('legacy nfo');
     }
 
-    public function test_browse_and_moderation_views_share_the_same_metadata_map_output(): void
+    public function test_browse_uses_filter_first_shell_and_keeps_metadata_in_filters(): void
     {
         $staff = User::factory()->staff()->create();
         $member = User::factory()->create();
@@ -119,8 +119,17 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         $this->assertStringContainsString('text/html', (string) $browseResponse->headers->get('content-type'));
         $this->assertStringContainsString('<!DOCTYPE html>', (string) $browseResponse->getContent());
 
-        // Browse surface renders metadata through the shared map contract.
-        $browseResponse->assertSeeInOrder([$approved->name, 'Tv']);
+        $browseResponse->assertSee('Filter first, then browse');
+        $browseResponse->assertSee('Search');
+        $browseResponse->assertSee('Core filters');
+        $browseResponse->assertSee('Order by');
+        $browseResponse->assertSee('Metadata filters');
+        $browseResponse->assertSee('Saved views');
+        $browseResponse->assertSee('RSS');
+        $browseResponse->assertSee($approved->name);
+        $browseResponse->assertDontSee('Tv');
+        $browseResponse->assertDontSee('Best version torrent ID: 9876');
+        $browseResponse->assertDontSee('A better version already exists.');
 
         $moderationResponse = $this->actingAs($staff)
             ->withHeaders(['Accept' => 'text/html'])
