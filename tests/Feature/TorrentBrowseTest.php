@@ -51,6 +51,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Metadata filters');
         $response->assertSee('Saved views');
         $response->assertSee('RSS');
+        $response->assertSee('placeholder="Try: source:web-dl res:1080p rg:ntb sub:danish,english"', false);
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void
@@ -87,6 +88,10 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('RSS');
         $response->assertSee(e(route('rss.feed', ['token' => $user->rss_token])), false);
         $response->assertSee('RSS uses your current filters.');
+        $response->assertSee('source:web-dl');
+        $response->assertSee('res:1080p');
+        $response->assertSee('rg:ntb');
+        $response->assertSee('sub:danish,english');
     }
 
     public function test_browse_rss_action_preserves_supported_query_parameters(): void
