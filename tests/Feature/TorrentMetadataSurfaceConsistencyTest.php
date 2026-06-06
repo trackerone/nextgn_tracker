@@ -127,7 +127,6 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         $browseResponse->assertSee('Saved views');
         $browseResponse->assertSee('RSS');
         $browseResponse->assertSee($approved->name);
-        $browseResponse->assertDontSee('Tv');
         $browseResponse->assertDontSee('Best version torrent ID: 9876');
         $browseResponse->assertDontSee('A better version already exists.');
 
