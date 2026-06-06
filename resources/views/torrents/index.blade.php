@@ -32,7 +32,7 @@
                             name="q"
                             value="{{ $filters['q'] ?? '' }}"
                             class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white focus:border-brand focus:outline-none"
-                            placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024"
+                            placeholder="Title, source:web-dl res:1080p rg:ntb"
                         >
                     </label>
                     <label class="text-sm font-semibold text-slate-300 md:col-span-2">
@@ -116,7 +116,7 @@
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="submit" class="rounded-lg bg-brand px-5 py-2 text-sm font-semibold text-white">Apply</button>
                     <a href="{{ route('torrents.index') }}" class="rounded-lg border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-200">Reset</a>
-                    <span class="text-[11px] text-slate-500">Tip: use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for precise tracker-style search.</span>
+                    <span class="text-[11px] text-slate-500">Try: <code>source:web-dl</code> <code>res:1080p</code> <code>rg:ntb</code> <code>sub:danish,english</code></span>
                 </div>
             </form>
         </div>
