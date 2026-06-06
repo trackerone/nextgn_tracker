@@ -20,6 +20,15 @@ final class DiscoveryTrendingRequest extends FormRequest
         '90d' => 90,
     ];
 
+    /**
+     * @var array<int, string>
+     */
+    private const CATEGORIES = [
+        'sources',
+        'resolutions',
+        'release_groups',
+    ];
+
     public function authorize(): bool
     {
         return true;
@@ -28,9 +37,11 @@ final class DiscoveryTrendingRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $window = $this->input('window');
+        $category = $this->input('category');
 
         $this->merge([
             'window' => is_string($window) ? trim($window) : $window,
+            'category' => is_string($category) ? trim($category) : $category,
         ]);
     }
 
@@ -41,6 +52,7 @@ final class DiscoveryTrendingRequest extends FormRequest
     {
         return [
             'window' => ['nullable', Rule::in(array_keys(self::WINDOW_DAYS))],
+            'category' => ['nullable', Rule::in(self::CATEGORIES)],
         ];
     }
 
@@ -52,5 +64,13 @@ final class DiscoveryTrendingRequest extends FormRequest
         $window = $validated['window'] ?? self::DEFAULT_WINDOW;
 
         return self::WINDOW_DAYS[$window];
+    }
+
+    public function category(): ?string
+    {
+        /** @var array{category?: string|null} $validated */
+        $validated = $this->validated();
+
+        return $validated['category'] ?? null;
     }
 }
