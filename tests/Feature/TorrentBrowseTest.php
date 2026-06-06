@@ -650,7 +650,7 @@ final class TorrentBrowseTest extends TestCase
     public function test_pending_torrents_are_hidden_from_index(): void
     {
         $user = User::factory()->create();
-        $approved = Torrent::factory()->create(['status' => Torrent::STATUS_PENDING]);
+        $approved = Torrent::factory()->create();
         $pending = Torrent::factory()->create(['status' => Torrent::STATUS_PENDING]);
 
         $response = $this->actingAs($user)->get('/torrents');
