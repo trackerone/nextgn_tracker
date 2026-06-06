@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 
 final class DiscoveryMetadataController extends Controller
 {
+    private const AGGREGATE_LIMIT = 25;
+
     public function __invoke(): JsonResponse
     {
         return response()->json([
@@ -36,6 +38,7 @@ final class DiscoveryMetadataController extends Controller
             ->groupBy($field)
             ->orderByDesc('count')
             ->orderBy($field)
+            ->limit(self::AGGREGATE_LIMIT)
             ->get();
 
         $aggregates = [];
