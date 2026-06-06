@@ -15,6 +15,7 @@ final class TorrentBrowseFilters
         public readonly string $subtitleLanguage,
         public readonly string $resolution,
         public readonly string $source,
+        public readonly ?int $year,
         public readonly ?int $categoryId,
         public readonly string $order,
         public readonly string $direction,
@@ -33,6 +34,17 @@ final class TorrentBrowseFilters
         $subtitleLanguage = self::normalizeCommaSeparatedLowercase($input['subtitle_language'] ?? '');
         $resolution = self::normalizeLowercase($input['resolution'] ?? '');
         $source = self::normalizeUppercase($input['source'] ?? '');
+
+        $yearRaw = $input['year'] ?? null;
+        $year = null;
+
+        if ($yearRaw !== null && $yearRaw !== '' && is_numeric($yearRaw)) {
+            $candidateYear = (int) $yearRaw;
+
+            if ($candidateYear >= 1900 && $candidateYear <= 2100) {
+                $year = $candidateYear;
+            }
+        }
 
         $sort = trim((string) ($input['sort'] ?? ''));
         $order = trim((string) ($input['order'] ?? $sort));
@@ -62,6 +74,7 @@ final class TorrentBrowseFilters
             $subtitleLanguage,
             $resolution,
             $source,
+            $year,
             $categoryId,
             $order,
             $direction
@@ -82,6 +95,7 @@ final class TorrentBrowseFilters
             'subtitle_language' => $this->subtitleLanguage,
             'resolution' => $this->resolution,
             'source' => $this->source,
+            'year' => $this->year,
             'category_id' => $this->categoryId,
             'order' => $this->order,
             'direction' => $this->direction,
@@ -125,6 +139,10 @@ final class TorrentBrowseFilters
 
         if ($this->source !== '') {
             $params['source'] = $this->source;
+        }
+
+        if ($this->year !== null) {
+            $params['year'] = $this->year;
         }
 
         if ($this->categoryId !== null) {
