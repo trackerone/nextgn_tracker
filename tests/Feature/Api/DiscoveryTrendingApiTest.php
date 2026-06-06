@@ -191,6 +191,155 @@ final class DiscoveryTrendingApiTest extends TestCase
             ->assertJsonValidationErrors(['window']);
     }
 
+    public function test_trending_discovery_preserves_default_response_shape_when_category_is_omitted(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(1),
+        ]);
+
+        $this->createMetadata($torrent, [
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'release_group' => 'NTB',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending'));
+
+        $response->assertOk();
+        $this->assertSame([
+            'sources',
+            'resolutions',
+            'release_groups',
+        ], array_keys($response->json()));
+    }
+
+    public function test_trending_discovery_can_return_only_sources_category(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(1),
+        ]);
+
+        $this->createMetadata($torrent, [
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'release_group' => 'NTB',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['category' => 'sources']));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [
+                ['value' => 'WEB-DL', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_trending_discovery_can_return_only_resolutions_category(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(1),
+        ]);
+
+        $this->createMetadata($torrent, [
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'release_group' => 'NTB',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['category' => 'resolutions']));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'resolutions' => [
+                ['value' => '1080p', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_trending_discovery_can_return_only_release_groups_category(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(1),
+        ]);
+
+        $this->createMetadata($torrent, [
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'release_group' => 'NTB',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['category' => 'release_groups']));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'release_groups' => [
+                ['value' => 'NTB', 'count' => 1],
+            ],
+        ]);
+    }
+
+    public function test_invalid_category_is_rejected(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', ['category' => 'genres']))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['category']);
+    }
+
+    public function test_trending_discovery_applies_window_when_filtering_by_category(): void
+    {
+        Carbon::setTestNow('2026-06-01 12:00:00');
+
+        $user = User::factory()->create();
+
+        $includedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(7),
+        ]);
+        $excludedTorrent = Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(8),
+        ]);
+
+        $this->createMetadata($includedTorrent, [
+            'source' => 'Within Seven Days',
+        ]);
+
+        $this->createMetadata($excludedTorrent, [
+            'source' => 'Outside Seven Days',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.trending', [
+                'window' => '7d',
+                'category' => 'sources',
+            ]));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [
+                ['value' => 'Within Seven Days', 'count' => 1],
+            ],
+        ]);
+    }
+
     public function test_trending_discovery_returns_recent_visible_metadata_only_with_expected_ordering(): void
     {
         Carbon::setTestNow('2026-06-01 12:00:00');
