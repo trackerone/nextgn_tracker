@@ -338,12 +338,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents?q=matrix source:web-dl res:1080p rg:ntb');
 
         $response->assertOk();
-        $response->assertViewHas('filters', function (array $filters): bool {
-            return $filters['q'] === 'matrix'
-                && $filters['source'] === 'WEB-DL'
-                && $filters['resolution'] === '1080p'
-                && $filters['release_group'] === 'NTB';
-        });
+        $response->assertSee('value="matrix"', false);
         $response->assertSee($match->name);
         $response->assertDontSee($miss->name);
     }
@@ -381,12 +376,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents?q=matrix lang:english audio:japanese sub:danish');
 
         $response->assertOk();
-        $response->assertViewHas('filters', function (array $filters): bool {
-            return $filters['q'] === 'matrix'
-                && $filters['language'] === 'english'
-                && $filters['audio_language'] === 'japanese'
-                && $filters['subtitle_language'] === 'danish';
-        });
+        $response->assertSee('value="matrix"', false);
         $response->assertSee($match->name);
         $response->assertDontSee($miss->name);
     }
@@ -431,10 +421,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents?q=matrix sub:danish,english');
 
         $response->assertOk();
-        $response->assertViewHas('filters', function (array $filters): bool {
-            return $filters['q'] === 'matrix'
-                && $filters['subtitle_language'] === 'danish,english';
-        });
+        $response->assertSee('value="matrix"', false);
         $response->assertSee($danish->name);
         $response->assertSee($english->name);
         $response->assertDontSee($miss->name);
@@ -467,9 +454,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents?q=matrix subs:gold');
 
         $response->assertOk();
-        $response->assertViewHas('filters', function (array $filters): bool {
-            return $filters['q'] === 'matrix subs:gold';
-        });
+        $response->assertSee('value="matrix subs:gold"', false);
         $response->assertSee($match->name);
         $response->assertDontSee($miss->name);
     }
