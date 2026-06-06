@@ -60,7 +60,7 @@
                         </div>
                         <label class="block text-sm font-semibold text-slate-300">
                             <span class="sr-only">Search</span>
-                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand focus:outline-none" placeholder="Title, rg:NTB source:BLURAY res:2160p year:2024">
+                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand focus:outline-none" placeholder="Try: source:web-dl res:1080p rg:ntb sub:danish,english">
                         </label>
                     </div>
 
@@ -174,7 +174,7 @@
                     <a href="{{ route('account.saved-intents.index') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
                     <a href="{{ $rssUrl }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
                 </div>
-                <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: use <code>rg:</code>, <code>source:</code>, <code>res:</code>, or <code>year:</code> for precise tracker-style search.</p>
+                <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: try <code>source:web-dl</code>, <code>res:1080p</code>, <code>rg:ntb</code>, or <code>sub:danish,english</code>.</p>
             </div>
         </aside>
 
