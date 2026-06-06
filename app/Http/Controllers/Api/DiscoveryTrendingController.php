@@ -14,15 +14,30 @@ final class DiscoveryTrendingController extends Controller
 {
     private const AGGREGATE_LIMIT = 25;
 
+    /**
+     * @var array<string, string>
+     */
+    private const CATEGORY_FIELDS = [
+        'sources' => 'source',
+        'resolutions' => 'resolution',
+        'release_groups' => 'release_group',
+    ];
+
     public function __invoke(DiscoveryTrendingRequest $request): JsonResponse
     {
         $windowDays = $request->windowDays();
+        $category = $request->category();
+        $categories = $category === null
+            ? self::CATEGORY_FIELDS
+            : [$category => self::CATEGORY_FIELDS[$category]];
 
-        return response()->json([
-            'sources' => $this->aggregate('source', $windowDays),
-            'resolutions' => $this->aggregate('resolution', $windowDays),
-            'release_groups' => $this->aggregate('release_group', $windowDays),
-        ]);
+        $payload = [];
+
+        foreach ($categories as $responseKey => $field) {
+            $payload[$responseKey] = $this->aggregate($field, $windowDays);
+        }
+
+        return response()->json($payload);
     }
 
     /**
