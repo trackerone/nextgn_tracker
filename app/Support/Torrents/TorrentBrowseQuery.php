@@ -125,9 +125,6 @@ final class TorrentBrowseQuery
         });
     }
 
-    /**
-     * @param  list<string>  $values
-     */
     private function applyMetadataAnyHas(Builder $query, string $column, string $values): void
     {
         $candidates = array_values(array_filter(array_map(
