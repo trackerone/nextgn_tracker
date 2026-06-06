@@ -120,6 +120,10 @@ final class TorrentBrowseQuery
 
     private function applyMetadataWhereHas(Builder $query, string $column, string $value): void
     {
+        if (! in_array($column, ['release_group', 'language', 'audio_language'], true)) {
+            throw new \InvalidArgumentException('Unsupported metadata column.');
+        }
+
         $query->whereHas('metadata', function (Builder $metadataQuery) use ($column, $value): void {
             $metadataQuery->where($column, $value);
         });
@@ -127,6 +131,10 @@ final class TorrentBrowseQuery
 
     private function applyMetadataAnyHas(Builder $query, string $column, string $values): void
     {
+        if ($column !== 'subtitle_language') {
+            throw new \InvalidArgumentException('Unsupported metadata column.');
+        }
+
         $candidates = array_values(array_filter(array_map(
             static fn (string $value): string => trim(mb_strtolower($value)),
             explode(',', $values)
@@ -136,12 +144,12 @@ final class TorrentBrowseQuery
             return;
         }
 
-        $query->where(function (Builder $innerQuery) use ($column, $candidates): void {
+        $query->where(function (Builder $innerQuery) use ($candidates): void {
             foreach ($candidates as $index => $value) {
                 $method = $index === 0 ? 'whereHas' : 'orWhereHas';
 
-                $innerQuery->{$method}('metadata', function (Builder $metadataQuery) use ($column, $value): void {
-                    $metadataQuery->whereRaw('LOWER('.$column.') = ?', [$value]);
+                $innerQuery->{$method}('metadata', function (Builder $metadataQuery) use ($value): void {
+                    $metadataQuery->whereRaw('LOWER(subtitle_language) = ?', [$value]);
                 });
             }
         });
@@ -149,16 +157,38 @@ final class TorrentBrowseQuery
 
     private function applyMetadataFilter(Builder $query, string $column, string $value): void
     {
-        $query->where(function (Builder $innerQuery) use ($column, $value): void {
-            $innerQuery
-                ->whereHas('metadata', function (Builder $metadataQuery) use ($column, $value): void {
-                    $metadataQuery->where($column, $value);
-                })
-                ->orWhere(function (Builder $fallbackQuery) use ($column, $value): void {
-                    $fallbackQuery
-                        ->whereDoesntHave('metadata')
-                        ->where("torrents.{$column}", $value);
-                });
-        });
+        if ($column === 'source') {
+            $query->where(function (Builder $innerQuery) use ($value): void {
+                $innerQuery
+                    ->whereHas('metadata', function (Builder $metadataQuery) use ($value): void {
+                        $metadataQuery->where('source', $value);
+                    })
+                    ->orWhere(function (Builder $fallbackQuery) use ($value): void {
+                        $fallbackQuery
+                            ->whereDoesntHave('metadata')
+                            ->where('torrents.source', $value);
+                    });
+            });
+
+            return;
+        }
+
+        if ($column === 'resolution') {
+            $query->where(function (Builder $innerQuery) use ($value): void {
+                $innerQuery
+                    ->whereHas('metadata', function (Builder $metadataQuery) use ($value): void {
+                        $metadataQuery->where('resolution', $value);
+                    })
+                    ->orWhere(function (Builder $fallbackQuery) use ($value): void {
+                        $fallbackQuery
+                            ->whereDoesntHave('metadata')
+                            ->where('torrents.resolution', $value);
+                    });
+            });
+
+            return;
+        }
+
+        throw new \InvalidArgumentException('Unsupported metadata column.');
     }
 }

@@ -21,8 +21,7 @@ All aliases are case-insensitive.
 
 ## Examples
 
-- `q=Matrix RG:NTB res:2160p`
-- `q=Matrix SoUrCe:BLURAY SuB:danish,english`
+- `q=Matrix rg:NTB res:2160p`
 - `q=Spider-Man lang:english audio:japanese sub:danish,english`
 - `q=Docu foo:bar` keeps `foo:bar` in the free-text query
 

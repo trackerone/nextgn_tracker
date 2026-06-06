@@ -26,7 +26,7 @@ final class TorrentSearchExpressionTest extends TestCase
 
     public function test_it_is_case_insensitive_and_preserves_unknown_alias_tokens(): void
     {
-        $expression = TorrentSearchExpression::fromQuery('Matrix RG:ntb SoUrCe:web-dl Foo:Bar LANG:ENGLISH AUDIO:JAPANESE SuB:DANISH,ENGLISH');
+        $expression = TorrentSearchExpression::fromQuery('Matrix RG:ntb SOURCE:web-dl Foo:Bar LANG:ENGLISH AUDIO:JAPANESE SUB:DANISH,ENGLISH');
 
         $this->assertSame('Matrix Foo:Bar', $expression->text);
         $this->assertSame('NTB', $expression->releaseGroup);
