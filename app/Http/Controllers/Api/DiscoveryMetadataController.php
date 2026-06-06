@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Models\TorrentMetadata;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Collection;
 
 final class DiscoveryMetadataController extends Controller
 {
@@ -29,7 +28,6 @@ final class DiscoveryMetadataController extends Controller
      */
     private function aggregate(string $field): array
     {
-        /** @var Collection<int, object{value: string, count: int|string}> $rows */
         $rows = TorrentMetadata::query()
             ->selectRaw(sprintf('%s as value, COUNT(*) as count', $field))
             ->whereNotNull($field)
@@ -42,12 +40,15 @@ final class DiscoveryMetadataController extends Controller
             ->orderBy($field)
             ->get();
 
-        return $rows
-            ->map(static fn (object $row): array => [
-                'value' => (string) $row->value,
-                'count' => (int) $row->count,
-            ])
-            ->values()
-            ->all();
+        $aggregates = [];
+
+        foreach ($rows as $row) {
+            $aggregates[] = [
+                'value' => (string) $row->getAttribute('value'),
+                'count' => (int) $row->getAttribute('count'),
+            ];
+        }
+
+        return $aggregates;
     }
 }
