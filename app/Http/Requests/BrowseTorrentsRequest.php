@@ -48,6 +48,7 @@ final class BrowseTorrentsRequest extends FormRequest
             'subtitle_language' => $this->stringOrNull('subtitle_language') ?? $searchExpression->subtitleLanguage,
             'resolution' => $this->stringOrNull('resolution') ?? $searchExpression->resolution,
             'source' => $this->stringOrNull('source') ?? $searchExpression->source,
+            'year' => $this->input('year') ?? $searchExpression->year,
             'direction' => is_string($this->input('direction'))
                 ? strtolower(trim($this->string('direction')->value()))
                 : $this->input('direction'),
@@ -73,6 +74,7 @@ final class BrowseTorrentsRequest extends FormRequest
             'subtitle_language' => ['nullable', 'string', 'max:255'],
             'resolution' => ['nullable', 'string', 'max:32'],
             'source' => ['nullable', 'string', 'max:32'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'category' => ['nullable', 'integer', 'exists:categories,id'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'sort' => ['nullable', Rule::in(self::ORDER_OPTIONS)],
