@@ -98,7 +98,7 @@ Saved presets support these filter keys: `q`, `type`, `resolution`, `source`, `r
 /rss/{token}?type=movie&subtitle_language=da&resolution=2160p
 ```
 
-Language filters accept ISO-like short values such as `da`, `no`, `nb`, `nn`, `sv`, `fi`, and `en`, plus common names such as `danish`, `dansk`, `norwegian`, `svensk`, `swedish`, `finnish`, and `english`. Matching is case-insensitive.
+Language filters accept ISO-like short values such as `da`, `no`, `nb`, `nn`, `sv`, `fi`, and `en`, plus common names such as `danish`, `dansk`, `norwegian`, `svensk`, `swedish`, `finnish`, and `english`. Matching is case-insensitive. Language/subtitle matching depends on uploaded metadata being populated.
 
 ## Security boundaries
 

@@ -16,10 +16,42 @@ final class TorrentUploadRules
         $nfoMimeRule = 'mimetypes:'.implode(',', self::configList('upload.nfo.allowed_mimes'));
         $nfoExtensionRule = 'extensions:'.implode(',', self::configList('upload.nfo.allowed_extensions'));
 
+        $safeMetadataText = [
+            'nullable',
+            'string',
+            'max:255',
+            static function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value === null || $value === '') {
+                    return;
+                }
+
+                if (! is_string($value)) {
+                    return;
+                }
+
+                if (str_contains($value, '<') || str_contains($value, '>')) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+
+                    return;
+                }
+
+                if (preg_match('#^[A-Za-z0-9 .,_/;-]+$#', $value) !== 1) {
+                    $fail('The '.$attribute.' field contains invalid characters.');
+                }
+            },
+        ];
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'type' => ['required', 'string', 'in:movie,tv,music,game,software,other'],
+            'title' => ['nullable', 'string', 'max:255'],
+            'year' => ['nullable', 'integer', 'between:1900,'.(((int) date('Y')) + 2)],
+            'release_group' => ['nullable', 'string', 'max:120'],
+            'language' => $safeMetadataText,
+            'audio_language' => $safeMetadataText,
+            'subtitle_language' => $safeMetadataText,
+            'subtitles' => $safeMetadataText,
             'description' => ['nullable', 'string'],
             'tags_input' => ['nullable', 'string', 'max:512'],
             'tags' => ['nullable', 'array'],

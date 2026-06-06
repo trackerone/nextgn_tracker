@@ -13,6 +13,7 @@ use App\Services\Security\SanitizationService;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\DuplicateTorrentResolver;
 use App\Services\Torrents\PersistTorrentMetadataService;
+use App\Services\Torrents\TorrentExtractedMetadata;
 use App\Services\Torrents\TorrentIngestService;
 use App\Services\Torrents\UploadEligibilityReason;
 use App\Services\Torrents\UploadEligibilityService;
@@ -125,12 +126,7 @@ final class SubmitTorrentUploadAction
         try {
             $this->metadataPersistence->persist(
                 $torrent,
-                CanonicalTorrentMetadata::fromExtractedMetadata(
-                    $metadata,
-                    $data['type'] ?? null,
-                    $data['resolution'] ?? null,
-                    $data['source'] ?? null,
-                ),
+                $this->canonicalMetadataForUpload($metadata, $data),
             );
 
             $this->auditLogger->log('torrent.created', $torrent, [
@@ -156,6 +152,37 @@ final class SubmitTorrentUploadAction
             is_array($decision->context['release_advice'] ?? null) ? $decision->context['release_advice'] : null,
             $metadataEnrichmentOutcome,
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function canonicalMetadataForUpload(TorrentExtractedMetadata $metadata, array $data): CanonicalTorrentMetadata
+    {
+        $attributes = CanonicalTorrentMetadata::fromExtractedMetadata(
+            $metadata,
+            is_string($data['type'] ?? null) ? $data['type'] : null,
+            is_string($data['resolution'] ?? null) ? $data['resolution'] : null,
+            is_string($data['source'] ?? null) ? $data['source'] : null,
+        )->toPersistenceArray();
+
+        foreach ([
+            'title',
+            'year',
+            'release_group',
+            'imdb_id',
+            'tmdb_id',
+            'language',
+            'audio_language',
+            'subtitle_language',
+            'subtitles',
+        ] as $field) {
+            if (array_key_exists($field, $data)) {
+                $attributes[$field] = $data[$field];
+            }
+        }
+
+        return CanonicalTorrentMetadata::fromArray($attributes);
     }
 
     /**

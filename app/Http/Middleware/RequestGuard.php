@@ -15,10 +15,17 @@ use Symfony\Component\HttpFoundation\Response;
 final class RequestGuard
 {
     private const MALICIOUS_PATTERNS = [
-        'javascript\\s*:',
-        'data\\s*:\\s*(?:text|application)/(?:html|javascript)\\s*;base64',
-        '"__proto__"\\s*:',
-        '(\\{|\\[)\\s*\\"(?:__proto__|constructor)\\"',
+        'javascript\s*:',
+        'data\s*:\s*(?:text|application)/(?:html|javascript)\s*;base64',
+        '"__proto__"\s*:',
+        '(\{|\[)\s*\"(?:__proto__|constructor)\"',
+    ];
+
+    private const UPLOAD_METADATA_PRESERVED_FIELDS = [
+        'language',
+        'audio_language',
+        'subtitle_language',
+        'subtitles',
     ];
 
     private const SENSITIVE_KEY_TERMS = [
@@ -42,7 +49,10 @@ final class RequestGuard
      */
     public function handle(Request $request, Closure $next): Response
     {
-        [$sanitized, $incidents] = $this->sanitizePayload($request->all());
+        [$sanitized, $incidents] = $this->sanitizePayload(
+            $request->all(),
+            preserveUploadMetadata: $this->isTorrentUploadRequest($request),
+        );
 
         if ($incidents !== []) {
             $this->logIncident($request, $incidents);
@@ -60,8 +70,12 @@ final class RequestGuard
      * @param  array<int, string>  $keyPath
      * @return array{0: array<mixed>, 1: array<int, array<string, bool|int|string>>}
      */
-    private function sanitizePayload(array $payload, array $keyPath = [], bool $sensitiveAncestor = false): array
-    {
+    private function sanitizePayload(
+        array $payload,
+        array $keyPath = [],
+        bool $sensitiveAncestor = false,
+        bool $preserveUploadMetadata = false,
+    ): array {
         $sanitized = [];
         $incidents = [];
 
@@ -77,7 +91,12 @@ final class RequestGuard
             }
 
             if (is_array($value)) {
-                [$childSanitized, $childIncidents] = $this->sanitizePayload($value, $currentPath, $isSensitive);
+                [$childSanitized, $childIncidents] = $this->sanitizePayload(
+                    $value,
+                    $currentPath,
+                    $isSensitive,
+                    $preserveUploadMetadata,
+                );
 
                 $sanitized[$key] = $childSanitized;
                 $incidents = array_merge($incidents, $childIncidents);
@@ -86,15 +105,17 @@ final class RequestGuard
             }
 
             if (is_string($value)) {
-
-                $cleanValue = $this->sanitizer->sanitizeString($value);
-
-                // Block clearly malicious protocol payloads
                 if ($this->containsMaliciousPayload($value)) {
                     $incidents[] = $this->incidentForValue($currentPath, $value, $isSensitive);
                 }
 
-                $sanitized[$key] = $cleanValue;
+                if ($this->shouldPreserveUploadMetadataField($currentPath, $preserveUploadMetadata)) {
+                    $sanitized[$key] = $value;
+
+                    continue;
+                }
+
+                $sanitized[$key] = $this->sanitizer->sanitizeString($value);
 
                 continue;
             }
@@ -103,6 +124,32 @@ final class RequestGuard
         }
 
         return [$sanitized, $incidents];
+    }
+
+    private function isTorrentUploadRequest(Request $request): bool
+    {
+        if ($request->routeIs('torrents.store') || $request->routeIs('api.uploads.store')) {
+            return true;
+        }
+
+        return $request->isMethod('POST')
+            && ($request->is('torrents') || $request->is('api/uploads'));
+    }
+
+    /**
+     * @param  array<int, string>  $keyPath
+     */
+    private function shouldPreserveUploadMetadataField(array $keyPath, bool $preserveUploadMetadata): bool
+    {
+        if (! $preserveUploadMetadata) {
+            return false;
+        }
+
+        if (count($keyPath) !== 1) {
+            return false;
+        }
+
+        return in_array($keyPath[0], self::UPLOAD_METADATA_PRESERVED_FIELDS, true);
     }
 
     private function containsMaliciousPayload(string $value): bool
@@ -142,10 +189,10 @@ final class RequestGuard
 
     private function isSensitiveKey(string $key): bool
     {
-        $normalizedKey = Str::lower(str_replace(['-', ' '], '_', $key));
+        $normalized = Str::lower($key);
 
         foreach (self::SENSITIVE_KEY_TERMS as $term) {
-            if (str_contains($normalizedKey, $term)) {
+            if (str_contains($normalized, $term)) {
                 return true;
             }
         }
@@ -155,7 +202,7 @@ final class RequestGuard
 
     private function truncateForLog(string $value): string
     {
-        return Str::limit($value, 120);
+        return Str::limit($value, 120, '...');
     }
 
     /**
@@ -163,13 +210,10 @@ final class RequestGuard
      */
     private function logIncident(Request $request, array $incidents): void
     {
-        Log::build([
-            'driver' => 'single',
-            'path' => storage_path('logs/security.log'),
-            'level' => 'warning',
-        ])->warning('RequestGuard blocked payload', [
-            'ip' => $request->ip(),
+        Log::warning('request_guard.malicious_payload_detected', [
             'path' => $request->path(),
+            'method' => $request->method(),
+            'ip' => $request->ip(),
             'incidents' => $incidents,
         ]);
     }

@@ -15,7 +15,7 @@
             <div class="mt-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
         @endif
 
-        @if ($errors->any())
+        @if (isset($errors) && $errors->any())
             <div class="mt-5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                 <ul class="list-disc space-y-1 pl-5">
                     @foreach ($errors->all() as $error)
@@ -26,6 +26,7 @@
         @endif
 
         @php($releaseAdvice = is_array($releaseAdvice ?? null) ? $releaseAdvice : [])
+        @php($languageExamples = \App\Support\Languages\LanguageMetadataOptions::examples())
         @if (($releaseAdvice['exact_duplicate_exists'] ?? false) === true)
             <div class="mt-5 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-100">
                 <strong>Exact duplicate detected.</strong>
@@ -54,13 +55,15 @@
                 <p class="mb-3 text-xs text-slate-400">Upload the private <code>.torrent</code> file first.</p>
                 <label for="torrent_file">Torrent file (.torrent)</label><input type="file" name="torrent_file" id="torrent_file" accept=".torrent,application/x-bittorrent" required aria-describedby="torrent_file_help">
                 <p class="mt-1 text-xs text-slate-500" id="torrent_file_help">Use an unmodified <code>.torrent</code> file with a valid bencoded payload.</p>
-                @error('torrent_file')<p class="mt-1 text-xs text-rose-300">{{ $message }}</p>@enderror
+                @if (isset($errors) && $errors->has('torrent_file'))<p class="mt-1 text-xs text-rose-300">{{ $errors->first('torrent_file') }}</p>@endif
             </fieldset>
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
                 <legend class="px-1 text-base font-semibold text-white">2. Release metadata</legend>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label for="name">Release name</label><input type="text" id="name" name="name" value="{{ old('name') }}" required></div>
+                    <div><label for="title">Title</label><input type="text" id="title" name="title" value="{{ old('title') }}" placeholder="Movie or series title"></div>
+                    <div><label for="year">Year</label><input type="number" id="year" name="year" value="{{ old('year') }}" min="1900" max="{{ now()->year + 2 }}" placeholder="2026"></div>
                     <div>
                         <label for="category_id">Category</label>
                         <select id="category_id" name="category_id"><option value="">Select a category</option>@foreach ($categories as $category)<option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select>
@@ -68,10 +71,18 @@
                     <div><label for="type">Type</label><select id="type" name="type" required>@php($types = ['movie', 'tv', 'music', 'game', 'software', 'other'])@foreach ($types as $type)<option value="{{ $type }}" @selected(old('type', 'movie') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></div>
                     <div><label for="source">Source</label><input type="text" id="source" name="source" value="{{ old('source') }}" placeholder="WEB, BluRay, HDTV"></div>
                     <div><label for="resolution">Resolution</label><input type="text" id="resolution" name="resolution" value="{{ old('resolution') }}" placeholder="2160p, 1080p, 720p"></div>
+                    <div><label for="release_group">Release group</label><input type="text" id="release_group" name="release_group" value="{{ old('release_group') }}" placeholder="NTB, FLUX, GRP"></div>
+                    <div><label for="imdb_id">IMDb ID</label><input type="text" id="imdb_id" name="imdb_id" value="{{ old('imdb_id') }}" placeholder="tt1234567"></div>
+                    <div><label for="tmdb_id">TMDB ID</label><input type="text" id="tmdb_id" name="tmdb_id" value="{{ old('tmdb_id') }}" placeholder="9988"></div>
                     <div><label for="tags_input">Tags</label><input type="text" id="tags_input" name="tags_input" value="{{ old('tags_input') }}" placeholder="scene, remux, internal"></div>
                     <div><label for="codecs_video">Video codec</label><input type="text" id="codecs_video" name="codecs[video]" value="{{ old('codecs.video') }}" placeholder="H.264, H.265, AV1"></div>
                     <div><label for="codecs_audio">Audio codec</label><input type="text" id="codecs_audio" name="codecs[audio]" value="{{ old('codecs.audio') }}" placeholder="AAC, DTS, FLAC"></div>
+                    <div><label for="language">Language</label><input type="text" id="language" name="language" value="{{ old('language') }}" placeholder="English or en"></div>
+                    <div><label for="audio_language">Audio language</label><input type="text" id="audio_language" name="audio_language" value="{{ old('audio_language') }}" placeholder="Japanese or ja"></div>
+                    <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="Spanish or es"></div>
+                    <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="English, Japanese, Spanish"></div>
                 </div>
+                <p class="mt-3 text-xs text-slate-500">Examples: {{ implode(', ', $languageExamples) }}. Use labels or short codes; multiple subtitles can be comma-separated.</p>
                 <div class="mt-4"><label for="description">Description (Markdown supported)</label><textarea id="description" name="description" rows="6">{{ old('description') }}</textarea></div>
             </fieldset>
 

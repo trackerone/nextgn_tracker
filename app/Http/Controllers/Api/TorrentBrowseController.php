@@ -49,7 +49,7 @@ final class TorrentBrowseController extends Controller
             ->with([
                 'category:id,name,slug',
                 'uploader:id,name',
-                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id,nfo',
+                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id,nfo',
                 'externalMetadata:id,torrent_id,imdb_id,tmdb_id,trakt_id,trakt_slug,title,year,media_type,overview,poster_url,backdrop_url,tmdb_url,imdb_url,trakt_url,enrichment_status',
             ]);
 

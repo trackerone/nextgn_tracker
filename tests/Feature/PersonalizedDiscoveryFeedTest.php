@@ -30,7 +30,7 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
         ]);
 
         $relevant = Torrent::factory()->create(['name' => 'Signal S01E01 1080p WEB-DL']);
-        $irrelevant = Torrent::factory()->create(['name' => 'Different Show S01E01 2160p WEB-DL']);
+        $irrelevant = Torrent::factory()->unapproved()->create(['name' => 'Different Show S01E01 2160p WEB-DL']);
 
         TorrentMetadata::query()->insert([
             [

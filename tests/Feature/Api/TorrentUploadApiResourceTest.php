@@ -89,6 +89,29 @@ final class TorrentUploadApiResourceTest extends TestCase
         $this->assertDatabaseCount('torrents', 0);
     }
 
+    public function test_html_like_language_metadata_is_rejected(): void
+    {
+        Storage::fake('torrents');
+
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson(route('api.uploads.store'), [
+            'name' => 'API Unsafe Metadata Upload',
+            'type' => 'movie',
+            'language' => '<script>alert(1)</script>',
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'api-unsafe-metadata.torrent',
+                $this->sampleTorrentPayload('API Unsafe Metadata Upload'),
+                'application/x-bittorrent'
+            ),
+        ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['language']);
+
+        $this->assertDatabaseCount('torrents', 0);
+    }
+
     public function test_my_uploads_response_exposes_only_expected_fields(): void
     {
         $user = User::factory()->create();

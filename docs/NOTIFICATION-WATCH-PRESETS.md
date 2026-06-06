@@ -29,7 +29,7 @@ The RSS `limit` filter is ignored for notification watch presets because matchin
 
 ## Relationship to RSS presets
 
-RSS presets and notification watch presets share the same metadata-aware filter semantics through `RssFeedFilterNormalizer` and the RSS filter matcher. RSS presets remain public-token feed shortcuts, while notification watch presets are account-owned internal notification rules with no public identifier or URL.
+RSS presets and notification watch presets share the same metadata-aware filter semantics through `RssFeedFilterNormalizer` and the RSS filter matcher. Language/subtitle matching depends on uploaded metadata being populated. RSS presets remain public-token feed shortcuts, while notification watch presets are account-owned internal notification rules with no public identifier or URL.
 
 ## Trigger point
 

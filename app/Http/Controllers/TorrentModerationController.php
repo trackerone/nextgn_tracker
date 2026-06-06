@@ -55,7 +55,7 @@ class TorrentModerationController extends Controller
             ->with([
                 'category:id,name',
                 'uploader:id,name',
-                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,imdb_id,tmdb_id,nfo,raw_payload',
+                'metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id,nfo,raw_payload',
             ])
             ->pending()
             ->orderByDesc('uploaded_at')

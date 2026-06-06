@@ -55,17 +55,21 @@ The Docker image runs `composer install --no-dev --prefer-dist --no-interaction 
 
 ## Docker CI coverage
 
-`.github/workflows/ci-docker.yml` runs on pushes and pull requests targeting `main` or `develop`. It verifies:
+`.github/workflows/ci-docker.yml` runs on pushes and pull requests targeting `main` or `develop`. It is a container/runtime smoke test, not a full application acceptance test. It verifies:
 
 - The Docker image builds with `docker build -t nextgn-tracker:test .`.
 - PHP is available with `docker run --rm nextgn-tracker:test php -v`.
 - FrankenPHP is available with `frankenphp version` or `frankenphp --version`.
 - The default runtime user is not root.
-- A lightweight FrankenPHP startup smoke test can serve `/health` with safe dummy production environment values and a temporary SQLite database file.
+- The FrankenPHP/Caddy configuration validates inside the built image without starting the Laravel entrypoint.
+
+The workflow intentionally does not prove full Laravel application readiness. A full production startup smoke would currently require the entrypoint to run Laravel cache warmup (`config:cache`, `route:cache`, and `view:cache`) against dummy SQLite state before FrankenPHP starts, which is not deterministic enough for a reliable container smoke test yet.
+
+Full Laravel production startup smoke testing is deferred until the app has a deterministic test environment with migrations and a seeded database suitable for production boot checks. Until then, full app readiness remains covered by the separate PHP test suite and should be expanded with future deployment smoke tests that run against real deployment configuration.
 
 ## Healthcheck status
 
-No Docker `HEALTHCHECK` instruction is added in this change. The application has a lightweight `/health` route that is suitable for CI smoke testing, but runtime healthcheck behavior should be decided with deployment-specific timeout, interval, and failure-threshold expectations rather than introduced implicitly.
+No Docker `HEALTHCHECK` instruction is added in this change. Runtime healthcheck behavior should be decided with deployment-specific timeout, interval, and failure-threshold expectations rather than introduced implicitly.
 
 ## Known future improvements
 
