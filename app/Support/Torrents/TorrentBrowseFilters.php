@@ -9,6 +9,10 @@ final class TorrentBrowseFilters
     public function __construct(
         public readonly string $q,
         public readonly string $type,
+        public readonly string $releaseGroup,
+        public readonly string $language,
+        public readonly string $audioLanguage,
+        public readonly string $subtitleLanguage,
         public readonly string $resolution,
         public readonly string $source,
         public readonly ?int $categoryId,
@@ -23,8 +27,12 @@ final class TorrentBrowseFilters
     {
         $q = trim((string) ($input['q'] ?? ''));
         $type = trim((string) ($input['type'] ?? ''));
-        $resolution = trim((string) ($input['resolution'] ?? ''));
-        $source = trim((string) ($input['source'] ?? ''));
+        $releaseGroup = self::normalizeUppercase($input['release_group'] ?? '');
+        $language = self::normalizeLowercase($input['language'] ?? '');
+        $audioLanguage = self::normalizeLowercase($input['audio_language'] ?? '');
+        $subtitleLanguage = self::normalizeCommaSeparatedLowercase($input['subtitle_language'] ?? '');
+        $resolution = self::normalizeLowercase($input['resolution'] ?? '');
+        $source = self::normalizeUppercase($input['source'] ?? '');
 
         $sort = trim((string) ($input['sort'] ?? ''));
         $order = trim((string) ($input['order'] ?? $sort));
@@ -45,7 +53,19 @@ final class TorrentBrowseFilters
             $direction = 'desc';
         }
 
-        return new self($q, $type, $resolution, $source, $categoryId, $order, $direction);
+        return new self(
+            $q,
+            $type,
+            $releaseGroup,
+            $language,
+            $audioLanguage,
+            $subtitleLanguage,
+            $resolution,
+            $source,
+            $categoryId,
+            $order,
+            $direction
+        );
     }
 
     /**
@@ -56,6 +76,10 @@ final class TorrentBrowseFilters
         return [
             'q' => $this->q,
             'type' => $this->type,
+            'release_group' => $this->releaseGroup,
+            'language' => $this->language,
+            'audio_language' => $this->audioLanguage,
+            'subtitle_language' => $this->subtitleLanguage,
             'resolution' => $this->resolution,
             'source' => $this->source,
             'category_id' => $this->categoryId,
@@ -79,6 +103,22 @@ final class TorrentBrowseFilters
             $params['type'] = $this->type;
         }
 
+        if ($this->releaseGroup !== '') {
+            $params['release_group'] = $this->releaseGroup;
+        }
+
+        if ($this->language !== '') {
+            $params['language'] = $this->language;
+        }
+
+        if ($this->audioLanguage !== '') {
+            $params['audio_language'] = $this->audioLanguage;
+        }
+
+        if ($this->subtitleLanguage !== '') {
+            $params['subtitle_language'] = $this->subtitleLanguage;
+        }
+
         if ($this->resolution !== '') {
             $params['resolution'] = $this->resolution;
         }
@@ -100,5 +140,38 @@ final class TorrentBrowseFilters
         }
 
         return $params;
+    }
+
+    private static function normalizeUppercase(mixed $value): string
+    {
+        if (! is_scalar($value)) {
+            return '';
+        }
+
+        return trim(mb_strtoupper((string) $value));
+    }
+
+    private static function normalizeLowercase(mixed $value): string
+    {
+        if (! is_scalar($value)) {
+            return '';
+        }
+
+        return trim(mb_strtolower((string) $value));
+    }
+
+    private static function normalizeCommaSeparatedLowercase(mixed $value): string
+    {
+        if (! is_scalar($value)) {
+            return '';
+        }
+
+        $parts = array_map(
+            static fn (string $part): string => trim(mb_strtolower($part)),
+            explode(',', (string) $value)
+        );
+        $parts = array_values(array_filter($parts, static fn (string $part): bool => $part !== ''));
+
+        return implode(',', $parts);
     }
 }
