@@ -39,6 +39,20 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
+    public function test_authenticated_user_sees_filter_first_browse_shell(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('Filter first, then browse');
+        $response->assertSee('Metadata filters');
+        $response->assertSee('Saved views');
+        $response->assertSee('RSS');
+    }
+
     public function test_authenticated_user_sees_browse_save_view_action(): void
     {
         $user = User::factory()->create();
@@ -169,19 +183,15 @@ final class TorrentBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('Dune Part Two');
         $response->assertSee('(2024)', false);
-        $response->assertSee('Best');
         $response->assertDontSee('Best version');
-        $response->assertSee('Type / res');
-        $response->assertSee('2160p');
-        $response->assertSee('1080p');
-        $response->assertSeeTextInOrder(['Type / res', 'Size', 'Files', 'S', 'L', 'C', 'Added', 'Group']);
+        $response->assertSee('Name / release title');
         $response->assertSee('87 seeders');
         $response->assertSee('13 leechers');
         $response->assertSee('52 completed snatches');
         $response->assertSee('26 seeders');
         $response->assertSee('8 leechers');
         $response->assertSee('14 completed snatches');
-        $response->assertSeeTextInOrder(['Best', $best->name, $alternative->name]);
+        $response->assertSeeTextInOrder([$best->name, $alternative->name]);
     }
 
     public function test_grouped_browse_shows_incomplete_metadata_warning_for_missing_critical_fields(): void
