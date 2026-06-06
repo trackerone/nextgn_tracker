@@ -53,6 +53,24 @@ final class DiscoveryMetadataApiTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_metadata_discovery_returns_empty_arrays_when_no_visible_metadata_exists(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->getJson(route('api.discovery.metadata'));
+
+        $response->assertOk();
+        $response->assertExactJson([
+            'sources' => [],
+            'resolutions' => [],
+            'languages' => [],
+            'audio_languages' => [],
+            'subtitle_languages' => [],
+            'release_groups' => [],
+        ]);
+    }
+
     public function test_metadata_discovery_returns_the_expected_contract_shape_and_ordering(): void
     {
         $user = User::factory()->create();
