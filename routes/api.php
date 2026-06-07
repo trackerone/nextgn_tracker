@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
+use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
 use App\Http\Controllers\Api\DiscoveryTrendingController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
@@ -55,6 +56,9 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/m
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
+
+    Route::get('/discovery/popular', DiscoveryPopularMetadataController::class)
+        ->name('api.discovery.popular');
 
     Route::get('/discovery/trending', DiscoveryTrendingController::class)
         ->name('api.discovery.trending');
