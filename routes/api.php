@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
 use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
+use App\Http\Controllers\Api\DiscoverySummaryController;
 use App\Http\Controllers\Api\DiscoveryTrendingController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
@@ -36,29 +37,15 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
         ->name('api.admin.settings.tracker.ratio.update');
 });
 
-Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
-    Route::get('/providers', [MetadataProviderSettingsController::class, 'show'])
-        ->name('api.admin.settings.metadata.providers.show');
-
-    Route::post('/providers', [MetadataProviderSettingsController::class, 'update'])
-        ->name('api.admin.settings.metadata.providers.update');
-
-    Route::get('/credentials/status', [MetadataCredentialSettingsController::class, 'status'])
-        ->name('api.admin.settings.metadata.credentials.status');
-
-    Route::put('/credentials/{provider}', [MetadataCredentialSettingsController::class, 'set'])
-        ->name('api.admin.settings.metadata.credentials.set');
-
-    Route::delete('/credentials/{provider}/{field}', [MetadataCredentialSettingsController::class, 'clear'])
-        ->name('api.admin.settings.metadata.credentials.clear');
-});
-
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
 
     Route::get('/discovery/popular', DiscoveryPopularMetadataController::class)
         ->name('api.discovery.popular');
+
+    Route::get('/discovery/summary', DiscoverySummaryController::class)
+        ->name('api.discovery.summary');
 
     Route::get('/discovery/trending', DiscoveryTrendingController::class)
         ->name('api.discovery.trending');
