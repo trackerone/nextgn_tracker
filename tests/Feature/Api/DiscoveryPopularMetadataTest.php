@@ -65,6 +65,102 @@ it('returns popular metadata for authenticated users', function (): void {
     expect($visibleTorrent)->toBeInstanceOf(Torrent::class);
 });
 
+it('returns only sources when category is sources', function (): void {
+    $user = User::factory()->create();
+
+    createPopularDiscoveryTorrent([], [
+        'source' => 'bluray',
+        'resolution' => '1080p',
+        'release_group' => 'GROUPA',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/popular?category=sources')
+        ->assertOk()
+        ->assertExactJson([
+            'sources' => [
+                ['value' => 'bluray', 'count' => 1],
+            ],
+        ]);
+});
+
+it('returns only resolutions when category is resolutions', function (): void {
+    $user = User::factory()->create();
+
+    createPopularDiscoveryTorrent([], [
+        'source' => 'bluray',
+        'resolution' => '1080p',
+        'release_group' => 'GROUPA',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/popular?category=resolutions')
+        ->assertOk()
+        ->assertExactJson([
+            'resolutions' => [
+                ['value' => '1080p', 'count' => 1],
+            ],
+        ]);
+});
+
+it('returns only release groups when category is release_groups', function (): void {
+    $user = User::factory()->create();
+
+    createPopularDiscoveryTorrent([], [
+        'source' => 'bluray',
+        'resolution' => '1080p',
+        'release_group' => 'GROUPA',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/popular?category=release_groups')
+        ->assertOk()
+        ->assertExactJson([
+            'release_groups' => [
+                ['value' => 'GROUPA', 'count' => 1],
+            ],
+        ]);
+});
+
+it('rejects invalid category values', function (): void {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/popular?category=genres')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['category']);
+});
+
+it('keeps category results all-time instead of time-windowed', function (): void {
+    $user = User::factory()->create();
+
+    createPopularDiscoveryTorrent([
+        'uploaded_at' => now()->subDays(1),
+    ], [
+        'source' => 'recent-source',
+        'resolution' => '1080p',
+        'release_group' => 'RECENT',
+    ]);
+
+    createPopularDiscoveryTorrent([
+        'uploaded_at' => now()->subDays(365),
+    ], [
+        'source' => 'old-source',
+        'resolution' => '720p',
+        'release_group' => 'OLD',
+    ]);
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/popular?category=sources')
+        ->assertOk()
+        ->assertExactJson([
+            'sources' => [
+                ['value' => 'old-source', 'count' => 1],
+                ['value' => 'recent-source', 'count' => 1],
+            ],
+        ]);
+});
+
 it('ignores hidden and unapproved torrents', function (): void {
     $user = User::factory()->create();
 
