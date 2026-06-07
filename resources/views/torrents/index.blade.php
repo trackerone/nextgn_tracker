@@ -174,6 +174,21 @@
                     <a href="{{ route('account.saved-intents.index') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
                     <a href="{{ $rssUrl }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
                 </div>
+                <div
+                    data-discovery-browse-teaser
+                    data-discovery-url="{{ route('my.discovery') }}"
+                    class="mt-4"
+                >
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
+                        <div class="space-y-3">
+                            <div class="h-4 w-28 rounded bg-slate-800/80"></div>
+                            <div class="space-y-2">
+                                <div class="h-3 w-full rounded bg-slate-800/70"></div>
+                                <div class="h-3 w-5/6 rounded bg-slate-800/70"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: @include('partials.search-alias-guidance', ['variant' => 'examples'])</p>
             </div>
         </aside>
