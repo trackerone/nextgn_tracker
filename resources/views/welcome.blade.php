@@ -8,7 +8,7 @@
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
-    <body class="min-h-screen bg-slate-950 font-sans antialiased text-slate-50">
+    <body class="min-h-screen bg-slate-950 font-sans text-slate-50">
         @php
             $user = auth()->user();
             $session = [
@@ -30,6 +30,7 @@
                         {{ config('app.name', 'NextGN Tracker') }}
                     </a>
                     <a href="#forum" class="text-sm font-medium text-slate-300 hover:text-brand">Forum</a>
+                    <a href="#discovery" class="text-sm font-medium text-slate-300 hover:text-brand">Discovery</a>
                     @if ($session['canWrite'])
                         <a href="#create-topic" class="text-sm font-medium text-brand hover:text-brand/80">New topic</a>
                     @endif
