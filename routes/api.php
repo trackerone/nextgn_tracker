@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\DiscoveryHomeController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
 use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
+use App\Http\Controllers\Api\DiscoveryRssSuggestionsController;
 use App\Http\Controllers\Api\DiscoverySummaryController;
 use App\Http\Controllers\Api\DiscoveryTrendingController;
 use App\Http\Controllers\Api\ModerationUploadsController;
@@ -64,6 +65,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/popular', DiscoveryPopularMetadataController::class)
         ->name('api.discovery.popular');
+
+    Route::get('/discovery/rss-suggestions', DiscoveryRssSuggestionsController::class)
+        ->name('api.discovery.rss-suggestions');
 
     Route::get('/discovery/summary', DiscoverySummaryController::class)
         ->name('api.discovery.summary');

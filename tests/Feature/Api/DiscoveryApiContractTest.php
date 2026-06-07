@@ -17,13 +17,14 @@ final class DiscoveryApiContractTest extends TestCase
         $this->assertSame('/api/discovery/metadata', route('api.discovery.metadata', [], false));
         $this->assertSame('/api/discovery/trending', route('api.discovery.trending', [], false));
         $this->assertSame('/api/discovery/popular', route('api.discovery.popular', [], false));
+        $this->assertSame('/api/discovery/rss-suggestions', route('api.discovery.rss-suggestions', [], false));
     }
 
     public function test_authenticated_users_can_get_each_discovery_endpoint(): void
     {
         $user = User::factory()->create();
 
-        foreach (['api.discovery.metadata', 'api.discovery.trending', 'api.discovery.popular'] as $routeName) {
+        foreach ($this->discoveryRouteNames() as $routeName) {
             $this->actingAs($user)
                 ->getJson(route($routeName))
                 ->assertOk();
@@ -32,7 +33,7 @@ final class DiscoveryApiContractTest extends TestCase
 
     public function test_unauthenticated_users_are_rejected_from_each_discovery_endpoint(): void
     {
-        foreach (['api.discovery.metadata', 'api.discovery.trending', 'api.discovery.popular'] as $routeName) {
+        foreach ($this->discoveryRouteNames() as $routeName) {
             $this->getJson(route($routeName))
                 ->assertUnauthorized();
         }
@@ -42,12 +43,25 @@ final class DiscoveryApiContractTest extends TestCase
     {
         $user = User::factory()->create();
 
-        foreach (['api.discovery.metadata', 'api.discovery.trending', 'api.discovery.popular'] as $routeName) {
+        foreach ($this->discoveryRouteNames() as $routeName) {
             foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
                 $this->actingAs($user)
                     ->json($method, route($routeName))
                     ->assertStatus(405);
             }
         }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function discoveryRouteNames(): array
+    {
+        return [
+            'api.discovery.metadata',
+            'api.discovery.trending',
+            'api.discovery.popular',
+            'api.discovery.rss-suggestions',
+        ];
     }
 }
