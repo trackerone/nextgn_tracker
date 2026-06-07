@@ -28,6 +28,10 @@ export interface DiscoveryTrendingSummary extends DiscoveryAggregateSummary {
   window: typeof DISCOVERY_HOME_TRENDING_WINDOW;
 }
 
+export interface DiscoveryTrendingWindow {
+  window: typeof DISCOVERY_HOME_TRENDING_WINDOW;
+}
+
 export interface DiscoveryAggregateSection {
   sources: DiscoveryAggregateItem[];
   resolutions: DiscoveryAggregateItem[];
@@ -42,7 +46,7 @@ export interface DiscoveryHomeSummary {
 
 export interface DiscoveryHomePayload {
   summary: DiscoveryHomeSummary;
-  trending: DiscoveryTrendingSummary & DiscoveryAggregateSection;
+  trending: DiscoveryTrendingWindow & DiscoveryAggregateSection;
   popular: DiscoveryAggregateSection;
 }
 
