@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DiscoveryPopularRequest;
 use App\Support\Discovery\DiscoveryMetadataService;
 use Illuminate\Http\JsonResponse;
 
@@ -19,8 +20,13 @@ final class DiscoveryPopularMetadataController extends Controller
         'release_groups' => 'release_group',
     ];
 
-    public function __invoke(DiscoveryMetadataService $metadata): JsonResponse
+    public function __invoke(DiscoveryPopularRequest $request, DiscoveryMetadataService $metadata): JsonResponse
     {
-        return response()->json($metadata->aggregateMany(self::CATEGORY_FIELDS));
+        $category = $request->category();
+        $categories = $category === null
+            ? self::CATEGORY_FIELDS
+            : [$category => self::CATEGORY_FIELDS[$category]];
+
+        return response()->json($metadata->aggregateMany($categories));
     }
 }
