@@ -33,6 +33,23 @@ it('keeps discovery.ts as the single discovery home client', function (): void {
         ->not->toContain('fetchJson');
 });
 
+it('keeps discovery.ts as the typed RSS suggestions client', function (): void {
+    $discoveryClient = frontendSource('resources/js/lib/discovery.ts');
+
+    expect($discoveryClient)
+        ->toContain("export const DISCOVERY_RSS_SUGGESTIONS_ENDPOINT = '/api/discovery/rss-suggestions' as const")
+        ->toContain("export type DiscoveryRssSuggestionCategory = 'sources' | 'resolutions' | 'languages' | 'release_groups'")
+        ->toContain('export interface DiscoveryRssSuggestionsPayload')
+        ->toContain('sources: DiscoveryAggregateItem[]')
+        ->toContain('resolutions: DiscoveryAggregateItem[]')
+        ->toContain('languages: DiscoveryAggregateItem[]')
+        ->toContain('release_groups: DiscoveryAggregateItem[]')
+        ->toContain('new URLSearchParams({ category })')
+        ->toContain('fetchDiscoveryRssSuggestions')
+        ->toContain('fetchJson<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>>')
+        ->toContain('discoveryRssSuggestionsUrl(options.category)');
+});
+
 it('keeps landing and browse teaser aligned to shared discovery home assumptions', function (): void {
     $landingWidget = frontendSource('resources/js/components/discovery/DiscoveryLandingWidget.tsx');
     $browseTeaser = frontendSource('resources/js/components/discovery/BrowseDiscoveryTeaser.tsx');
