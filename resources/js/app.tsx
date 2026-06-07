@@ -4,10 +4,10 @@ import ReactDOM from 'react-dom/client';
 import CreateTopicForm from './components/forum/CreateTopicForm';
 import TopicList from './components/forum/TopicList';
 import TopicView from './components/forum/TopicView';
-import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidget';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
+import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
 import PrivateMessagesPanel from './components/pm/PrivateMessagesPanel';
 
 declare global {
@@ -66,25 +66,6 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      <section id="discovery" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand">Discovery</p>
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
-              Dedicated landing entry point for the discovery home payload. The widget below stays reusable while the broader
-              landing surface evolves.
-            </p>
-          </div>
-          <a
-            href="#forum"
-            className="rounded-full border border-slate-700 px-3 py-2 text-sm font-medium text-slate-300 hover:border-brand/60 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
-          >
-            Back to forum
-          </a>
-        </div>
-        <DiscoveryLandingWidget />
-      </section>
-
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,380px)_1fr] lg:items-start">
         <section id="forum" className="space-y-6 lg:sticky lg:top-6">
           {session.canWrite && (
@@ -122,6 +103,18 @@ if (element) {
   ReactDOM.createRoot(element).render(
     <React.StrictMode>
       <App />
+    </React.StrictMode>,
+  );
+}
+
+const browseDiscoveryTeaserElement = document.querySelector<HTMLElement>('[data-discovery-browse-teaser]');
+
+if (browseDiscoveryTeaserElement) {
+  const discoveryUrl = browseDiscoveryTeaserElement.dataset.discoveryUrl ?? '/account/discovery';
+
+  ReactDOM.createRoot(browseDiscoveryTeaserElement).render(
+    <React.StrictMode>
+      <BrowseDiscoveryTeaser discoveryUrl={discoveryUrl} />
     </React.StrictMode>,
   );
 }
