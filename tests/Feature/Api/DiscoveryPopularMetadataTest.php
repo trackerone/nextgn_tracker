@@ -38,8 +38,9 @@ it('returns popular metadata for authenticated users', function (): void {
 
     $visibleTorrent = createPopularDiscoveryTorrent();
     createPopularDiscoveryTorrent([
-        'source' => 'hidden-source',
-        'resolution' => 'hidden-resolution',
+        'is_approved' => false,
+        'is_banned' => true,
+        'status' => Torrent::STATUS_PENDING,
     ], [
         'source' => 'hidden-source',
         'resolution' => 'hidden-resolution',
