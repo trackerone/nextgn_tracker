@@ -37,6 +37,23 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
         ->name('api.admin.settings.tracker.ratio.update');
 });
 
+Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
+    Route::get('/providers', [MetadataProviderSettingsController::class, 'show'])
+        ->name('api.admin.settings.metadata.providers.show');
+
+    Route::post('/providers', [MetadataProviderSettingsController::class, 'update'])
+        ->name('api.admin.settings.metadata.providers.update');
+
+    Route::get('/credentials/status', [MetadataCredentialSettingsController::class, 'status'])
+        ->name('api.admin.settings.metadata.credentials.status');
+
+    Route::put('/credentials/{provider}', [MetadataCredentialSettingsController::class, 'set'])
+        ->name('api.admin.settings.metadata.credentials.set');
+
+    Route::delete('/credentials/{provider}/{field}', [MetadataCredentialSettingsController::class, 'clear'])
+        ->name('api.admin.settings.metadata.credentials.clear');
+});
+
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
