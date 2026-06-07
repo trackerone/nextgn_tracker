@@ -26,6 +26,8 @@ const formatCount = (value: number): string => value.toLocaleString();
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
+const getRecord = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
+
 const safeNumber = (value: unknown): number =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
 
@@ -54,41 +56,48 @@ const normalizeAggregateItems = (items: unknown): DiscoveryAggregateItem[] => {
   }, []);
 };
 
-const normalizeAggregateSection = (section: unknown): DiscoveryAggregateSection => ({
-  sources: normalizeAggregateItems(isRecord(section) ? section.sources : undefined),
-  resolutions: normalizeAggregateItems(isRecord(section) ? section.resolutions : undefined),
-  release_groups: normalizeAggregateItems(isRecord(section) ? section.release_groups : undefined),
-});
+const normalizeAggregateSection = (section: unknown): DiscoveryAggregateSection => {
+  const record = getRecord(section);
+
+  return {
+    sources: normalizeAggregateItems(record.sources),
+    resolutions: normalizeAggregateItems(record.resolutions),
+    release_groups: normalizeAggregateItems(record.release_groups),
+  };
+};
 
 const normalizeDiscoveryHomePayload = (payload: unknown): DiscoveryHomePayload => {
-  const payloadRecord = isRecord(payload) ? payload : {};
-  const summaryRecord = isRecord(payloadRecord.summary) ? payloadRecord.summary : {};
-  const popularRecord = isRecord(payloadRecord.popular) ? payloadRecord.popular : {};
-  const trendingRecord = isRecord(payloadRecord.trending) ? payloadRecord.trending : {};
+  const payloadRecord = getRecord(payload);
+  const summaryRecord = getRecord(payloadRecord.summary);
+  const metadataRecord = getRecord(summaryRecord.metadata);
+  const popularSummaryRecord = getRecord(summaryRecord.popular);
+  const trendingSummaryRecord = getRecord(summaryRecord.trending);
+  const popularRecord = getRecord(payloadRecord.popular);
+  const trendingRecord = getRecord(payloadRecord.trending);
 
   return {
     summary: {
       metadata: {
-        sources: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.sources : undefined),
-        resolutions: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.resolutions : undefined),
-        languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.languages : undefined),
-        audio_languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.audio_languages : undefined),
-        subtitle_languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.subtitle_languages : undefined),
-        release_groups: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.release_groups : undefined),
+        sources: safeNumber(metadataRecord.sources),
+        resolutions: safeNumber(metadataRecord.resolutions),
+        languages: safeNumber(metadataRecord.languages),
+        audio_languages: safeNumber(metadataRecord.audio_languages),
+        subtitle_languages: safeNumber(metadataRecord.subtitle_languages),
+        release_groups: safeNumber(metadataRecord.release_groups),
       },
       popular: {
-        sources: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.sources : undefined),
-        resolutions: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.resolutions : undefined),
-        release_groups: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.release_groups : undefined),
+        sources: safeNumber(popularSummaryRecord.sources),
+        resolutions: safeNumber(popularSummaryRecord.resolutions),
+        release_groups: safeNumber(popularSummaryRecord.release_groups),
       },
       trending: {
         window:
-          typeof trendingRecord.window === 'string' && trendingRecord.window.trim()
-            ? (trendingRecord.window.trim() as typeof DISCOVERY_HOME_TRENDING_WINDOW)
+          typeof trendingSummaryRecord.window === 'string' && trendingSummaryRecord.window.trim()
+            ? (trendingSummaryRecord.window.trim() as typeof DISCOVERY_HOME_TRENDING_WINDOW)
             : DISCOVERY_HOME_TRENDING_WINDOW,
-        sources: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.sources : undefined),
-        resolutions: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.resolutions : undefined),
-        release_groups: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.release_groups : undefined),
+        sources: safeNumber(trendingSummaryRecord.sources),
+        resolutions: safeNumber(trendingSummaryRecord.resolutions),
+        release_groups: safeNumber(trendingSummaryRecord.release_groups),
       },
     },
     popular: normalizeAggregateSection(popularRecord),
