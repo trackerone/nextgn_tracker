@@ -39,6 +39,18 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
+    public function test_authenticated_user_sees_discovery_teaser_mount_contract(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create();
+
+        $response = $this->actingAs($user)->get('/torrents');
+
+        $response->assertOk();
+        $response->assertSee('data-discovery-browse-teaser', false);
+        $response->assertSee('data-discovery-url="'.route('my.discovery').'"', false);
+    }
+
     public function test_authenticated_user_sees_filter_first_browse_shell(): void
     {
         $user = User::factory()->create();
