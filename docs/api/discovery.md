@@ -1,6 +1,6 @@
 # Discovery API Contract
 
-This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, popular, summary, and home clear.
+This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, popular, RSS suggestions, summary, and home clear.
 
 ## Common rules
 
@@ -81,6 +81,38 @@ Returns all-time popular discovery data from all-time visible metadata only.
 - Only visible metadata is included.
 - The response contains only the requested category when a valid category is provided.
 - Invalid `category` values are rejected with HTTP `422`.
+
+## GET `/api/discovery/rss-suggestions`
+
+Returns all-time discovery metadata suitable for future RSS preset creation UI.
+
+### Optional category
+
+- `sources`
+- `resolutions`
+- `languages`
+- `release_groups`
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- No time window is applied.
+- No personalization, recommendation logic, or RSS generation behavior is applied.
+- The endpoint reuses `DiscoveryMetadataService`, including visible filtering, null and empty filtering, ordering, and the 25 entry aggregate limit.
+- The response contains only the requested category when a valid category is provided.
+- Invalid `category` values are rejected with HTTP `422`.
+
+### Response shape
+
+```json
+{
+  "sources": [],
+  "resolutions": [],
+  "languages": [],
+  "release_groups": []
+}
+```
 
 ## GET `/api/discovery/home`
 
