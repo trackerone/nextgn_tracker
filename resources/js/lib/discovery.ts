@@ -85,5 +85,7 @@ export async function fetchDiscoveryRssSuggestions<TCategory extends DiscoveryRs
 export async function fetchDiscoveryRssSuggestions(
   options: DiscoveryRssSuggestionsOptions = {},
 ): Promise<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>> {
-  return fetchJson(discoveryRssSuggestionsUrl(options.category));
+  return fetchJson<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>>(
+    discoveryRssSuggestionsUrl(options.category),
+  );
 }
