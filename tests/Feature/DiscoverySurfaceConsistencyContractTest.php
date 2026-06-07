@@ -46,7 +46,8 @@ it('keeps discovery.ts as the typed RSS suggestions client', function (): void {
         ->toContain('release_groups: DiscoveryAggregateItem[]')
         ->toContain('new URLSearchParams({ category })')
         ->toContain('fetchDiscoveryRssSuggestions')
-        ->toContain('fetchJson(discoveryRssSuggestionsUrl(options.category))');
+        ->toContain('fetchJson<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>>')
+        ->toContain('discoveryRssSuggestionsUrl(options.category)');
 });
 
 it('keeps landing and browse teaser aligned to shared discovery home assumptions', function (): void {
