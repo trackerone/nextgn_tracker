@@ -34,6 +34,10 @@ export interface DiscoveryAggregateSection {
   release_groups: DiscoveryAggregateItem[];
 }
 
+export interface DiscoveryHomeTrendingSection extends DiscoveryAggregateSection {
+  window: typeof DISCOVERY_HOME_TRENDING_WINDOW;
+}
+
 export interface DiscoveryHomeSummary {
   metadata: DiscoveryMetadataSummary;
   popular: DiscoveryAggregateSummary;
@@ -42,7 +46,7 @@ export interface DiscoveryHomeSummary {
 
 export interface DiscoveryHomePayload {
   summary: DiscoveryHomeSummary;
-  trending: DiscoveryTrendingSummary & DiscoveryAggregateSection;
+  trending: DiscoveryHomeTrendingSection;
   popular: DiscoveryAggregateSection;
 }
 
