@@ -23,31 +23,111 @@ const SECTION_TITLES: Record<DiscoverySectionKey, string> = {
 
 const formatCount = (value: number): string => value.toLocaleString();
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const safeNumber = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0;
+
+const normalizeAggregateItems = (items: unknown): DiscoveryAggregateItem[] => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.reduce<DiscoveryAggregateItem[]>((accumulator, item) => {
+    if (!isRecord(item)) {
+      return accumulator;
+    }
+
+    const value = typeof item.value === 'string' ? item.value.trim() : '';
+
+    if (!value) {
+      return accumulator;
+    }
+
+    accumulator.push({
+      value,
+      count: safeNumber(item.count),
+    });
+
+    return accumulator;
+  }, []);
+};
+
+const normalizeAggregateSection = (section: unknown): DiscoveryAggregateSection => ({
+  sources: normalizeAggregateItems(isRecord(section) ? section.sources : undefined),
+  resolutions: normalizeAggregateItems(isRecord(section) ? section.resolutions : undefined),
+  release_groups: normalizeAggregateItems(isRecord(section) ? section.release_groups : undefined),
+});
+
+const normalizeDiscoveryHomePayload = (payload: unknown): DiscoveryHomePayload => {
+  const payloadRecord = isRecord(payload) ? payload : {};
+  const summaryRecord = isRecord(payloadRecord.summary) ? payloadRecord.summary : {};
+  const popularRecord = isRecord(payloadRecord.popular) ? payloadRecord.popular : {};
+  const trendingRecord = isRecord(payloadRecord.trending) ? payloadRecord.trending : {};
+
+  return {
+    summary: {
+      metadata: {
+        sources: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.sources : undefined),
+        resolutions: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.resolutions : undefined),
+        languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.languages : undefined),
+        audio_languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.audio_languages : undefined),
+        subtitle_languages: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.subtitle_languages : undefined),
+        release_groups: safeNumber(summaryRecord.metadata && isRecord(summaryRecord.metadata) ? summaryRecord.metadata.release_groups : undefined),
+      },
+      popular: {
+        sources: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.sources : undefined),
+        resolutions: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.resolutions : undefined),
+        release_groups: safeNumber(summaryRecord.popular && isRecord(summaryRecord.popular) ? summaryRecord.popular.release_groups : undefined),
+      },
+      trending: {
+        window:
+          typeof trendingRecord.window === 'string' && trendingRecord.window.trim()
+            ? (trendingRecord.window.trim() as typeof DISCOVERY_HOME_TRENDING_WINDOW)
+            : DISCOVERY_HOME_TRENDING_WINDOW,
+        sources: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.sources : undefined),
+        resolutions: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.resolutions : undefined),
+        release_groups: safeNumber(summaryRecord.trending && isRecord(summaryRecord.trending) ? summaryRecord.trending.release_groups : undefined),
+      },
+    },
+    popular: normalizeAggregateSection(popularRecord),
+    trending: {
+      window:
+        typeof trendingRecord.window === 'string' && trendingRecord.window.trim()
+          ? (trendingRecord.window.trim() as typeof DISCOVERY_HOME_TRENDING_WINDOW)
+          : DISCOVERY_HOME_TRENDING_WINDOW,
+      ...normalizeAggregateSection(trendingRecord),
+    },
+  };
+};
+
 const hasDiscoveryData = (payload: DiscoveryHomePayload): boolean => {
-  const summary = payload.summary;
-  const countsAreEmpty =
-    summary.metadata.sources === 0 &&
-    summary.metadata.resolutions === 0 &&
-    summary.metadata.languages === 0 &&
-    summary.metadata.audio_languages === 0 &&
-    summary.metadata.subtitle_languages === 0 &&
-    summary.metadata.release_groups === 0 &&
-    summary.popular.sources === 0 &&
-    summary.popular.resolutions === 0 &&
-    summary.popular.release_groups === 0 &&
-    summary.trending.sources === 0 &&
-    summary.trending.resolutions === 0 &&
-    summary.trending.release_groups === 0;
+  const counts = [
+    payload.summary.metadata.sources,
+    payload.summary.metadata.resolutions,
+    payload.summary.metadata.languages,
+    payload.summary.metadata.audio_languages,
+    payload.summary.metadata.subtitle_languages,
+    payload.summary.metadata.release_groups,
+    payload.summary.popular.sources,
+    payload.summary.popular.resolutions,
+    payload.summary.popular.release_groups,
+    payload.summary.trending.sources,
+    payload.summary.trending.resolutions,
+    payload.summary.trending.release_groups,
+  ];
 
-  const listsAreEmpty =
-    payload.popular.sources.length === 0 &&
-    payload.popular.resolutions.length === 0 &&
-    payload.popular.release_groups.length === 0 &&
-    payload.trending.sources.length === 0 &&
-    payload.trending.resolutions.length === 0 &&
-    payload.trending.release_groups.length === 0;
+  const lists = [
+    payload.popular.sources,
+    payload.popular.resolutions,
+    payload.popular.release_groups,
+    payload.trending.sources,
+    payload.trending.resolutions,
+    payload.trending.release_groups,
+  ];
 
-  return !(countsAreEmpty && listsAreEmpty);
+  return counts.some((value) => value > 0) || lists.some((list) => list.length > 0);
 };
 
 interface MetricTileProps {
@@ -95,26 +175,27 @@ const SectionCard: React.FC<SectionCardProps> = ({ icon, title, description, chi
 
 interface AggregateColumnProps {
   title: string;
-  items: DiscoveryAggregateItem[];
+  items: DiscoveryAggregateItem[] | null | undefined;
 }
 
 const AggregateColumn: React.FC<AggregateColumnProps> = ({ title, items }) => {
-  const previewItems = items.slice(0, PREVIEW_ITEM_LIMIT);
+  const safeItems = Array.isArray(items) ? items : [];
+  const previewItems = safeItems.slice(0, PREVIEW_ITEM_LIMIT);
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/70 p-4">
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-semibold text-slate-100">{title}</h4>
-        <span className="text-xs font-medium text-slate-500">{formatCount(items.length)} items</span>
+        <h4 className="min-w-0 truncate text-sm font-semibold text-slate-100">{title}</h4>
+        <span className="shrink-0 text-xs font-medium text-slate-500">{formatCount(safeItems.length)} items</span>
       </div>
       {previewItems.length > 0 ? (
         <ul className="mt-3 space-y-2" aria-label={title}>
-          {previewItems.map((item) => (
+          {previewItems.map((item, index) => (
             <li
-              key={item.value}
+              key={`${item.value}-${index}`}
               className="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/80 px-3 py-2"
             >
-              <span className="min-w-0 truncate text-sm text-slate-200" title={item.value}>
+              <span className="min-w-0 flex-1 truncate text-sm text-slate-200" title={item.value}>
                 {item.value}
               </span>
               <span className="shrink-0 text-sm font-semibold text-slate-300">{formatCount(item.count)}</span>
@@ -126,7 +207,7 @@ const AggregateColumn: React.FC<AggregateColumnProps> = ({ title, items }) => {
           No {title.toLowerCase()} yet.
         </div>
       )}
-      {items.length > previewItems.length && (
+      {safeItems.length > previewItems.length && (
         <p className="mt-3 text-xs text-slate-500">
           Showing the top {PREVIEW_ITEM_LIMIT} of up to {DISCOVERY_AGGREGATE_LIMIT} entries.
         </p>
@@ -148,7 +229,7 @@ const DiscoveryLandingWidget: React.FC = () => {
     setError(null);
 
     try {
-      const nextPayload = await fetchDiscoveryHome();
+      const nextPayload = normalizeDiscoveryHomePayload(await fetchDiscoveryHome());
 
       if (requestId !== requestCounter.current) {
         return;
