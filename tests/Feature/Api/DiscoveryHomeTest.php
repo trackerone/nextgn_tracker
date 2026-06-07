@@ -185,8 +185,6 @@ it('caps the home aggregate lists at 25 entries and keeps summary counts aligned
     foreach (range(1, 26) as $index) {
         $torrent = Torrent::factory()->create([
             'user_id' => $user->id,
-            'is_approved' => true,
-            'is_banned' => false,
             'status' => Torrent::STATUS_PUBLISHED,
             'uploaded_at' => now()->subDays(2),
         ]);
