@@ -55,8 +55,8 @@ final class DiscoveryHomeController extends Controller
     }
 
     /**
-     * @param array<string, array<int, array{value: string, count: int}>> $aggregates
-     * @param array<string, string> $fields
+     * @param  array<string, array<int, array{value: string, count: int}>>  $aggregates
+     * @param  array<string, string>  $fields
      * @return array<string, int>
      */
     private function summarize(array $aggregates, array $fields): array
