@@ -1,6 +1,6 @@
 # Discovery API Contract
 
-This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, and popular clear.
+This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, popular, and summary clear.
 
 ## Common rules
 
@@ -11,6 +11,7 @@ This document describes the current contract for the discovery endpoints so futu
 - Each aggregate group returns at most 25 entries.
 - Ordering is by `count` descending, then `value` ascending for ties.
 - Invalid `window` or `category` values return the standard Laravel validation response with HTTP `422`.
+- Summary values count aggregate entries, not torrent rows.
 - Output items use the same shape everywhere:
 
 ```json
@@ -80,3 +81,42 @@ Returns all-time popular discovery data from all-time visible metadata only.
 - Only visible metadata is included.
 - The response contains only the requested category when a valid category is provided.
 - Invalid `category` values are rejected with HTTP `422`.
+
+## GET `/api/discovery/summary`
+
+Returns a compact overview of the discovery layer.
+
+### Behavior
+
+- Authentication is required.
+- The response is read-only.
+- `metadata` reflects the aggregate groups returned by `GET /api/discovery/metadata`.
+- `popular` reflects the aggregate groups returned by `GET /api/discovery/popular`.
+- `trending` reflects the default `30d` aggregate groups returned by `GET /api/discovery/trending`.
+- Summary counts measure returned aggregate entries, not torrent rows.
+
+### Response shape
+
+```json
+{
+  "metadata": {
+    "sources": 0,
+    "resolutions": 0,
+    "languages": 0,
+    "audio_languages": 0,
+    "subtitle_languages": 0,
+    "release_groups": 0
+  },
+  "popular": {
+    "sources": 0,
+    "resolutions": 0,
+    "release_groups": 0
+  },
+  "trending": {
+    "window": "30d",
+    "sources": 0,
+    "resolutions": 0,
+    "release_groups": 0
+  }
+}
+```
