@@ -91,12 +91,13 @@ Returns a compact discovery payload for the frontend landing section.
 - Authentication is required.
 - The endpoint is read-only.
 - No query parameters are supported yet.
+- The endpoint reuses `DiscoveryMetadataService`, so every aggregate list in `summary`, `popular`, and `trending` is capped at 25 entries.
 - `summary.metadata` reflects the aggregate groups returned by `GET /api/discovery/metadata`.
 - `summary.popular` reflects the aggregate groups returned by `GET /api/discovery/popular`.
 - `summary.trending` reflects the default `30d` aggregate groups returned by `GET /api/discovery/trending`.
 - `popular` matches `GET /api/discovery/popular`.
 - `trending` matches `GET /api/discovery/trending` with the default `30d` window.
-- Summary counts measure returned aggregate entries, not torrent rows.
+- Summary counts measure the capped aggregate entries, not torrent rows.
 
 ### Response shape
 
