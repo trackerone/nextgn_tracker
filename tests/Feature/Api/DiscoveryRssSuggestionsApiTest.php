@@ -79,40 +79,27 @@ final class DiscoveryRssSuggestionsApiTest extends TestCase
         ], array_keys($response->json()));
     }
 
-    /**
-     * @return array<string, array{0: string, 1: string}>
-     */
-    public static function supportedCategories(): array
-    {
-        return [
-            'sources' => ['sources', 'source'],
-            'resolutions' => ['resolutions', 'resolution'],
-            'languages' => ['languages', 'language'],
-            'release groups' => ['release_groups', 'release_group'],
-        ];
-    }
-
-    /**
-     * @dataProvider supportedCategories
-     */
-    public function test_rss_suggestions_can_return_each_supported_category(string $category, string $field): void
+    public function test_rss_suggestions_can_return_each_supported_category(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create();
 
-        $this->createMetadata($torrent, [
-            $field => 'supported-value',
-        ]);
+        foreach ($this->supportedCategories() as $category => $field) {
+            $torrent = Torrent::factory()->create();
 
-        $response = $this->actingAs($user)
-            ->getJson(route('api.discovery.rss-suggestions', ['category' => $category]));
+            $this->createMetadata($torrent, [
+                $field => $category.'-value',
+            ]);
 
-        $response->assertOk();
-        $response->assertExactJson([
-            $category => [
-                ['value' => 'supported-value', 'count' => 1],
-            ],
-        ]);
+            $response = $this->actingAs($user)
+                ->getJson(route('api.discovery.rss-suggestions', ['category' => $category]));
+
+            $response->assertOk();
+            $response->assertExactJson([
+                $category => [
+                    ['value' => $category.'-value', 'count' => 1],
+                ],
+            ]);
+        }
     }
 
     public function test_invalid_rss_suggestions_category_is_rejected(): void
@@ -196,6 +183,19 @@ final class DiscoveryRssSuggestionsApiTest extends TestCase
                 ->json($method, route('api.discovery.rss-suggestions'))
                 ->assertStatus(405);
         }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function supportedCategories(): array
+    {
+        return [
+            'sources' => 'source',
+            'resolutions' => 'resolution',
+            'languages' => 'language',
+            'release_groups' => 'release_group',
+        ];
     }
 
     /**
