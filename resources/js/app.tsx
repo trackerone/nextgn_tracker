@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import CreateTopicForm from './components/forum/CreateTopicForm';
 import TopicList from './components/forum/TopicList';
 import TopicView from './components/forum/TopicView';
+import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidget';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -64,6 +65,8 @@ const App: React.FC = () => {
           )}
         </div>
       </section>
+
+      <DiscoveryLandingWidget />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(280px,380px)_1fr] lg:items-start">
         <section id="forum" className="space-y-6 lg:sticky lg:top-6">
