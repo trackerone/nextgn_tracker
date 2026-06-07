@@ -179,6 +179,49 @@ it('keeps old visible torrents in popular data while excluding them from trendin
         ->assertJsonPath('trending.release_groups.0.value', 'recent-group');
 });
 
+it('caps the home aggregate lists at 25 entries and keeps summary counts aligned', function (): void {
+    $user = User::factory()->create();
+
+    foreach (range(1, 26) as $index) {
+        $torrent = Torrent::factory()->create([
+            'user_id' => $user->id,
+            'is_approved' => true,
+            'is_banned' => false,
+            'status' => Torrent::STATUS_PUBLISHED,
+            'uploaded_at' => now()->subDays(2),
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'source' => sprintf('source-%02d', $index),
+            'resolution' => sprintf('resolution-%02d', $index),
+            'release_group' => sprintf('group-%02d', $index),
+        ]);
+    }
+
+    $this->actingAs($user)
+        ->getJson('/api/discovery/home')
+        ->assertOk()
+        ->assertJsonCount(25, 'popular.sources')
+        ->assertJsonCount(25, 'popular.resolutions')
+        ->assertJsonCount(25, 'popular.release_groups')
+        ->assertJsonCount(25, 'trending.sources')
+        ->assertJsonCount(25, 'trending.resolutions')
+        ->assertJsonCount(25, 'trending.release_groups')
+        ->assertJsonPath('summary.metadata.sources', 25)
+        ->assertJsonPath('summary.metadata.resolutions', 25)
+        ->assertJsonPath('summary.metadata.languages', 0)
+        ->assertJsonPath('summary.metadata.audio_languages', 0)
+        ->assertJsonPath('summary.metadata.subtitle_languages', 0)
+        ->assertJsonPath('summary.metadata.release_groups', 25)
+        ->assertJsonPath('summary.popular.sources', 25)
+        ->assertJsonPath('summary.popular.resolutions', 25)
+        ->assertJsonPath('summary.popular.release_groups', 25)
+        ->assertJsonPath('summary.trending.sources', 25)
+        ->assertJsonPath('summary.trending.resolutions', 25)
+        ->assertJsonPath('summary.trending.release_groups', 25);
+});
+
 it('is read only for non-get methods', function (): void {
     $user = User::factory()->create();
 
