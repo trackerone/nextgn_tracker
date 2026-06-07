@@ -1,6 +1,6 @@
 # Discovery API Contract
 
-This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, popular, and summary clear.
+This document describes the current contract for the discovery endpoints so future slices keep the boundaries between metadata, trending, popular, summary, and home clear.
 
 ## Common rules
 
@@ -81,6 +81,61 @@ Returns all-time popular discovery data from all-time visible metadata only.
 - Only visible metadata is included.
 - The response contains only the requested category when a valid category is provided.
 - Invalid `category` values are rejected with HTTP `422`.
+
+## GET `/api/discovery/home`
+
+Returns a compact discovery payload for the frontend landing section.
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- No query parameters are supported yet.
+- `summary.metadata` reflects the aggregate groups returned by `GET /api/discovery/metadata`.
+- `summary.popular` reflects the aggregate groups returned by `GET /api/discovery/popular`.
+- `summary.trending` reflects the default `30d` aggregate groups returned by `GET /api/discovery/trending`.
+- `popular` matches `GET /api/discovery/popular`.
+- `trending` matches `GET /api/discovery/trending` with the default `30d` window.
+- Summary counts measure returned aggregate entries, not torrent rows.
+
+### Response shape
+
+```json
+{
+  "summary": {
+    "metadata": {
+      "sources": 0,
+      "resolutions": 0,
+      "languages": 0,
+      "audio_languages": 0,
+      "subtitle_languages": 0,
+      "release_groups": 0
+    },
+    "popular": {
+      "sources": 0,
+      "resolutions": 0,
+      "release_groups": 0
+    },
+    "trending": {
+      "window": "30d",
+      "sources": 0,
+      "resolutions": 0,
+      "release_groups": 0
+    }
+  },
+  "trending": {
+    "window": "30d",
+    "sources": [],
+    "resolutions": [],
+    "release_groups": []
+  },
+  "popular": {
+    "sources": [],
+    "resolutions": [],
+    "release_groups": []
+  }
+}
+```
 
 ## GET `/api/discovery/summary`
 
