@@ -6,6 +6,7 @@ import TopicList from './components/forum/TopicList';
 import TopicView from './components/forum/TopicView';
 import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidget';
 import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
+import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -135,6 +136,16 @@ if (browseDiscoveryTeaserElement) {
   ReactDOM.createRoot(browseDiscoveryTeaserElement).render(
     <React.StrictMode>
       <BrowseDiscoveryTeaser discoveryUrl={discoveryUrl} />
+    </React.StrictMode>,
+  );
+}
+
+const rssDiscoverySuggestionsElement = document.querySelector<HTMLElement>('[data-rss-discovery-suggestions]');
+
+if (rssDiscoverySuggestionsElement) {
+  ReactDOM.createRoot(rssDiscoverySuggestionsElement).render(
+    <React.StrictMode>
+      <RssDiscoverySuggestions />
     </React.StrictMode>,
   );
 }
