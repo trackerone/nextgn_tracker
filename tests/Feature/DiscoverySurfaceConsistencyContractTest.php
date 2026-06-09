@@ -90,6 +90,9 @@ it('keeps discovery.ts as the typed RSS suggestions client', function (): void {
 it('keeps discovery.ts as the typed watch preset suggestions client', function (): void {
     $discoveryClient = frontendSource('resources/js/lib/discovery.ts');
 
+    expect(substr_count($discoveryClient, "'/api/discovery/watch-preset-suggestions'"))->toBe(1);
+    expect(substr_count($discoveryClient, 'DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT'))->toBe(2);
+
     expect($discoveryClient)
         ->toContain("export const DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT = '/api/discovery/watch-preset-suggestions' as const")
         ->toContain('export type DiscoveryWatchPresetSuggestionCategory = DiscoverySuggestionCategory')
@@ -191,6 +194,8 @@ it('keeps the watch discovery UI delegated to the shared readonly client', funct
         ->toContain('Suggestions are read-only and do not change the preset.')
         ->toContain('Read only')
         ->not->toContain('/api/discovery/watch-preset-suggestions')
+        ->not->toContain('DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT')
+        ->not->toContain('URLSearchParams')
         ->not->toContain('fetchJson')
         ->not->toContain('fetch(')
         ->not->toContain('axios')
@@ -200,7 +205,14 @@ it('keeps the watch discovery UI delegated to the shared readonly client', funct
         ->not->toContain('onClick')
         ->not->toContain('onChange')
         ->not->toContain('method=')
-        ->not->toContain('action=');
+        ->not->toContain('action=')
+        ->not->toContain('route(')
+        ->not->toContain('account.watch-presets')
+        ->not->toContain('account.notifications')
+        ->not->toContain('Save')
+        ->not->toContain('Update')
+        ->not->toContain('notify')
+        ->not->toContain('read_all');
 });
 
 it('keeps the watch preset suggestions endpoint centralized in discovery.ts', function (): void {
