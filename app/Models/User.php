@@ -17,12 +17,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
  * @property string|null $role
  * @property string $email
  * @property string $name
+ * @property string $public_slug
  * @property string $passkey
  * @property string|null $rss_token
  * @property bool $is_banned
@@ -92,7 +94,52 @@ class User extends Authenticatable implements MustVerifyEmail
                     'role' => self::ROLE_USER,
                 ]);
             }
+
+            if (
+                Schema::hasColumn($user->getTable(), 'public_slug')
+                && (! array_key_exists('public_slug', $attributes)
+                    || ! is_string($user->public_slug)
+                    || $user->public_slug === '')
+            ) {
+                $user->forceFill([
+                    'public_slug' => self::makeUniquePublicSlug($user->name),
+                ]);
+            }
         });
+    }
+
+    public static function makePublicSlug(string $name): string
+    {
+        $slug = Str::slug($name);
+
+        if ($slug === '') {
+            $slug = 'user';
+        }
+
+        if (ctype_digit($slug)) {
+            $slug = 'user-'.$slug;
+        }
+
+        return $slug;
+    }
+
+    public static function makeUniquePublicSlug(string $name): string
+    {
+        $base = self::makePublicSlug($name);
+        $slug = $base;
+        $counter = 2;
+
+        while (self::query()->where('public_slug', $slug)->exists()) {
+            $slug = $base.'-'.$counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
+
+    public function publicProfileRouteKey(): string
+    {
+        return (string) $this->public_slug;
     }
 
     public function generateRssToken(): string
