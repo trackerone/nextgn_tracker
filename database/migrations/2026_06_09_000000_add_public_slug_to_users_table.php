@@ -61,7 +61,7 @@ return new class extends Migration
     }
 
     /**
-     * @param array<string, bool> $usedSlugs
+     * @param  array<string, bool>  $usedSlugs
      */
     private function uniquePublicSlug(string $name, array $usedSlugs): string
     {
