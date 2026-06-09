@@ -27,6 +27,10 @@ Watch presets reuse the safe RSS filter normalization and matching semantics whe
 
 The RSS `limit` filter is ignored for notification watch presets because matching evaluates one newly published torrent at a time. Unsupported keys are discarded during request normalization and are not persisted.
 
+## Discovery suggestions
+
+`GET /api/discovery/watch-preset-suggestions` exposes a read-only discovery-powered suggestions foundation for future watch preset creation UI. It returns aggregate metadata suggestions for `sources`, `resolutions`, `languages`, and `release_groups` by reusing `DiscoveryMetadataService`. The endpoint does not create presets, change existing watch preset behavior, personalize results, recommend rules, or trigger notifications.
+
 ## Relationship to RSS presets
 
 RSS presets and notification watch presets share the same metadata-aware filter semantics through `RssFeedFilterNormalizer` and the RSS filter matcher. Language/subtitle matching depends on uploaded metadata being populated. RSS presets remain public-token feed shortcuts, while notification watch presets are account-owned internal notification rules with no public identifier or URL.
