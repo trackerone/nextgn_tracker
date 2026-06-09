@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
+use App\Models\NotificationWatchPreset;
 use App\Models\Torrent;
 use App\Models\TorrentMetadata;
+use App\Models\TorrentWatchNotification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -202,6 +204,44 @@ final class DiscoveryWatchPresetSuggestionsApiTest extends TestCase
                 ->json($method, route('api.discovery.watch-preset-suggestions'))
                 ->assertStatus(405);
         }
+    }
+
+    public function test_watch_preset_suggestions_do_not_mutate_watch_presets_or_notifications(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+        $preset = NotificationWatchPreset::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'Existing preset',
+            'filters' => ['source' => 'WEB-DL'],
+            'is_enabled' => true,
+        ]);
+
+        TorrentWatchNotification::factory()->create([
+            'user_id' => $user->id,
+            'torrent_id' => $torrent->id,
+            'notification_watch_preset_id' => $preset->id,
+        ]);
+
+        $this->createMetadata($torrent, [
+            'source' => 'WEB-DL',
+            'resolution' => '1080p',
+            'language' => 'english',
+            'release_group' => 'NTB',
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(route('api.discovery.watch-preset-suggestions'))
+            ->assertOk();
+
+        $this->assertDatabaseCount('notification_watch_presets', 1);
+        $this->assertDatabaseCount('torrent_watch_notifications', 1);
+
+        $preset->refresh();
+
+        $this->assertSame('Existing preset', $preset->name);
+        $this->assertSame(['source' => 'WEB-DL'], $preset->filters);
+        $this->assertTrue($preset->is_enabled);
     }
 
     /**
