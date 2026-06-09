@@ -38,6 +38,7 @@ use App\Http\Controllers\TorrentDownloadController;
 use App\Http\Controllers\TorrentFollowController;
 use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WatchCenterController;
 use Illuminate\Support\Facades\Route;
 
@@ -91,6 +92,9 @@ Route::get('/rss/{token}/download/{torrent}', RssTorrentDownloadController::clas
     ->middleware($torrentDownloadThrottle)
     ->where(['token' => '[A-Za-z0-9]+', 'torrent' => '[0-9]+'])
     ->name('rss.torrents.download');
+Route::get('/users/{user:public_slug}', [UserProfileController::class, 'show'])
+    ->where('user', '(?![0-9]+$)[A-Za-z0-9][A-Za-z0-9_-]*')
+    ->name('users.show');
 
 /*
 |--------------------------------------------------------------------------

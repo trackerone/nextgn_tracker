@@ -78,7 +78,7 @@
                 <div>
                     <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">Approved torrent</p>
                     <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
-                    <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by {{ $torrent->uploader?->name ?? 'Unknown' }}</p>
+                    <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
                 </div>
                 @can('download', $torrent)
                     <div class="flex flex-wrap gap-3">
@@ -150,7 +150,7 @@
                         @endif
                     </div>
                     <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploader</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->uploader?->name ?? 'Unknown' }}</dd></div>
+                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploader</dt><dd class="mt-1 text-sm font-semibold text-white">@if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</dd></div>
                         <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted / Updated</dt><dd class="mt-1 text-sm font-semibold text-white">{{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? '—' }}</dd><dd class="text-xs text-slate-400">Updated {{ optional($torrent->updated_at)->toDayDateTimeString() ?? '—' }}</dd></div>
                         <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Upload context</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->original_filename ?? 'Original filename unavailable' }}</dd><dd class="text-xs text-slate-400">{{ number_format($torrent->file_count) }} files • {{ $torrent->formatted_size }}</dd></div>
                         <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Completeness</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $hasDescription ? 'Description' : 'No description' }} • {{ $hasNfo ? 'NFO' : 'No NFO' }}</dd><dd class="text-xs text-slate-400">{{ $hasMetadataRecord ? 'Metadata record present' : 'No metadata record' }}</dd></div>
