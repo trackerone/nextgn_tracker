@@ -146,6 +146,46 @@ Returns all-time discovery metadata suitable for future notification watch prese
 }
 ```
 
+## GET `/api/recommendations/signals`
+
+Returns the recommendation signal foundation payload for authenticated users. This endpoint exposes reusable metadata signals only; it does not return recommended torrents.
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- The endpoint reuses `RecommendationSignalService` and the shared discovery metadata aggregation path.
+- Visibility filtering remains delegated to the shared discovery metadata service.
+- No personalization, recommendation scoring, download history, watch history, or recommendation engine behavior is applied.
+- The all-time `popular` group returns sources, resolutions, languages, and release groups.
+- The `trending` group returns the existing 30-day sources, resolutions, and release groups metadata signals.
+
+### Response shape
+
+```json
+{
+  "version": 1,
+  "engine": "metadata_signals_foundation",
+  "personalized": false,
+  "uses_user_history": false,
+  "uses_download_history": false,
+  "signals": {
+    "popular": {
+      "sources": [],
+      "resolutions": [],
+      "languages": [],
+      "release_groups": []
+    },
+    "trending": {
+      "window": "30d",
+      "sources": [],
+      "resolutions": [],
+      "release_groups": []
+    }
+  }
+}
+```
+
 ## GET `/api/discovery/home`
 
 Returns a compact discovery payload for the frontend landing section.
