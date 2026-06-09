@@ -5,7 +5,7 @@
 - **Laravel**: 13.x (`laravel/framework` constraint `^13.7`).
 - **PHP**: 8.4+ (`composer.json` requires `^8.4`; Docker uses the official FrankenPHP PHP 8.4 image).
 - **Node.js**: >=20 and <26 (`package.json` engines).
-- **Frontend**: Vite 8, React 18, TypeScript, Tailwind CSS, shadcn/ui, and lucide-react.
+- **Frontend**: Laravel Blade-first UI; Vite 8 asset/build pipeline; Tailwind CSS styling; React 18 + TypeScript only for isolated interactive widgets mounted into Blade views (with supporting packages such as shadcn/ui and lucide-react where already used). No full SPA or React takeover of core tracker flows.
 - **Database**: Laravel-supported relational databases. The container accepts SQLite, MySQL/MariaDB, PostgreSQL, or SQL Server env wiring; tests commonly use SQLite.
 
 ## Operational notes

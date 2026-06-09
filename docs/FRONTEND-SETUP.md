@@ -1,6 +1,6 @@
 # Frontend Setup
 
-The NextGN Tracker UI uses Vite + React + Tailwind. Keep Laravel running while Vite runs so browser/API behavior matches normal local usage.
+The NextGN Tracker UI is Laravel Blade-first. Vite provides the asset/build pipeline, Tailwind provides styling, and React is reserved for isolated interactive widgets mounted into Blade views. This is not a full SPA, and core tracker flows should not be taken over by React. Keep Laravel running while Vite runs so browser/API behavior matches normal local usage.
 
 ## Requirements
 
