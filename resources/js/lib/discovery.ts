@@ -2,6 +2,7 @@ import { fetchJson } from './http';
 
 export const DISCOVERY_HOME_ENDPOINT = '/api/discovery/home' as const;
 export const DISCOVERY_RSS_SUGGESTIONS_ENDPOINT = '/api/discovery/rss-suggestions' as const;
+export const DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT = '/api/discovery/watch-preset-suggestions' as const;
 export const DISCOVERY_HOME_TRENDING_WINDOW = '30d' as const;
 export const DISCOVERY_AGGREGATE_LIMIT = 25 as const;
 
@@ -51,27 +52,48 @@ export interface DiscoveryHomePayload {
   popular: DiscoveryAggregateSection;
 }
 
-export type DiscoveryRssSuggestionCategory = 'sources' | 'resolutions' | 'languages' | 'release_groups';
+export type DiscoverySuggestionCategory = 'sources' | 'resolutions' | 'languages' | 'release_groups';
+export type DiscoveryRssSuggestionCategory = DiscoverySuggestionCategory;
+export type DiscoveryWatchPresetSuggestionCategory = DiscoverySuggestionCategory;
 
-export interface DiscoveryRssSuggestionsPayload {
+export interface DiscoverySuggestionsPayload {
   sources: DiscoveryAggregateItem[];
   resolutions: DiscoveryAggregateItem[];
   languages: DiscoveryAggregateItem[];
   release_groups: DiscoveryAggregateItem[];
 }
 
-export interface DiscoveryRssSuggestionsOptions<TCategory extends DiscoveryRssSuggestionCategory = DiscoveryRssSuggestionCategory> {
+export interface DiscoveryRssSuggestionsPayload extends DiscoverySuggestionsPayload {}
+
+export interface DiscoveryWatchPresetSuggestionsPayload extends DiscoverySuggestionsPayload {}
+
+export interface DiscoverySuggestionsOptions<TCategory extends DiscoverySuggestionCategory = DiscoverySuggestionCategory> {
   category?: TCategory;
 }
 
-function discoveryRssSuggestionsUrl(category?: DiscoveryRssSuggestionCategory): string {
+export interface DiscoveryRssSuggestionsOptions<TCategory extends DiscoveryRssSuggestionCategory = DiscoveryRssSuggestionCategory>
+  extends DiscoverySuggestionsOptions<TCategory> {}
+
+export interface DiscoveryWatchPresetSuggestionsOptions<
+  TCategory extends DiscoveryWatchPresetSuggestionCategory = DiscoveryWatchPresetSuggestionCategory,
+> extends DiscoverySuggestionsOptions<TCategory> {}
+
+function discoverySuggestionsUrl(endpoint: string, category?: DiscoverySuggestionCategory): string {
   if (!category) {
-    return DISCOVERY_RSS_SUGGESTIONS_ENDPOINT;
+    return endpoint;
   }
 
   const params = new URLSearchParams({ category });
 
-  return `${DISCOVERY_RSS_SUGGESTIONS_ENDPOINT}?${params.toString()}`;
+  return `${endpoint}?${params.toString()}`;
+}
+
+function discoveryRssSuggestionsUrl(category?: DiscoveryRssSuggestionCategory): string {
+  return discoverySuggestionsUrl(DISCOVERY_RSS_SUGGESTIONS_ENDPOINT, category);
+}
+
+function discoveryWatchPresetSuggestionsUrl(category?: DiscoveryWatchPresetSuggestionCategory): string {
+  return discoverySuggestionsUrl(DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT, category);
 }
 
 export async function fetchDiscoveryHome(): Promise<DiscoveryHomePayload> {
@@ -87,5 +109,17 @@ export async function fetchDiscoveryRssSuggestions(
 ): Promise<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>> {
   return fetchJson<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>>(
     discoveryRssSuggestionsUrl(options.category),
+  );
+}
+
+export async function fetchDiscoveryWatchPresetSuggestions(): Promise<DiscoveryWatchPresetSuggestionsPayload>;
+export async function fetchDiscoveryWatchPresetSuggestions<TCategory extends DiscoveryWatchPresetSuggestionCategory>(
+  options: DiscoveryWatchPresetSuggestionsOptions<TCategory>,
+): Promise<Pick<DiscoveryWatchPresetSuggestionsPayload, TCategory>>;
+export async function fetchDiscoveryWatchPresetSuggestions(
+  options: DiscoveryWatchPresetSuggestionsOptions = {},
+): Promise<DiscoveryWatchPresetSuggestionsPayload | Partial<DiscoveryWatchPresetSuggestionsPayload>> {
+  return fetchJson<DiscoveryWatchPresetSuggestionsPayload | Partial<DiscoveryWatchPresetSuggestionsPayload>>(
+    discoveryWatchPresetSuggestionsUrl(options.category),
   );
 }
