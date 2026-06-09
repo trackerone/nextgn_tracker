@@ -37,7 +37,7 @@ This file defines default operating rules for Codex agents in this repository.
 
 ## Stack and conventions to verify before changes
 - Backend uses Laravel + PHP 8.4 with PSR-12 style.
-- Frontend uses Vite + Tailwind + React packages.
+- Frontend is Laravel Blade-first: Vite provides the asset/build pipeline, Tailwind provides styling, and React is limited to isolated interactive widgets mounted into Blade views (no full SPA or React takeover of core tracker flows).
 - Use repository services/actions/policies patterns already present under `app/`.
 - For database access, use Laravel database abstractions and prepared statements.
 
