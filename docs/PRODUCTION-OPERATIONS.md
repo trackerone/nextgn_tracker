@@ -23,10 +23,19 @@ APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:...
 APP_URL=https://your-domain.example
+TRACKER_ANNOUNCE_URL=https://your-domain.example/announce/%s
 NEXTGN_PRODUCTION_HARDENING=true
 ```
 
 Set database/cache/queue/session values for your environment before boot.
+
+## HTTPS and public URL policy
+
+Production deployments must be served through HTTPS at the public edge, typically by placing the Laravel/FrankenPHP runtime behind a TLS-terminating reverse proxy or platform load balancer. Plain `http://localhost` and `http://127.0.0.1` values are acceptable only in local development `.env` files and must not be copied into production secrets.
+
+Set `APP_URL` to the canonical public HTTPS origin for the site. Set `TRACKER_ANNOUNCE_URL` to the public HTTPS announce endpoint, including the `%s` passkey placeholder when the deployment uses passkey announce URLs. Keep both values aligned with the hostname users and clients actually reach so generated links, redirects, storage URLs, and torrent announce metadata use the production HTTPS origin.
+
+If TLS terminates before the application container, configure the reverse proxy or hosting platform to forward the original scheme and host headers according to Laravel trusted proxy expectations before running production readiness checks.
 
 ## First production deployment (copy/paste order)
 

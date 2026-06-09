@@ -14,6 +14,10 @@ final class ProductionReadinessTest extends TestCase
 
         $this->assertStringContainsString('APP_ENV=production', $envExample);
         $this->assertStringContainsString('APP_DEBUG=false', $envExample);
+        $this->assertStringContainsString('APP_URL=https://example.com', $envExample);
+        $this->assertStringContainsString('TRACKER_ANNOUNCE_URL=https://example.com/announce/%s', $envExample);
+        $this->assertStringNotContainsString('APP_URL=http://localhost', $envExample);
+        $this->assertStringNotContainsString('TRACKER_ANNOUNCE_URL=http://localhost', $envExample);
         $this->assertMatchesRegularExpression('/^APP_KEY=$/m', $envExample);
         $this->assertStringContainsString('DB_CONNECTION=', $envExample);
         $this->assertStringContainsString('QUEUE_CONNECTION=sync', $envExample);
@@ -59,6 +63,8 @@ final class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('php artisan schedule:run', $runbook);
         $this->assertStringContainsString('php artisan storage:link', $runbook);
         $this->assertStringContainsString('GET /health', $runbook);
+        $this->assertStringContainsString('Production deployments must be served through HTTPS', $runbook);
+        $this->assertStringContainsString('TRACKER_ANNOUNCE_URL=https://your-domain.example/announce/%s', $runbook);
         $this->assertStringContainsString("Schema::create('failed_jobs'", $failedJobsMigration);
         $this->assertStringContainsString("Schema::create('jobs'", $jobsMigration);
         $this->assertStringContainsString("'default' => env('QUEUE_CONNECTION', 'sync')", $queueConfig);

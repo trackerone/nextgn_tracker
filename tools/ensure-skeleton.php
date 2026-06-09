@@ -93,7 +93,8 @@ APP_NAME=PU239
 APP_ENV=production
 APP_KEY=
 APP_DEBUG=false
-APP_URL=${APP_URL:-http://localhost}
+# Production deployments must use HTTPS; localhost HTTP is only for local development.
+APP_URL=${APP_URL:-https://example.com}
 LOG_CHANNEL=stack
 LOG_LEVEL=info
 ENV;
