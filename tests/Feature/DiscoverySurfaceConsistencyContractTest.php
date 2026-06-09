@@ -169,12 +169,46 @@ it('keeps the RSS suggestions endpoint centralized in discovery.ts', function ()
         ->toBe([]);
 });
 
-it('keeps the watch preset suggestions endpoint centralized in discovery.ts without adding UI consumers', function (): void {
+it('keeps the watch discovery UI delegated to the shared readonly client', function (): void {
+    $watchDiscoveryComponent = frontendSource('resources/js/components/discovery/WatchDiscoverySuggestions.tsx');
+    $appShell = frontendSource('resources/js/app.tsx');
+    $watchPresetForm = frontendSource('resources/views/account/notification-watch-preset-form.blade.php');
+
+    expect($watchPresetForm)
+        ->toContain('data-watch-discovery-suggestions')
+        ->not->toContain('/api/discovery/watch-preset-suggestions');
+
+    expect($appShell)
+        ->toContain("import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions'")
+        ->toContain("document.querySelector<HTMLElement>('[data-watch-discovery-suggestions]')")
+        ->toContain('<WatchDiscoverySuggestions />')
+        ->not->toContain('/api/discovery/watch-preset-suggestions')
+        ->not->toContain('fetchJson');
+
+    expect($watchDiscoveryComponent)
+        ->toContain("from '../../lib/discovery'")
+        ->toContain('fetchDiscoveryWatchPresetSuggestions')
+        ->toContain('Suggestions are read-only and do not change the preset.')
+        ->toContain('Read only')
+        ->not->toContain('/api/discovery/watch-preset-suggestions')
+        ->not->toContain('fetchJson')
+        ->not->toContain('fetch(')
+        ->not->toContain('axios')
+        ->not->toContain('<form')
+        ->not->toContain('<button')
+        ->not->toContain('onSubmit')
+        ->not->toContain('onClick')
+        ->not->toContain('onChange')
+        ->not->toContain('method=')
+        ->not->toContain('action=');
+});
+
+it('keeps the watch preset suggestions endpoint centralized in discovery.ts', function (): void {
     expect(frontendFilesContaining('resources/js', '/api/discovery/watch-preset-suggestions'))
         ->toBe(['resources/js/lib/discovery.ts']);
 
     expect(frontendFilesContaining('resources/js/components', 'fetchDiscoveryWatchPresetSuggestions'))
-        ->toBe([]);
+        ->toBe(['resources/js/components/discovery/WatchDiscoverySuggestions.tsx']);
 
     expect(frontendFilesContaining('resources/js/components', 'DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT'))
         ->toBe([]);
