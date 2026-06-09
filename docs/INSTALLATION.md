@@ -31,7 +31,7 @@ Common failure:
 cp .env.example .env
 ```
 
-Then set at least:
+Then set at least for **local development only**:
 
 ```env
 APP_NAME="NextGN Tracker"
