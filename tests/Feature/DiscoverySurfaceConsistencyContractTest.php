@@ -74,7 +74,8 @@ it('keeps discovery.ts as the typed RSS suggestions client', function (): void {
 
     expect($discoveryClient)
         ->toContain("export const DISCOVERY_RSS_SUGGESTIONS_ENDPOINT = '/api/discovery/rss-suggestions' as const")
-        ->toContain("export type DiscoveryRssSuggestionCategory = 'sources' | 'resolutions' | 'languages' | 'release_groups'")
+        ->toContain("export type DiscoverySuggestionCategory = 'sources' | 'resolutions' | 'languages' | 'release_groups'")
+        ->toContain('export type DiscoveryRssSuggestionCategory = DiscoverySuggestionCategory')
         ->toContain('export interface DiscoveryRssSuggestionsPayload')
         ->toContain('sources: DiscoveryAggregateItem[]')
         ->toContain('resolutions: DiscoveryAggregateItem[]')
@@ -84,6 +85,23 @@ it('keeps discovery.ts as the typed RSS suggestions client', function (): void {
         ->toContain('fetchDiscoveryRssSuggestions')
         ->toContain('fetchJson<DiscoveryRssSuggestionsPayload | Partial<DiscoveryRssSuggestionsPayload>>')
         ->toContain('discoveryRssSuggestionsUrl(options.category)');
+});
+
+it('keeps discovery.ts as the typed watch preset suggestions client', function (): void {
+    $discoveryClient = frontendSource('resources/js/lib/discovery.ts');
+
+    expect($discoveryClient)
+        ->toContain("export const DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT = '/api/discovery/watch-preset-suggestions' as const")
+        ->toContain('export type DiscoveryWatchPresetSuggestionCategory = DiscoverySuggestionCategory')
+        ->toContain('export interface DiscoveryWatchPresetSuggestionsPayload')
+        ->toContain('sources: DiscoveryAggregateItem[]')
+        ->toContain('resolutions: DiscoveryAggregateItem[]')
+        ->toContain('languages: DiscoveryAggregateItem[]')
+        ->toContain('release_groups: DiscoveryAggregateItem[]')
+        ->toContain('new URLSearchParams({ category })')
+        ->toContain('fetchDiscoveryWatchPresetSuggestions')
+        ->toContain('fetchJson<DiscoveryWatchPresetSuggestionsPayload | Partial<DiscoveryWatchPresetSuggestionsPayload>>')
+        ->toContain('discoveryWatchPresetSuggestionsUrl(options.category)');
 });
 
 it('keeps landing and browse teaser aligned to shared discovery home assumptions', function (): void {
@@ -148,5 +166,16 @@ it('keeps the RSS suggestions endpoint centralized in discovery.ts', function ()
         ->toBe(['resources/js/components/discovery/RssDiscoverySuggestions.tsx']);
 
     expect(frontendFilesContaining('resources/js/components', 'DISCOVERY_RSS_SUGGESTIONS_ENDPOINT'))
+        ->toBe([]);
+});
+
+it('keeps the watch preset suggestions endpoint centralized in discovery.ts without adding UI consumers', function (): void {
+    expect(frontendFilesContaining('resources/js', '/api/discovery/watch-preset-suggestions'))
+        ->toBe(['resources/js/lib/discovery.ts']);
+
+    expect(frontendFilesContaining('resources/js/components', 'fetchDiscoveryWatchPresetSuggestions'))
+        ->toBe([]);
+
+    expect(frontendFilesContaining('resources/js/components', 'DISCOVERY_WATCH_PRESET_SUGGESTIONS_ENDPOINT'))
         ->toBe([]);
 });
