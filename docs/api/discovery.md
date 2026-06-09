@@ -114,6 +114,38 @@ Returns all-time discovery metadata suitable for future RSS preset creation UI.
 }
 ```
 
+## GET `/api/discovery/watch-preset-suggestions`
+
+Returns all-time discovery metadata suitable for future notification watch preset creation UI.
+
+### Optional category
+
+- `sources`
+- `resolutions`
+- `languages`
+- `release_groups`
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- No time window is applied.
+- No personalization, recommendation logic, watch preset saving behavior, or notification behavior is applied.
+- The endpoint reuses `DiscoveryMetadataService`, including visible filtering, null and empty filtering, ordering, and the 25 entry aggregate limit.
+- The response contains only the requested category when a valid category is provided.
+- Invalid `category` values are rejected with HTTP `422`.
+
+### Response shape
+
+```json
+{
+  "sources": [],
+  "resolutions": [],
+  "languages": [],
+  "release_groups": []
+}
+```
+
 ## GET `/api/discovery/home`
 
 Returns a compact discovery payload for the frontend landing section.

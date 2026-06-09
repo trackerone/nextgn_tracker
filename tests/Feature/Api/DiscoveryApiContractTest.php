@@ -18,6 +18,7 @@ final class DiscoveryApiContractTest extends TestCase
         $this->assertSame('/api/discovery/trending', route('api.discovery.trending', [], false));
         $this->assertSame('/api/discovery/popular', route('api.discovery.popular', [], false));
         $this->assertSame('/api/discovery/rss-suggestions', route('api.discovery.rss-suggestions', [], false));
+        $this->assertSame('/api/discovery/watch-preset-suggestions', route('api.discovery.watch-preset-suggestions', [], false));
     }
 
     public function test_authenticated_users_can_get_each_discovery_endpoint(): void
@@ -62,6 +63,7 @@ final class DiscoveryApiContractTest extends TestCase
             'api.discovery.trending',
             'api.discovery.popular',
             'api.discovery.rss-suggestions',
+            'api.discovery.watch-preset-suggestions',
         ];
     }
 }

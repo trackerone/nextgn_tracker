@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
 use App\Http\Controllers\Api\DiscoveryRssSuggestionsController;
 use App\Http\Controllers\Api\DiscoverySummaryController;
 use App\Http\Controllers\Api\DiscoveryTrendingController;
+use App\Http\Controllers\Api\DiscoveryWatchPresetSuggestionsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
@@ -68,6 +69,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/rss-suggestions', DiscoveryRssSuggestionsController::class)
         ->name('api.discovery.rss-suggestions');
+
+    Route::get('/discovery/watch-preset-suggestions', DiscoveryWatchPresetSuggestionsController::class)
+        ->name('api.discovery.watch-preset-suggestions');
 
     Route::get('/discovery/summary', DiscoverySummaryController::class)
         ->name('api.discovery.summary');
