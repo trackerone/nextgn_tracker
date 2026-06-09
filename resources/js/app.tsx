@@ -7,6 +7,7 @@ import TopicView from './components/forum/TopicView';
 import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidget';
 import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
+import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -146,6 +147,16 @@ if (rssDiscoverySuggestionsElement) {
   ReactDOM.createRoot(rssDiscoverySuggestionsElement).render(
     <React.StrictMode>
       <RssDiscoverySuggestions />
+    </React.StrictMode>,
+  );
+}
+
+const watchDiscoverySuggestionsElement = document.querySelector<HTMLElement>('[data-watch-discovery-suggestions]');
+
+if (watchDiscoverySuggestionsElement) {
+  ReactDOM.createRoot(watchDiscoverySuggestionsElement).render(
+    <React.StrictMode>
+      <WatchDiscoverySuggestions />
     </React.StrictMode>,
   );
 }
