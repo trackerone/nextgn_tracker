@@ -8,6 +8,7 @@ import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidge
 import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
+import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -157,6 +158,16 @@ if (watchDiscoverySuggestionsElement) {
   ReactDOM.createRoot(watchDiscoverySuggestionsElement).render(
     <React.StrictMode>
       <WatchDiscoverySuggestions />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationSignalsElement = document.querySelector<HTMLElement>('[data-recommendation-signals]');
+
+if (recommendationSignalsElement) {
+  ReactDOM.createRoot(recommendationSignalsElement).render(
+    <React.StrictMode>
+      <RecommendationSignalsPanel />
     </React.StrictMode>,
   );
 }
