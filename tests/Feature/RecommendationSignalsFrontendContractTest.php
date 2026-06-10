@@ -79,8 +79,37 @@ it('keeps the recommendation signals endpoint centralized away from UI code', fu
         ->toBe(['resources/js/lib/recommendationSignals.ts']);
 
     expect(recommendationSignalsFrontendFilesContaining('resources/js/components', 'fetchRecommendationSignals'))
-        ->toBe([]);
+        ->toBe(['resources/js/components/discovery/RecommendationSignalsPanel.tsx']);
 
     expect(recommendationSignalsFrontendFilesContaining('resources/js/components', 'RECOMMENDATION_SIGNALS_ENDPOINT'))
         ->toBe([]);
+});
+
+it('mounts a readonly recommendation signals discovery surface without torrent recommendation language', function (): void {
+    $discoveryView = recommendationSignalsFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationSignalsFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationSignalsFrontendSource('resources/js/components/discovery/RecommendationSignalsPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-signals');
+
+    expect($appSource)
+        ->toContain("import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-signals]')")
+        ->toContain('<RecommendationSignalsPanel />');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationSignals')
+        ->toContain('Recommendation Signals')
+        ->toContain('Metadata-driven discovery signals')
+        ->toContain('Read-only aggregate signals from catalog metadata')
+        ->toContain('This surface does not personalize, use history, or show torrents')
+        ->toContain('Loading discovery signals')
+        ->toContain('No discovery signals are available yet')
+        ->toContain('Discovery signals are temporarily unavailable')
+        ->toContain('Signals only')
+        ->not->toContain('recommended torrents')
+        ->not->toContain('Recommended torrents')
+        ->not->toContain('watch history')
+        ->not->toContain('download history');
 });
