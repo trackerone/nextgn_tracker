@@ -117,7 +117,7 @@ final class RecommendationEngineApiTest extends TestCase
             'watch_history',
         ] as $forbiddenKey) {
             $this->assertArrayNotHasKey($forbiddenKey, $payload);
-            $this->assertStringNotContainsString('"' . $forbiddenKey . '"', $encodedPayload);
+            $this->assertStringNotContainsString('"'.$forbiddenKey.'"', $encodedPayload);
         }
     }
 
