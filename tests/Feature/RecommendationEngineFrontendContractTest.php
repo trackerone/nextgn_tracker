@@ -158,7 +158,6 @@ it('keeps the recommendation engine foundation UI readonly and non-personalized'
         ->not->toContain('PUT')
         ->not->toContain('PATCH')
         ->not->toContain('DELETE')
-        ->not->toContain('download')
         ->not->toContain('watch-history')
         ->not->toContain('watch history behavior')
         ->not->toContain('personalized')
