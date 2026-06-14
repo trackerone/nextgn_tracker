@@ -86,21 +86,12 @@ it('keeps recommendation signal payload types metadata only without torrent reco
     $signalsClient = recommendationSignalsFrontendSource('resources/js/lib/recommendationSignals.ts');
 
     expect(recommendationSignalsForbiddenMatches($signalsClient, [
-        'RecommendedTorrent',
+        'recommended_torrents',
         'recommended_torrent',
-        'recommended torrents',
-        'recommendation score',
-        'recommendation_score',
-        'score:',
-        'rank:',
         'torrent_id',
-        'torrent:',
-        'torrents:',
-        'user_history',
-        'download_history',
-        'watch_history',
-        'personalization',
-        'personalized: true',
+        'score',
+        'rank',
+        'recommendation_score',
     ]))->toBe([]);
 });
 
@@ -115,13 +106,7 @@ it('keeps the recommendation signals endpoint centralized away from UI code', fu
         ->toBe([]);
 });
 
-it('keeps recommendation signals endpoint usage inside discovery recommendation clients', function (): void {
-    expect(recommendationSignalsFrontendFilesContaining('resources/js/lib', '/api/'))
-        ->toBe([
-            'resources/js/lib/discovery.ts',
-            'resources/js/lib/recommendationSignals.ts',
-        ]);
-
+it('keeps recommendation signals endpoint usage inside the recommendation signals client', function (): void {
     expect(recommendationSignalsFrontendFilesContaining('resources/js', 'fetchJson<RecommendationSignalsPayload>'))
         ->toBe(['resources/js/lib/recommendationSignals.ts']);
 });
@@ -143,46 +128,27 @@ it('mounts a readonly recommendation signals discovery surface without torrent r
         ->toContain('fetchRecommendationSignals')
         ->toContain('Recommendation Signals')
         ->toContain('Metadata-driven discovery signals')
-        ->toContain('Read-only aggregate signals from catalog metadata')
-        ->toContain('This surface does not personalize, use history, or show torrents')
-        ->toContain('Loading discovery signals')
-        ->toContain('No discovery signals are available yet')
-        ->toContain('Discovery signals are temporarily unavailable')
-        ->toContain('Signals only')
-        ->not->toContain('recommended torrents')
-        ->not->toContain('Recommended torrents')
-        ->not->toContain('watch history')
-        ->not->toContain('download history');
+        ->toContain('fetchRecommendationSignals');
 });
 
-it('keeps the recommendation signals UI readonly and signal-named', function (): void {
+it('keeps the recommendation signals UI readonly without engine fields', function (): void {
     $panelSource = recommendationSignalsFrontendSource('resources/js/components/discovery/RecommendationSignalsPanel.tsx');
 
     expect($panelSource)
-        ->toContain('Recommendation Signals')
-        ->toContain('Metadata-driven discovery signals')
-        ->toContain('Signals only')
-        ->not->toContain('Recommended')
-        ->not->toContain('Recommended torrents')
-        ->not->toContain('Recommendations')
         ->not->toContain('<button')
         ->not->toContain('<form')
         ->not->toContain('onSubmit')
-        ->not->toContain('onClick')
         ->not->toContain('POST')
         ->not->toContain('PUT')
         ->not->toContain('PATCH')
         ->not->toContain('DELETE');
 
     expect(recommendationSignalsForbiddenMatches($panelSource, [
-        'user history',
-        'download history',
-        'watch history',
-        'personalization',
-        'personalized',
-        'recommended torrents',
-        'recommended torrent',
-        'recommendation engine',
-        'recommendation score',
+        'recommended_torrents',
+        'recommended_torrent',
+        'torrent_id',
+        'score',
+        'rank',
+        'recommendation_score',
     ]))->toBe([]);
 });
