@@ -101,7 +101,6 @@ it('keeps the recommendation engine endpoint centralized in the engine foundatio
         ->toBe(['resources/js/lib/recommendationEngine.ts']);
 });
 
-
 it('mounts a readonly recommendation engine foundation discovery surface without torrent output', function (): void {
     $discoveryView = recommendationEngineFrontendSource('resources/views/account/discovery.blade.php');
     $appSource = recommendationEngineFrontendSource('resources/js/app.tsx');
