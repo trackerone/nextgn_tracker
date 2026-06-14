@@ -52,6 +52,7 @@ class PrivateTrackerAccessLockdownTest extends TestCase
         $this->getJson(route('api.my.uploads'))->assertUnauthorized();
         $this->getJson(route('api.moderation.uploads.index'))->assertUnauthorized();
         $this->getJson(route('api.recommendations.signals'))->assertUnauthorized();
+        $this->getJson(route('api.recommendations.engine'))->assertUnauthorized();
         $this->postJson(route('api.moderation.uploads.approve', $torrent))->assertUnauthorized();
     }
 

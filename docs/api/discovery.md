@@ -186,6 +186,50 @@ Returns the recommendation signal foundation payload for authenticated users. Th
 }
 ```
 
+
+## GET `/api/recommendations/engine`
+
+Returns the recommendation engine foundation payload for authenticated users. This endpoint exposes the readonly, metadata/signal-based engine foundation only; it does not return recommended torrents or personalized output.
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- The endpoint reuses `RecommendationEngineService`, which consumes `RecommendationSignalService` output instead of reading torrent metadata directly.
+- Visibility filtering remains delegated to the shared discovery metadata service through recommendation signals.
+- No recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history are returned.
+- Non-`GET` methods are not supported.
+
+### Response shape
+
+```json
+{
+  "version": 1,
+  "engine": "metadata_recommendation_engine_foundation",
+  "readonly": true,
+  "uses_user_history": false,
+  "uses_download_history": false,
+  "uses_watch_history": false,
+  "metadata_categories": [],
+  "signal_groups": [],
+  "weights": {},
+  "signals": {
+    "popular": {
+      "sources": [],
+      "resolutions": [],
+      "languages": [],
+      "release_groups": []
+    },
+    "trending": {
+      "window": "30d",
+      "sources": [],
+      "resolutions": [],
+      "release_groups": []
+    }
+  }
+}
+```
+
 ## GET `/api/discovery/home`
 
 Returns a compact discovery payload for the frontend landing section.
