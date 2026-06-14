@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DiscoveryWatchPresetSuggestionsController;
 use App\Http\Controllers\Api\ModerationUploadsController;
 use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
+use App\Http\Controllers\Api\RecommendationEngineController;
 use App\Http\Controllers\Api\RecommendationSignalsController;
 use App\Http\Controllers\Api\TorrentBrowseController;
 use App\Http\Controllers\Api\TorrentDetailsController;
@@ -82,6 +83,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/recommendations/signals', RecommendationSignalsController::class)
         ->name('api.recommendations.signals');
+
+    Route::get('/recommendations/engine', RecommendationEngineController::class)
+        ->name('api.recommendations.engine');
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
