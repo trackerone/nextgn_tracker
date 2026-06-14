@@ -55,6 +55,19 @@ function recommendationEngineForbiddenMatches(string $source, array $forbidden):
     ));
 }
 
+function recommendationEngineForbiddenOutputFields(): array
+{
+    return [
+        'recommended_torrents',
+        'recommended_torrent',
+        'torrent_id',
+        'score',
+        'rank',
+        'recommendation_score',
+        'personalized_recommendations',
+    ];
+}
+
 it('keeps the recommendation engine foundation behind a typed readonly frontend client', function (): void {
     $engineClient = recommendationEngineFrontendSource('resources/js/lib/recommendationEngine.ts');
 
@@ -78,24 +91,28 @@ it('keeps the recommendation engine foundation behind a typed readonly frontend 
         ->toContain('metadata_categories: RecommendationEngineMetadataCategory[]')
         ->toContain('signal_groups: RecommendationEngineSignalGroup[]')
         ->toContain('fetchRecommendationEngineFoundation')
-        ->toContain('fetchJson<RecommendationEngineFoundationPayload>(RECOMMENDATION_ENGINE_FOUNDATION_ENDPOINT)');
+        ->toContain('fetchJson<RecommendationEngineFoundationPayload>(RECOMMENDATION_ENGINE_FOUNDATION_ENDPOINT)')
+        ->not->toContain('personalized:')
+        ->not->toContain('personalization')
+        ->not->toContain('recommendations:');
 });
 
 it('keeps recommendation engine foundation payload types free of final recommendation output', function (): void {
     $engineClient = recommendationEngineFrontendSource('resources/js/lib/recommendationEngine.ts');
 
-    expect(recommendationEngineForbiddenMatches($engineClient, [
-        'recommended_torrents',
-        'torrent_id',
-        'score',
-        'rank',
-        'personalized',
-    ]))->toBe([]);
+    expect(recommendationEngineForbiddenMatches($engineClient, recommendationEngineForbiddenOutputFields()))
+        ->toBe([]);
 });
 
 it('keeps the recommendation engine endpoint centralized in the engine foundation client', function (): void {
     expect(recommendationEngineFrontendFilesContaining('resources/js', '/api/recommendations/engine'))
         ->toBe(['resources/js/lib/recommendationEngine.ts']);
+
+    expect(recommendationEngineFrontendFilesContaining('resources/js/components', 'RECOMMENDATION_ENGINE_FOUNDATION_ENDPOINT'))
+        ->toBe([]);
+
+    expect(recommendationEngineFrontendFilesContaining('resources/js/components', 'fetchRecommendationEngineFoundation'))
+        ->toBe(['resources/js/components/discovery/RecommendationEngineFoundationPanel.tsx']);
 
     expect(recommendationEngineFrontendFilesContaining('resources/js', 'fetchJson<RecommendationEngineFoundationPayload>'))
         ->toBe(['resources/js/lib/recommendationEngine.ts']);
@@ -126,12 +143,24 @@ it('mounts a readonly recommendation engine foundation discovery surface without
         ->toContain('No watch history')
         ->toContain('does not show torrents');
 
-    expect(recommendationEngineForbiddenMatches($panelSource, [
-        'recommended_torrents',
-        'recommended_torrent',
-        'torrent_id',
-        'score',
-        'rank',
-        'personalized',
-    ]))->toBe([]);
+    expect(recommendationEngineForbiddenMatches($panelSource, recommendationEngineForbiddenOutputFields()))
+        ->toBe([]);
+});
+
+it('keeps the recommendation engine foundation UI readonly and non-personalized', function (): void {
+    $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationEngineFoundationPanel.tsx');
+
+    expect($panelSource)
+        ->not->toContain('<button')
+        ->not->toContain('<form')
+        ->not->toContain('onSubmit')
+        ->not->toContain('POST')
+        ->not->toContain('PUT')
+        ->not->toContain('PATCH')
+        ->not->toContain('DELETE')
+        ->not->toContain('download')
+        ->not->toContain('watch-history')
+        ->not->toContain('watch history behavior')
+        ->not->toContain('personalized')
+        ->not->toContain('personalization');
 });
