@@ -230,6 +230,35 @@ Returns the recommendation engine foundation payload for authenticated users. Th
 }
 ```
 
+
+## GET `/api/recommendations/candidates`
+
+Returns readonly recommendation candidate groups for authenticated users. This endpoint exposes system-wide metadata combinations generated from the recommendation engine foundation; it does not return torrents or personalized recommendations.
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- The endpoint reuses `RecommendationEngineService` candidate generation.
+- Candidate groups are system-wide metadata combinations only.
+- No recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history are returned.
+- Non-`GET` methods are not supported.
+
+### Response shape
+
+```json
+{
+  "version": 1,
+  "readonly": true,
+  "candidate_groups": [
+    {
+      "source": "WEB-DL",
+      "resolution": "1080p"
+    }
+  ]
+}
+```
+
 ## GET `/api/discovery/home`
 
 Returns a compact discovery payload for the frontend landing section.
