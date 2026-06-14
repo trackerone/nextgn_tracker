@@ -100,3 +100,38 @@ it('keeps the recommendation engine endpoint centralized in the engine foundatio
     expect(recommendationEngineFrontendFilesContaining('resources/js', 'fetchJson<RecommendationEngineFoundationPayload>'))
         ->toBe(['resources/js/lib/recommendationEngine.ts']);
 });
+
+it('mounts a readonly recommendation engine foundation discovery surface without torrent output', function (): void {
+    $discoveryView = recommendationEngineFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationEngineFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationEngineFoundationPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-engine-foundation');
+
+    expect($appSource)
+        ->toContain("import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-engine-foundation]')")
+        ->toContain('<RecommendationEngineFoundationPanel />');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationEngineFoundation')
+        ->toContain('Recommendation Engine Foundation')
+        ->toContain('Readonly metadata signal foundation')
+        ->toContain('Metadata categories')
+        ->toContain('Signal groups')
+        ->toContain('Foundation weights')
+        ->toContain('No user history')
+        ->toContain('No download history')
+        ->toContain('No watch history')
+        ->toContain('does not show torrents');
+
+    expect(recommendationEngineForbiddenMatches($panelSource, [
+        'recommended_torrents',
+        'recommended_torrent',
+        'torrent_id',
+        'score',
+        'rank',
+        'personalized',
+    ]))->toBe([]);
+});
