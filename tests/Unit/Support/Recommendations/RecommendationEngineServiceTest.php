@@ -36,6 +36,7 @@ final class RecommendationEngineServiceTest extends TestCase
             'metadata_categories',
             'signal_groups',
             'weights',
+            'candidate_groups',
             'signals',
         ], array_keys($payload));
         $this->assertSame(1, $payload['version']);
@@ -48,6 +49,7 @@ final class RecommendationEngineServiceTest extends TestCase
         $this->assertSame(['sources', 'resolutions', 'languages', 'release_groups'], $payload['metadata_categories']);
         $this->assertSame(['popular', 'trending'], $payload['signal_groups']);
         $this->assertSame(['popular' => 60, 'trending' => 40], $payload['weights']);
+        $this->assertSame([['source' => 'WEB-DL', 'resolution' => '1080p']], $payload['candidate_groups']);
     }
 
     public function test_recommendation_engine_reuses_signal_payload_without_recommendations(): void
@@ -67,6 +69,7 @@ final class RecommendationEngineServiceTest extends TestCase
         $this->assertSame([['value' => 'NTB', 'count' => 1]], $payload['signals']['popular']['release_groups']);
         $this->assertSame('30d', $payload['signals']['trending']['window']);
         $this->assertSame([['value' => 'WEB-DL', 'count' => 1]], $payload['signals']['trending']['sources']);
+        $this->assertSame([['source' => 'WEB-DL', 'resolution' => '1080p']], $payload['candidate_groups']);
 
         $this->assertArrayNotHasKey('torrents', $payload);
         $this->assertArrayNotHasKey('recommendations', $payload);
@@ -101,6 +104,43 @@ final class RecommendationEngineServiceTest extends TestCase
         $this->assertSame([['value' => 'WEB-DL', 'count' => 1]], $payload['signals']['popular']['sources']);
         $this->assertSame([['value' => 'english', 'count' => 1]], $payload['signals']['popular']['languages']);
         $this->assertSame([['value' => 'WEB-DL', 'count' => 1]], $payload['signals']['trending']['sources']);
+        $this->assertSame([['source' => 'WEB-DL', 'resolution' => '1080p']], $payload['candidate_groups']);
+    }
+
+    public function test_recommendation_engine_candidate_groups_are_metadata_only_combinations(): void
+    {
+        $this->createMetadata(Torrent::factory()->create([
+            'uploaded_at' => now()->subDay(),
+        ]), [
+            'source' => 'WEB-DL',
+            'resolution' => '2160p',
+            'language' => 'english',
+            'release_group' => 'NTB',
+        ]);
+        $this->createMetadata(Torrent::factory()->create([
+            'uploaded_at' => now()->subDays(45),
+        ]), [
+            'source' => 'BluRay',
+            'resolution' => '1080p',
+            'language' => 'french',
+            'release_group' => 'CtrlHD',
+        ]);
+
+        $payload = app(RecommendationEngineService::class)->payload();
+
+        $this->assertSame([
+            ['source' => 'WEB-DL', 'resolution' => '2160p'],
+            ['source' => 'WEB-DL', 'resolution' => '1080p'],
+            ['source' => 'BluRay', 'resolution' => '2160p'],
+            ['source' => 'BluRay', 'resolution' => '1080p'],
+        ], $payload['candidate_groups']);
+
+        foreach ($payload['candidate_groups'] as $candidateGroup) {
+            $this->assertSame(['source', 'resolution'], array_keys($candidateGroup));
+            $this->assertArrayNotHasKey('torrent_id', $candidateGroup);
+            $this->assertArrayNotHasKey('score', $candidateGroup);
+            $this->assertArrayNotHasKey('rank', $candidateGroup);
+        }
     }
 
     /**

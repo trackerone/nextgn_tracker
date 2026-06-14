@@ -64,6 +64,12 @@ final class RecommendationEngineApiTest extends TestCase
                 'popular' => 60,
                 'trending' => 40,
             ],
+            'candidate_groups' => [
+                [
+                    'source' => 'WEB-DL',
+                    'resolution' => '1080p',
+                ],
+            ],
             'signals' => [
                 'popular' => [
                     'sources' => [
