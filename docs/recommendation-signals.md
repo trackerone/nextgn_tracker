@@ -50,7 +50,10 @@ Slice 73 adds `App\Support\Recommendations\RecommendationEngineService` as an in
 
 The engine foundation payload intentionally contains only metadata categories, available signal groups, a small internal signal weighting structure, and the engine-ready signal payload. It does not render UI, return torrent records, personalize results, or inspect user, download, or watch history.
 
+
 Slice 74 exposes that foundation through authenticated `GET /api/recommendations/engine`. The API response reuses `RecommendationEngineService` while keeping the external contract metadata-only and readonly: no recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history are returned. Non-`GET` methods are not supported.
+
+Slice 79 exposes candidate groups through authenticated `GET /api/recommendations/candidates`. The API response reuses `RecommendationEngineService` candidate generation but returns only the readonly metadata-combination candidate groups. It does not return recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history. Non-`GET` methods are not supported.
 
 ## API endpoint
 
