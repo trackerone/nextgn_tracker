@@ -44,6 +44,12 @@ Slice 68 adds an internal, read-only recommendation signal payload for future AP
 
 The all-time popular groups cover sources, resolutions, languages, and release groups. The trending group uses the existing safe discovery-style 30-day metadata window for sources, resolutions, and release groups.
 
+## Engine foundation
+
+Slice 73 adds `App\Support\Recommendations\RecommendationEngineService` as an internal-only, read-only foundation for future recommendation engine work. The service consumes the existing recommendation signals payload rather than reading torrent metadata directly, so visibility filtering remains delegated through `RecommendationSignalService` and `DiscoveryMetadataService`.
+
+The engine foundation payload intentionally contains only metadata categories, available signal groups, a small internal signal weighting structure, and the engine-ready signal payload. It does not expose an API route, render UI, return torrent records, personalize results, or inspect user, download, or watch history.
+
 ## API endpoint
 
 `GET /api/recommendations/signals` exposes the foundation payload for authenticated users. The endpoint is intentionally read-only and metadata-only:
