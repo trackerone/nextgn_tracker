@@ -47,6 +47,14 @@ function recommendationSignalsFrontendFilesContaining(string $directory, string 
     ));
 }
 
+function recommendationSignalsForbiddenMatches(string $source, array $forbidden): array
+{
+    return array_values(array_filter(
+        $forbidden,
+        fn (string $needle): bool => str_contains(strtolower($source), strtolower($needle)),
+    ));
+}
+
 it('keeps recommendation signals behind a typed readonly frontend client', function (): void {
     $signalsClient = recommendationSignalsFrontendSource('resources/js/lib/recommendationSignals.ts');
 
@@ -74,6 +82,28 @@ it('keeps recommendation signals behind a typed readonly frontend client', funct
         ->not->toContain('personalization');
 });
 
+it('keeps recommendation signal payload types metadata only without torrent recommendations', function (): void {
+    $signalsClient = recommendationSignalsFrontendSource('resources/js/lib/recommendationSignals.ts');
+
+    expect(recommendationSignalsForbiddenMatches($signalsClient, [
+        'RecommendedTorrent',
+        'recommended_torrent',
+        'recommended torrents',
+        'recommendation score',
+        'recommendation_score',
+        'score:',
+        'rank:',
+        'torrent_id',
+        'torrent:',
+        'torrents:',
+        'user_history',
+        'download_history',
+        'watch_history',
+        'personalization',
+        'personalized: true',
+    ]))->toBe([]);
+});
+
 it('keeps the recommendation signals endpoint centralized away from UI code', function (): void {
     expect(recommendationSignalsFrontendFilesContaining('resources/js', '/api/recommendations/signals'))
         ->toBe(['resources/js/lib/recommendationSignals.ts']);
@@ -83,6 +113,17 @@ it('keeps the recommendation signals endpoint centralized away from UI code', fu
 
     expect(recommendationSignalsFrontendFilesContaining('resources/js/components', 'RECOMMENDATION_SIGNALS_ENDPOINT'))
         ->toBe([]);
+});
+
+it('keeps recommendation signals endpoint usage inside discovery recommendation clients', function (): void {
+    expect(recommendationSignalsFrontendFilesContaining('resources/js/lib', '/api/'))
+        ->toBe([
+            'resources/js/lib/discovery.ts',
+            'resources/js/lib/recommendationSignals.ts',
+        ]);
+
+    expect(recommendationSignalsFrontendFilesContaining('resources/js', 'fetchJson<RecommendationSignalsPayload>'))
+        ->toBe(['resources/js/lib/recommendationSignals.ts']);
 });
 
 it('mounts a readonly recommendation signals discovery surface without torrent recommendation language', function (): void {
@@ -112,4 +153,36 @@ it('mounts a readonly recommendation signals discovery surface without torrent r
         ->not->toContain('Recommended torrents')
         ->not->toContain('watch history')
         ->not->toContain('download history');
+});
+
+it('keeps the recommendation signals UI readonly and signal-named', function (): void {
+    $panelSource = recommendationSignalsFrontendSource('resources/js/components/discovery/RecommendationSignalsPanel.tsx');
+
+    expect($panelSource)
+        ->toContain('Recommendation Signals')
+        ->toContain('Metadata-driven discovery signals')
+        ->toContain('Signals only')
+        ->not->toContain('Recommended')
+        ->not->toContain('Recommended torrents')
+        ->not->toContain('Recommendations')
+        ->not->toContain('<button')
+        ->not->toContain('<form')
+        ->not->toContain('onSubmit')
+        ->not->toContain('onClick')
+        ->not->toContain('POST')
+        ->not->toContain('PUT')
+        ->not->toContain('PATCH')
+        ->not->toContain('DELETE');
+
+    expect(recommendationSignalsForbiddenMatches($panelSource, [
+        'user history',
+        'download history',
+        'watch history',
+        'personalization',
+        'personalized',
+        'recommended torrents',
+        'recommended torrent',
+        'recommendation engine',
+        'recommendation score',
+    ]))->toBe([]);
 });
