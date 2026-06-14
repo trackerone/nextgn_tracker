@@ -9,6 +9,7 @@ import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser'
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
+import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -168,6 +169,16 @@ if (recommendationSignalsElement) {
   ReactDOM.createRoot(recommendationSignalsElement).render(
     <React.StrictMode>
       <RecommendationSignalsPanel />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationEngineFoundationElement = document.querySelector<HTMLElement>('[data-recommendation-engine-foundation]');
+
+if (recommendationEngineFoundationElement) {
+  ReactDOM.createRoot(recommendationEngineFoundationElement).render(
+    <React.StrictMode>
+      <RecommendationEngineFoundationPanel />
     </React.StrictMode>,
   );
 }
