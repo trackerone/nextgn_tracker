@@ -163,3 +163,97 @@ it('keeps the recommendation engine foundation UI readonly and non-personalized'
         ->not->toContain('personalized')
         ->not->toContain('personalization');
 });
+
+it('keeps recommendation candidates behind the shared typed readonly frontend client', function (): void {
+    $candidateClient = recommendationEngineFrontendSource('resources/js/lib/recommendationCandidates.ts');
+
+    expect($candidateClient)
+        ->toContain("import { fetchJson } from './http'")
+        ->toContain("export const RECOMMENDATION_CANDIDATES_ENDPOINT = '/api/recommendations/candidates' as const")
+        ->toContain('export const RECOMMENDATION_CANDIDATES_VERSION = 1 as const')
+        ->toContain('export interface RecommendationCandidateGroup')
+        ->toContain('source: string')
+        ->toContain('resolution: string')
+        ->toContain('export interface RecommendationCandidatesPayload')
+        ->toContain('readonly: true')
+        ->toContain('candidate_groups: RecommendationCandidateGroup[]')
+        ->toContain('fetchRecommendationCandidates')
+        ->toContain('fetchJson<RecommendationCandidatesPayload>(RECOMMENDATION_CANDIDATES_ENDPOINT)')
+        ->not->toContain('recommendations:')
+        ->not->toContain('personalized:')
+        ->not->toContain('uses_user_history')
+        ->not->toContain('uses_download_history')
+        ->not->toContain('uses_watch_history');
+
+    expect(recommendationEngineForbiddenMatches($candidateClient, recommendationEngineForbiddenOutputFields()))
+        ->toBe([]);
+});
+
+it('keeps the recommendation candidates endpoint centralized in the candidate client', function (): void {
+    expect(recommendationEngineFrontendFilesContaining('resources/js', '/api/recommendations/candidates'))
+        ->toBe(['resources/js/lib/recommendationCandidates.ts']);
+
+    expect(recommendationEngineFrontendFilesContaining('resources/js/components', 'RECOMMENDATION_CANDIDATES_ENDPOINT'))
+        ->toBe([]);
+
+    expect(recommendationEngineFrontendFilesContaining('resources/js/components', 'fetchRecommendationCandidates'))
+        ->toBe(['resources/js/components/discovery/RecommendationCandidatesPanel.tsx']);
+
+    expect(recommendationEngineFrontendFilesContaining('resources/js', 'fetchJson<RecommendationCandidatesPayload>'))
+        ->toBe(['resources/js/lib/recommendationCandidates.ts']);
+});
+
+it('mounts a readonly recommendation candidates surface without torrent output or personalization', function (): void {
+    $discoveryView = recommendationEngineFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationEngineFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationCandidatesPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-candidates');
+
+    expect($appSource)
+        ->toContain("import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-candidates]')")
+        ->toContain('<RecommendationCandidatesPanel />');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationCandidates')
+        ->toContain('Recommendation Candidates')
+        ->toContain('Metadata candidate groups')
+        ->toContain('Readonly source and resolution combinations generated from system-wide metadata signals')
+        ->toContain('candidate groups only')
+        ->toContain('without user-specific output, scoring, or final picks')
+        ->toContain('Candidates only')
+        ->not->toContain('/api/recommendations/candidates')
+        ->not->toContain('recommended torrent')
+        ->not->toContain('recommended torrents')
+        ->not->toContain('recommended for you')
+        ->not->toContain('because you')
+        ->not->toContain('personalized')
+        ->not->toContain('personalization')
+        ->not->toContain('user history')
+        ->not->toContain('download history')
+        ->not->toContain('watch history');
+
+    expect(recommendationEngineForbiddenMatches($panelSource, recommendationEngineForbiddenOutputFields()))
+        ->toBe([]);
+});
+
+it('keeps the recommendation candidates UI readonly and free of scoring or ranking behavior', function (): void {
+    $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationCandidatesPanel.tsx');
+
+    expect($panelSource)
+        ->not->toContain('<button')
+        ->not->toContain('<form')
+        ->not->toContain('onSubmit')
+        ->not->toContain('POST')
+        ->not->toContain('PUT')
+        ->not->toContain('PATCH')
+        ->not->toContain('DELETE')
+        ->not->toContain('score:')
+        ->not->toContain('rank:')
+        ->not->toContain('sort(')
+        ->not->toContain('userId')
+        ->not->toContain('downloadHistory')
+        ->not->toContain('watchHistory');
+});

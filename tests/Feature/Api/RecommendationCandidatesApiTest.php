@@ -68,9 +68,12 @@ final class RecommendationCandidatesApiTest extends TestCase
 
         foreach ([
             'recommended_torrents',
+            'recommended_torrent',
             'torrent_id',
             'score',
             'rank',
+            'recommendation_score',
+            'personalized_recommendations',
             'personalized',
             'user_history',
             'download_history',
