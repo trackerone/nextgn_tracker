@@ -63,9 +63,10 @@ final class RecommendationHealthService
                 'torrent_recommendations_generated' => $matchedRecommendations,
                 'empty_outputs' => $outputsGenerated === 0 ? 1 : 0,
                 'empty_recommendation_results' => $emptyRecommendationResults,
-                'recommendation_match_rate' => $outputsGenerated === 0
-                    ? 0.0
-                    : round($matchedRecommendations / $outputsGenerated, 4),
+                'recommendation_match_rate' => $this->recommendationMatchRate(
+                    $matchedRecommendations,
+                    $outputsGenerated,
+                ),
             ],
             'metadata_coverage' => $this->metadataCoverage(),
             'indicators' => [
@@ -96,6 +97,17 @@ final class RecommendationHealthService
         }
 
         return $count;
+    }
+
+    private function recommendationMatchRate(int $matchedRecommendations, int $outputsGenerated): int|float
+    {
+        if ($outputsGenerated === 0) {
+            return 0.0;
+        }
+
+        $rate = round($matchedRecommendations / $outputsGenerated, 4);
+
+        return floor($rate) === $rate ? (int) $rate : $rate;
     }
 
     /**

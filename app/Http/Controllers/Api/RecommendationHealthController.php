@@ -12,6 +12,6 @@ final class RecommendationHealthController extends Controller
 {
     public function __invoke(RecommendationHealthService $health): JsonResponse
     {
-        return response()->json($health->payload());
+        return response()->json($health->payload(), options: JSON_PRESERVE_ZERO_FRACTION);
     }
 }
