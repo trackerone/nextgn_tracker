@@ -97,8 +97,46 @@ it('keeps the recommendation candidates endpoint centralized in the candidates c
         ->toBe([]);
 
     expect(recommendationCandidatesFrontendFilesContaining('resources/js/components', 'fetchRecommendationCandidates'))
-        ->toBe([]);
+        ->toBe(['resources/js/components/discovery/RecommendationCandidatesPanel.tsx']);
 
     expect(recommendationCandidatesFrontendFilesContaining('resources/js', 'fetchJson<RecommendationCandidatesPayload>'))
         ->toBe(['resources/js/lib/recommendationCandidates.ts']);
+});
+
+it('mounts a readonly recommendation candidates discovery surface without final output', function (): void {
+    $discoveryView = recommendationCandidatesFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationCandidatesFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationCandidatesFrontendSource('resources/js/components/discovery/RecommendationCandidatesPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-candidates');
+
+    expect($appSource)
+        ->toContain("import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-candidates]')")
+        ->toContain('<RecommendationCandidatesPanel />');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationCandidates')
+        ->toContain('Recommendation Candidates')
+        ->toContain('Metadata candidate groups')
+        ->toContain('No recommendation candidate groups are available yet.')
+        ->toContain('Loading recommendation candidate groups...')
+        ->toContain('Recommendation candidate groups are temporarily unavailable.')
+        ->toContain('Candidates only')
+        ->toContain('Readonly')
+        ->not->toContain('recommended_torrents')
+        ->not->toContain('recommended_torrent')
+        ->not->toContain('torrent_id')
+        ->not->toContain('final recommendations');
+
+    expect(recommendationCandidatesForbiddenMatches($panelSource, [
+        'recommended_torrents',
+        'recommended_torrent',
+        'torrent_id',
+        'score',
+        'rank',
+        'recommendation_score',
+        'personalized',
+    ]))->toBe([]);
 });
