@@ -17,7 +17,10 @@ final class RecommendationHealthApiTest extends TestCase
 
     public function test_recommendation_health_route_generates_expected_path(): void
     {
-        $this->assertSame('/api/recommendations/health', route('api.recommendations.health', [], false));
+        $this->assertSame(
+            '/api/recommendations/health',
+            route('api.recommendations.health', [], false),
+        );
     }
 
     public function test_recommendation_health_requires_authentication(): void

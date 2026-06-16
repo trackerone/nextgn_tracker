@@ -40,10 +40,12 @@ final class RecommendationHealthService
         $torrentRecommendations = $this->resolver->recommendationsWithTorrents();
 
         $outputsGenerated = count($enginePayload['recommendation_groups']);
-        $matchedRecommendations = count(array_filter(
-            $torrentRecommendations,
-            static fn (array $group): bool => count($group['torrents']) > 0,
-        ));
+        $matchedRecommendations = count(
+            array_filter(
+                $torrentRecommendations,
+                static fn (array $group): bool => count($group['torrents']) > 0,
+            )
+        );
         $emptyRecommendationResults = $outputsGenerated - $matchedRecommendations;
 
         return [
@@ -61,7 +63,9 @@ final class RecommendationHealthService
                 'torrent_recommendations_generated' => $matchedRecommendations,
                 'empty_outputs' => $outputsGenerated === 0 ? 1 : 0,
                 'empty_recommendation_results' => $emptyRecommendationResults,
-                'recommendation_match_rate' => $outputsGenerated === 0 ? 0.0 : round($matchedRecommendations / $outputsGenerated, 4),
+                'recommendation_match_rate' => $outputsGenerated === 0
+                    ? 0.0
+                    : round($matchedRecommendations / $outputsGenerated, 4),
             ],
             'metadata_coverage' => $this->metadataCoverage(),
             'indicators' => [
@@ -107,7 +111,9 @@ final class RecommendationHealthService
             $metadata = TorrentMetadataView::forTorrent($torrent);
 
             foreach (array_keys(self::COVERAGE_FIELDS) as $field) {
-                $value = $field === 'category' ? $torrent->category?->name : ($metadata[$field] ?? null);
+                $value = $field === 'category'
+                    ? $torrent->category?->name
+                    : ($metadata[$field] ?? null);
 
                 if ($value !== null && $value !== '') {
                     $covered[$field]++;
@@ -122,7 +128,9 @@ final class RecommendationHealthService
                 'total' => $total,
                 'covered' => $covered[$field],
                 'missing' => $total - $covered[$field],
-                'coverage_rate' => $total === 0 ? 0.0 : round($covered[$field] / $total, 4),
+                'coverage_rate' => $total === 0
+                    ? 0.0
+                    : round($covered[$field] / $total, 4),
             ],
             array_keys(self::COVERAGE_FIELDS),
             array_values(self::COVERAGE_FIELDS),
