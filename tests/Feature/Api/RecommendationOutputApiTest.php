@@ -68,11 +68,16 @@ final class RecommendationOutputApiTest extends TestCase
         $encodedPayload = json_encode($payload, JSON_THROW_ON_ERROR);
 
         foreach ([
+            'recommendations',
             'recommended_torrents',
+            'recommended_torrent',
+            'torrents',
             'torrent_id',
             'score',
             'rank',
             'personalized',
+            'personalized_recommendations',
+            'user_id',
             'user_history',
             'download_history',
             'watch_history',
