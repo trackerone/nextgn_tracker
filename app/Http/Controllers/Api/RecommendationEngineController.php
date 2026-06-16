@@ -13,7 +13,7 @@ final class RecommendationEngineController extends Controller
     public function __invoke(RecommendationEngineService $engine): JsonResponse
     {
         $payload = $engine->payload();
-        unset($payload['personalized']);
+        unset($payload['personalized'], $payload['recommendation_groups']);
 
         return response()->json($payload);
     }

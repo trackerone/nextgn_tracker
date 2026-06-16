@@ -31,6 +31,7 @@ final class RecommendationEngineService
      *     signal_groups: array<int, string>,
      *     weights: array<string, int>,
      *     candidate_groups: array<int, array{source: string, resolution: string}>,
+     *     recommendation_groups: array<int, array{source: string, resolution: string, language: string}>,
      *     signals: array{
      *         popular: array<string, array<int, array{value: string, count: int}>>,
      *         trending: array<string, string|array<int, array{value: string, count: int}>>
@@ -40,6 +41,8 @@ final class RecommendationEngineService
     public function payload(): array
     {
         $signals = $this->signals->payload();
+
+        $candidateGroups = $this->candidateGroups($signals['signals']);
 
         return [
             'version' => 1,
@@ -52,7 +55,8 @@ final class RecommendationEngineService
             'metadata_categories' => $this->metadataCategories($signals['signals']),
             'signal_groups' => array_keys($signals['signals']),
             'weights' => self::SIGNAL_WEIGHTS,
-            'candidate_groups' => $this->candidateGroups($signals['signals']),
+            'candidate_groups' => $candidateGroups,
+            'recommendation_groups' => $this->recommendationGroups($candidateGroups, $signals['signals']),
             'signals' => $signals['signals'],
         ];
     }
@@ -72,6 +76,33 @@ final class RecommendationEngineService
                 $groups[] = [
                     'source' => $source,
                     'resolution' => $resolution,
+                ];
+
+                if (count($groups) >= self::CANDIDATE_GROUP_LIMIT) {
+                    return $groups;
+                }
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * @param  array<int, array{source: string, resolution: string}>  $candidateGroups
+     * @param  array<string, array<string, mixed>>  $signals
+     * @return array<int, array{source: string, resolution: string, language: string}>
+     */
+    private function recommendationGroups(array $candidateGroups, array $signals): array
+    {
+        $languages = $this->signalValues($signals, 'languages');
+        $groups = [];
+
+        foreach ($candidateGroups as $candidateGroup) {
+            foreach ($languages as $language) {
+                $groups[] = [
+                    'source' => $candidateGroup['source'],
+                    'resolution' => $candidateGroup['resolution'],
+                    'language' => $language,
                 ];
 
                 if (count($groups) >= self::CANDIDATE_GROUP_LIMIT) {
