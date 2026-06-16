@@ -259,6 +259,37 @@ Returns readonly recommendation candidate groups for authenticated users. This e
 }
 ```
 
+
+## GET `/api/recommendations/output`
+
+Returns readonly recommendation output groups for authenticated users. This endpoint exposes the first system-wide recommendation output generated from the recommendation engine foundation; it does not return concrete torrents or personalized recommendations.
+
+### Behavior
+
+- Authentication is required.
+- The endpoint is read-only.
+- The endpoint reuses `RecommendationEngineService` recommendation output generation.
+- Recommendation groups are system-wide metadata combinations only.
+- Output remains metadata-combination based and does not include concrete torrent recommendations.
+- No recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history are returned.
+- Non-`GET` methods are not supported.
+
+### Response shape
+
+```json
+{
+  "version": 1,
+  "readonly": true,
+  "recommendation_groups": [
+    {
+      "source": "WEB-DL",
+      "resolution": "1080p",
+      "language": "english"
+    }
+  ]
+}
+```
+
 ## GET `/api/discovery/home`
 
 Returns a compact discovery payload for the frontend landing section.
