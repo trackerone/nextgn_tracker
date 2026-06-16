@@ -98,43 +98,37 @@ it('keeps the recommendation output endpoint centralized in the output groups cl
         ->toBe([]);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js/components', 'fetchRecommendationOutputGroups'))
-        ->toBe(['resources/js/components/discovery/RecommendationOutputGroupsPanel.tsx']);
+        ->toBe(['resources/js/components/discovery/RecommendationOutputPanel.tsx']);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js', 'fetchJson<RecommendationOutputGroupsPayload>'))
         ->toBe(['resources/js/lib/recommendationOutput.ts']);
 });
 
-it('mounts a readonly recommendation output UI through the shared client without concrete torrents', function (): void {
+it('mounts a readonly recommendation output discovery surface for metadata groups only', function (): void {
     $discoveryView = recommendationOutputFrontendSource('resources/views/account/discovery.blade.php');
     $appSource = recommendationOutputFrontendSource('resources/js/app.tsx');
-    $panelSource = recommendationOutputFrontendSource('resources/js/components/discovery/RecommendationOutputGroupsPanel.tsx');
+    $panelSource = recommendationOutputFrontendSource('resources/js/components/discovery/RecommendationOutputPanel.tsx');
 
     expect($discoveryView)
-        ->toContain('data-recommendation-output-groups');
+        ->toContain('data-recommendation-output');
 
     expect($appSource)
-        ->toContain("import RecommendationOutputGroupsPanel from './components/discovery/RecommendationOutputGroupsPanel'")
-        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-output-groups]')")
-        ->toContain('<RecommendationOutputGroupsPanel />')
-        ->not->toContain('/api/recommendations/output');
+        ->toContain("import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-output]')")
+        ->toContain('<RecommendationOutputPanel />');
 
     expect($panelSource)
         ->toContain('fetchRecommendationOutputGroups')
-        ->toContain('RecommendationOutputGroupsPayload')
-        ->toContain('Readonly metadata output groups')
-        ->toContain('Output groups only')
+        ->toContain('Recommendation Output')
+        ->toContain('Metadata output groups')
+        ->toContain('Readonly system-wide output groups built from metadata combinations')
         ->toContain('No recommendation output groups are available yet.')
         ->toContain('Loading recommendation output groups...')
-        ->not->toContain('/api/recommendations/output');
-
-    expect(recommendationOutputForbiddenMatches($panelSource, [
-        'recommended_torrents',
-        'torrent_id',
-        'download_history',
-        'watch_history',
-        'score',
-        'rank',
-        'personalized',
-        'personalization',
-    ]))->toBe([]);
+        ->toContain('Recommendation output groups are temporarily unavailable.')
+        ->toContain('Groups only')
+        ->not->toContain('torrent_id')
+        ->not->toContain('recommended_torrents')
+        ->not->toContain('recommended_torrent')
+        ->not->toContain('score')
+        ->not->toContain('rank');
 });

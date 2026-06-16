@@ -11,7 +11,7 @@ import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySugg
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
-import RecommendationOutputGroupsPanel from './components/discovery/RecommendationOutputGroupsPanel';
+import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -185,12 +185,12 @@ if (recommendationCandidatesElement) {
   );
 }
 
-const recommendationOutputGroupsElement = document.querySelector<HTMLElement>('[data-recommendation-output-groups]');
+const recommendationOutputElement = document.querySelector<HTMLElement>('[data-recommendation-output]');
 
-if (recommendationOutputGroupsElement) {
-  ReactDOM.createRoot(recommendationOutputGroupsElement).render(
+if (recommendationOutputElement) {
+  ReactDOM.createRoot(recommendationOutputElement).render(
     <React.StrictMode>
-      <RecommendationOutputGroupsPanel />
+      <RecommendationOutputPanel />
     </React.StrictMode>,
   );
 }

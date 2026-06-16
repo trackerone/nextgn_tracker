@@ -41,7 +41,7 @@
 
         <div data-recommendation-candidates></div>
 
-        <div data-recommendation-output-groups></div>
+        <div data-recommendation-output></div>
 
         <div class="grid gap-6 lg:grid-cols-2">
             @foreach ($discoverySections as $section)
