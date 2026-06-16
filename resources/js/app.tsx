@@ -13,6 +13,7 @@ import RecommendationEngineFoundationPanel from './components/discovery/Recommen
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
 import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel';
 import RecommendationPreviewPanel from './components/discovery/RecommendationPreviewPanel';
+import RecommendationTorrentsPanel from './components/discovery/RecommendationTorrentsPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -202,6 +203,16 @@ if (recommendationPreviewElement) {
   ReactDOM.createRoot(recommendationPreviewElement).render(
     <React.StrictMode>
       <RecommendationPreviewPanel />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationTorrentsElement = document.querySelector<HTMLElement>('[data-recommendation-torrents]');
+
+if (recommendationTorrentsElement) {
+  ReactDOM.createRoot(recommendationTorrentsElement).render(
+    <React.StrictMode>
+      <RecommendationTorrentsPanel />
     </React.StrictMode>,
   );
 }

@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\RecommendationEngineController;
 use App\Http\Controllers\Api\RecommendationOutputController;
 use App\Http\Controllers\Api\RecommendationPreviewController;
 use App\Http\Controllers\Api\RecommendationSignalsController;
+use App\Http\Controllers\Api\RecommendationTorrentsController;
 use App\Http\Controllers\Api\TorrentBrowseController;
 use App\Http\Controllers\Api\TorrentDetailsController;
 use App\Http\Controllers\Api\TorrentDownloadController;
@@ -98,6 +99,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/recommendations/preview', RecommendationPreviewController::class)
         ->name('api.recommendations.preview');
+
+    Route::get('/recommendations/torrents', RecommendationTorrentsController::class)
+        ->name('api.recommendations.torrents');
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
