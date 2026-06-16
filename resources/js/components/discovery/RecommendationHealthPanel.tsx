@@ -42,7 +42,10 @@ export default function RecommendationHealthPanel(): React.ReactElement {
       })
       .catch(() => {
         if (!cancelled) {
-          setState({ status: 'error', message: 'Recommendation health is temporarily unavailable.' });
+          setState({
+            status: 'error',
+            message: 'Recommendation health is temporarily unavailable.',
+          });
         }
       });
 
@@ -63,8 +66,12 @@ export default function RecommendationHealthPanel(): React.ReactElement {
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {metricEntries.map(([key, value]) => (
             <div key={key} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{METRIC_LABELS[key]}</dt>
-              <dd className="mt-2 text-2xl font-semibold text-white">{formatMetric(key, value)}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {METRIC_LABELS[key]}
+              </dt>
+              <dd className="mt-2 text-2xl font-semibold text-white">
+                {formatMetric(key, value)}
+              </dd>
             </div>
           ))}
         </div>
@@ -72,7 +79,9 @@ export default function RecommendationHealthPanel(): React.ReactElement {
         <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/40">
           <div className="border-b border-slate-800 px-3 py-2">
             <h3 className="text-sm font-semibold text-slate-100">Metadata Coverage</h3>
-            <p className="mt-1 text-xs text-slate-500">Visible torrent metadata completeness used by recommendation operations intelligence.</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Visible torrent metadata completeness used by recommendation operations intelligence.
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-800 text-sm">
@@ -88,9 +97,13 @@ export default function RecommendationHealthPanel(): React.ReactElement {
                 {state.payload.metadata_coverage.map((coverage) => (
                   <tr key={coverage.field}>
                     <td className="px-3 py-2 font-medium text-slate-100">{coverage.label}</td>
-                    <td className="px-3 py-2">{coverage.covered.toLocaleString()} / {coverage.total.toLocaleString()}</td>
+                    <td className="px-3 py-2">
+                      {coverage.covered.toLocaleString()} / {coverage.total.toLocaleString()}
+                    </td>
                     <td className="px-3 py-2">{coverage.missing.toLocaleString()}</td>
-                    <td className="px-3 py-2">{Math.round(coverage.coverage_rate * 100)}%</td>
+                    <td className="px-3 py-2">
+                      {Math.round(coverage.coverage_rate * 100)}%
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -109,7 +122,9 @@ export default function RecommendationHealthPanel(): React.ReactElement {
             <Activity className="h-4 w-4" aria-hidden="true" />
             Recommendation Health
           </div>
-          <h2 className="mt-2 text-lg font-semibold text-white">Recommendation operations intelligence</h2>
+          <h2 className="mt-2 text-lg font-semibold text-white">
+            Recommendation operations intelligence
+          </h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
             Readonly health metrics for the metadata recommendation pipeline, including output emptiness, torrent match quality, and metadata coverage quality.
           </p>
@@ -127,7 +142,11 @@ export default function RecommendationHealthPanel(): React.ReactElement {
           </div>
         )}
 
-        {state.status === 'error' && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm leading-6 text-red-200" role="status" aria-live="polite">{state.message}</p>}
+        {state.status === 'error' && (
+          <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm leading-6 text-red-200" role="status" aria-live="polite">
+            {state.message}
+          </p>
+        )}
 
         {state.status === 'ready' && content}
       </div>
