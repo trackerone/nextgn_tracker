@@ -55,6 +55,8 @@ Slice 74 exposes that foundation through authenticated `GET /api/recommendations
 
 Slice 79 exposes candidate groups through authenticated `GET /api/recommendations/candidates`. The API response reuses `RecommendationEngineService` candidate generation but returns only the readonly metadata-combination candidate groups. It does not return recommended torrents, torrent IDs, scores, ranks, personalization fields, user history, download history, or watch history. Non-`GET` methods are not supported.
 
+Slice 84 exposes the first recommendation output through authenticated `GET /api/recommendations/output`. The API response reuses `RecommendationEngineService` recommendation groups but returns only system-wide metadata output combinations. It does not return concrete torrents, torrent IDs, scores, ranks, personalized output, user history, download history, or watch history. Non-`GET` methods are not supported.
+
 ## API endpoint
 
 `GET /api/recommendations/signals` exposes the foundation payload for authenticated users. The endpoint is intentionally read-only and metadata-only:
