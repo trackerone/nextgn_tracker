@@ -98,8 +98,37 @@ it('keeps the recommendation output endpoint centralized in the output groups cl
         ->toBe([]);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js/components', 'fetchRecommendationOutputGroups'))
-        ->toBe([]);
+        ->toBe(['resources/js/components/discovery/RecommendationOutputPanel.tsx']);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js', 'fetchJson<RecommendationOutputGroupsPayload>'))
         ->toBe(['resources/js/lib/recommendationOutput.ts']);
+});
+
+it('mounts a readonly recommendation output discovery surface for metadata groups only', function (): void {
+    $discoveryView = recommendationOutputFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationOutputFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationOutputFrontendSource('resources/js/components/discovery/RecommendationOutputPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-output');
+
+    expect($appSource)
+        ->toContain("import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-output]')")
+        ->toContain('<RecommendationOutputPanel />');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationOutputGroups')
+        ->toContain('Recommendation Output')
+        ->toContain('Metadata output groups')
+        ->toContain('Readonly system-wide output groups built from metadata combinations')
+        ->toContain('No recommendation output groups are available yet.')
+        ->toContain('Loading recommendation output groups...')
+        ->toContain('Recommendation output groups are temporarily unavailable.')
+        ->toContain('Groups only')
+        ->not->toContain('torrent_id')
+        ->not->toContain('recommended_torrents')
+        ->not->toContain('recommended_torrent')
+        ->not->toContain('score')
+        ->not->toContain('rank');
 });
