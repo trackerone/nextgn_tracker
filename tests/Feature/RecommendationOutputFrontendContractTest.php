@@ -98,8 +98,43 @@ it('keeps the recommendation output endpoint centralized in the output groups cl
         ->toBe([]);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js/components', 'fetchRecommendationOutputGroups'))
-        ->toBe([]);
+        ->toBe(['resources/js/components/discovery/RecommendationOutputGroupsPanel.tsx']);
 
     expect(recommendationOutputFrontendFilesContaining('resources/js', 'fetchJson<RecommendationOutputGroupsPayload>'))
         ->toBe(['resources/js/lib/recommendationOutput.ts']);
+});
+
+it('mounts a readonly recommendation output UI through the shared client without concrete torrents', function (): void {
+    $discoveryView = recommendationOutputFrontendSource('resources/views/account/discovery.blade.php');
+    $appSource = recommendationOutputFrontendSource('resources/js/app.tsx');
+    $panelSource = recommendationOutputFrontendSource('resources/js/components/discovery/RecommendationOutputGroupsPanel.tsx');
+
+    expect($discoveryView)
+        ->toContain('data-recommendation-output-groups');
+
+    expect($appSource)
+        ->toContain("import RecommendationOutputGroupsPanel from './components/discovery/RecommendationOutputGroupsPanel'")
+        ->toContain("document.querySelector<HTMLElement>('[data-recommendation-output-groups]')")
+        ->toContain('<RecommendationOutputGroupsPanel />')
+        ->not->toContain('/api/recommendations/output');
+
+    expect($panelSource)
+        ->toContain('fetchRecommendationOutputGroups')
+        ->toContain('RecommendationOutputGroupsPayload')
+        ->toContain('Readonly metadata output groups')
+        ->toContain('Output groups only')
+        ->toContain('No recommendation output groups are available yet.')
+        ->toContain('Loading recommendation output groups...')
+        ->not->toContain('/api/recommendations/output');
+
+    expect(recommendationOutputForbiddenMatches($panelSource, [
+        'recommended_torrents',
+        'torrent_id',
+        'download_history',
+        'watch_history',
+        'score',
+        'rank',
+        'personalized',
+        'personalization',
+    ]))->toBe([]);
 });
