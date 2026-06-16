@@ -14,6 +14,7 @@ import RecommendationCandidatesPanel from './components/discovery/Recommendation
 import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel';
 import RecommendationPreviewPanel from './components/discovery/RecommendationPreviewPanel';
 import RecommendationTorrentsPanel from './components/discovery/RecommendationTorrentsPanel';
+import RecommendationHealthPanel from './components/discovery/RecommendationHealthPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -213,6 +214,16 @@ if (recommendationTorrentsElement) {
   ReactDOM.createRoot(recommendationTorrentsElement).render(
     <React.StrictMode>
       <RecommendationTorrentsPanel />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationHealthElement = document.querySelector<HTMLElement>('[data-recommendation-health]');
+
+if (recommendationHealthElement) {
+  ReactDOM.createRoot(recommendationHealthElement).render(
+    <React.StrictMode>
+      <RecommendationHealthPanel />
     </React.StrictMode>,
   );
 }
