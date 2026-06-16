@@ -114,6 +114,7 @@ final class RecommendationEngineApiTest extends TestCase
 
         foreach ([
             'recommended_torrents',
+            'recommendation_groups',
             'torrent_id',
             'score',
             'rank',
