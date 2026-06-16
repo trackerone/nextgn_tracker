@@ -104,7 +104,6 @@ it('keeps the recommendation output endpoint centralized in the output groups cl
         ->toBe(['resources/js/lib/recommendationOutput.ts']);
 });
 
-
 it('mounts a readonly recommendation output discovery surface for metadata groups only', function (): void {
     $discoveryView = recommendationOutputFrontendSource('resources/views/account/discovery.blade.php');
     $appSource = recommendationOutputFrontendSource('resources/js/app.tsx');
