@@ -12,6 +12,7 @@ import RecommendationSignalsPanel from './components/discovery/RecommendationSig
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
 import RecommendationOutputPanel from './components/discovery/RecommendationOutputPanel';
+import RecommendationPreviewPanel from './components/discovery/RecommendationPreviewPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -191,6 +192,16 @@ if (recommendationOutputElement) {
   ReactDOM.createRoot(recommendationOutputElement).render(
     <React.StrictMode>
       <RecommendationOutputPanel />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationPreviewElement = document.querySelector<HTMLElement>('[data-recommendation-preview]');
+
+if (recommendationPreviewElement) {
+  ReactDOM.createRoot(recommendationPreviewElement).render(
+    <React.StrictMode>
+      <RecommendationPreviewPanel />
     </React.StrictMode>,
   );
 }
