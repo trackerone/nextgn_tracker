@@ -104,7 +104,7 @@ final class RecommendationHealthApiTest extends TestCase
             ->assertJsonPath('metrics.torrent_recommendations_generated', 1)
             ->assertJsonPath('metrics.empty_outputs', 0)
             ->assertJsonPath('metrics.empty_recommendation_results', 0)
-            ->assertJsonPath('metrics.recommendation_match_rate', 1.0)
+            ->assertJsonPath('metrics.recommendation_match_rate', 1)
             ->assertJsonPath('metadata_coverage.0', [
                 'field' => 'category',
                 'label' => 'Category',
