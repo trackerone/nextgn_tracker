@@ -6,7 +6,9 @@ namespace App\Support\Discovery;
 
 final class DiscoveryOperationsPriorityService
 {
-    public function __construct(private readonly DiscoveryOperationsOverviewService $overview) {}
+    public function __construct(private readonly DiscoveryOperationsOverviewService $overview)
+    {
+    }
 
     /**
      * @return array<string, mixed>
@@ -142,8 +144,7 @@ final class DiscoveryOperationsPriorityService
         array $affectedFields,
         array $exampleTorrents,
         string $recommendedStaffAction,
-    ): array
-    {
+    ): array {
         return compact('type', 'severity', 'title', 'message', 'reason') + [
             'affected_fields' => $affectedFields,
             'example_torrents' => $exampleTorrents,
