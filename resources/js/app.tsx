@@ -9,6 +9,7 @@ import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser'
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
 import DiscoveryHealthPanel from './components/discovery/DiscoveryHealthPanel';
+import DiscoveryExplainabilityPanel from './components/discovery/DiscoveryExplainabilityPanel';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
@@ -176,6 +177,16 @@ if (discoveryHealthElement) {
   ReactDOM.createRoot(discoveryHealthElement).render(
     <React.StrictMode>
       <DiscoveryHealthPanel />
+    </React.StrictMode>,
+  );
+}
+
+const discoveryExplainabilityElement = document.querySelector<HTMLElement>('[data-discovery-explainability]');
+
+if (discoveryExplainabilityElement) {
+  ReactDOM.createRoot(discoveryExplainabilityElement).render(
+    <React.StrictMode>
+      <DiscoveryExplainabilityPanel />
     </React.StrictMode>,
   );
 }
