@@ -17,7 +17,10 @@ final class DiscoveryExplainabilityApiTest extends TestCase
 
     public function test_discovery_explainability_route_generates_expected_path(): void
     {
-        $this->assertSame('/api/discovery/explainability', route('api.discovery.explainability', [], false));
+        $this->assertSame(
+            '/api/discovery/explainability',
+            route('api.discovery.explainability', [], false),
+        );
     }
 
     public function test_discovery_explainability_requires_authentication(): void
@@ -47,7 +50,10 @@ final class DiscoveryExplainabilityApiTest extends TestCase
         $user = User::factory()->create();
         $category = Category::factory()->create(['name' => 'Movies']);
 
-        $ready = Torrent::factory()->create(['category_id' => $category->id, 'name' => 'Ready Movie']);
+        $ready = Torrent::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Ready Movie',
+        ]);
         TorrentMetadata::query()->create($this->metadata($ready, [
             'type' => 'movie',
             'resolution' => '1080p',
@@ -59,14 +65,27 @@ final class DiscoveryExplainabilityApiTest extends TestCase
             'year' => 2026,
         ]));
 
-        $weak = Torrent::factory()->create(['category_id' => $category->id, 'name' => 'Weak Movie']);
+        $weak = Torrent::factory()->create([
+            'category_id' => $category->id,
+            'name' => 'Weak Movie',
+        ]);
         TorrentMetadata::query()->create($this->metadata($weak, ['type' => 'movie', 'resolution' => '720p']));
 
-        $missingCore = Torrent::factory()->create(['category_id' => null, 'name' => 'Missing Movie', 'type' => 'movie']);
+        $missingCore = Torrent::factory()->create([
+            'category_id' => null,
+            'name' => 'Missing Movie',
+            'type' => 'movie',
+        ]);
         TorrentMetadata::query()->create($this->metadata($missingCore, ['type' => 'movie', 'resolution' => '720p']));
 
-        Torrent::factory()->banned()->create(['category_id' => $category->id, 'name' => 'Hidden Banned']);
-        Torrent::factory()->unapproved()->create(['category_id' => $category->id, 'name' => 'Hidden Pending']);
+        Torrent::factory()->banned()->create([
+            'category_id' => $category->id,
+            'name' => 'Hidden Banned',
+        ]);
+        Torrent::factory()->unapproved()->create([
+            'category_id' => $category->id,
+            'name' => 'Hidden Pending',
+        ]);
 
         $response = $this->actingAs($user)->getJson(route('api.discovery.explainability'));
 
@@ -120,7 +139,9 @@ final class DiscoveryExplainabilityApiTest extends TestCase
         $user = User::factory()->create();
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
-            $this->actingAs($user)->json($method, route('api.discovery.explainability'))->assertStatus(405);
+            $this->actingAs($user)
+                ->json($method, route('api.discovery.explainability'))
+                ->assertStatus(405);
         }
     }
 

@@ -25,7 +25,11 @@ function discoveryExplainabilityFrontendSourceFiles(string $directory): array
 
         $path = str_replace(base_path().'/', '', $file->getPathname());
 
-        if (str_ends_with($path, '.ts') || str_ends_with($path, '.tsx') || str_ends_with($path, '.blade.php')) {
+        if (
+            str_ends_with($path, '.ts')
+            || str_ends_with($path, '.tsx')
+            || str_ends_with($path, '.blade.php')
+        ) {
             $files[] = $path;
         }
     }
@@ -68,10 +72,16 @@ it('keeps the discovery explainability endpoint centralized in the explainabilit
     expect(discoveryExplainabilityFrontendFilesContaining('resources/js', '/api/discovery/explainability'))
         ->toBe(['resources/js/lib/discoveryExplainability.ts']);
 
-    expect(discoveryExplainabilityFrontendFilesContaining('resources/js/components', 'DISCOVERY_EXPLAINABILITY_ENDPOINT'))
+    expect(discoveryExplainabilityFrontendFilesContaining(
+        'resources/js/components',
+        'DISCOVERY_EXPLAINABILITY_ENDPOINT',
+    ))
         ->toBe([]);
 
-    expect(discoveryExplainabilityFrontendFilesContaining('resources/js/components', 'fetchDiscoveryExplainability'))
+    expect(discoveryExplainabilityFrontendFilesContaining(
+        'resources/js/components',
+        'fetchDiscoveryExplainability',
+    ))
         ->toBe(['resources/js/components/discovery/DiscoveryExplainabilityPanel.tsx']);
 });
 

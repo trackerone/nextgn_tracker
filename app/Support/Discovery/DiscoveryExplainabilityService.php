@@ -9,7 +9,9 @@ use App\Models\Torrent;
 
 final class DiscoveryExplainabilityService
 {
-    public function __construct(private readonly DiscoveryHealthService $health) {}
+    public function __construct(
+        private readonly DiscoveryHealthService $health,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -32,7 +34,10 @@ final class DiscoveryExplainabilityService
             'uses_user_history' => false,
             'uses_download_history' => false,
             'uses_watch_history' => false,
-            'explanations' => $torrents->map(fn (Torrent $torrent): array => $this->explain($torrent))->values()->all(),
+            'explanations' => $torrents
+                ->map(fn (Torrent $torrent): array => $this->explain($torrent))
+                ->values()
+                ->all(),
         ];
     }
 
@@ -75,8 +80,10 @@ final class DiscoveryExplainabilityService
      */
     private function status(Torrent $torrent, array $metadata, int $presentCount): string
     {
-        if (! $this->health->hasMetadataValue('category', $torrent, $metadata)
-            || ! $this->health->hasMetadataValue('type', $torrent, $metadata)) {
+        if (
+            ! $this->health->hasMetadataValue('category', $torrent, $metadata)
+            || ! $this->health->hasMetadataValue('type', $torrent, $metadata)
+        ) {
             return 'missing_core_metadata';
         }
 
@@ -92,7 +99,9 @@ final class DiscoveryExplainabilityService
      */
     private function metadataValue(string $field, Torrent $torrent, array $metadata): int|string
     {
-        $value = $field === 'category' ? $torrent->category?->name : ($metadata[$field] ?? '');
+        $value = $field === 'category'
+            ? $torrent->category?->name
+            : ($metadata[$field] ?? '');
 
         return is_int($value) ? $value : (string) $value;
     }
@@ -108,7 +117,9 @@ final class DiscoveryExplainabilityService
         }
 
         return array_map(
-            static fn (array $field): array => $field + ['reason' => 'Missing metadata reduces discovery filtering and readiness.'],
+            static fn (array $field): array => $field + [
+                'reason' => 'Missing metadata reduces discovery filtering and readiness.',
+            ],
             $missing,
         );
     }
@@ -132,7 +143,10 @@ final class DiscoveryExplainabilityService
             return 'Enough core metadata is present for metadata-first discovery. Remaining gaps can still improve quality but do not block readiness.';
         }
 
-        $missingLabels = implode(', ', array_map(static fn (array $field): string => $field['label'], $missing));
+        $missingLabels = implode(
+            ', ',
+            array_map(static fn (array $field): string => $field['label'], $missing),
+        );
 
         if ($status === 'missing_core_metadata') {
             return "Discovery is limited because required classification metadata is missing: {$missingLabels}.";
