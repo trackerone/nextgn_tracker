@@ -15,6 +15,7 @@ import RecommendationOutputPanel from './components/discovery/RecommendationOutp
 import RecommendationPreviewPanel from './components/discovery/RecommendationPreviewPanel';
 import RecommendationTorrentsPanel from './components/discovery/RecommendationTorrentsPanel';
 import RecommendationHealthPanel from './components/discovery/RecommendationHealthPanel';
+import RecommendationExplainabilityPanel from './components/discovery/RecommendationExplainabilityPanel';
 import { MessageCircle } from 'lucide-react';
 import { SessionContext } from './components/forum/types';
 import { useForum } from './components/forum/useForum';
@@ -224,6 +225,16 @@ if (recommendationHealthElement) {
   ReactDOM.createRoot(recommendationHealthElement).render(
     <React.StrictMode>
       <RecommendationHealthPanel />
+    </React.StrictMode>,
+  );
+}
+
+const recommendationExplainabilityElement = document.querySelector<HTMLElement>('[data-recommendation-explainability]');
+
+if (recommendationExplainabilityElement) {
+  ReactDOM.createRoot(recommendationExplainabilityElement).render(
+    <React.StrictMode>
+      <RecommendationExplainabilityPanel />
     </React.StrictMode>,
   );
 }
