@@ -6,9 +6,7 @@ namespace App\Support\Discovery;
 
 final class DiscoveryOperationsPriorityService
 {
-    public function __construct(
-        private readonly DiscoveryOperationsOverviewService $overview,
-    ) {}
+    public function __construct(private readonly DiscoveryOperationsOverviewService $overview) {}
 
     /**
      * @return array<string, mixed>
