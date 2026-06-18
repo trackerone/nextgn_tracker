@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
+use App\Http\Controllers\Api\DiscoveryExplainabilityController;
 use App\Http\Controllers\Api\DiscoveryHealthController;
 use App\Http\Controllers\Api\DiscoveryHomeController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
@@ -72,6 +73,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/health', DiscoveryHealthController::class)
         ->name('api.discovery.health');
+
+    Route::get('/discovery/explainability', DiscoveryExplainabilityController::class)
+        ->name('api.discovery.explainability');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');

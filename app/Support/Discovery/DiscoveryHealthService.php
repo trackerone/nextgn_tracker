@@ -12,7 +12,7 @@ final class DiscoveryHealthService
     /**
      * @var array<string, string>
      */
-    private const CORE_METADATA_FIELDS = [
+    public const CORE_METADATA_FIELDS = [
         'category' => 'Category',
         'type' => 'Type',
         'resolution' => 'Resolution',
@@ -24,7 +24,7 @@ final class DiscoveryHealthService
         'year' => 'Year',
     ];
 
-    private const DISCOVERY_READY_MINIMUM_FIELDS = 5;
+    public const DISCOVERY_READY_MINIMUM_FIELDS = 5;
 
     /**
      * @return array<string, mixed>
@@ -92,7 +92,7 @@ final class DiscoveryHealthService
     /**
      * @param  array<string, int|string|null>  $metadata
      */
-    private function isDiscoveryReady(int $coveredFields, Torrent $torrent, array $metadata): bool
+    public function isDiscoveryReady(int $coveredFields, Torrent $torrent, array $metadata): bool
     {
         return $coveredFields >= self::DISCOVERY_READY_MINIMUM_FIELDS
             && $this->hasMetadataValue('category', $torrent, $metadata)
@@ -102,7 +102,7 @@ final class DiscoveryHealthService
     /**
      * @param  array<string, int|string|null>  $metadata
      */
-    private function hasMetadataValue(string $field, Torrent $torrent, array $metadata): bool
+    public function hasMetadataValue(string $field, Torrent $torrent, array $metadata): bool
     {
         $value = $field === 'category'
             ? $torrent->category?->name

@@ -37,6 +37,8 @@
 
         <div data-discovery-health></div>
 
+        <div data-discovery-explainability></div>
+
         <div data-recommendation-signals></div>
 
         <div data-recommendation-engine-foundation></div>
