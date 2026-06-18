@@ -9,9 +9,7 @@ use App\Models\Torrent;
 
 final class DiscoveryExplainabilityService
 {
-    public function __construct(
-        private readonly DiscoveryHealthService $health,
-    ) {}
+    public function __construct(private readonly DiscoveryHealthService $health) {}
 
     /**
      * @return array<string, mixed>
