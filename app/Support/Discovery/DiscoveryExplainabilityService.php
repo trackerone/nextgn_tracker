@@ -79,8 +79,8 @@ final class DiscoveryExplainabilityService
     private function status(Torrent $torrent, array $metadata, int $presentCount): string
     {
         if (
-            !$this->health->hasMetadataValue('category', $torrent, $metadata)
-            || !$this->health->hasMetadataValue('type', $torrent, $metadata)
+            ! $this->health->hasMetadataValue('category', $torrent, $metadata)
+            || ! $this->health->hasMetadataValue('type', $torrent, $metadata)
         ) {
             return 'missing_core_metadata';
         }
