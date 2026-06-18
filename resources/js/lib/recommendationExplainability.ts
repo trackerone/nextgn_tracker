@@ -10,6 +10,12 @@ export interface RecommendationExplanationMetadataReason {
   coverage_rate: number | null;
 }
 
+export interface RecommendationExplanationMatchedRecommendationMetadata {
+  field: string;
+  value: string;
+  reason: string;
+}
+
 export interface RecommendationExplanationMatchedMetadata {
   field: string;
   value: string | number | null;
@@ -20,6 +26,25 @@ export interface RecommendationExplanationMissingMetadata {
   reason: string;
 }
 
+export interface RecommendationExplanationWeakMetadata {
+  field: string;
+  value: string | number | null;
+  reason: string;
+}
+
+export interface RecommendationExplanationReadonlyFlags {
+  readonly: true;
+  mutates_recommendations: false;
+  writes_user_state: false;
+}
+
+export interface RecommendationExplanationNonPersonalizedGuarantees {
+  personalized: false;
+  uses_user_history: false;
+  uses_download_history: false;
+  uses_watch_history: false;
+}
+
 export interface RecommendationExplanationTorrent {
   torrent: {
     id: number;
@@ -27,7 +52,7 @@ export interface RecommendationExplanationTorrent {
   };
   metadata_matched: RecommendationExplanationMatchedMetadata[];
   metadata_missing: RecommendationExplanationMissingMetadata[];
-  metadata_weak: RecommendationExplanationMissingMetadata[];
+  metadata_weak: RecommendationExplanationWeakMetadata[];
   match_reason: string;
   match_score: number | null;
 }
@@ -35,6 +60,7 @@ export interface RecommendationExplanationTorrent {
 export interface RecommendationExplanation {
   identifier: string;
   title: string;
+  name: string;
   summary: string;
   signal_summary: {
     reason: string;
@@ -51,7 +77,13 @@ export interface RecommendationExplanation {
     matched_torrent_count: number;
   };
   matched_torrents: RecommendationExplanationTorrent[];
+  metadata_matched: RecommendationExplanationMatchedRecommendationMetadata[];
+  metadata_missing: RecommendationExplanationMissingMetadata[];
+  metadata_weak: RecommendationExplanationWeakMetadata[];
   metadata_reasons: RecommendationExplanationMetadataReason[];
+  match_reason: string;
+  readonly_flags: RecommendationExplanationReadonlyFlags;
+  non_personalized_guarantees: RecommendationExplanationNonPersonalizedGuarantees;
 }
 
 export interface RecommendationExplainabilityPayload {
