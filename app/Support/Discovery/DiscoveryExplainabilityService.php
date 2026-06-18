@@ -79,8 +79,8 @@ final class DiscoveryExplainabilityService
     private function status(Torrent $torrent, array $metadata, int $presentCount): string
     {
         if (
-            ! $this->health->hasMetadataValue('category', $torrent, $metadata)
-            || ! $this->health->hasMetadataValue('type', $torrent, $metadata)
+            !$this->health->hasMetadataValue('category', $torrent, $metadata)
+            || !$this->health->hasMetadataValue('type', $torrent, $metadata)
         ) {
             return 'missing_core_metadata';
         }
@@ -125,9 +125,9 @@ final class DiscoveryExplainabilityService
     private function summary(string $status, int $presentCount, int $missingCount): string
     {
         return match ($status) {
-            'discovery_ready' => "Discovery Ready: {$presentCount} core metadata fields are present.",
-            'missing_core_metadata' => "Missing Core Metadata: category or type is absent, so discovery cannot classify the torrent reliably.",
-            default => "Weakly Discoverable: {$presentCount} core metadata fields are present and {$missingCount} gaps remain.",
+            'discovery_ready' => 'Discovery Ready: '.$presentCount.' core metadata fields are present.',
+            'missing_core_metadata' => 'Missing Core Metadata: category or type is absent, so discovery cannot classify the torrent reliably.',
+            default => 'Weakly Discoverable: '.$presentCount.' core metadata fields are present and '.$missingCount.' gaps remain.',
         };
     }
 
@@ -147,9 +147,9 @@ final class DiscoveryExplainabilityService
         );
 
         if ($status === 'missing_core_metadata') {
-            return "Discovery is limited because required classification metadata is missing: {$missingLabels}.";
+            return 'Discovery is limited because required classification metadata is missing: '.$missingLabels.'.';
         }
 
-        return "Discovery is possible but weak because these metadata gaps reduce filtering quality: {$missingLabels}.";
+        return 'Discovery is possible but weak because these metadata gaps reduce filtering quality: '.$missingLabels.'.';
     }
 }
