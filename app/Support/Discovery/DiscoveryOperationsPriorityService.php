@@ -8,8 +8,7 @@ final class DiscoveryOperationsPriorityService
 {
     public function __construct(
         private readonly DiscoveryOperationsOverviewService $overview,
-    )
-    {
+    ) {
         // Promoted dependency only.
     }
 
