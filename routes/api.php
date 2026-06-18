@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
+use App\Http\Controllers\Api\DiscoveryHealthController;
 use App\Http\Controllers\Api\DiscoveryHomeController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
 use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
@@ -68,6 +69,9 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/m
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/home', DiscoveryHomeController::class)
         ->name('api.discovery.home');
+
+    Route::get('/discovery/health', DiscoveryHealthController::class)
+        ->name('api.discovery.health');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
