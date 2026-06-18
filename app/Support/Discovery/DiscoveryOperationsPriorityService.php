@@ -146,8 +146,7 @@ final class DiscoveryOperationsPriorityService
         array $affectedFields,
         array $exampleTorrents,
         string $recommendedStaffAction,
-    ): array
-    {
+    ): array {
         return compact('type', 'severity', 'title', 'message', 'reason') + [
             'affected_fields' => $affectedFields,
             'example_torrents' => $exampleTorrents,
