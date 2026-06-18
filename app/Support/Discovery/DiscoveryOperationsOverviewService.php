@@ -71,10 +71,24 @@ final class DiscoveryOperationsOverviewService
             $metadataCoverage,
         );
 
+        $priority = [
+            'category' => 0,
+            'type' => 1,
+        ];
+
         usort(
             $fields,
-            static fn (array $left, array $right): int => [$left['coverage_rate'], -$left['missing'], $left['field']]
-                <=> [$right['coverage_rate'], -$right['missing'], $right['field']],
+            static fn (array $left, array $right): int => [
+                $left['coverage_rate'],
+                $priority[$left['field']] ?? 99,
+                -$left['missing'],
+                $left['field'],
+            ] <=> [
+                $right['coverage_rate'],
+                $priority[$right['field']] ?? 99,
+                -$right['missing'],
+                $right['field'],
+            ],
         );
 
         return array_slice($fields, 0, 5);
