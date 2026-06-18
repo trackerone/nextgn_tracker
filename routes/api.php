@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\MyStatsController;
 use App\Http\Controllers\Api\MyUploadsController;
 use App\Http\Controllers\Api\RecommendationCandidatesController;
 use App\Http\Controllers\Api\RecommendationEngineController;
+use App\Http\Controllers\Api\RecommendationExplainabilityController;
 use App\Http\Controllers\Api\RecommendationHealthController;
 use App\Http\Controllers\Api\RecommendationOutputController;
 use App\Http\Controllers\Api\RecommendationPreviewController;
@@ -106,6 +107,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/recommendations/health', RecommendationHealthController::class)
         ->name('api.recommendations.health');
+
+    Route::get('/recommendations/explainability', RecommendationExplainabilityController::class)
+        ->name('api.recommendations.explainability');
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
