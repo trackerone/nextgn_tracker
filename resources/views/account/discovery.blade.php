@@ -35,6 +35,8 @@
             </section>
         @endif
 
+        <div data-discovery-operations-overview></div>
+
         <div data-discovery-health></div>
 
         <div data-discovery-explainability></div>
