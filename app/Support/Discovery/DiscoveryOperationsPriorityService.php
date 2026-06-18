@@ -9,6 +9,7 @@ final class DiscoveryOperationsPriorityService
     public function __construct(
         private readonly DiscoveryOperationsOverviewService $overview,
     ) {}
+
     /**
      * @return array<string, mixed>
      */
