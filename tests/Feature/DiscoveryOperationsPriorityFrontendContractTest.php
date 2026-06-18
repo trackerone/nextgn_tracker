@@ -7,7 +7,7 @@ function discoveryOperationsPriorityFrontendSource(string $path): string
     $contents = file_get_contents(base_path($path));
 
     if ($contents === false) {
-        throw new RuntimeException("Unable to read {$path}");
+        throw new RuntimeException('Unable to read '.$path);
     }
 
     return $contents;
