@@ -57,11 +57,12 @@ export default function RecommendationExplainabilityPanel(): React.ReactElement 
               <p className="text-xs font-semibold uppercase tracking-wide text-brand">Recommendation</p>
               <h3 className="mt-1 text-base font-semibold text-white">{explanation.title}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-400">{explanation.summary}</p>
+              <p className="mt-2 text-xs text-slate-500">{explanation.match_reason}</p>
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <div className="rounded-lg border border-slate-800 p-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Why it exists</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Why this recommendation exists</p>
                 <p className="mt-2 text-sm text-slate-300">{explanation.signal_summary.reason}</p>
               </div>
               <div className="rounded-lg border border-slate-800 p-3">
@@ -75,7 +76,7 @@ export default function RecommendationExplainabilityPanel(): React.ReactElement 
             </div>
 
             <div className="mt-4">
-              <h4 className="text-sm font-semibold text-slate-100">Metadata reasons</h4>
+              <h4 className="text-sm font-semibold text-slate-100">Matched metadata</h4>
               <div className="mt-2 flex flex-wrap gap-2">
                 {explanation.metadata_reasons.map((reason) => (
                   <span key={reason.field} className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300">
@@ -100,6 +101,7 @@ export default function RecommendationExplainabilityPanel(): React.ReactElement 
                         <th className="px-3 py-2">Why each torrent matched</th>
                         <th className="px-3 py-2">Metadata matched</th>
                         <th className="px-3 py-2">Missing metadata</th>
+                        <th className="px-3 py-2">Weak/partial metadata</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-slate-300">
@@ -114,6 +116,11 @@ export default function RecommendationExplainabilityPanel(): React.ReactElement 
                             {match.metadata_missing.length === 0
                               ? 'No missing metadata.'
                               : match.metadata_missing.map((metadata) => metadata.field).join(', ')}
+                          </td>
+                          <td className="px-3 py-2">
+                            {match.metadata_weak.length === 0
+                              ? 'No weak/partial metadata.'
+                              : match.metadata_weak.map((metadata) => `${metadata.field}: ${metadata.value}`).join(', ')}
                           </td>
                         </tr>
                       ))}
@@ -138,7 +145,7 @@ export default function RecommendationExplainabilityPanel(): React.ReactElement 
           </div>
           <h2 className="mt-2 text-lg font-semibold text-white">Why recommendations matched torrents</h2>
           <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-400">
-            Readonly explanations for the metadata recommendation pipeline: why a recommendation exists, why torrents matched, and which metadata fields contributed or were missing.
+            Readonly explanations for the metadata recommendation pipeline: why a recommendation exists, why torrents matched, and which metadata fields contributed, were missing, or were weak/partial.
           </p>
         </div>
         <span className="inline-flex w-fit items-center gap-1 rounded-full border border-slate-700 bg-slate-950/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-300">

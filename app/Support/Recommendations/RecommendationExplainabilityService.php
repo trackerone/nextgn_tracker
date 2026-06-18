@@ -89,6 +89,7 @@ final class RecommendationExplainabilityService
         return [
             'identifier' => $recommendation['recommendation']['identifier'],
             'title' => $recommendation['recommendation']['title'],
+            'name' => $recommendation['recommendation']['title'],
             'summary' => $recommendation['recommendation']['explanation'],
             'signal_summary' => [
                 'reason' => 'Popular and trending metadata signals produced this recommendation group.',
@@ -105,7 +106,24 @@ final class RecommendationExplainabilityService
                 'matched_torrent_count' => count($torrents),
             ],
             'matched_torrents' => array_map(fn (array $torrent): array => $this->matchedTorrent($torrent), $torrents),
+            'metadata_matched' => $this->matchedRecommendationMetadata($metadata),
+            'metadata_missing' => [],
+            'metadata_weak' => [],
             'metadata_reasons' => $this->metadataReasons($metadata, $healthPayload),
+            'match_reason' => count($torrents) > 0
+                ? 'Recommendation output has visible torrent matches for the required metadata taxonomy fields.'
+                : 'Recommendation output was generated from metadata signals, but no visible torrents currently match every required taxonomy field.',
+            'readonly_flags' => [
+                'readonly' => true,
+                'mutates_recommendations' => false,
+                'writes_user_state' => false,
+            ],
+            'non_personalized_guarantees' => [
+                'personalized' => false,
+                'uses_user_history' => false,
+                'uses_download_history' => false,
+                'uses_watch_history' => false,
+            ],
         ];
     }
 
@@ -119,10 +137,27 @@ final class RecommendationExplainabilityService
             'torrent' => $torrent['torrent'],
             'metadata_matched' => $torrent['matched_fields'],
             'metadata_missing' => $this->missingMetadata($torrent['metadata']),
-            'metadata_weak' => [],
+            'metadata_weak' => $this->weakMetadata($torrent['metadata']),
             'match_reason' => $torrent['match_reason'],
             'match_score' => null,
         ];
+    }
+
+    /**
+     * @param  array<string, string>  $metadata
+     * @return array<int, array{field: string, value: string, reason: string}>
+     */
+    private function matchedRecommendationMetadata(array $metadata): array
+    {
+        return array_map(
+            fn (string $field, string $value): array => [
+                'field' => $field,
+                'value' => $value,
+                'reason' => 'Metadata field is required by the recommendation output contract and matched by resolved torrents when available.',
+            ],
+            array_keys($metadata),
+            array_values($metadata),
+        );
     }
 
     /**
@@ -145,6 +180,29 @@ final class RecommendationExplainabilityService
         }
 
         return $missing;
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     * @return array<int, array{field: string, value: mixed, reason: string}>
+     */
+    private function weakMetadata(array $metadata): array
+    {
+        $weak = [];
+
+        foreach (self::CONTEXT_FIELDS as $field) {
+            if (($metadata[$field] ?? null) === null || $metadata[$field] === '') {
+                continue;
+            }
+
+            $weak[] = [
+                'field' => $field,
+                'value' => $metadata[$field],
+                'reason' => 'Metadata is available as context, but it is not part of the required recommendation match taxonomy.',
+            ];
+        }
+
+        return $weak;
     }
 
     /**
