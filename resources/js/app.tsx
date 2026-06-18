@@ -8,6 +8,7 @@ import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidge
 import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
+import DiscoveryHealthPanel from './components/discovery/DiscoveryHealthPanel';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
@@ -165,6 +166,16 @@ if (watchDiscoverySuggestionsElement) {
   ReactDOM.createRoot(watchDiscoverySuggestionsElement).render(
     <React.StrictMode>
       <WatchDiscoverySuggestions />
+    </React.StrictMode>,
+  );
+}
+
+const discoveryHealthElement = document.querySelector<HTMLElement>('[data-discovery-health]');
+
+if (discoveryHealthElement) {
+  ReactDOM.createRoot(discoveryHealthElement).render(
+    <React.StrictMode>
+      <DiscoveryHealthPanel />
     </React.StrictMode>,
   );
 }
