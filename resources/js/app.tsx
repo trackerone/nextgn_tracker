@@ -11,6 +11,7 @@ import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySugg
 import DiscoveryHealthPanel from './components/discovery/DiscoveryHealthPanel';
 import DiscoveryExplainabilityPanel from './components/discovery/DiscoveryExplainabilityPanel';
 import DiscoveryOperationsOverviewPanel from './components/discovery/DiscoveryOperationsOverviewPanel';
+import DiscoveryOperationsPrioritiesPanel from './components/discovery/DiscoveryOperationsPrioritiesPanel';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
@@ -168,6 +169,16 @@ if (watchDiscoverySuggestionsElement) {
   ReactDOM.createRoot(watchDiscoverySuggestionsElement).render(
     <React.StrictMode>
       <WatchDiscoverySuggestions />
+    </React.StrictMode>,
+  );
+}
+
+const discoveryOperationsPrioritiesElement = document.querySelector<HTMLElement>('[data-discovery-operations-priorities]');
+
+if (discoveryOperationsPrioritiesElement) {
+  ReactDOM.createRoot(discoveryOperationsPrioritiesElement).render(
+    <React.StrictMode>
+      <DiscoveryOperationsPrioritiesPanel />
     </React.StrictMode>,
   );
 }
