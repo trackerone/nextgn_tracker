@@ -13,6 +13,7 @@ import DiscoveryExplainabilityPanel from './components/discovery/DiscoveryExplai
 import DiscoveryOperationsOverviewPanel from './components/discovery/DiscoveryOperationsOverviewPanel';
 import DiscoveryOperationsPrioritiesPanel from './components/discovery/DiscoveryOperationsPrioritiesPanel';
 import DiscoveryOperationsDrilldownPanel from './components/discovery/DiscoveryOperationsDrilldownPanel';
+import DiscoveryOperationsActionHintsPanel from './components/discovery/DiscoveryOperationsActionHintsPanel';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
@@ -180,6 +181,16 @@ if (discoveryOperationsPrioritiesElement) {
   ReactDOM.createRoot(discoveryOperationsPrioritiesElement).render(
     <React.StrictMode>
       <DiscoveryOperationsPrioritiesPanel />
+    </React.StrictMode>,
+  );
+}
+
+const discoveryOperationsActionHintsElement = document.querySelector<HTMLElement>('[data-discovery-operations-action-hints]');
+
+if (discoveryOperationsActionHintsElement) {
+  ReactDOM.createRoot(discoveryOperationsActionHintsElement).render(
+    <React.StrictMode>
+      <DiscoveryOperationsActionHintsPanel />
     </React.StrictMode>,
   );
 }
