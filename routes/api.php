@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DiscoveryExplainabilityController;
 use App\Http\Controllers\Api\DiscoveryHealthController;
 use App\Http\Controllers\Api\DiscoveryHomeController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
+use App\Http\Controllers\Api\DiscoveryOperationsActionHintController;
 use App\Http\Controllers\Api\DiscoveryOperationsDrilldownController;
 use App\Http\Controllers\Api\DiscoveryOperationsOverviewController;
 use App\Http\Controllers\Api\DiscoveryOperationsPriorityController;
@@ -88,6 +89,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/operations-drilldown', DiscoveryOperationsDrilldownController::class)
         ->name('api.discovery.operations-drilldown');
+
+    Route::get('/discovery/operations-action-hints', DiscoveryOperationsActionHintController::class)
+        ->name('api.discovery.operations-action-hints');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
