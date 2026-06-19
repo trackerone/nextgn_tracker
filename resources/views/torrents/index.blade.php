@@ -254,7 +254,7 @@
                                                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                             </div>
                                                             <p class="text-xs leading-5 text-slate-500">
-                                                                {{ $row['metadata_summary'] ?? 'Metadata pending' }}
+                                                                {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -313,7 +313,7 @@
                                                     <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                 </div>
                                                 <p class="text-xs leading-5 text-slate-500">
-                                                    {{ $row['metadata_summary'] ?? 'Metadata pending' }}
+                                                    {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
                                                 </p>
                                             </div>
                                         </div>

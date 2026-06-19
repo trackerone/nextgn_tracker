@@ -41,7 +41,6 @@ final class TorrentBrowseRowPresenter
                 'type_label' => TorrentMetadataPresenter::typeLabel($metadata) ?? '—',
                 'resolution_label' => $this->lowerText($metadata['resolution'] ?? null),
                 'release_group' => $this->upperText($metadata['release_group'] ?? null),
-                'metadata_summary' => $this->metadataSummary($metadata),
                 'file_count' => max(1, $fileCount),
                 'file_count_formatted' => number_format(max(1, $fileCount)),
                 'is_freeleech' => (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false),
@@ -72,21 +71,6 @@ final class TorrentBrowseRowPresenter
             $this->prefixedUpperText('Audio', $metadata['audio_language'] ?? null),
             $this->prefixedUpperText('Subs', $metadata['subtitles'] ?? $metadata['subtitle_language'] ?? null),
         ]));
-    }
-
-    private function metadataSummary(array $metadata): string
-    {
-        $summary = array_filter([
-            TorrentMetadataPresenter::typeLabel($metadata),
-            $this->lowerText($metadata['resolution'] ?? null),
-            $this->upperText($metadata['release_group'] ?? null),
-        ], static fn (mixed $value): bool => is_string($value) && $value !== '—');
-
-        if ($summary === []) {
-            return 'Metadata pending';
-        }
-
-        return implode(' · ', $summary);
     }
 
     private function lowerText(mixed $value): string
