@@ -25,6 +25,18 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertSee('href="'.route('pm.index').'"', false);
     }
 
+    public function test_primary_navigation_uses_livable_alpha_labels(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('home'));
+
+        $response->assertOk();
+        $response->assertSee('Browse');
+        $response->assertSee('Messages');
+        $response->assertSeeText('Ratio & snatches');
+    }
+
     public function test_staff_moderation_page_renders_and_non_staff_is_forbidden(): void
     {
         $this->seed(RoleSeeder::class);

@@ -103,6 +103,22 @@ final class TorrentDetailsTest extends TestCase
             ->assertSee('Metadata is not available for this torrent yet.');
     }
 
+    public function test_details_page_shows_usage_guidance_and_missing_description_state(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'name' => 'Guided Detail',
+            'description' => null,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk();
+        $response->assertSee('How to use this torrent');
+        $response->assertSee('Check metadata.');
+        $response->assertSee('No description was provided.');
+    }
+
     public function test_details_page_shows_eligibility_message_for_ratio_denial(): void
     {
         $user = User::factory()->create();

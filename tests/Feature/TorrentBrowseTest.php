@@ -71,6 +71,38 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('language');
     }
 
+    public function test_browse_no_results_gives_recovery_actions(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('torrents.index', ['q' => 'nothing-matches-this']));
+
+        $response->assertOk();
+        $response->assertSee('No torrents matched your filters.');
+        $response->assertSee('Clear filters');
+        $response->assertSee('Upload a release');
+    }
+
+    public function test_browse_rows_show_subtle_metadata_context(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create(['name' => 'Metadata Context Release']);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Metadata Context',
+            'type' => 'movie',
+            'year' => 2026,
+            'resolution' => '1080p',
+            'release_group' => 'SAFE',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
+
+        $response->assertOk();
+        $response->assertSee('Movie · 1080p · SAFE');
+    }
+
     public function test_authenticated_user_sees_browse_save_view_action(): void
     {
         $user = User::factory()->create();

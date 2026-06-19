@@ -197,7 +197,7 @@
             <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Clean rows with metadata staying in the filter shell.</p>
+                    <p class="text-sm text-slate-400">Compact rows with only the metadata that helps you choose a release.</p>
                 </div>
                 <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
             </div>
@@ -253,6 +253,9 @@
                                                                 @endif
                                                                 <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                             </div>
+                                                            <p class="text-xs leading-5 text-slate-500">
+                                                                {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -267,7 +270,14 @@
                             </div>
                         </section>
                     @empty
-                        <div class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</div>
+                        <div class="px-4 py-10 text-center">
+                            <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
+                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
+                            <div class="mt-4 flex justify-center gap-3">
+                                <a href="{{ route('torrents.index') }}" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
+                                <a href="{{ route('torrents.upload') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                            </div>
+                        </div>
                     @endforelse
                 </div>
             @else
@@ -302,6 +312,9 @@
                                                     @endif
                                                     <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                 </div>
+                                                <p class="text-xs leading-5 text-slate-500">
+                                                    {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
+                                                </p>
                                             </div>
                                         </div>
                                     </td>
@@ -312,7 +325,14 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-6 text-center text-slate-400">No torrents matched your filters.</td>
+                                    <td colspan="5" class="px-4 py-10 text-center">
+                                            <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
+                                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
+                                            <div class="mt-4 flex justify-center gap-3">
+                                                <a href="{{ route('torrents.index') }}" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
+                                                <a href="{{ route('torrents.upload') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                            </div>
+                                        </td>
                                 </tr>
                             @endforelse
                         </tbody>

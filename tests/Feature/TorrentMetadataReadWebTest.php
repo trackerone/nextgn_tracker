@@ -118,7 +118,7 @@ final class TorrentMetadataReadWebTest extends TestCase
         $response->assertSee('bluray');
         $response->assertSee('Web Browse Metadata');
         $response->assertSee('2025');
-        $response->assertDontSee('FLUX');
+        $response->assertSeeText('FLUX');
     }
 
     public function test_torrent_detail_falls_back_to_legacy_columns_when_metadata_row_is_missing(): void
