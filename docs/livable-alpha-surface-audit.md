@@ -278,3 +278,28 @@ These items should stay parked until the core tracker surface is livable:
 - P0/P1/P2/Parked classification is preserved in follow-up planning.
 - Metadata reduces effort without adding badge overload.
 - Tests or documentation-contract checks cover any durable launch contract.
+
+## Slice 102 follow-up – Core user surface hardening
+
+Date: 2026-06-19
+
+Slice 102 moved the audit from discovery-foundation review into a narrow Livable Alpha product-surface pass. It did not add new discovery services, scoring engines, recommendation engines, or operations intelligence layers.
+
+### Slice 101 gaps addressed
+
+- **Front page / discovery home (P1):** added a concise ordinary-member orientation path from dashboard to browse, compare, detail, download, and follow.
+- **Browse / torrent listing (P1):** made result copy user-facing, added subtle per-row metadata context, and improved no-results recovery with clear next actions.
+- **Torrent detail page (P1):** added practical usage guidance, stronger download-denied recovery wording, and clearer missing metadata/description states.
+- **Navigation (P1):** simplified primary labels for ordinary users by emphasizing Browse, Messages, and Ratio & snatches without adding new menu sprawl.
+- **Empty/error states (P1/P2 overlap):** improved core no-results, missing catalog, missing metadata, missing description, and ratio-blocked recovery copy.
+
+### Remaining launch gaps
+
+- **Slice 103:** deeper torrent detail hardening remains, especially file list, report action, richer media context, and client/passkey guidance.
+- **Slice 104:** upload flow remains a P0 launch blocker for preflight confidence, field guidance, and rejection recovery.
+- **Slice 105:** account and tracker setup hub remains a P0 launch blocker for passkey, announce URL, RSS token, API keys, and preferences.
+- **Slice 113:** Livable Alpha seeder/demo data remains a P0 launch blocker for realistic review journeys.
+
+### Scope note
+
+Metadata visibility was intentionally kept quiet: browse rows now show only compact release context where it helps selection, while detail pages keep metadata grouped instead of adding badge clutter.

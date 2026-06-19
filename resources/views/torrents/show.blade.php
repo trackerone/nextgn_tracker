@@ -116,7 +116,7 @@
                     @if (($eligibility['allowed'] ?? false) !== true)
                         <div class="mt-3 rounded-xl border border-rose-400/30 bg-rose-950/20 px-3 py-2 text-xs leading-5 text-rose-100">
                             <p class="font-semibold uppercase tracking-wide">Why blocked</p>
-                            <p class="mt-1">Improve ratio or wait for freeleech/no-history grace before retrying this download.</p>
+                            <p class="mt-1">Improve ratio, choose a freeleech release, or ask staff if you believe this account state is incorrect. This is action-required before downloading.</p>
                         </div>
                     @endif
                     <div class="mt-3 grid gap-2 md:grid-cols-2">
@@ -198,6 +198,14 @@
                     @endif
                 </section>
             @endcan
+            <section class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/35 p-5" aria-label="How to use this torrent">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">How to use this torrent</h2>
+                <div class="mt-3 grid gap-3 text-sm leading-6 text-slate-300 md:grid-cols-3">
+                    <p><span class="font-semibold text-white">Check metadata.</span> Confirm resolution, source, language and subtitle context before downloading.</p>
+                    <p><span class="font-semibold text-white">Check access.</span> The download status below explains whether this is ready, temporary, or action-required.</p>
+                    <p><span class="font-semibold text-white">Follow updates.</span> Following uses metadata so better versions and related releases are easier to find later.</p>
+                </div>
+            </section>
             <section class="mt-8 space-y-4" aria-label="Quick facts">
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>
@@ -228,8 +236,9 @@
                     </dl>
                 </section>
             @else
-                <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    Metadata is not available for this torrent yet.
+                <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm leading-6 text-slate-300">
+                    <p class="font-semibold text-white">Metadata is not available for this torrent yet.</p>
+                    <p class="mt-1">This can be normal for older or freshly moderated uploads. Use the title, category, size and swarm stats for now; staff can enrich metadata later.</p>
                 </div>
             @endif
             <section class="mt-8 space-y-4" aria-label="Torrent facts">
@@ -266,12 +275,16 @@
                 @endforeach
             </div>
         @endif
-        @if ($descriptionHtml !== '')
-            <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-                <h2 class="text-lg font-semibold text-white">Description</h2>
+        <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <h2 class="text-lg font-semibold text-white">Description</h2>
+            @if ($descriptionHtml !== '')
                 <div class="prose prose-invert mt-4 max-w-none text-slate-100">{!! $descriptionHtml !!}</div>
-            </section>
-        @endif
+            @else
+                <div class="mt-4 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm leading-6 text-slate-400">
+                    No description was provided. This is usable for alpha if the torrent metadata and NFO are enough to identify the release; choose another version or contact staff if the release is unclear.
+                </div>
+            @endif
+        </section>
         @if (($nfoText ?? '') !== '')
             <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                 <h2 class="text-lg font-semibold text-white">NFO</h2>

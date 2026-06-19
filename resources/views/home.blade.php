@@ -59,6 +59,25 @@
             </div>
         </section>
 
+
+        <section class="rounded-2xl border border-brand/30 bg-brand/10 p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Livable Alpha orientation</p>
+                    <h2 class="mt-2 text-xl font-semibold text-white">Start with the ordinary tracker path</h2>
+                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Browse a release, open its detail page, confirm the metadata and download status, then save the search or follow the release family if you want updates.</p>
+                </div>
+                <a href="{{ route('torrents.index') }}" class="inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Start browsing</a>
+            </div>
+            <ol class="mt-5 grid gap-3 text-sm text-slate-300 md:grid-cols-5">
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">1. Browse</span><br>Use search or core filters.</li>
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">2. Compare</span><br>Pick a clean version.</li>
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">3. Check details</span><br>Review metadata and ratio status.</li>
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">4. Download</span><br>Use the torrent or magnet action.</li>
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">5. Follow</span><br>Save updates with metadata.</li>
+            </ol>
+        </section>
+
         <section class="grid gap-4 md:grid-cols-3">
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Discover</h2>
@@ -103,7 +122,7 @@
                         </a>
                     @empty
                         <div class="px-5 py-8 text-center text-sm text-slate-400">
-                            No visible torrents yet. When approved uploads are published, they will appear here.
+                            No visible torrents yet. This is normal before the first approved uploads are published. Try Browse later or submit a release if you have upload access.
                         </div>
                     @endforelse
                 </div>
