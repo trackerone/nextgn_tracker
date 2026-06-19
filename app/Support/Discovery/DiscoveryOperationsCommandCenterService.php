@@ -127,6 +127,10 @@ final class DiscoveryOperationsCommandCenterService
 
     private function nextStaffFocus(array $queue, array $priorities, array $actionHints, array $health): array
     {
+        if (($health['metrics']['total_visible_torrents'] ?? 0) === 0) {
+            return self::SAFE_INFO_FOCUS;
+        }
+
         if (isset($queue[0])) {
             return ['severity' => $queue[0]['severity'], 'title' => $queue[0]['issue_title'], 'recommended_staff_action' => $queue[0]['recommended_staff_action'], 'reason' => $queue[0]['explanation'], 'source' => 'review_queue'];
         }
