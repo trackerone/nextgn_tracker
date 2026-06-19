@@ -86,7 +86,7 @@ final class DiscoveryOperationsActionHintService
             $this->hint('inspect_weakly_discoverable_torrents', 'warning', 'Inspect weakly discoverable torrents', 'Weakly discoverable torrents have metadata gaps that reduce filtering quality.', array_keys(DiscoveryHealthService::CORE_METADATA_FIELDS), ['weakly_discoverable'], ['low_discovery_readiness'], 'Inspect weak metadata coverage and improve extraction or curation guidance.', 'The operations layer reports metadata readiness without using personalization or history.'),
         ];
 
-        if ($activePriorities === [] || in_array('healthy_discovery_condition', $activePriorities, true)) {
+        if ($activePriorities === [] || in_array('healthy_discovery_condition', $activePriorities, true) || in_array('no_visible_torrents', $activePriorities, true)) {
             $hints[] = $this->hint('no_action_required', 'info', 'No action required', 'Discovery operations do not show immediate action hints for the selected filters.', array_keys(DiscoveryHealthService::CORE_METADATA_FIELDS), ['discovery_ready'], ['healthy_discovery_condition', 'no_visible_torrents'], 'No action required; keep metadata complete during normal curation.', 'Current discovery operations conditions are healthy or no matching issue hint exists.');
         }
 
