@@ -100,7 +100,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
 
         $response->assertOk();
-        $response->assertSee('Movie · 1080p · SAFE');
+        $response->assertSeeText('Movie · 1080p · SAFE');
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void
