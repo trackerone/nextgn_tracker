@@ -35,6 +35,8 @@
             </section>
         @endif
 
+        <div data-discovery-operations-review-queue></div>
+
         <div data-discovery-operations-priorities></div>
 
         <div data-discovery-operations-action-hints></div>

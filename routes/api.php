@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\DiscoveryOperationsActionHintController;
 use App\Http\Controllers\Api\DiscoveryOperationsDrilldownController;
 use App\Http\Controllers\Api\DiscoveryOperationsOverviewController;
 use App\Http\Controllers\Api\DiscoveryOperationsPriorityController;
+use App\Http\Controllers\Api\DiscoveryOperationsReviewQueueController;
 use App\Http\Controllers\Api\DiscoveryPopularMetadataController;
 use App\Http\Controllers\Api\DiscoveryRssSuggestionsController;
 use App\Http\Controllers\Api\DiscoverySummaryController;
@@ -92,6 +93,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/operations-action-hints', DiscoveryOperationsActionHintController::class)
         ->name('api.discovery.operations-action-hints');
+
+    Route::get('/discovery/operations-review-queue', DiscoveryOperationsReviewQueueController::class)
+        ->name('api.discovery.operations-review-queue');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
         ->name('api.discovery.metadata');
