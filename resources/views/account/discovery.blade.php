@@ -37,6 +37,8 @@
 
         <div data-discovery-operations-priorities></div>
 
+        <div data-discovery-operations-drilldown></div>
+
         <div data-discovery-operations-overview></div>
 
         <div data-discovery-health></div>

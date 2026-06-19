@@ -12,6 +12,7 @@ import DiscoveryHealthPanel from './components/discovery/DiscoveryHealthPanel';
 import DiscoveryExplainabilityPanel from './components/discovery/DiscoveryExplainabilityPanel';
 import DiscoveryOperationsOverviewPanel from './components/discovery/DiscoveryOperationsOverviewPanel';
 import DiscoveryOperationsPrioritiesPanel from './components/discovery/DiscoveryOperationsPrioritiesPanel';
+import DiscoveryOperationsDrilldownPanel from './components/discovery/DiscoveryOperationsDrilldownPanel';
 import RecommendationSignalsPanel from './components/discovery/RecommendationSignalsPanel';
 import RecommendationEngineFoundationPanel from './components/discovery/RecommendationEngineFoundationPanel';
 import RecommendationCandidatesPanel from './components/discovery/RecommendationCandidatesPanel';
@@ -179,6 +180,16 @@ if (discoveryOperationsPrioritiesElement) {
   ReactDOM.createRoot(discoveryOperationsPrioritiesElement).render(
     <React.StrictMode>
       <DiscoveryOperationsPrioritiesPanel />
+    </React.StrictMode>,
+  );
+}
+
+const discoveryOperationsDrilldownElement = document.querySelector<HTMLElement>('[data-discovery-operations-drilldown]');
+
+if (discoveryOperationsDrilldownElement) {
+  ReactDOM.createRoot(discoveryOperationsDrilldownElement).render(
+    <React.StrictMode>
+      <DiscoveryOperationsDrilldownPanel />
     </React.StrictMode>,
   );
 }
