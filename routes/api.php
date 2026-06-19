@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\DiscoveryHealthController;
 use App\Http\Controllers\Api\DiscoveryHomeController;
 use App\Http\Controllers\Api\DiscoveryMetadataController;
 use App\Http\Controllers\Api\DiscoveryOperationsActionHintController;
+use App\Http\Controllers\Api\DiscoveryOperationsCommandCenterController;
 use App\Http\Controllers\Api\DiscoveryOperationsDrilldownController;
 use App\Http\Controllers\Api\DiscoveryOperationsOverviewController;
 use App\Http\Controllers\Api\DiscoveryOperationsPriorityController;
@@ -81,6 +82,9 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/discovery/explainability', DiscoveryExplainabilityController::class)
         ->name('api.discovery.explainability');
+
+    Route::get('/discovery/operations-command-center', DiscoveryOperationsCommandCenterController::class)
+        ->name('api.discovery.operations-command-center');
 
     Route::get('/discovery/operations-overview', DiscoveryOperationsOverviewController::class)
         ->name('api.discovery.operations-overview');
