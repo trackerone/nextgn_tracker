@@ -313,3 +313,14 @@ Slice 103 rebuilt the core tracker pass cleanly after the abandoned PR #539 by k
 This helps Livable Alpha by making the ordinary tracker loop easier to follow: browse, inspect, decide, download or follow, then upload and track account state without adding new backend systems or discovery machinery.
 
 Slice 104 should focus on upload hardening: preflight confidence, clearer rejected-upload recovery, and uploader next steps while preserving the existing moderation workflow.
+
+
+## Slice 104 follow-up – Staff admin launch operations surface
+
+Date: 2026-06-20
+
+Slice 104 hardened the existing staff/admin launch surfaces by clarifying the upload moderation queue, staff navigation labels, sysop operations readiness copy, and uploader-facing rejection recovery wording.
+
+This matters for Livable Alpha because staff need to quickly see what needs review, what needs action, what is blocked, and which existing health and smoke paths should be checked before launch without adding a new operations engine.
+
+Slice 105 should focus on the account and tracker setup hub: passkey, announce URL, RSS token, API keys, and preference guidance for ordinary members.

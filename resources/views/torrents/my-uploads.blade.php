@@ -10,7 +10,7 @@
     <div class="space-y-6">
         <div>
             <h1 class="text-2xl font-semibold text-white">My uploads</h1>
-            <p class="text-sm text-slate-400">Track moderation status for your recent submissions.</p>
+            <p class="text-sm text-slate-400">Track moderation status for your recent submissions. If an upload is rejected, use the reason to fix the torrent, title, category, or metadata before submitting again.</p>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-slate-900/30">
@@ -45,7 +45,7 @@
                                 @if ($torrent->moderated_reason)
                                     {{ $torrent->moderated_reason }}
                                 @elseif ($torrent->status === \App\Enums\TorrentStatus::Pending)
-                                    Awaiting moderator review
+                                    Awaiting moderator review; staff will approve clear releases or reject with what to fix
                                 @else
                                     —
                                 @endif
@@ -57,7 +57,7 @@
                             <td colspan="4" class="px-4 py-10 text-center">
                                 <div class="mx-auto max-w-xl">
                                     <h2 class="text-lg font-semibold text-white">No uploads submitted yet</h2>
-                                    <p class="mt-2 text-sm text-slate-400">Share a clean release with metadata and files ready for review. Your moderation status and feedback will appear here.</p>
+                                    <p class="mt-2 text-sm text-slate-400">Share a clean release with metadata and files ready for review. Pending, approved, and rejected status updates will appear here with staff feedback when action is needed.</p>
                                     <a href="{{ route('torrents.upload') }}" class="mt-4 inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Upload your first torrent</a>
                                 </div>
                             </td>

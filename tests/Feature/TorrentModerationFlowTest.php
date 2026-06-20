@@ -137,6 +137,9 @@ final class TorrentModerationFlowTest extends TestCase
             ->get(route('staff.torrents.moderation.index'))
             ->assertOk()
             ->assertSee($torrent->name)
+            ->assertSeeText('Approve and publish')
+            ->assertSeeText('Reject with reason')
+            ->assertSeeText('Soft-delete upload')
             ->assertSee('Tv')
             ->assertSee('Needs metadata review')
             ->assertSee('Missing season/episode');

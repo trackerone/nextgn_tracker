@@ -14,10 +14,15 @@
 <div class="space-y-6">
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
         <h1 class="text-2xl font-semibold text-white">Sysop Operations Dashboard</h1>
-        <p class="mt-2 text-sm text-slate-300">Read-only runtime visibility for sysop operations. Deployment and server tasks remain shell/server responsibilities.</p>
+        <p class="mt-2 text-sm text-slate-300">Read-only runtime visibility for sysop operations and launch readiness. Deployment and server tasks remain shell/server responsibilities.</p>
         <div class="mt-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ $statusClasses[$health['status']] ?? $statusClasses['warning'] }}">
             Overall state: {{ $labels[$health['status']] ?? ucfirst($health['status']) }}
         </div>
+    </section>
+
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Alpha launch readiness</h2>
+        <p class="mt-2 text-sm text-slate-400">Use this page with staff moderation, recent uploads, browse/detail/upload smoke checks, and RSS/watch/notification smoke paths before declaring the alpha healthy enough for launch.</p>
     </section>
 
     @if (!empty($health['warnings']))

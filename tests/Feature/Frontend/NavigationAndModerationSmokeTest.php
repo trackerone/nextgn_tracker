@@ -35,6 +35,7 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertSee('Browse');
         $response->assertSee('Messages');
         $response->assertSeeText('Ratio & snatches');
+        $response->assertDontSeeText('Staff moderation');
     }
 
     public function test_dashboard_shows_conservative_core_tracker_orientation(): void
@@ -76,6 +77,13 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $this->actingAs($staff)
             ->get(route('staff.torrents.moderation.index'))
             ->assertOk()
-            ->assertSee('Pending torrent review queue');
+            ->assertSeeText('Pending torrent review queue')
+            ->assertSeeText('Review guidance')
+            ->assertSeeText('Approve')
+            ->assertSeeText('Reject with an actionable reason')
+            ->assertSeeText('Soft-delete only when appropriate')
+            ->assertSeeText('Launch readiness checks')
+            ->assertSeeText('No pending uploads right now')
+            ->assertSeeText('Staff moderation');
     }
 }

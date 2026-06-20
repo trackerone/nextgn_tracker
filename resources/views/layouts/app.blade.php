@@ -56,10 +56,10 @@
                         <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">Messages</a>
                         <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio & snatches</a>
                         @if (auth()->user()?->isStaff())
-                            <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Moderation</a>
+                            <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
                         @endif
                         @if (auth()->user()?->isSysop())
-                            <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Operations</a>
+                            <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Sysop operations</a>
                         @endif
                     </nav>
                 @endauth

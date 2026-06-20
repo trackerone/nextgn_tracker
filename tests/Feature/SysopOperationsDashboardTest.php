@@ -43,6 +43,8 @@ final class SysopOperationsDashboardTest extends TestCase
             ->get(route('sysop.operations.index'))
             ->assertOk()
             ->assertSee('Sysop Operations Dashboard')
+            ->assertSeeText('Alpha launch readiness')
+            ->assertSeeText('browse/detail/upload smoke checks')
             ->assertSee('Runtime Job Controls (Safe Scope)')
             ->assertSee('Immutable Critical')
             ->assertSee('Sysop Controllable')
