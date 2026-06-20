@@ -197,7 +197,7 @@
             <div class="flex flex-col gap-2 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Scan the essentials, then inspect a release for metadata, access guidance, and download state.</p>
+                    <p class="text-sm text-slate-400">Scan size, swarm, snatches, and added date before you inspect the release details.</p>
                 </div>
                 <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
             </div>
