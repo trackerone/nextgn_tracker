@@ -325,6 +325,12 @@ This matters for Livable Alpha because staff need to quickly see what needs revi
 
 A following launch-prep slice should focus on the account and tracker setup hub: passkey, announce URL, RSS token, API keys, and preference guidance for ordinary members.
 
+## Slice 106 note — release readiness audit
+
+Date: 2026-06-20
+
+Slice 106 created a separate decision-support release readiness audit at [`docs/livable-alpha-release-readiness.md`](livable-alpha-release-readiness.md). It summarizes the current controlled-alpha go/no-go posture, launch blockers, pre-launch must-fix items, operating model, smoke checklist, deferred work, and recommended launch-focused next slices without changing product code.
+
 ## Slice 105 note — mobile visual alpha polish
 
 - Applied a narrow polish pass to the existing dashboard, torrent browse/listing, torrent detail, upload, My Uploads, and staff moderation surfaces.
