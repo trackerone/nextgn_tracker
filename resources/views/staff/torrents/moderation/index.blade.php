@@ -20,10 +20,24 @@
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff moderation</p>
                 <h1 class="mt-2 text-2xl font-semibold text-white">Pending torrent review queue</h1>
-                <p class="text-sm text-slate-400">Scan upload context, metadata quality and safety signals before publishing or rejecting submissions.</p>
+                <p class="text-sm text-slate-400">Review pending uploads, decide what needs action, and keep unclear releases out of the alpha catalog.</p>
             </div>
             <div class="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"><span class="font-semibold text-white">{{ $pendingTorrents->total() }}</span> pending uploads</div>
         </div>
+        <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4" aria-labelledby="moderation-review-guidance">
+            <h2 id="moderation-review-guidance" class="text-sm font-semibold uppercase tracking-wide text-slate-300">Review guidance</h2>
+            <div class="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
+                <p><span class="font-semibold text-emerald-200">Approve</span> only when the torrent file, title, category, and release metadata are clear enough for members to choose confidently.</p>
+                <p><span class="font-semibold text-rose-200">Reject with an actionable reason</span> when the uploader can fix missing metadata, confusing naming, or an unsafe/invalid submission.</p>
+                <p><span class="font-semibold text-amber-200">Soft-delete only when appropriate</span> for staff cleanup cases that should be hidden rather than returned for uploader correction.</p>
+            </div>
+        </section>
+
+        <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4" aria-labelledby="staff-launch-readiness">
+            <h2 id="staff-launch-readiness" class="text-sm font-semibold uppercase tracking-wide text-slate-300">Launch readiness checks</h2>
+            <p class="mt-2 text-sm text-slate-400">Before alpha, staff should confirm pending moderation is low, recent uploads look understandable, health/status is acceptable, and the browse, detail, upload, RSS/watch, and notification smoke paths still work.</p>
+        </section>
+
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
             <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-800 text-sm">
@@ -124,7 +138,7 @@
                                 <div class="flex flex-col gap-2">
                                     <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" data-submit-label="Publishing…">
                                         @csrf
-                                        <button type="submit" class="w-full rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Publish torrent</button>
+                                        <button type="submit" class="w-full rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Approve and publish</button>
                                     </form>
                                     <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
                                         @csrf
@@ -134,7 +148,7 @@
                                     </form>
                                     <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
                                         @csrf
-                                        <button type="submit" class="w-full rounded-xl border border-rose-500/60 bg-rose-950/30 px-3 py-2 text-xs font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete</button>
+                                        <button type="submit" class="w-full rounded-xl border border-rose-500/60 bg-rose-950/30 px-3 py-2 text-xs font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete upload</button>
                                     </form>
                                 </div>
                             </td>
@@ -142,7 +156,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-4 py-8 text-center text-slate-400">
-                                No pending uploads right now. New user submissions will appear here for moderation.
+                                No pending uploads right now. The alpha queue is clear; check recent uploads, health/status, and smoke paths before launch.
                             </td>
                         </tr>
                     @endforelse

@@ -222,7 +222,8 @@ final class UploadPublishModerationSliceTest extends TestCase
             ->get(route('my.uploads'))
             ->assertOk()
             ->assertSee($torrent->name)
-            ->assertSee('Bad metadata');
+            ->assertSee('Bad metadata')
+            ->assertSeeText('use the reason to fix the torrent, title, category, or metadata before submitting again');
     }
 
     public function test_non_moderator_cannot_approve_or_reject(): void
