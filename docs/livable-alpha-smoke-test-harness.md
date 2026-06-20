@@ -127,6 +127,8 @@ Launch must stop if:
 
 ## 7. Failure recording template
 
+Enter smoke-test failures into the alpha feedback intake so staff can triage them with the same severity and blocker language used by this harness. Use `blocker`, `must-fix`, or `non-blocking` for severity and mark `Blocks alpha` consistently with the smoke row.
+
 ```text
 Date/time:
 Environment:

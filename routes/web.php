@@ -7,6 +7,7 @@ use App\Http\Controllers\AccountNotificationController;
 use App\Http\Controllers\AccountRssController;
 use App\Http\Controllers\AccountRssPresetController;
 use App\Http\Controllers\AccountSnatchController;
+use App\Http\Controllers\AlphaFeedbackController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\InviteAdminController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\RssPresetFeedController;
 use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\SavedIntentController;
 use App\Http\Controllers\ScrapeController;
+use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\TopicController;
@@ -154,6 +156,15 @@ Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(funct
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name('staff.')->group(function (): void {
+    Route::get('/alpha-feedback', [StaffAlphaFeedbackController::class, 'index'])
+        ->name('alpha-feedback.index');
+    Route::get('/alpha-feedback/{alphaFeedback}', [StaffAlphaFeedbackController::class, 'show'])
+        ->whereNumber('alphaFeedback')
+        ->name('alpha-feedback.show');
+    Route::patch('/alpha-feedback/{alphaFeedback}', [StaffAlphaFeedbackController::class, 'update'])
+        ->whereNumber('alphaFeedback')
+        ->name('alpha-feedback.update');
+
     Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
         ->name('torrents.moderation.index');
 
@@ -247,6 +258,9 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function (): void {
+    Route::get('/alpha/feedback', [AlphaFeedbackController::class, 'create'])->name('alpha.feedback.create');
+    Route::post('/alpha/feedback', [AlphaFeedbackController::class, 'store'])->name('alpha.feedback.store');
+
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])
         ->middleware('throttle:torrent-upload')
