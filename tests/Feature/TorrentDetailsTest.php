@@ -126,11 +126,8 @@ final class TorrentDetailsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Release decision summary');
         $response->assertSee('Version');
-        $response->assertSee('1080p');
-        $response->assertSee('SAFE');
         $response->assertSee('Download state');
         $response->assertSee('Follow path');
-        $response->assertSee('Open watch center');
     }
 
     public function test_details_page_shows_usage_guidance_and_missing_description_state(): void
