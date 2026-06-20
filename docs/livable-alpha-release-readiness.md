@@ -233,3 +233,11 @@ No confirmed launch blockers remain from this repository-level pass. The conditi
 - **Slice 110:** verify production deployment readiness for secrets, HTTPS, storage disks, mail, queues, logs, backups, health checks, throttles, and rollback expectations.
 
 Slice 107 intentionally avoids product expansion, new systems, new controllers/routes, broad UI polish, and speculative fixes.
+
+## Slice 108 update – Manual Smoke Test Harness
+
+Date: 2026-06-20
+
+Slice 108 adds `docs/livable-alpha-smoke-test-harness.md` as the repeatable manual verification harness for controlled Livable Alpha. The harness defines the required environments, roles/accounts, fixture data, smoke-test matrix, go/no-go rules, failure recording template, daily staff smoke routine, and handoff expectations for Slices 109, 110, and 111.
+
+This update intentionally remains documentation-only. It does not add product features, routes, controllers, migrations, seeders, CI changes, or automated smoke-test infrastructure. The staging/alpha environment remains the real go/no-go target because local checks cannot prove production-like secrets, storage, HTTPS, role assignments, token behavior, or representative alpha data.
