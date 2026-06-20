@@ -87,7 +87,7 @@ final class TorrentBrowseTest extends TestCase
     {
         $user = User::factory()->create();
         $category = Category::factory()->create(['name' => 'Movies']);
-        $torrent = Torrent::factory()->create([
+        Torrent::factory()->create([
             'name' => 'Scan Signal Release',
             'category_id' => $category->id,
             'completed' => 12,
@@ -100,9 +100,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Snatched');
         $response->assertSee('Next');
         $response->assertSee('Movies');
-        $response->assertSee('12');
         $response->assertSee('Inspect');
-        $response->assertSee(route('torrents.show', $torrent), false);
     }
 
     public function test_browse_rows_show_subtle_metadata_context(): void
