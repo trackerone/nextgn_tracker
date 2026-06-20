@@ -238,6 +238,8 @@ Slice 107 intentionally avoids product expansion, new systems, new controllers/r
 
 Date: 2026-06-20
 
-Slice 108 adds `docs/livable-alpha-smoke-test-harness.md` as the repeatable manual verification harness for controlled Livable Alpha. The harness defines the required environments, roles/accounts, fixture data, smoke-test matrix, go/no-go rules, failure recording template, daily staff smoke routine, and handoff expectations for Slices 109, 110, and 111.
+Slice 108 created [`docs/livable-alpha-smoke-test-harness.md`](livable-alpha-smoke-test-harness.md).
 
-This update intentionally remains documentation-only. It does not add product features, routes, controllers, migrations, seeders, CI changes, or automated smoke-test infrastructure. The staging/alpha environment remains the real go/no-go target because local checks cannot prove production-like secrets, storage, HTTPS, role assignments, token behavior, or representative alpha data.
+The smoke checklist is now the operational go/no-go artifact for controlled alpha.
+
+Product code was not changed.
