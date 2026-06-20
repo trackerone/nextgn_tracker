@@ -490,6 +490,19 @@ class TorrentUploadTest extends TestCase
         $response->assertDontSee('Possible upgrade already exists.');
     }
 
+    public function test_upload_page_shows_readiness_guide(): void
+    {
+        $response = $this->view('torrents.upload', [
+            'categories' => collect(),
+            'errors' => new ViewErrorBag,
+            'releaseAdvice' => [],
+        ]);
+
+        $response->assertSeeText('Upload readiness guide');
+        $response->assertSeeText('Metadata expected');
+        $response->assertSeeText('After submit');
+    }
+
     public function test_web_upload_endpoint_throttles_failed_uploads(): void
     {
         config()->set('security.rate_limits.torrent_upload', '1,1');

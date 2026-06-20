@@ -37,6 +37,20 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertSeeText('Ratio & snatches');
     }
 
+    public function test_dashboard_shows_conservative_core_tracker_orientation(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('home'));
+
+        $response->assertOk();
+        $response->assertSeeText('Core tracker path');
+        $response->assertSeeText('ordinary tracker path');
+        $response->assertSeeText('Browse torrents');
+        $response->assertSeeText('Upload release');
+        $response->assertSeeText('My uploads');
+    }
+
     public function test_staff_moderation_page_renders_and_non_staff_is_forbidden(): void
     {
         $this->seed(RoleSeeder::class);

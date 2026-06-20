@@ -303,3 +303,13 @@ Slice 102 moved the audit from discovery-foundation review into a narrow Livable
 ### Scope note
 
 Metadata visibility was intentionally kept quiet: browse rows now show only compact release context where it helps selection, while detail pages keep metadata grouped instead of adding badge clutter.
+
+## Slice 103 follow-up – Core tracker surface buildout
+
+Date: 2026-06-20
+
+Slice 103 rebuilt the core tracker pass cleanly after the abandoned PR #539 by keeping changes limited to visible, stable surfaces: browse scan labels and inspect actions, a detail-page release decision summary, upload readiness copy, and a conservative dashboard orientation panel.
+
+This helps Livable Alpha by making the ordinary tracker loop easier to follow: browse, inspect, decide, download or follow, then upload and track account state without adding new backend systems or discovery machinery.
+
+Slice 104 should focus on upload hardening: preflight confidence, clearer rejected-upload recovery, and uploader next steps while preserving the existing moderation workflow.
