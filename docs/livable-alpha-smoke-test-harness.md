@@ -20,6 +20,7 @@ Notes:
 
 - Local green is not enough.
 - Staging/alpha must use realistic roles, storage, secrets, and data.
+- Run this smoke harness after alpha Docker deployment; the deployed server result is the go/no-go signal for invites.
 
 ## 3. Required roles
 
