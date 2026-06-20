@@ -7,9 +7,9 @@
 @endsection
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/50 md:p-8">
+    <div class="mx-auto w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-slate-950/50 md:p-8">
         <h1 class="text-2xl font-semibold text-white">Upload torrent</h1>
-        <p class="mt-2 text-sm text-slate-400">Add a torrent with clear metadata so users and moderators can understand what is being uploaded before it becomes visible.</p>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Add a torrent with clear metadata so members and moderators can understand the release before it becomes visible in browse, RSS, or follow matches.</p>
 
         @if (session('status'))
             <div class="mt-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
@@ -104,8 +104,8 @@
                 </div>
             </fieldset>
 
-            <div class="flex items-center gap-3">
-                <button type="submit" class="rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950">Submit for review</button>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button type="submit" class="inline-flex justify-center rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-slate-950">Submit for review</button>
                 <p class="text-xs text-slate-500">Submitting does not bypass moderation.</p>
             </div>
         </form>

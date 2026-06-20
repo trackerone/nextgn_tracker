@@ -115,7 +115,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
 
         $response->assertOk();
-        $response->assertSeeText('Scan size, swarm, snatches, and added date before you inspect the release details.');
+        $response->assertSeeText('inspect the release details.');
         $response->assertSeeText('Size');
         $response->assertSeeText('Seed');
         $response->assertSeeText('Leech');

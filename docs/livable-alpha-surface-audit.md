@@ -323,4 +323,10 @@ Slice 104 hardened the existing staff/admin launch surfaces by clarifying the up
 
 This matters for Livable Alpha because staff need to quickly see what needs review, what needs action, what is blocked, and which existing health and smoke paths should be checked before launch without adding a new operations engine.
 
-Slice 105 should focus on the account and tracker setup hub: passkey, announce URL, RSS token, API keys, and preference guidance for ordinary members.
+A following launch-prep slice should focus on the account and tracker setup hub: passkey, announce URL, RSS token, API keys, and preference guidance for ordinary members.
+
+## Slice 105 note — mobile visual alpha polish
+
+- Applied a narrow polish pass to the existing dashboard, torrent browse/listing, torrent detail, upload, My Uploads, and staff moderation surfaces.
+- Reviewed small-screen readability, button wrapping, table overflow affordances, empty/recovery copy, and tracker-critical actions: Browse, Inspect, Download/access guidance, Upload, My uploads, and staff review actions.
+- This slice intentionally avoided discovery foundation work and backend expansion. The next launch-prep slice should still address first-use account/client setup and broader launch smoke readiness.

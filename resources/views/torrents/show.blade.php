@@ -80,7 +80,7 @@
                 </dl>
             </section>
         @endif
-        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-8 shadow-2xl shadow-slate-950/40">
+        <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-slate-950/40 md:p-8">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                     <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">Approved torrent</p>
@@ -88,12 +88,12 @@
                     <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
                 </div>
                 @can('download', $torrent)
-                    <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
-                        <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
                         <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
                             @csrf
-                            <button type="submit" class="inline-flex items-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400">Follow with metadata</button>
+                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">Follow with metadata</button>
                         </form>
                     </div>
                 @endcan
@@ -123,7 +123,7 @@
                     @if (($eligibility['allowed'] ?? false) !== true)
                         <div class="mt-3 rounded-xl border border-rose-400/30 bg-rose-950/20 px-3 py-2 text-xs leading-5 text-rose-100">
                             <p class="font-semibold uppercase tracking-wide">Why blocked</p>
-                            <p class="mt-1">Improve ratio, choose a freeleech release, or ask staff if you believe this account state is incorrect. This is action-required before downloading.</p>
+                            <p class="mt-1">Improve ratio, choose a freeleech release, or ask staff if you believe this account state is incorrect. Download is blocked until this is resolved.</p>
                         </div>
                     @endif
                     <div class="mt-3 grid gap-2 md:grid-cols-2">
@@ -191,7 +191,7 @@
                         @if ($metadataFacts !== [])
                             <p class="mt-2">{{ collect($metadataFacts)->map(fn ($item) => $item['label'].': '.$item['value'])->implode(' • ') }}</p>
                         @else
-                            <p class="mt-2 text-slate-500">No normalized release metadata is available yet.</p>
+                            <p class="mt-2 text-slate-500">No normalized release metadata is available yet. Review the title, category, description, and NFO before deciding.</p>
                         @endif
                         @if (($releaseAdvice['upgrade_available'] ?? false) === true)
                             <p class="mt-2 text-amber-200">A better version is already known for this release family.</p>

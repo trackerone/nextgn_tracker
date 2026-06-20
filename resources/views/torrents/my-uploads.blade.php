@@ -10,11 +10,12 @@
     <div class="space-y-6">
         <div>
             <h1 class="text-2xl font-semibold text-white">My uploads</h1>
-            <p class="text-sm text-slate-400">Track moderation status for your recent submissions. If an upload is rejected, use the reason to fix the torrent, title, category, or metadata before submitting again.</p>
+            <p class="max-w-3xl text-sm leading-6 text-slate-400">Track moderation status for your submissions. If an upload is rejected, use the reason to fix the torrent, title, category, or metadata before submitting again.</p>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-slate-900/30">
-            <table class="min-w-full divide-y divide-slate-800 text-sm">
+            <div class="overflow-x-auto" aria-label="Scrollable my uploads table">
+                <table class="min-w-[42rem] divide-y divide-slate-800 text-sm">
                 <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
                     <tr>
                         <th class="px-4 py-3 text-left">Name</th>
@@ -58,14 +59,14 @@
                                 <div class="mx-auto max-w-xl">
                                     <h2 class="text-lg font-semibold text-white">No uploads submitted yet</h2>
                                     <p class="mt-2 text-sm text-slate-400">Share a clean release with metadata and files ready for review. Pending, approved, and rejected status updates will appear here with staff feedback when action is needed.</p>
-                                    <a href="{{ route('torrents.upload') }}" class="mt-4 inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Upload your first torrent</a>
+                                    <a href="{{ route('torrents.upload') }}" class="mt-4 inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Upload your first torrent</a>
                                 </div>
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
-            </table>
-
+                </table>
+            </div>
             <div class="border-t border-slate-800 bg-slate-900/70 px-4 py-3">
                 {{ $uploads->links() }}
             </div>

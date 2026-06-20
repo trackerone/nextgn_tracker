@@ -18,10 +18,10 @@
                             Browse verified releases, follow titles you care about, share clean uploads, and stay close to tracker discussions from one focused dashboard.
                         </p>
                     </div>
-                    <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('torrents.index') }}" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20">Browse torrents</a>
-                        <a href="{{ route('torrents.upload') }}" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
-                        <a href="#community" class="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Community activity</a>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20">Browse torrents</a>
+                        <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
+                        <a href="#community" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Community activity</a>
                     </div>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -67,7 +67,7 @@
                     <h2 class="mt-2 text-xl font-semibold text-white">Start with the ordinary tracker path</h2>
                     <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Browse a release, inspect its detail page, decide from the swarm and download state, then download, follow, or contribute your own clean upload.</p>
                 </div>
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <a href="{{ route('torrents.index') }}" class="inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Browse torrents</a>
                     <a href="{{ route('torrents.upload') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
                     <a href="{{ route('my.uploads') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">My uploads</a>
@@ -126,7 +126,7 @@
                         </a>
                     @empty
                         <div class="px-5 py-8 text-center text-sm text-slate-400">
-                            No visible torrents yet. This is normal before the first approved uploads are published. Try Browse later or submit a release if you have upload access.
+                            No visible torrents yet. Approved uploads will appear here. Browse again later or submit a clean release if you have upload access.
                         </div>
                     @endforelse
                 </div>
