@@ -243,3 +243,13 @@ Slice 108 created [`docs/livable-alpha-smoke-test-harness.md`](livable-alpha-smo
 The smoke checklist is now the operational go/no-go artifact for controlled alpha.
 
 Product code was not changed.
+
+## Slice 109 update – Alpha Feedback & Issue Intake Surface
+
+Date: 2026-06-20
+
+Slice 109 adds a lightweight authenticated alpha issue intake surface so blockers, must-fix issues, non-blocking feedback, smoke-test failures, affected area, role/environment context, blocker status, and next triage status can be captured consistently.
+
+Unresolved blockers found while running the smoke-test harness should be entered through this alpha feedback intake instead of being left only in chat or notes. Staff can review submitted alpha feedback, prioritize blocker and must-fix reports, and update the status as items move through review.
+
+This update is intentionally limited to controlled alpha issue intake and does not create a public bug tracker, support ticket system, comments, voting, attachments, notifications, or broader community feedback platform.
