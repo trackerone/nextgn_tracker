@@ -336,3 +336,7 @@ Slice 106 created a separate decision-support release readiness audit at [`docs/
 - Applied a narrow polish pass to the existing dashboard, torrent browse/listing, torrent detail, upload, My Uploads, and staff moderation surfaces.
 - Reviewed small-screen readability, button wrapping, table overflow affordances, empty/recovery copy, and tracker-critical actions: Browse, Inspect, Download/access guidance, Upload, My uploads, and staff review actions.
 - This slice intentionally avoided discovery foundation work and backend expansion. The next launch-prep slice should still address first-use account/client setup and broader launch smoke readiness.
+
+## Slice 107 cross-reference
+
+Slice 107 used the Slice 106 release-readiness audit as the active scope boundary for an alpha-blocker verification pass. It found no confirmed product-code launch blocker, added focused auth/session smoke coverage, and leaves repeatable staging smoke execution, feedback intake, and production deployment readiness to Slices 108, 109, and 110.

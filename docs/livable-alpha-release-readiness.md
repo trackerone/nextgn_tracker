@@ -203,3 +203,33 @@ Use this checklist manually against staging/alpha before invitations are sent an
 
 5. **Slice 111 – Controlled Alpha Launch Package**
    Assemble invite language, staff daily checklist, known limitations, deferred-work list, smoke-test signoff, and go/no-go criteria.
+
+## Slice 107 update – Alpha Blocker Fix Pass
+
+Date: 2026-06-20
+
+### What was inspected
+
+Slice 107 re-checked the Slice 106 blocker boundary against the current alpha-critical code and tests for:
+
+- Member dashboard, browse, search/filter, torrent detail, download/magnet, blocked download, and logout/session protection paths.
+- Uploader upload form, invalid upload validation, valid `.torrent` submission, My Uploads status, rejected-upload recovery copy, and approved upload visibility paths.
+- Staff moderation queue, approve/reject/soft-delete actions, moderation reason handling, and ordinary-member authorization boundaries.
+- Account RSS setup, token rotation, tokenized feed/download routes, RSS download eligibility, and RSS feed enclosure safety.
+- Existing operations/security-adjacent auth, authorization, upload/download, RSS token, and staff/admin boundaries covered by the current app surfaces and tests.
+
+### What was fixed
+
+No product behavior blocker was confirmed. The only code change is focused smoke coverage for the auth/session checklist item: after logout, an authenticated torrent page must redirect to login rather than remain available through the prior session.
+
+### Confirmed blockers remaining
+
+No confirmed launch blockers remain from this repository-level pass. The conditional risks from Slice 106 still require environment validation because local code review cannot prove staging/alpha secrets, storage, HTTPS, role data, realistic torrents, pending/rejected uploads, RSS/watch examples, or operator routines.
+
+### Items moving forward
+
+- **Slice 108:** convert the manual smoke checklist into a repeatable launch checklist/harness with representative roles, fixtures, expected outcomes, and pass/fail recording.
+- **Slice 109:** prepare lightweight alpha feedback and issue-intake triage for reproducible flow failures and confusing copy found during controlled alpha.
+- **Slice 110:** verify production deployment readiness for secrets, HTTPS, storage disks, mail, queues, logs, backups, health checks, throttles, and rollback expectations.
+
+Slice 107 intentionally avoids product expansion, new systems, new controllers/routes, broad UI polish, and speculative fixes.

@@ -39,6 +39,19 @@ class AuthFlowTest extends TestCase
         $response->assertSuccessful();
     }
 
+    public function test_logout_protects_authenticated_torrent_pages(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/torrents')
+            ->assertSuccessful();
+
+        $this->post('/logout')->assertRedirect('/login');
+
+        $this->get('/torrents')->assertRedirect('/login');
+    }
+
     public function test_login_throttles_after_max_failed_attempts(): void
     {
         $maxAttempts = 2;
