@@ -197,7 +197,7 @@
             <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Compact rows with only the metadata that helps you choose a release.</p>
+                    <p class="text-sm text-slate-400">Scan size, swarm, snatches, and added date before you inspect the release details.</p>
                 </div>
                 <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
             </div>
@@ -226,9 +226,11 @@
                                         <tr>
                                             <th class="px-3 py-2 text-left font-semibold">Name / release title</th>
                                             <th class="px-3 py-2 text-right font-semibold">Size</th>
-                                            <th class="px-3 py-2 text-right font-semibold">S</th>
-                                            <th class="px-3 py-2 text-right font-semibold">L</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Seed</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Leech</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Snatches</th>
                                             <th class="px-3 py-2 text-right font-semibold">Added</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Inspect</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 text-slate-100">
@@ -239,6 +241,7 @@
                                                 $isFreeleech = (bool) ($row['is_freeleech'] ?? false);
                                                 $seedersFormatted = $row['seeders_formatted'] ?? '0';
                                                 $leechersFormatted = $row['leechers_formatted'] ?? '0';
+                                                $completedFormatted = $row['completed_formatted'] ?? number_format((int) $torrent->completed);
                                                 $uploadedDate = $row['uploaded_date'] ?? '—';
                                                 $rowTone = $isPrimary ? 'bg-emerald-500/[0.04] ring-1 ring-inset ring-emerald-500/10' : 'hover:bg-slate-800/35';
                                             @endphp
@@ -262,7 +265,11 @@
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top">
+                                                    <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -287,9 +294,11 @@
                             <tr>
                                 <th class="px-3 py-2 text-left">Name / release title</th>
                                 <th class="px-3 py-2 text-right">Size</th>
-                                <th class="px-3 py-2 text-right">S</th>
-                                <th class="px-3 py-2 text-right">L</th>
+                                <th class="px-3 py-2 text-right">Seed</th>
+                                <th class="px-3 py-2 text-right">Leech</th>
+                                <th class="px-3 py-2 text-right">Snatches</th>
                                 <th class="px-3 py-2 text-right">Added</th>
+                                <th class="px-3 py-2 text-right">Inspect</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800 text-slate-100">
@@ -299,6 +308,7 @@
                                     $isFreeleech = (bool) ($row['is_freeleech'] ?? false);
                                     $seedersFormatted = $row['seeders_formatted'] ?? '0';
                                     $leechersFormatted = $row['leechers_formatted'] ?? '0';
+                                    $completedFormatted = $row['completed_formatted'] ?? number_format((int) $torrent->completed);
                                     $uploadedDate = $row['uploaded_date'] ?? '—';
                                 @endphp
                                 <tr class="hover:bg-slate-800/35">
@@ -321,11 +331,15 @@
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                     <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top">
+                                        <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-10 text-center">
+                                    <td colspan="7" class="px-4 py-10 text-center">
                                             <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
                                             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
                                             <div class="mt-4 flex justify-center gap-3">

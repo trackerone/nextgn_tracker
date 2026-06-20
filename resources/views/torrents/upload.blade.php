@@ -47,6 +47,16 @@
             </div>
         @endif
 
+        <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Upload readiness guide</h2>
+            <div class="mt-4 grid gap-3 text-sm leading-6 text-slate-300 md:grid-cols-2">
+                <p><span class="font-semibold text-white">Clean torrent.</span> Start with an unmodified private torrent file and a release name moderators can recognize.</p>
+                <p><span class="font-semibold text-white">Metadata expected.</span> Fill the existing title, category, type, source, resolution, language, subtitle, and ID fields when you know them.</p>
+                <p><span class="font-semibold text-white">After submit.</span> The upload enters moderation before it is visible in browse, details, RSS, or follow matches.</p>
+                <p><span class="font-semibold text-white">Rejected uploads.</span> Check <a href="{{ route('my.uploads') }}" class="font-semibold text-brand hover:text-brand/80">My uploads</a> for the reason, then recover with a cleaner file or clearer metadata on a new submission.</p>
+            </div>
+        </section>
+
         <form method="POST" action="{{ route('torrents.store') }}" enctype="multipart/form-data" class="mt-6 space-y-6 [&_label]:text-sm [&_label]:font-semibold [&_label]:text-slate-300 [&_input]:mt-1 [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-700 [&_input]:bg-slate-950/60 [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-sm [&_input]:text-slate-100 [&_select]:mt-1 [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-700 [&_select]:bg-slate-950/60 [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-sm [&_select]:text-slate-100 [&_textarea]:mt-1 [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-slate-700 [&_textarea]:bg-slate-950/60 [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:text-sm [&_textarea]:text-slate-100">
             @csrf
 

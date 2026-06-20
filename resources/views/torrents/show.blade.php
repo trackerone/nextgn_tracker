@@ -58,6 +58,13 @@
             ! empty($metadata['imdb_id']) ? ['label' => 'IMDb: '.$metadata['imdb_id'], 'url' => 'https://www.imdb.com/title/'.$metadata['imdb_id'].'/'] : null,
             ! empty($metadata['tmdb_id']) ? ['label' => 'TMDB: '.$metadata['tmdb_id'], 'url' => 'https://www.themoviedb.org/movie/'.$metadata['tmdb_id']] : null,
         ]);
+        $decisionVersion = collect([$metadata['type'] ?? null, $metadata['resolution'] ?? null, $metadata['source'] ?? null])
+            ->reject(fn ($value) => blank($value))
+            ->implode(' · ') ?: 'Version metadata pending';
+        $decisionSwarm = number_format($torrent->seeders).' seed / '.number_format($torrent->leechers).' leech / '.number_format($torrent->completed).' snatches';
+        $decisionDownloadState = ($eligibility['allowed'] ?? false) === true
+            ? 'Download available'
+            : 'Download needs attention';
     @endphp
     <div class="space-y-8">
         @if ($uploadMetadataFacts !== [])
@@ -125,6 +132,30 @@
                     </div>
                 </section>
             @endif
+            <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/45 p-5" aria-label="Release decision summary">
+                <div>
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Release decision summary</h2>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">A compact tracker check before you download or follow this release.</p>
+                </div>
+                <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Version</dt>
+                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionVersion }}</dd>
+                    </div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Swarm</dt>
+                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionSwarm }}</dd>
+                    </div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Download state</dt>
+                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionDownloadState }}</dd>
+                    </div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Follow path</dt>
+                        <dd class="mt-1 text-sm font-semibold text-white">Use the follow action to track this release family.</dd>
+                    </div>
+                </dl>
+            </section>
             @can('moderate', $torrent)
                 <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5" aria-label="Staff review context">
                     @php

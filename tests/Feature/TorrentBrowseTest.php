@@ -103,6 +103,27 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Movie · 1080p · SAFE');
     }
 
+    public function test_browse_page_shows_core_tracker_scan_actions(): void
+    {
+        $user = User::factory()->create();
+        Torrent::factory()->create([
+            'seeders' => 3,
+            'leechers' => 1,
+            'completed' => 2,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
+
+        $response->assertOk();
+        $response->assertSeeText('Scan size, swarm, snatches, and added date before you inspect the release details.');
+        $response->assertSeeText('Size');
+        $response->assertSeeText('Seed');
+        $response->assertSeeText('Leech');
+        $response->assertSeeText('Snatches');
+        $response->assertSeeText('Added');
+        $response->assertSeeText('Inspect');
+    }
+
     public function test_authenticated_user_sees_browse_save_view_action(): void
     {
         $user = User::factory()->create();

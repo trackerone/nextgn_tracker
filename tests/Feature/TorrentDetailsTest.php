@@ -119,6 +119,21 @@ final class TorrentDetailsTest extends TestCase
         $response->assertSee('No description was provided.');
     }
 
+    public function test_details_page_shows_release_decision_summary_structure(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create(['name' => 'Decision Summary Detail']);
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk();
+        $response->assertSeeText('Release decision summary');
+        $response->assertSeeText('Version');
+        $response->assertSeeText('Swarm');
+        $response->assertSeeText('Download state');
+        $response->assertSeeText('Follow path');
+    }
+
     public function test_details_page_shows_eligibility_message_for_ratio_denial(): void
     {
         $user = User::factory()->create();
