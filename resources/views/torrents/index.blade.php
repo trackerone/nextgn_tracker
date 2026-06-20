@@ -171,8 +171,8 @@
                 </form>
 
                 <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
-                    <a href="{{ route('account.saved-intents.index') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
-                    <a href="{{ $rssUrl }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
+                    <a href="{{ route('account.saved-intents.index') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
+                    <a href="{{ $rssUrl }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
                 </div>
                 <div
                     data-discovery-browse-teaser
@@ -194,10 +194,10 @@
         </aside>
 
         <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
-            <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
+            <div class="flex flex-col gap-2 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Scan size, swarm, snatches, and added date before you inspect the release details.</p>
+                    <p class="text-sm text-slate-400">Scan the essentials, then inspect a release for metadata, access guidance, and download state.</p>
                 </div>
                 <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
             </div>
@@ -220,8 +220,8 @@
                                 <span class="text-[11px] uppercase tracking-wide text-slate-500">{{ $familyRows->count() }} versions</span>
                             </div>
 
-                            <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20">
-                                <table class="min-w-full text-sm">
+                            <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20" aria-label="Scrollable release versions table">
+                                <table class="min-w-[46rem] text-sm">
                                     <thead class="bg-slate-950/60 text-[11px] uppercase tracking-wide text-slate-500">
                                         <tr>
                                             <th class="px-3 py-2 text-left font-semibold">Name / release title</th>
@@ -279,17 +279,17 @@
                     @empty
                         <div class="px-4 py-10 text-center">
                             <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
-                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
-                            <div class="mt-4 flex justify-center gap-3">
-                                <a href="{{ route('torrents.index') }}" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
-                                <a href="{{ route('torrents.upload') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, inspect the latest releases, or save this view and check back later.</p>
+                            <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+                                <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
+                                <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
                             </div>
                         </div>
                     @endforelse
                 </div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-slate-800 text-sm">
+                <div class="overflow-x-auto" aria-label="Scrollable torrent results table">
+                    <table class="min-w-[46rem] divide-y divide-slate-800 text-sm">
                         <thead class="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-3 py-2 text-left">Name / release title</th>
@@ -341,10 +341,10 @@
                                 <tr>
                                     <td colspan="7" class="px-4 py-10 text-center">
                                             <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
-                                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
-                                            <div class="mt-4 flex justify-center gap-3">
-                                                <a href="{{ route('torrents.index') }}" class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
-                                                <a href="{{ route('torrents.upload') }}" class="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, inspect the latest releases, or save this view and check back later.</p>
+                                            <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
+                                                <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
+                                                <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
                                             </div>
                                         </td>
                                 </tr>

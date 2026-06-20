@@ -20,7 +20,7 @@
             <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff moderation</p>
                 <h1 class="mt-2 text-2xl font-semibold text-white">Pending torrent review queue</h1>
-                <p class="text-sm text-slate-400">Review pending uploads, decide what needs action, and keep unclear releases out of the alpha catalog.</p>
+                <p class="max-w-3xl text-sm leading-6 text-slate-400">Review pending uploads, decide what needs action, and keep unclear releases out of the alpha catalog.</p>
             </div>
             <div class="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"><span class="font-semibold text-white">{{ $pendingTorrents->total() }}</span> pending uploads</div>
         </div>
@@ -39,8 +39,8 @@
         </section>
 
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60">
-            <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-slate-800 text-sm">
+            <div class="overflow-x-auto" aria-label="Scrollable moderation queue table">
+            <table class="min-w-[64rem] divide-y divide-slate-800 text-sm">
                 <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
                     <tr>
                         <th class="px-4 py-3 text-left">Upload</th>
@@ -156,7 +156,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-4 py-8 text-center text-slate-400">
-                                No pending uploads right now. The alpha queue is clear; check recent uploads, health/status, and smoke paths before launch.
+                                No pending uploads right now. The alpha queue is clear; check recently moderated uploads, health/status, and smoke paths before launch.
                             </td>
                         </tr>
                     @endforelse

@@ -115,13 +115,14 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
 
         $response->assertOk();
-        $response->assertSeeText('Scan size, swarm, snatches, and added date before you inspect the release details.');
+        $response->assertSeeText('Scan the essentials, then inspect a release for metadata, access guidance, and download state.');
         $response->assertSeeText('Size');
         $response->assertSeeText('Seed');
         $response->assertSeeText('Leech');
         $response->assertSeeText('Snatches');
         $response->assertSeeText('Added');
         $response->assertSeeText('Inspect');
+        $response->assertSee('aria-label="Scrollable torrent results table"', false);
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void
