@@ -14,6 +14,12 @@ Use this index to find the canonical document for each operational topic.
 - [Production hardening](security/production-hardening.md) — hardening controls and validation.
 - [Security checklist](SECURITY-CHECKLIST.md) — pre-go-live checklist only.
 
+## Livable Alpha
+
+- [Release readiness](livable-alpha-release-readiness.md) — controlled alpha readiness posture and next slices.
+- [Smoke test harness](livable-alpha-smoke-test-harness.md) — manual go/no-go checklist for staging/alpha and alpha operations.
+- [Surface audit](livable-alpha-surface-audit.md) — launch-surface gaps and roadmap context.
+
 ## Operations runbooks
 
 - [Backups and restore](operations/backups-and-restore.md)
