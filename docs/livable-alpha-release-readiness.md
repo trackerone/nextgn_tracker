@@ -253,3 +253,11 @@ Slice 109 adds a lightweight authenticated alpha issue intake surface so blocker
 Unresolved blockers found while running the smoke-test harness should be entered through this alpha feedback intake instead of being left only in chat or notes. Staff can review submitted alpha feedback, prioritize blocker and must-fix reports, and update the status as items move through review.
 
 This update is intentionally limited to controlled alpha issue intake and does not create a public bug tracker, support ticket system, comments, voting, attachments, notifications, or broader community feedback platform.
+
+## Slice 110 update – Docker Alpha Deployment Readiness
+
+Date: 2026-06-20
+
+- Alpha Docker deployment readiness is now documented in [Alpha Docker Deployment Readiness](alpha-docker-deployment-readiness.md).
+- The first alpha server install should happen only after the deployment checklist, environment, volumes, backup, and rollback expectations are reviewed.
+- The smoke harness remains the go/no-go artifact after the Docker alpha install is running over HTTPS.
