@@ -52,6 +52,7 @@ final class TorrentController extends Controller
         $query
             ->select([
                 'id',
+                'category_id',
                 'name',
                 'slug',
                 'size_bytes',
@@ -71,7 +72,7 @@ final class TorrentController extends Controller
                 'created_at',
                 'uploaded_at',
             ])
-            ->with(['metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id']);
+            ->with(['category:id,name', 'metadata:id,torrent_id,title,year,type,resolution,source,release_group,language,audio_language,subtitle_language,subtitles,imdb_id,tmdb_id']);
 
         $perPage = (int) config('torrents.per_page', 25);
         $groupedBrowse = $request->grouped();

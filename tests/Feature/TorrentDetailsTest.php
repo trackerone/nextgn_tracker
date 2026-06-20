@@ -103,6 +103,35 @@ final class TorrentDetailsTest extends TestCase
             ->assertSee('Metadata is not available for this torrent yet.');
     }
 
+    public function test_details_page_shows_release_decision_summary_and_follow_paths(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create([
+            'name' => 'Decision Summary Detail',
+            'seeders' => 4,
+            'leechers' => 1,
+        ]);
+
+        TorrentMetadata::query()->create([
+            'torrent_id' => $torrent->id,
+            'title' => 'Decision Summary Detail',
+            'type' => 'movie',
+            'resolution' => '1080p',
+            'source' => 'web',
+            'release_group' => 'SAFE',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk();
+        $response->assertSee('Release decision summary');
+        $response->assertSee('Version');
+        $response->assertSee('1080p · web · SAFE');
+        $response->assertSee('Download state');
+        $response->assertSee('Follow path');
+        $response->assertSee('Open watch center');
+    }
+
     public function test_details_page_shows_usage_guidance_and_missing_description_state(): void
     {
         $user = User::factory()->create();

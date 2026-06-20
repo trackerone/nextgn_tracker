@@ -206,6 +206,21 @@
                     <p><span class="font-semibold text-white">Follow updates.</span> Following uses metadata so better versions and related releases are easier to find later.</p>
                 </div>
             </section>
+            <section class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/35 p-5" aria-label="Release decision summary">
+                <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Release decision summary</h2>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">Use these facts to decide whether this version is the right one before spending ratio or client time.</p>
+                    </div>
+                    <a href="{{ route('my.watch-center') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Open watch center</a>
+                </div>
+                <dl class="mt-4 grid gap-3 md:grid-cols-4">
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs uppercase tracking-wide text-slate-500">Version</dt><dd class="mt-1 text-sm font-semibold text-white">{{ collect([$metadata['resolution'] ?? null, $metadata['source'] ?? null, $metadata['release_group'] ?? null])->filter()->implode(' · ') ?: 'Version metadata pending' }}</dd></div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs uppercase tracking-wide text-slate-500">Swarm</dt><dd class="mt-1 text-sm font-semibold text-white">{{ number_format($torrent->seeders) }} seed / {{ number_format($torrent->leechers) }} leech</dd></div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs uppercase tracking-wide text-slate-500">Download state</dt><dd class="mt-1 text-sm font-semibold text-white">{{ ($eligibility['allowed'] ?? false) ? 'Ready for your account' : 'Action required' }}</dd></div>
+                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs uppercase tracking-wide text-slate-500">Follow path</dt><dd class="mt-1 text-sm font-semibold text-white">Metadata follow, RSS, or watch preset</dd></div>
+                </dl>
+            </section>
             <section class="mt-8 space-y-4" aria-label="Quick facts">
                 <div>
                     <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>

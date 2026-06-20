@@ -11,6 +11,25 @@
         <h1 class="text-2xl font-semibold text-white">Upload torrent</h1>
         <p class="mt-2 text-sm text-slate-400">Add a torrent with clear metadata so users and moderators can understand what is being uploaded before it becomes visible.</p>
 
+        <section class="mt-6 grid gap-4 md:grid-cols-3" aria-label="Upload readiness guide">
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Before upload</p>
+                <h2 class="mt-2 text-base font-semibold text-white">Prepare a clean release</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-400">Use a valid private torrent, a recognizable release name, and enough metadata for members to compare versions.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Metadata expected</p>
+                <h2 class="mt-2 text-base font-semibold text-white">Fill the decision fields</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-400">Type, source, resolution, language, subtitles, release group, IDs, description, and NFO all help moderation and browse.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">After submit</p>
+                <h2 class="mt-2 text-base font-semibold text-white">Moderation may review it</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-400">Your upload appears in My Uploads while pending, rejected, or published; rejection notes should explain the next fix.</p>
+                <a href="{{ route('my.uploads') }}" class="mt-3 inline-flex text-sm font-semibold text-brand hover:text-brand/80">View my uploads →</a>
+            </div>
+        </section>
+
         @if (session('status'))
             <div class="mt-5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">{{ session('status') }}</div>
         @endif
@@ -60,6 +79,7 @@
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
                 <legend class="px-1 text-base font-semibold text-white">2. Release metadata</legend>
+                <p class="mb-3 text-xs leading-5 text-slate-400">These fields power browse, detail pages, RSS feeds, watch presets, notifications, and moderation checks. Complete only what you know; do not guess.</p>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label for="name">Release name</label><input type="text" id="name" name="name" value="{{ old('name') }}" required></div>
                     <div><label for="title">Title</label><input type="text" id="title" name="title" value="{{ old('title') }}" placeholder="Movie or series title"></div>

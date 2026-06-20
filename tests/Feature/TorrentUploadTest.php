@@ -38,6 +38,20 @@ class TorrentUploadTest extends TestCase
         $this->assertStringContainsString('/login', (string) $postResponse->headers->get('Location'));
     }
 
+    public function test_upload_form_shows_readiness_guidance(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('torrents.upload'));
+
+        $response->assertOk();
+        $response->assertSee('Upload readiness guide');
+        $response->assertSee('Prepare a clean release');
+        $response->assertSee('Fill the decision fields');
+        $response->assertSee('View my uploads');
+        $response->assertSee('These fields power browse, detail pages, RSS feeds, watch presets, notifications, and moderation checks.');
+    }
+
     public function test_successful_upload_persists_torrent_and_file(): void
     {
         Storage::fake('torrents');

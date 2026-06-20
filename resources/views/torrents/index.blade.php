@@ -197,7 +197,7 @@
             <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Compact rows with only the metadata that helps you choose a release.</p>
+                    <p class="text-sm text-slate-400">Compact rows with category, version, swarm, age, and next action so you can compare without badge overload.</p>
                 </div>
                 <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
             </div>
@@ -225,10 +225,13 @@
                                     <thead class="bg-slate-950/60 text-[11px] uppercase tracking-wide text-slate-500">
                                         <tr>
                                             <th class="px-3 py-2 text-left font-semibold">Name / release title</th>
+                                            <th class="px-3 py-2 text-left font-semibold">Category</th>
                                             <th class="px-3 py-2 text-right font-semibold">Size</th>
                                             <th class="px-3 py-2 text-right font-semibold">S</th>
                                             <th class="px-3 py-2 text-right font-semibold">L</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Snatched</th>
                                             <th class="px-3 py-2 text-right font-semibold">Added</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Next</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 text-slate-100">
@@ -259,10 +262,13 @@
                                                         </div>
                                                     </div>
                                                 </td>
+                                                <td class="px-3 py-2.5 align-top text-xs text-slate-300">{{ $torrent->category?->name ?? 'Uncategorized' }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
                                                 <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $row['completed_formatted'] ?? '0' }} snatches">{{ $row['completed_formatted'] ?? '0' }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                                <td class="px-3 py-2.5 text-right align-top"><a href="{{ route('torrents.show', $torrent) }}" class="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a></td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -286,10 +292,13 @@
                         <thead class="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-3 py-2 text-left">Name / release title</th>
+                                <th class="px-3 py-2 text-left">Category</th>
                                 <th class="px-3 py-2 text-right">Size</th>
                                 <th class="px-3 py-2 text-right">S</th>
                                 <th class="px-3 py-2 text-right">L</th>
+                                <th class="px-3 py-2 text-right">Snatched</th>
                                 <th class="px-3 py-2 text-right">Added</th>
+                                <th class="px-3 py-2 text-right">Next</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800 text-slate-100">
@@ -318,14 +327,17 @@
                                             </div>
                                         </div>
                                     </td>
+                                    <td class="px-3 py-2.5 align-top text-xs text-slate-300">{{ $torrent->category?->name ?? 'Uncategorized' }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
                                     <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $row['completed_formatted'] ?? '0' }} snatches">{{ $row['completed_formatted'] ?? '0' }}</td>
                                     <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                    <td class="px-3 py-2.5 text-right align-top"><a href="{{ route('torrents.show', $torrent) }}" class="rounded-lg border border-slate-700 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-10 text-center">
+                                    <td colspan="8" class="px-4 py-10 text-center">
                                             <p class="text-base font-semibold text-white">No torrents matched your filters.</p>
                                             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, or save the view and check back later.</p>
                                             <div class="mt-4 flex justify-center gap-3">

@@ -25,6 +25,20 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertSee('href="'.route('pm.index').'"', false);
     }
 
+    public function test_dashboard_surfaces_tracker_account_tools(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('home'));
+
+        $response->assertOk();
+        $response->assertSee('Tracker account tools');
+        $response->assertSee('RSS setup');
+        $response->assertSee('Watch presets');
+        $response->assertSee('Notifications');
+        $response->assertSee('Snatches');
+    }
+
     public function test_primary_navigation_uses_livable_alpha_labels(): void
     {
         $user = User::factory()->create();

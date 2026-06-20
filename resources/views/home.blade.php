@@ -78,6 +78,23 @@
             </ol>
         </section>
 
+        <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5" aria-label="Tracker account tools">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Tracker account tools</p>
+                    <h2 class="mt-2 text-xl font-semibold text-white">Use your account area to keep the core loop moving</h2>
+                    <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">RSS feeds, watch presets, notifications, snatches, saved views, and upload status all connect back to browse and torrent details.</p>
+                </div>
+                <a href="{{ route('my.watch-center') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Open watch center</a>
+            </div>
+            <div class="mt-5 grid gap-3 md:grid-cols-4">
+                <a href="{{ route('account.rss.index') }}" class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 hover:border-brand/60"><span class="text-sm font-semibold text-white">RSS setup</span><span class="mt-1 block text-xs leading-5 text-slate-500">Generate feeds for current or saved filters.</span></a>
+                <a href="{{ route('account.watch-presets.index') }}" class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 hover:border-brand/60"><span class="text-sm font-semibold text-white">Watch presets</span><span class="mt-1 block text-xs leading-5 text-slate-500">Follow reusable metadata intent.</span></a>
+                <a href="{{ route('account.notifications.index') }}" class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 hover:border-brand/60"><span class="text-sm font-semibold text-white">Notifications</span><span class="mt-1 block text-xs leading-5 text-slate-500">Review matches and account activity.</span></a>
+                <a href="{{ route('account.snatches') }}" class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 hover:border-brand/60"><span class="text-sm font-semibold text-white">Snatches</span><span class="mt-1 block text-xs leading-5 text-slate-500">Check your download history.</span></a>
+            </div>
+        </section>
+
         <section class="grid gap-4 md:grid-cols-3">
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Discover</h2>

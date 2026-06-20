@@ -83,6 +83,28 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('Upload a release');
     }
 
+    public function test_browse_rows_show_tracker_scan_signals_and_next_action(): void
+    {
+        $user = User::factory()->create();
+        $category = Category::factory()->create(['name' => 'Movies']);
+        $torrent = Torrent::factory()->create([
+            'name' => 'Scan Signal Release',
+            'category_id' => $category->id,
+            'completed' => 12,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
+
+        $response->assertOk();
+        $response->assertSee('Category');
+        $response->assertSee('Snatched');
+        $response->assertSee('Next');
+        $response->assertSee('Movies');
+        $response->assertSee('12');
+        $response->assertSee('Inspect');
+        $response->assertSee(route('torrents.show', $torrent), false);
+    }
+
     public function test_browse_rows_show_subtle_metadata_context(): void
     {
         $user = User::factory()->create();

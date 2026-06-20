@@ -303,3 +303,9 @@ Slice 102 moved the audit from discovery-foundation review into a narrow Livable
 ### Scope note
 
 Metadata visibility was intentionally kept quiet: browse rows now show only compact release context where it helps selection, while detail pages keep metadata grouped instead of adding badge clutter.
+
+## Slice 103 update – Core tracker surface buildout
+
+Slice 103 materially improved the ordinary tracker loop without resuming discovery-foundation work. Browse now exposes clearer scan columns for category, swarm, snatches, age, and inspection actions; torrent detail now adds a release decision summary that groups version, swarm, download state, and follow paths; upload now has a readiness guide and clearer metadata expectations; the dashboard now points members toward RSS, watch presets, notifications, snatches, saved views, uploads, and browse as connected tracker tools.
+
+Remaining Slice 104 work should stay focused on the upload flow hardening called out above: preflight confidence, rejection recovery, and uploader-facing validation clarity. Discovery foundation work remains paused.
