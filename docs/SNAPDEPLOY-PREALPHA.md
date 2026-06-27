@@ -20,6 +20,16 @@ NEXTGN_PREALPHA_DEMO=true
 
 A full non-secret example is available in `.env.snapdeploy.example`.
 
+## SnapDeploy start command
+
+Keep the repository default Docker runtime unchanged. In SnapDeploy, override the service start command to run the pre-alpha bootstrap script:
+
+```sh
+sh /app/scripts/snapdeploy-start.sh
+```
+
+The default Dockerfile continues to start through `/app/tools/entrypoint.sh`; the SnapDeploy override is what enables migrations plus optional demo seeding for this pre-alpha path.
+
 ## Demo users
 
 `StagingDemoSeeder` creates deterministic users for common role-based navigation checks. Every seeded demo user uses the password `password`.

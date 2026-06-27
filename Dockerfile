@@ -1,13 +1,4 @@
 # Dockerfile
-FROM node:24-bookworm-slim AS frontend
-
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY resources ./resources
-COPY vite.config.ts tsconfig.json postcss.config.js tailwind.config.js ./
-RUN npm run build
-
 FROM dunglas/frankenphp:1-php8.4-bookworm
 
 ARG APP_UID=1000
@@ -45,9 +36,6 @@ COPY . /app
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-# Copy prebuilt Vite assets from the Node build stage for Blade UI navigation.
-COPY --from=frontend /app/public/build /app/public/build
-
 # Prepare writable dirs; self-heal if bootstrap/cache is accidentally a file.
 RUN set -eu; \
     ensure_dir() { p="$1"; if [ -e "$p" ] && [ ! -d "$p" ]; then rm -f "$p"; fi; mkdir -p "$p"; }; \
@@ -71,5 +59,5 @@ EXPOSE 10000
 
 USER nextgn
 
-# Runtime starts through the SnapDeploy pre-alpha bootstrap script.
-CMD ["sh", "/app/scripts/snapdeploy-start.sh"]
+# Runtime starts in the entrypoint after Laravel production validation/cache warmup.
+CMD ["sh", "/app/tools/entrypoint.sh"]

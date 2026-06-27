@@ -16,7 +16,9 @@ it('documents the SnapDeploy pre-alpha safety flag and production warning', func
     expect($document)
         ->toContain('NEXTGN_PREALPHA_DEMO=true')
         ->toContain('not production')
-        ->toContain('Never point it at real production tracker data');
+        ->toContain('Never point it at real production tracker data')
+        ->toContain('sh /app/scripts/snapdeploy-start.sh')
+        ->toContain('/app/tools/entrypoint.sh');
 });
 
 it('documents all deterministic demo users', function (): void {
