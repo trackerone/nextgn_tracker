@@ -261,3 +261,9 @@ Date: 2026-06-20
 - Alpha Docker deployment readiness is now documented in [Alpha Docker Deployment Readiness](alpha-docker-deployment-readiness.md).
 - The first alpha server install should happen only after the deployment checklist, environment, volumes, backup, and rollback expectations are reviewed.
 - The smoke harness remains the go/no-go artifact after the Docker alpha install is running over HTTPS.
+
+## Slice 113 update – Post-SnapDeploy Controlled Alpha Alignment
+
+Date: 2026-07-01
+
+SnapDeploy was removed after Slice 112 and is not an active launch or deployment path. Controlled alpha validation should use the normal Docker/runtime flow or an already prepared staging/alpha environment that matches the production-readiness expectations. The controlled alpha launch handoff now lives in [Controlled Alpha Launch Package](controlled-alpha-launch-package.md), while the smoke harness remains the go/no-go checklist and alpha feedback intake remains the failure-triage path.
