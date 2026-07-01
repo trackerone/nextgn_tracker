@@ -17,6 +17,7 @@ Use this index to find the canonical document for each operational topic.
 ## Livable Alpha
 
 - [Release readiness](livable-alpha-release-readiness.md) — controlled alpha readiness posture and next slices.
+- [Controlled alpha launch package](controlled-alpha-launch-package.md) — post-SnapDeploy invite-only launch package, go/no-go rules, feedback flow, and staff routine.
 - [Smoke test harness](livable-alpha-smoke-test-harness.md) — manual go/no-go checklist for staging/alpha and alpha operations.
 - [Surface audit](livable-alpha-surface-audit.md) — launch-surface gaps and roadmap context.
 

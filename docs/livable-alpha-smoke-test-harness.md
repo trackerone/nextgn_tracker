@@ -158,8 +158,8 @@ Next action:
 
 ## 9. Handoff
 
-Slice 109 should prepare alpha feedback/intake.
-Slice 110 should handle deployment/runtime readiness.
-Slice 111 should assemble the controlled alpha launch package.
-Keep failures from this harness issue-scoped and assigned before launch.
+Slice 109 prepared alpha feedback/intake.
+Slice 110 handled deployment/runtime readiness.
+Slice 113 is the post-SnapDeploy controlled alpha launch package and documentation-alignment slice; use the controlled alpha launch package as the handoff artifact for invite-only validation.
+Keep failures from this harness tied to alpha feedback intake, issue-scoped, and assigned before launch.
 Do not expand product scope from this document alone.
