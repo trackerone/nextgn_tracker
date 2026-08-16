@@ -95,6 +95,42 @@ class AnnounceTest extends TestCase
         );
     }
 
+    public function test_real_client_binary_info_hash_is_not_changed_by_request_sanitization(): void
+    {
+        $user = User::factory()->create();
+        $infoHashHex = '1ABC94275D44BC5AA083C262186343E731612313';
+        $infoHash = hex2bin($infoHashHex);
+        $peerId = '-qB4600-123456789012';
+
+        $this->assertIsString($infoHash);
+        $this->assertSame(20, strlen($infoHash));
+        $this->assertSame(20, strlen($peerId));
+
+        $torrent = Torrent::factory()->create([
+            'info_hash' => $infoHashHex,
+        ]);
+        $query = http_build_query([
+            'info_hash' => $infoHash,
+            'peer_id' => $peerId,
+            'port' => 6881,
+            'uploaded' => 0,
+            'downloaded' => 0,
+            'left' => 1,
+            'event' => 'started',
+        ], '', '&', PHP_QUERY_RFC3986);
+
+        $this->get('/announce/'.$user->ensurePasskey().'?'.$query)
+            ->assertOk();
+
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->getKey(),
+            'user_id' => $user->getKey(),
+            'peer_id' => $peerId,
+            'left' => 1,
+            'is_seeder' => false,
+        ]);
+    }
+
     public function test_banned_torrent_returns_failure(): void
     {
         $user = User::factory()->create([
