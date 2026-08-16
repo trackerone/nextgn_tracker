@@ -24,6 +24,11 @@ jobs:
       - name: Build production Docker image
         run: docker build -t nextgn-tracker:test .
 
+      - name: Verify compiled Vite assets
+        run: >
+          docker run --rm --entrypoint php nextgn-tracker:test
+          /app/tools/verify-vite-assets.php
+
       - name: Verify PHP is available
         run: docker run --rm nextgn-tracker:test php -v
 
