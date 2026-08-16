@@ -19,6 +19,7 @@ use App\Providers\AuthServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\RepositoryServiceProvider;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Filesystem\FilesystemServiceProvider;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -40,6 +41,11 @@ return Application::configure(basePath: dirname(__DIR__))
         EventServiceProvider::class,
         RepositoryServiceProvider::class,
     ])
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('tracker:prune-ghost-peers')
+            ->everyTenMinutes()
+            ->withoutOverlapping(10);
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
