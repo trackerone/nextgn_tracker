@@ -27,6 +27,7 @@ final class SiteSettingsRepository
         'runtime.jobs.health.snapshot.enabled' => ['value' => 'true', 'type' => 'bool'],
         'runtime.jobs.tracker.announce.integrity.enabled' => ['value' => 'true', 'type' => 'bool'],
         'runtime.jobs.tracker.ratio.accounting.enabled' => ['value' => 'true', 'type' => 'bool'],
+        'runtime.jobs.tracker.peer.cleanup.enabled' => ['value' => 'true', 'type' => 'bool'],
     ];
 
     public function getBool(string $key): bool

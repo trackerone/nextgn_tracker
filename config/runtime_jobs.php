@@ -57,4 +57,13 @@ return [
         'sysop_controllable' => false,
         'default_enabled' => true,
     ],
+    [
+        'key' => 'tracker.peer.cleanup',
+        'label' => 'Ghost Peer Cleanup',
+        'description' => 'Critical stale peer cleanup is scheduled and managed by the server runtime.',
+        'category' => 'tracker peer cleanup',
+        'critical' => true,
+        'sysop_controllable' => false,
+        'default_enabled' => true,
+    ],
 ];

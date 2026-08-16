@@ -124,6 +124,7 @@ Align these values with mounted volumes so uploaded `.torrent`, NFO, and image f
 ```env
 TRACKER_ANNOUNCE_URL=https://alpha.example.invalid/announce/%s
 TRACKER_ANNOUNCE_MIN_INTERVAL=1800
+TRACKER_GHOST_TIMEOUT_MINUTES=45
 API_HMAC_SECRET=replace-with-api-hmac-secret-if-used
 API_REQUIRE_NONCE=true
 ```
