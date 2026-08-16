@@ -104,6 +104,15 @@ class User extends Authenticatable implements MustVerifyEmail
             }
 
             if (
+                Schema::hasColumn($user->getTable(), 'passkey')
+                && (! array_key_exists('passkey', $attributes)
+                    || ! is_string($user->passkey)
+                    || $user->passkey === '')
+            ) {
+                app(PasskeyService::class)->assign($user);
+            }
+
+            if (
                 Schema::hasColumn($user->getTable(), 'public_slug')
                 && (! array_key_exists('public_slug', $attributes)
                     || ! is_string($user->public_slug)

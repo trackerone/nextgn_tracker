@@ -60,7 +60,8 @@ final class UserMassAssignmentTest extends TestCase
 
         $this->assertSame(User::ROLE_USER, $user->role);
         $this->assertNull($user->role_id);
-        $this->assertNull($user->passkey);
+        $this->assertNotSame('attacker-controlled-passkey', $user->passkey);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $user->passkey);
         $this->assertFalse($user->is_banned);
         $this->assertFalse($user->is_disabled);
         $this->assertFalse($user->is_staff);
@@ -78,6 +79,7 @@ final class UserMassAssignmentTest extends TestCase
         $this->assertSame('safe-user@example.test', $user->email);
         $this->assertTrue(Hash::check('correct-horse-battery-staple', $user->password));
         $this->assertSame(User::ROLE_USER, $user->role);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $user->passkey);
     }
 
     public function test_staff_factory_state_can_still_create_privileged_users(): void
