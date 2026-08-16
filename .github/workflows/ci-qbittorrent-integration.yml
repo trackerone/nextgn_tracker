@@ -1,0 +1,100 @@
+name: qBittorrent Integration
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - app/**
+      - bootstrap/**
+      - config/**
+      - database/**
+      - routes/**
+      - tests/Integration/TorrentClient/**
+      - composer.json
+      - composer.lock
+      - .github/workflows/ci-qbittorrent-integration.yml
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - app/**
+      - bootstrap/**
+      - config/**
+      - database/**
+      - routes/**
+      - tests/Integration/TorrentClient/**
+      - composer.json
+      - composer.lock
+      - .github/workflows/ci-qbittorrent-integration.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qbittorrent-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qbittorrent:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      APP_ENV: testing
+      APP_DEBUG: 'false'
+      APP_URL: http://127.0.0.1:18000
+      TRACKER_ANNOUNCE_URL: http://127.0.0.1:18000/announce/%s
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ${{ github.workspace }}/database/qbittorrent.sqlite
+      CACHE_STORE: array
+      QUEUE_CONNECTION: sync
+      SESSION_DRIVER: array
+      MAIL_MAILER: array
+      ADMIN_TWO_FACTOR_REQUIRED: 'false'
+      QBITTORRENT_INTEGRATION_ARTIFACT_DIR: ${{ github.workspace }}/.integration-artifacts/qbittorrent
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: ctype, curl, dom, fileinfo, filter, gd, iconv, json, mbstring, openssl, pdo, session, tokenizer, xml, intl, pcntl, bcmath, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Install qBittorrent
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes qbittorrent-nox
+          qbittorrent-nox --version
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.composer/cache
+            vendor
+          key: ${{ runner.os }}-qbittorrent-php-8.4-${{ hashFiles('**/composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare application
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          touch database/qbittorrent.sqlite
+          php artisan migrate:fresh --force
+
+      - name: Run real qBittorrent announce integration
+        run: bash tests/Integration/TorrentClient/run-qbittorrent.sh
+
+      - name: Upload integration diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qbittorrent-integration-diagnostics
+          path: .integration-artifacts/qbittorrent
+          if-no-files-found: warn
+          retention-days: 7

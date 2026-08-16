@@ -28,6 +28,11 @@ final class RequestGuard
         'subtitles',
     ];
 
+    private const TRACKER_BINARY_FIELDS = [
+        'info_hash',
+        'peer_id',
+    ];
+
     private const SENSITIVE_KEY_TERMS = [
         'password',
         'token',
@@ -52,6 +57,7 @@ final class RequestGuard
         [$sanitized, $incidents] = $this->sanitizePayload(
             $request->all(),
             preserveUploadMetadata: $this->isTorrentUploadRequest($request),
+            preserveTrackerBinaryFields: $request->routeIs('announce', 'scrape'),
         );
 
         if ($incidents !== []) {
@@ -75,6 +81,7 @@ final class RequestGuard
         array $keyPath = [],
         bool $sensitiveAncestor = false,
         bool $preserveUploadMetadata = false,
+        bool $preserveTrackerBinaryFields = false,
     ): array {
         $sanitized = [];
         $incidents = [];
@@ -96,6 +103,7 @@ final class RequestGuard
                     $currentPath,
                     $isSensitive,
                     $preserveUploadMetadata,
+                    $preserveTrackerBinaryFields,
                 );
 
                 $sanitized[$key] = $childSanitized;
@@ -105,6 +113,12 @@ final class RequestGuard
             }
 
             if (is_string($value)) {
+                if ($this->shouldPreserveTrackerBinaryField($currentPath, $preserveTrackerBinaryFields)) {
+                    $sanitized[$key] = $value;
+
+                    continue;
+                }
+
                 if ($this->containsMaliciousPayload($value)) {
                     $incidents[] = $this->incidentForValue($currentPath, $value, $isSensitive);
                 }
@@ -150,6 +164,21 @@ final class RequestGuard
         }
 
         return in_array($keyPath[0], self::UPLOAD_METADATA_PRESERVED_FIELDS, true);
+    }
+
+    /**
+     * BitTorrent clients send these protocol values as percent-encoded binary.
+     * They are length-validated by the tracker pipeline and must not be UTF-8 normalized.
+     *
+     * @param  array<int, string>  $keyPath
+     */
+    private function shouldPreserveTrackerBinaryField(array $keyPath, bool $preserveTrackerBinaryFields): bool
+    {
+        if (! $preserveTrackerBinaryFields || count($keyPath) !== 1) {
+            return false;
+        }
+
+        return in_array($keyPath[0], self::TRACKER_BINARY_FIELDS, true);
     }
 
     private function containsMaliciousPayload(string $value): bool
