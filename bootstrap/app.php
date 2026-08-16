@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\ActiveUserMiddleware;
 use App\Http\Middleware\ApiKeyHmacMiddleware;
+use App\Http\Middleware\EnsureAdminTwoFactorAuthentication;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\LockdownModeMiddleware;
@@ -65,6 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             ActiveUserMiddleware::class,
+            EnsureAdminTwoFactorAuthentication::class,
         ]);
 
         $middleware->api(prepend: [

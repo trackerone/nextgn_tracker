@@ -19,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * @property string|null $role
@@ -30,6 +31,9 @@ use Illuminate\Support\Str;
  * @property bool $is_banned
  * @property bool $is_disabled
  * @property bool $announce_rate_limit_exceeded
+ * @property string|null $two_factor_secret
+ * @property string|null $two_factor_recovery_codes
+ * @property \Carbon\Carbon|null $two_factor_confirmed_at
  * @property \Carbon\Carbon|null $last_announce_at
  * @property \App\Models\Role|null $role
  */
@@ -38,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
     use HasFactory;
     use MustVerifyEmailTrait;
     use Notifiable;
+    use TwoFactorAuthenticatable;
 
     public const ROLE_USER = 'user';
 
@@ -66,6 +71,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
         'passkey',
         'rss_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected $casts = [
@@ -76,6 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_staff' => 'boolean',
         'last_announce_at' => 'datetime',
         'announce_rate_limit_exceeded' => 'boolean',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     protected $attributes = [
