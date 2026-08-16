@@ -14,13 +14,12 @@ final class TorrentDetailsController extends Controller
 {
     public function show(Request $request, int $torrent): JsonResponse
     {
-        $user = $request->user();
-        abort_unless($user !== null, 401);
+        abort_unless($request->user() !== null, 401);
 
         $torrentModel = app(ResolveTorrentAccessAction::class)->execute($torrent, 'view', ['category', 'uploader', 'metadata', 'externalMetadata']);
 
         return response()->json([
-            'data' => (new TorrentDetailsResource($torrentModel, $user->passkey))->resolve(),
+            'data' => (new TorrentDetailsResource($torrentModel))->resolve(),
         ]);
     }
 }

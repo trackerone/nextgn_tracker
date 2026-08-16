@@ -24,8 +24,6 @@ final class TorrentDetailsApiTest extends TestCase
     public function test_authenticated_user_gets_torrent_details_payload(): void
     {
         $user = User::factory()->create();
-        config()->set('tracker.announce_url', 'https://tracker.example/announce/%s');
-        config()->set('tracker.additional_trackers', ['https://backup.example/announce']);
         $uploader = User::factory()->create(['name' => 'trackerone']);
         $category = Category::factory()->create(['name' => 'Movies', 'slug' => 'movies']);
 
@@ -73,13 +71,7 @@ final class TorrentDetailsApiTest extends TestCase
         $response->assertJsonPath('data.file_count', 0);
         $response->assertJsonPath('data.files', []);
         $response->assertJsonPath('data.download_url', '/api/torrents/'.$torrent->id.'/download');
-        $response->assertJsonPath('data.magnet_url', sprintf(
-            'magnet:?xt=urn:btih:%s&dn=%s&tr=%s&tr=%s',
-            strtoupper($torrent->info_hash),
-            rawurlencode($torrent->name),
-            rawurlencode(sprintf('https://tracker.example/announce/%s', $user->passkey)),
-            rawurlencode('https://backup.example/announce')
-        ));
+        $response->assertJsonMissingPath('data.magnet_url');
 
         $this->assertNotNull($response->json('data.uploaded_at'));
         $this->assertNotNull($response->json('data.uploaded_at_human'));
@@ -111,16 +103,5 @@ final class TorrentDetailsApiTest extends TestCase
         $response->assertOk();
         $response->assertJsonPath('data.file_count', 0);
         $response->assertJsonPath('data.files', []);
-    }
-
-    public function test_details_payload_contains_non_empty_magnet_url_for_visible_torrent(): void
-    {
-        $user = User::factory()->create();
-        $torrent = Torrent::factory()->create();
-
-        $response = $this->actingAs($user)->getJson('/api/torrents/'.$torrent->id);
-
-        $response->assertOk();
-        $this->assertNotSame('', (string) $response->json('data.magnet_url'));
     }
 }

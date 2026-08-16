@@ -90,7 +90,6 @@
                 @can('download', $torrent)
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                         <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
-                        <button type="button" id="magnetButton" data-url="{{ route('torrents.magnet', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-5 py-2 text-sm font-semibold text-white hover:border-brand">Get magnet link</button>
                         <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
                             @csrf
                             <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">Follow with metadata</button>
@@ -322,29 +321,9 @@
                 <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{!! $nfoHtml !!}</pre>
             </section>
         @endif
-        <div id="magnetValue" class="hidden rounded-2xl border border-emerald-500/50 bg-emerald-500/10 p-4 text-emerald-100 text-sm"></div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const button = document.getElementById('magnetButton');
-            const output = document.getElementById('magnetValue');
-            if (button && output) {
-                button.addEventListener('click', async () => {
-                    output.textContent = 'Fetching magnet link…';
-                    output.classList.remove('hidden');
-                    try {
-                        const response = await fetch(button.dataset.url ?? '', { headers: { 'Accept': 'application/json' } });
-                        if (!response.ok) {
-                            output.textContent = 'Unable to fetch magnet link right now.';
-                            return;
-                        }
-                        const payload = await response.json();
-                        output.textContent = payload.magnet ?? 'Magnet link unavailable.';
-                    } catch (error) {
-                        output.textContent = 'Unable to fetch magnet link right now.';
-                    }
-                });
-            }
             document.querySelectorAll('form[data-submit-label]').forEach((form) => {
                 form.addEventListener('submit', (event) => {
                     const message = form.dataset.confirm;

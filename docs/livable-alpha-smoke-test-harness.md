@@ -69,10 +69,10 @@ Notes:
 | Member browse/detail | Member | Open torrent detail. | Detail page loads for an eligible visible torrent. | Yes |  |  |
 | Member browse/detail | Member | Read metadata/description/NFO area. | Available metadata, description, and NFO areas are readable; missing metadata is clearly indicated. | Yes |  |  |
 | Member browse/detail | Member | See release decision/download state. | Member can tell whether download is allowed, blocked, or unavailable. | Yes |  |  |
-| Download/magnet | Eligible member | Download `.torrent`. | File download starts or returns the expected torrent response. | Yes |  |  |
-| Download/magnet | Eligible member | Open magnet link if present. | Magnet link is visible and usable, or absence is clear. | No |  |  |
-| Download/magnet | Ineligible/restricted member | View blocked download state. | Download is blocked with safe recovery copy; no file or token leaks. | Yes |  |  |
-| Download/magnet | Eligible member | Trigger missing torrent file/storage case if already supported. | Failure is safe, logged where applicable, and does not expose private paths/secrets. | Yes |  |  |
+| Download | Eligible member | Download personalized `.torrent`. | File download starts or returns the expected torrent response. | Yes |  |  |
+| Download | Eligible member | Inspect the client handoff. | The personalized `.torrent` is the only offered client handoff; no magnet URL or passkey-bearing browser payload is exposed. | Yes |  |  |
+| Download | Ineligible/restricted member | View blocked download state. | Download is blocked with safe recovery copy; no file or token leaks. | Yes |  |  |
+| Download | Eligible member | Trigger missing torrent file/storage case if already supported. | Failure is safe, logged where applicable, and does not expose private paths/secrets. | Yes |  |  |
 | Upload/My Uploads | Uploader | Open upload form. | Form loads with required fields and guidance. | Yes |  |  |
 | Upload/My Uploads | Uploader | Submit invalid upload. | Validation fails safely with actionable errors. | Yes |  |  |
 | Upload/My Uploads | Uploader | Submit valid `.torrent`. | Upload is accepted into the expected moderation/status flow. | Yes |  |  |

@@ -14,11 +14,6 @@ use Illuminate\Support\Collection;
 /** @mixin Torrent */
 final class TorrentDetailsResource extends JsonResource
 {
-    public function __construct(mixed $resource, private readonly string $passkey)
-    {
-        parent::__construct($resource);
-    }
-
     /**
      * @return array<string, mixed>
      */
@@ -26,17 +21,6 @@ final class TorrentDetailsResource extends JsonResource
     {
         $rawFiles = data_get($this->resource, 'files', []);
         $files = $rawFiles instanceof Collection ? $rawFiles : collect($rawFiles);
-
-        $magnetUrl = sprintf(
-            'magnet:?xt=urn:btih:%s&dn=%s&tr=%s&tr=%s',
-            strtoupper((string) $this->info_hash),
-            rawurlencode((string) $this->name),
-            rawurlencode(sprintf(
-                (string) config('tracker.announce_url', 'https://tracker.example/announce/%s'),
-                $this->passkey
-            )),
-            rawurlencode((string) config('tracker.backup_announce_url', 'https://backup.example/announce'))
-        );
 
         return [
             'id' => $this->id,
@@ -75,7 +59,6 @@ final class TorrentDetailsResource extends JsonResource
                 'size_bytes' => (int) data_get($file, 'size', 0),
             ])->values()->all(),
             'download_url' => '/api/torrents/'.$this->id.'/download',
-            'magnet_url' => $magnetUrl,
         ];
     }
 

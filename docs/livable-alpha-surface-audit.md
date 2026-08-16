@@ -34,7 +34,7 @@ Estimated launch posture after Slice 100:
 | --- | --- | --- | --- | --- |
 | Front page / discovery home | Authenticated dashboard plus discovery surface; `/` redirects to login. | Partial | No clear member orientation from landing/dashboard into tracker basics. | P1 Livable Alpha Important |
 | Browse / torrent listing | Search, filters, grouped/flat rows, saved views, RSS query handoff. | Partial | Dense listing and limited first-class filters/mobile ergonomics. | P1 Livable Alpha Important |
-| Torrent detail page | Download, magnet, follow, facts, metadata, stats, description, NFO. | Partial | Missing trust/recovery affordances such as file list, report action, client guidance, and richer media context. | P1 Livable Alpha Important |
+| Torrent detail page | Personalized `.torrent` download, follow, facts, metadata, stats, description, NFO. | Partial | Missing trust/recovery affordances such as file list, report action, client guidance, and richer media context. Magnet links are intentionally unavailable for the private tracker. | P1 Livable Alpha Important |
 | Upload flow | Basic upload form, moderation disclaimer, My Uploads status. | Partial | Uploaders lack preflight confidence, field-level guidance, edit/resubmit loop, and screenshot/media support. | P0 Launch Blocker |
 | Account / user dashboard | Dashboard, ratio/snatches, notifications, RSS, invites, follows, watch center. | Partial | No coherent account/settings hub for passkey/client setup, profile, API keys, and preferences. | P0 Launch Blocker |
 | RSS / watch presets / notifications | RSS tokens/presets, watch presets, notification list. | Partial | Concepts overlap and setup guidance is thin. | P1 Livable Alpha Important |
@@ -80,7 +80,7 @@ Estimated launch posture after Slice 100:
 
 ### 3. Torrent detail page
 
-- **Current status:** Details expose download/magnet actions, follow action, quick facts, metadata, stats, links, description, and NFO.
+- **Current status:** Details expose a personalized `.torrent` download action, follow action, quick facts, metadata, stats, links, description, and NFO. Magnet links are intentionally unavailable for the private tracker.
 - **Good enough:** A member can inspect a torrent and attempt download from one page.
 - **Weak:** Detail lacks file list, screenshots/media preview, comments/report action, clear client setup help, uploader trust context, and stronger unavailable/download-denied recovery.
 - **Launch blocker:** None for a controlled technical alpha; risk rises if ordinary users need self-serve troubleshooting.

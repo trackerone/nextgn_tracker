@@ -15,12 +15,11 @@ final class TorrentDownloadTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_guests_cannot_access_download_or_magnet(): void
+    public function test_guests_cannot_access_download(): void
     {
         $torrent = Torrent::factory()->create();
 
         $this->get('/torrents/'.$torrent->getKey().'/download')->assertRedirect('/login');
-        $this->get('/torrents/'.$torrent->getKey().'/magnet')->assertRedirect('/login');
     }
 
     public function test_download_returns_personalized_file_when_exists(): void
@@ -116,27 +115,14 @@ final class TorrentDownloadTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_magnet_returns_tracker_information(): void
+    public function test_magnet_route_is_not_exposed(): void
     {
         $user = User::factory()->create();
-        $torrent = Torrent::factory()->create([
-            'info_hash' => 'ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234',
-            'name' => 'My <script>bad</script> Torrent',
-        ]);
+        $torrent = Torrent::factory()->create();
 
-        config()->set('tracker.announce_url', 'https://nextgn.example/announce');
-        config()->set('tracker.additional_trackers', ['https://backup.example/announce']);
-
-        $response = $this->actingAs($user)->getJson('/torrents/'.$torrent->getKey().'/magnet');
-
-        $response->assertOk();
-        $magnet = $response->json('magnet');
-
-        $this->assertIsString($magnet);
-        $this->assertStringContainsString('xt=urn:btih:ABCDEF1234ABCDEF1234ABCDEF1234ABCDEF1234', $magnet);
-        $this->assertStringContainsString(rawurlencode('https://nextgn.example/announce'), $magnet);
-        $this->assertStringContainsString(rawurlencode('https://backup.example/announce'), $magnet);
-        $this->assertStringNotContainsString('<script>', $magnet);
+        $this->actingAs($user)
+            ->getJson('/torrents/'.$torrent->getKey().'/magnet')
+            ->assertNotFound();
     }
 
     /**
