@@ -8,5 +8,5 @@ $trustedProxies = explode(',', (string) env(
 ));
 
 return [
-    'trusted' => array_values(array_filter(array_map('trim', $trustedProxies))),
+    'proxies' => array_values(array_filter(array_map('trim', $trustedProxies))),
 ];
