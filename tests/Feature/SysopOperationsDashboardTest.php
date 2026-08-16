@@ -46,6 +46,7 @@ final class SysopOperationsDashboardTest extends TestCase
             ->assertSeeText('Alpha launch readiness')
             ->assertSeeText('browse/detail/upload smoke checks')
             ->assertSee('Runtime Job Controls (Safe Scope)')
+            ->assertSee('Ghost Peer Cleanup')
             ->assertSee('Immutable Critical')
             ->assertSee('Sysop Controllable')
             ->assertSee('Visibility only: scheduler actions are not available from this dashboard.')

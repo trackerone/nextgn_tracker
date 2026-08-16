@@ -73,14 +73,18 @@ class EloquentTorrentRepository implements TorrentRepositoryInterface
 
     public function refreshPeerStats(Torrent $torrent): void
     {
+        $activeSince = now()->subMinutes(max(1, (int) config('tracker.ghost_peer_timeout_minutes')));
+
         $seeders = Peer::query()
             ->where('torrent_id', $torrent->getKey())
             ->where('is_seeder', true)
+            ->where('last_announce_at', '>', $activeSince)
             ->count();
 
         $leechers = Peer::query()
             ->where('torrent_id', $torrent->getKey())
             ->where('is_seeder', false)
+            ->where('last_announce_at', '>', $activeSince)
             ->count();
 
         $torrent->forceFill([

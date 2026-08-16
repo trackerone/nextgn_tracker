@@ -79,6 +79,7 @@ php artisan schedule:run
 - FrankenPHP worker mode is intentionally not enabled in this slice; evaluate it later only after compatibility and load testing.
 - Queue workers: restart after each deploy with `php artisan queue:restart`.
 - Scheduler: run `schedule:run` every minute via cron/platform scheduler.
+- Ghost peers: `tracker:prune-ghost-peers` runs every ten minutes and removes peers whose last announce is at least `TRACKER_GHOST_TIMEOUT_MINUTES` old (default `45`). Use `php artisan tracker:prune-ghost-peers --dry-run` to inspect the current cleanup set without changing data.
 
 ## Updating an existing installation
 
