@@ -18,7 +18,7 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->foreignId('torrent_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('peer_id', 20);
+            $table->binary('peer_id', 20);
             $table->string('ip', 45);
             $table->unsignedInteger('port');
             $table->unsignedBigInteger('uploaded')->default(0);

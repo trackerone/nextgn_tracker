@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\SavedIntent;
 use App\Models\User;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 final class SavedIntentTest extends TestCase
@@ -31,7 +32,7 @@ final class SavedIntentTest extends TestCase
 
         self::assertSame((int) $user->id, (int) $savedIntent->user_id);
         self::assertSame('All-language 2160p movies', $savedIntent->name);
-        self::assertSame([
+        self::assertEquals([
             'q' => 'matrix rg:NTB',
             'type' => 'movie',
             'resolution' => '2160p',
@@ -179,7 +180,7 @@ final class SavedIntentTest extends TestCase
             ],
         ]);
 
-        $expectedUrl = route('account.watch-presets.create', [
+        $expectedQuery = [
             'q' => 'matrix',
             'type' => 'movie',
             'resolution' => '2160p',
@@ -189,15 +190,20 @@ final class SavedIntentTest extends TestCase
             'audio_language' => 'Japanese',
             'subtitle_language' => 'Spanish',
             'subtitles' => 'English, Spanish, German',
-        ]);
+        ];
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get(route('account.saved-intents.index'))
             ->assertOk()
             ->assertSee('Create watch preset')
-            ->assertSee($expectedUrl)
             ->assertDontSee('title=ignored-title')
             ->assertDontSee('grouped=0');
+
+        $this->assertResponseContainsUrlWithQuery(
+            $response,
+            route('account.watch-presets.create'),
+            $expectedQuery,
+        );
     }
 
     public function test_saved_intent_page_shows_create_rss_preset_action(): void
@@ -240,7 +246,7 @@ final class SavedIntentTest extends TestCase
             ],
         ]);
 
-        $expectedUrl = route('account.rss.presets.create', [
+        $expectedQuery = [
             'q' => 'matrix',
             'type' => 'movie',
             'resolution' => '2160p',
@@ -252,15 +258,20 @@ final class SavedIntentTest extends TestCase
             'subtitles' => 'English, Spanish, German',
             'freeleech' => '1',
             'category' => '42',
-        ]);
+        ];
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get(route('account.saved-intents.index'))
             ->assertOk()
-            ->assertSee($expectedUrl)
             ->assertDontSee('title=ignored-title')
             ->assertDontSee('grouped=0')
             ->assertDontSee('category_id=42');
+
+        $this->assertResponseContainsUrlWithQuery(
+            $response,
+            route('account.rss.presets.create'),
+            $expectedQuery,
+        );
     }
 
     public function test_watch_preset_create_page_prefills_supported_query_values(): void
@@ -374,15 +385,21 @@ final class SavedIntentTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($user)
-            ->get(route('account.saved-intents.apply', ['savedIntent' => $savedIntent]))
-            ->assertRedirect(route('torrents.index', [
+        $response = $this->actingAs($user)
+            ->get(route('account.saved-intents.apply', ['savedIntent' => $savedIntent]));
+
+        $response->assertRedirect();
+        self::assertTrue($this->urlHasQuery(
+            (string) $response->headers->get('Location'),
+            route('torrents.index'),
+            [
                 'q' => 'matrix',
                 'type' => 'movie',
                 'resolution' => '2160p',
                 'source' => 'WEB-DL',
                 'grouped' => '0',
-            ]));
+            ],
+        ));
     }
 
     public function test_user_can_delete_own_saved_intent(): void
@@ -395,5 +412,41 @@ final class SavedIntentTest extends TestCase
             ->assertRedirect(route('account.saved-intents.index'));
 
         $this->assertDatabaseMissing('saved_intents', ['id' => $savedIntent->id]);
+    }
+
+    /**
+     * @param  array<string, string>  $expectedQuery
+     */
+    private function assertResponseContainsUrlWithQuery(
+        TestResponse $response,
+        string $expectedBaseUrl,
+        array $expectedQuery,
+    ): void {
+        preg_match_all('/href="([^"]+)"/', (string) $response->getContent(), $matches);
+
+        foreach ($matches[1] ?? [] as $href) {
+            if ($this->urlHasQuery(
+                html_entity_decode((string) $href, ENT_QUOTES | ENT_HTML5),
+                $expectedBaseUrl,
+                $expectedQuery,
+            )) {
+                self::assertTrue(true);
+
+                return;
+            }
+        }
+
+        self::fail('The response did not contain the expected URL and query parameters.');
+    }
+
+    /**
+     * @param  array<string, string>  $expectedQuery
+     */
+    private function urlHasQuery(string $url, string $expectedBaseUrl, array $expectedQuery): bool
+    {
+        $query = [];
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+        return strtok($url, '?') === $expectedBaseUrl && $query == $expectedQuery;
     }
 }

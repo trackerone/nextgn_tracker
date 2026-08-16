@@ -17,9 +17,17 @@ class PasskeyService
 
     public function generate(User $user): string
     {
+        $passkey = $this->assign($user);
+        $user->save();
+
+        return $passkey;
+    }
+
+    public function assign(User $user): string
+    {
         $passkey = $this->uniquePasskey();
 
-        $user->forceFill(['passkey' => $passkey])->save();
+        $user->forceFill(['passkey' => $passkey]);
 
         return $passkey;
     }

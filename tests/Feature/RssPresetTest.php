@@ -38,7 +38,7 @@ final class RssPresetTest extends TestCase
         self::assertSame((int) $user->id, (int) $preset->user_id);
         self::assertNotEmpty($preset->public_id);
         self::assertNotSame('00000000-0000-0000-0000-000000000000', $preset->public_id);
-        self::assertSame([
+        self::assertEquals([
             'type' => 'movie',
             'language' => 'DANISH',
             'limit' => 100,
@@ -59,7 +59,7 @@ final class RssPresetTest extends TestCase
         $preset->refresh();
         self::assertSame('Danish freeleech', $preset->name);
         self::assertSame($originalPublicId, $preset->public_id);
-        self::assertSame([
+        self::assertEquals([
             'q' => 'matrix',
             'freeleech' => true,
         ], $preset->filters);

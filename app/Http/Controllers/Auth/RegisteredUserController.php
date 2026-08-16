@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
 use App\Models\User;
-use App\Services\Tracker\PasskeyService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,8 +19,6 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    public function __construct(private readonly PasskeyService $passkeys) {}
-
     public function create(Request $request): View|RedirectResponse
     {
         if ($request->user()) {
@@ -54,8 +51,6 @@ class RegisteredUserController extends Controller
                 'password' => Hash::make($data['password']),
                 'invited_by_id' => $invite?->inviter_user_id,
             ]);
-
-            $this->passkeys->generate($user);
 
             if ($invite !== null) {
                 $invite->increment('uses');
