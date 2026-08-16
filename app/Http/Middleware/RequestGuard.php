@@ -57,7 +57,7 @@ final class RequestGuard
         [$sanitized, $incidents] = $this->sanitizePayload(
             $request->all(),
             preserveUploadMetadata: $this->isTorrentUploadRequest($request),
-            preserveTrackerBinaryFields: $request->routeIs('announce', 'scrape'),
+            preserveTrackerBinaryFields: $this->isTrackerProtocolRequest($request),
         );
 
         if ($incidents !== []) {
@@ -148,6 +148,16 @@ final class RequestGuard
 
         return $request->isMethod('POST')
             && ($request->is('torrents') || $request->is('api/uploads'));
+    }
+
+    private function isTrackerProtocolRequest(Request $request): bool
+    {
+        if ($request->routeIs('announce', 'scrape')) {
+            return true;
+        }
+
+        return $request->isMethod('GET')
+            && ($request->is('announce/*') || $request->is('scrape/*'));
     }
 
     /**
