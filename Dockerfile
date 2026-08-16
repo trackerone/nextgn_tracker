@@ -1,4 +1,16 @@
 # Dockerfile
+FROM node:24-bookworm-slim AS frontend
+
+WORKDIR /app
+
+# Install from the lockfile before copying source so dependency layers remain cacheable.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY postcss.config.js tailwind.config.js tsconfig.json tsconfig.node.json vite.config.ts ./
+COPY resources ./resources
+RUN npm run build
+
 FROM dunglas/frankenphp:1-php8.4-bookworm
 
 ARG APP_UID=1000
@@ -31,6 +43,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY . /app
+COPY --from=frontend /app/public/build /app/public/build
 
 # Install production dependencies during the image build so failures happen early.
 ENV COMPOSER_ALLOW_SUPERUSER=1
