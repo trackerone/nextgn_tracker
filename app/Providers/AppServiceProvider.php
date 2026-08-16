@@ -22,11 +22,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Fortify;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        Fortify::ignoreRoutes();
+
         $this->app->singleton(UploadPreflightContextBuilder::class, function ($app): UploadPreflightContextBuilder {
             return new UploadPreflightContextBuilder(
                 $app->make(\App\Services\BencodeService::class),
@@ -142,6 +145,32 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinutes($ipDecayMinutes, $ipMaxAttempts)
                     ->by(LoginThrottleKey::forIp($ip))
                     ->response($throttledResponse),
+            ];
+        });
+
+        RateLimiter::for('admin-two-factor', function (Request $request): array {
+            [$maxAttempts, $decayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.admin_two_factor', '5,1')
+            );
+            [$accountMaxAttempts, $accountDecayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.admin_two_factor_account', '20,60')
+            );
+            [$ipMaxAttempts, $ipDecayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.admin_two_factor_ip', '100,60')
+            );
+            $pendingUserId = (string) $request->session()->get(
+                'auth.admin_two_factor.pending_user_id',
+                'guest'
+            );
+            $ip = (string) $request->ip();
+
+            return [
+                Limit::perMinutes($decayMinutes, $maxAttempts)
+                    ->by(sprintf('admin-two-factor:%s:%s', $pendingUserId, $ip)),
+                Limit::perMinutes($accountDecayMinutes, $accountMaxAttempts)
+                    ->by(sprintf('admin-two-factor-account:%s', $pendingUserId)),
+                Limit::perMinutes($ipDecayMinutes, $ipMaxAttempts)
+                    ->by(sprintf('admin-two-factor-ip:%s', $ip)),
             ];
         });
     }

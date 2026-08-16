@@ -16,6 +16,8 @@ use App\Http\Controllers\Admin\UserRoleController;
 use App\Http\Controllers\AlphaFeedbackController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\Api\ApiKeyController;
+use App\Http\Controllers\Auth\AdminTwoFactorChallengeController;
+use App\Http\Controllers\Auth\AdminTwoFactorSetupController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
@@ -64,6 +66,23 @@ Route::get('/', static fn () => redirect('/login'));
 Route::get('/login', [LoginController::class, 'show'])->name('login');
 Route::post('/login', [LoginController::class, 'store'])->middleware('throttle:login');
 Route::post('/logout', [LoginController::class, 'destroy'])->middleware('auth')->name('logout');
+
+Route::middleware('guest')->group(function (): void {
+    Route::get('/two-factor-challenge', [AdminTwoFactorChallengeController::class, 'show'])
+        ->name('admin-two-factor.challenge');
+    Route::post('/two-factor-challenge', [AdminTwoFactorChallengeController::class, 'store'])
+        ->middleware('throttle:admin-two-factor')
+        ->name('admin-two-factor.challenge.store');
+});
+
+Route::middleware('auth')->prefix('security/two-factor')->group(function (): void {
+    Route::get('/', [AdminTwoFactorSetupController::class, 'show'])
+        ->name('admin-two-factor.setup');
+    Route::post('/enable', [AdminTwoFactorSetupController::class, 'enable'])
+        ->name('admin-two-factor.enable');
+    Route::post('/confirm', [AdminTwoFactorSetupController::class, 'confirm'])
+        ->name('admin-two-factor.confirm');
+});
 
 Route::middleware('auth')->get('/home', HomeController::class)->name('home');
 

@@ -36,6 +36,11 @@ return [
 
     'lockdown' => (bool) env('SECURITY_LOCKDOWN', false),
 
+    'admin_two_factor' => [
+        'required' => (bool) env('ADMIN_TWO_FACTOR_REQUIRED', true),
+        'setup_authorization_ttl_seconds' => 600,
+    ],
+
     'roles' => [
         'admin',
         'moderator',
@@ -88,6 +93,9 @@ return [
         'login' => env('SECURITY_RATE_LIMIT_LOGIN', '5,1'),
         'login_account' => env('SECURITY_RATE_LIMIT_LOGIN_ACCOUNT', '20,60'),
         'login_ip' => env('SECURITY_RATE_LIMIT_LOGIN_IP', '100,60'),
+        'admin_two_factor' => env('SECURITY_RATE_LIMIT_ADMIN_TWO_FACTOR', '5,1'),
+        'admin_two_factor_account' => env('SECURITY_RATE_LIMIT_ADMIN_TWO_FACTOR_ACCOUNT', '20,60'),
+        'admin_two_factor_ip' => env('SECURITY_RATE_LIMIT_ADMIN_TWO_FACTOR_IP', '100,60'),
         'register' => '3,60',
         'password_reset' => '3,60',
         'torrent_upload' => '10,60',

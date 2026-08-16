@@ -9,7 +9,7 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "doctrine/dbal": "^4.0",
+        "php": "^8.4",
         "ext-ctype": "*",
         "ext-curl": "*",
         "ext-dom": "*",
@@ -23,15 +23,16 @@
         "ext-pdo": "*",
         "ext-session": "*",
         "ext-tokenizer": "*",
+        "doctrine/dbal": "^4.0",
         "guzzlehttp/guzzle": "^7.9",
         "intervention/image": "^3.8",
+        "laravel/fortify": "^1.0",
         "laravel/framework": "^13.7",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "league/flysystem-local": "^3.0",
         "livewire/livewire": "^4.3",
-        "php": "^8.4",
         "ramsey/uuid": "^4.7",
         "spatie/laravel-permission": "^7.4"
     },
@@ -82,7 +83,9 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/passkeys"
+            ]
         }
     },
     "config": {
