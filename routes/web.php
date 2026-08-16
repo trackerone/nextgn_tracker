@@ -247,9 +247,6 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
         ->middleware($torrentDownloadThrottle)
         ->name('torrents.download');
 
-    Route::get('/torrents/{torrent}/magnet', [TorrentDownloadController::class, 'magnet'])
-        ->middleware($torrentDownloadThrottle)
-        ->name('torrents.magnet');
 });
 
 /*

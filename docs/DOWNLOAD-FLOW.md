@@ -13,7 +13,8 @@ The download endpoints serve stored `.torrent` payloads after personalizing the 
 - Web: `GET /torrents/{torrent}/download` (`auth`, torrent download throttle).
 - API: `GET /api/torrents/{torrent}/download` (`api`, `auth`, torrent download throttle).
 - RSS: `GET /rss/{token}/download/{torrent}` (public route, user resolved by RSS token).
-- Magnet links are exposed by `GET /torrents/{torrent}/magnet`.
+
+Magnet links are deliberately not exposed. NextGN is a private tracker, so the personalized `.torrent` download is the only supported client handoff and keeps the passkey inside the generated torrent payload.
 
 ## Behavior
 

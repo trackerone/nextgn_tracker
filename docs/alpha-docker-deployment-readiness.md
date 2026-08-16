@@ -249,7 +249,7 @@ Minimum smoke areas:
 
 - Auth/session.
 - Browse/detail.
-- Download/magnet.
+- Personalized `.torrent` download.
 - Upload/My Uploads.
 - Staff moderation.
 - RSS/watch.

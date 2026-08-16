@@ -77,7 +77,7 @@
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">1. Browse</span><br>Use search or core filters.</li>
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">2. Compare</span><br>Pick a clean version.</li>
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">3. Check details</span><br>Review metadata and ratio status.</li>
-                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">4. Download</span><br>Use the torrent or magnet action.</li>
+                <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">4. Download</span><br>Use the personalized .torrent file.</li>
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">5. Follow</span><br>Save updates with metadata.</li>
             </ol>
         </section>

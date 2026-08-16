@@ -28,7 +28,7 @@ The environment must be stable enough for repeatable smoke testing, staff triage
 Prepare accounts for every launch-critical role before smoke testing:
 
 - **Guest:** unauthenticated visitor for access boundaries, redirects, and public entry checks.
-- **Member:** ordinary authenticated user for browse, detail, download/magnet, RSS, profile/session, and feedback journeys.
+- **Member:** ordinary authenticated user for browse, detail, personalized `.torrent` download, RSS, profile/session, and feedback journeys.
 - **Uploader:** user allowed to submit torrents and review their upload states.
 - **Staff:** moderation-capable user for queue review, approvals, rejections, staff-only surfaces, and alpha feedback triage.
 - **Sysop:** highest-privilege operator for production checks, configuration review, emergency rollback coordination, and final go/no-go signoff.

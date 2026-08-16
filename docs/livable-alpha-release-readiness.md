@@ -8,7 +8,7 @@ Scope: release-readiness decision support only. This slice intentionally does **
 
 NextGN is **close enough for a controlled, invite-only Livable Alpha**, provided the launch is supervised by staff and treated as a limited validation window rather than a public opening.
 
-Short answer: **yes, this can be opened to a controlled alpha group after a small pre-launch verification/fix pass.** The current product surface supports the core tracker loop: an authenticated member can orient from the dashboard, browse torrents, inspect a torrent detail page, attempt download/magnet access, upload a torrent into moderation, track their own uploads, and staff can moderate pending uploads.
+Short answer: **yes, this can be opened to a controlled alpha group after a small pre-launch verification/fix pass.** The current product surface supports the core tracker loop: an authenticated member can orient from the dashboard, browse torrents, inspect a torrent detail page, attempt a personalized `.torrent` download, upload a torrent into moderation, track their own uploads, and staff can moderate pending uploads.
 
 There are **no confirmed launch blockers in the current audited product surface** from the documentation and route/test review in this slice. The remaining risks are mostly pre-launch must-fix or operational verification items:
 
@@ -23,7 +23,7 @@ If any of those checks fail in the alpha environment, the failed check should be
 
 These areas are considered alpha-ready enough for a small controlled group:
 
-- **Core browse/detail path:** authenticated torrent browse and detail routes exist, with search/filter throttling, compact listing/detail orientation, and download/magnet entry points.
+- **Core browse/detail path:** authenticated torrent browse and detail routes exist, with search/filter throttling, compact listing/detail orientation, and a personalized `.torrent` download entry point.
 - **Upload entry:** members can reach the upload form, submit a torrent, and receive validation/moderation-oriented guidance.
 - **Dashboard orientation:** `/home` gives members a practical starting point for browse, upload, my uploads, discovery/watch, messages, ratio, and staff links where relevant.
 - **My uploads:** uploaders can inspect pending/rejected/approved state and see rejection recovery copy.
@@ -44,7 +44,7 @@ Current blocker assessment:
 | Blocker | Status | Notes |
 | --- | --- | --- |
 | Core member browse/detail flow unavailable | Not currently identified | Authenticated browse/detail routes and UI surfaces exist. Verify with smoke test. |
-| Download/magnet access unsafe or unusable | Not currently identified | Authenticated download/magnet routes, RSS tokenized download, ratio/download eligibility, and tests exist. Verify storage and secrets in alpha. |
+| Personalized download access unsafe or unusable | Not currently identified | Authenticated and RSS tokenized `.torrent` download routes, ratio/download eligibility, and tests exist. Magnet links are deliberately not exposed. Verify storage and secrets in alpha. |
 | Upload flow unusable | Not currently identified | Upload entry, validation, moderation submission, and My Uploads status exist. Preflight polish remains useful but is not a blocker for trusted uploaders. |
 | Staff cannot moderate uploads | Not currently identified | Staff moderation queue/actions exist. Verify staff role and permissions in alpha data. |
 | RSS token/feed behavior unsafe | Not currently identified | Tokenized routes and rotation exist. Verify token secrecy, HTTPS, and feed download eligibility in environment. |
@@ -139,7 +139,7 @@ Use this checklist manually against staging/alpha before invitations are sent an
 - [ ] Open torrent detail.
 - [ ] Confirm metadata, description/NFO, stats, and action areas are readable.
 - [ ] Download an allowed torrent.
-- [ ] Open magnet link for an allowed torrent.
+- [ ] Confirm no magnet link or passkey-bearing browser payload is exposed.
 - [ ] Confirm blocked download state for a user who fails eligibility or lacks access.
 - [ ] Confirm a missing torrent file/storage case does not leak unsafe information.
 
@@ -212,7 +212,7 @@ Date: 2026-06-20
 
 Slice 107 re-checked the Slice 106 blocker boundary against the current alpha-critical code and tests for:
 
-- Member dashboard, browse, search/filter, torrent detail, download/magnet, blocked download, and logout/session protection paths.
+- Member dashboard, browse, search/filter, torrent detail, personalized `.torrent` download, blocked download, and logout/session protection paths.
 - Uploader upload form, invalid upload validation, valid `.torrent` submission, My Uploads status, rejected-upload recovery copy, and approved upload visibility paths.
 - Staff moderation queue, approve/reject/soft-delete actions, moderation reason handling, and ordinary-member authorization boundaries.
 - Account RSS setup, token rotation, tokenized feed/download routes, RSS download eligibility, and RSS feed enclosure safety.
