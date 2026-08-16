@@ -24,6 +24,7 @@ APP_DEBUG=false
 APP_KEY=base64:...
 APP_URL=https://your-domain.example
 TRACKER_ANNOUNCE_URL=https://your-domain.example/announce/%s
+TRUSTED_PROXIES=127.0.0.1,::1,172.16.0.0/12
 NEXTGN_PRODUCTION_HARDENING=true
 ```
 
@@ -35,7 +36,7 @@ Production deployments must be served through HTTPS at the public edge, typicall
 
 Set `APP_URL` to the canonical public HTTPS origin for the site. Set `TRACKER_ANNOUNCE_URL` to the public HTTPS announce endpoint, including the `%s` passkey placeholder when the deployment uses passkey announce URLs. Keep both values aligned with the hostname users and clients actually reach so generated links, redirects, storage URLs, and torrent announce metadata use the production HTTPS origin.
 
-If TLS terminates before the application container, configure the reverse proxy or hosting platform to forward the original scheme and host headers according to Laravel trusted proxy expectations before running production readiness checks.
+If TLS terminates before the application container, configure the reverse proxy or hosting platform to forward the original client IP, scheme, and host headers. Keep `TRUSTED_PROXIES` restricted to the internal proxy network; the default supports normal Docker bridge networks without trusting public clients.
 
 ## First production deployment (copy/paste order)
 

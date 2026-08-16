@@ -9,9 +9,13 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://your-domain.example
 TRACKER_ANNOUNCE_URL=https://your-domain.example/announce/%s
+TRUSTED_PROXIES=127.0.0.1,::1,172.16.0.0/12
 NEXTGN_PRODUCTION_HARDENING=true
 API_REQUIRE_NONCE=true
 SECURITY_API_ALLOW_LEGACY_KEYS=false
+SECURITY_RATE_LIMIT_LOGIN=5,1
+SECURITY_RATE_LIMIT_LOGIN_ACCOUNT=20,60
+SECURITY_RATE_LIMIT_LOGIN_IP=100,60
 ```
 
 ## HTTPS deployment requirement
@@ -20,11 +24,14 @@ Production must run behind HTTPS. Use a TLS-terminating reverse proxy, load bala
 
 `APP_URL` must be the canonical public HTTPS site origin. `TRACKER_ANNOUNCE_URL` must be the public HTTPS announce URL advertised in generated torrents, including the `%s` passkey placeholder for passkey-based announce routes.
 
+`TRUSTED_PROXIES` must contain only the loopback and private network ranges used by the deployment's reverse proxy. The default covers Docker's normal `172.16.0.0/12` bridge range. Override it if Docker uses another internal subnet. Never add client LANs, public ranges, or `*` when the application port can be reached directly, because untrusted clients could then spoof their source IP.
+
 ## Hardened controls
 
 - `NEXTGN_PRODUCTION_HARDENING=true` enables strict production expectations.
 - Nonce-based HMAC replay protection is enabled with `API_REQUIRE_NONCE=true`.
 - Legacy API keys should be disabled using `SECURITY_API_ALLOW_LEGACY_KEYS=false`.
+- Login attempts are limited per email/IP pair, per account across IPs, and per client IP across accounts.
 - Scrape endpoints cap requests at **50** `info_hash` values per request.
 
 ## Validate deployment safety

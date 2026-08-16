@@ -85,7 +85,9 @@ return [
     ],
 
     'rate_limits' => [
-        'login' => '5,1',
+        'login' => env('SECURITY_RATE_LIMIT_LOGIN', '5,1'),
+        'login_account' => env('SECURITY_RATE_LIMIT_LOGIN_ACCOUNT', '20,60'),
+        'login_ip' => env('SECURITY_RATE_LIMIT_LOGIN_IP', '100,60'),
         'register' => '3,60',
         'password_reset' => '3,60',
         'torrent_upload' => '10,60',
