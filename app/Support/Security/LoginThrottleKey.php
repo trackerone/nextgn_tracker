@@ -21,6 +21,16 @@ final class LoginThrottleKey
         );
     }
 
+    public static function forAccount(string $email): string
+    {
+        return sprintf('login-account:%s', mb_strtolower($email));
+    }
+
+    public static function forIp(string $ip): string
+    {
+        return sprintf('login-ip:%s', $ip);
+    }
+
     public static function throttleMiddlewareKey(string $email, string $ip): string
     {
         return self::middlewareKey('login', self::from($email, $ip));
@@ -31,9 +41,27 @@ final class LoginThrottleKey
      */
     public static function keysForClearing(string $email, string $ip): array
     {
+        $attemptKey = self::from($email, $ip);
+        $accountKey = self::forAccount($email);
+
         return [
-            self::from($email, $ip),
-            self::throttleMiddlewareKey($email, $ip),
+            $attemptKey,
+            self::middlewareKey('login', $attemptKey),
+            $accountKey,
+            self::middlewareKey('login', $accountKey),
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function ipKeysForClearing(string $ip): array
+    {
+        $ipKey = self::forIp($ip);
+
+        return [
+            $ipKey,
+            self::middlewareKey('login', $ipKey),
         ];
     }
 

@@ -111,21 +111,38 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerAuthRateLimiters(): void
     {
-        RateLimiter::for('login', function (Request $request): Limit {
+        RateLimiter::for('login', function (Request $request): array {
             [$maxAttempts, $decayMinutes] = $this->rateLimitConfig(
                 (string) config('security.rate_limits.login', '5,1')
             );
+            [$accountMaxAttempts, $accountDecayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.login_account', '20,60')
+            );
+            [$ipMaxAttempts, $ipDecayMinutes] = $this->rateLimitConfig(
+                (string) config('security.rate_limits.login_ip', '100,60')
+            );
+            $email = $this->normalizedEmail($request);
+            $ip = (string) $request->ip();
+            $throttledResponse = function (Request $request, array $headers): \Symfony\Component\HttpFoundation\Response {
+                SecurityAuditLog::logAndWarn(null, 'auth.login.throttled', [
+                    'email' => $this->normalizedEmail($request),
+                    'ip' => $request->ip(),
+                ]);
 
-            return Limit::perMinutes($decayMinutes, $maxAttempts)
-                ->by(LoginThrottleKey::fromRequest($request))
-                ->response(function (Request $request, array $headers): \Symfony\Component\HttpFoundation\Response {
-                    SecurityAuditLog::logAndWarn(null, 'auth.login.throttled', [
-                        'email' => $this->normalizedEmail($request),
-                        'ip' => $request->ip(),
-                    ]);
+                return response('Too Many Attempts.', 429, $headers);
+            };
 
-                    return response('Too Many Attempts.', 429, $headers);
-                });
+            return [
+                Limit::perMinutes($decayMinutes, $maxAttempts)
+                    ->by(LoginThrottleKey::from($email, $ip))
+                    ->response($throttledResponse),
+                Limit::perMinutes($accountDecayMinutes, $accountMaxAttempts)
+                    ->by(LoginThrottleKey::forAccount($email))
+                    ->response($throttledResponse),
+                Limit::perMinutes($ipDecayMinutes, $ipMaxAttempts)
+                    ->by(LoginThrottleKey::forIp($ip))
+                    ->response($throttledResponse),
+            ];
         });
     }
 

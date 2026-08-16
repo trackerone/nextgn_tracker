@@ -16,6 +16,9 @@ final class ProductionReadinessTest extends TestCase
         $this->assertStringContainsString('APP_DEBUG=false', $envExample);
         $this->assertStringContainsString('APP_URL=https://example.com', $envExample);
         $this->assertStringContainsString('TRACKER_ANNOUNCE_URL=https://example.com/announce/%s', $envExample);
+        $this->assertStringContainsString('TRUSTED_PROXIES=127.0.0.1,::1,172.16.0.0/12', $envExample);
+        $this->assertStringContainsString('SECURITY_RATE_LIMIT_LOGIN_ACCOUNT=20,60', $envExample);
+        $this->assertStringContainsString('SECURITY_RATE_LIMIT_LOGIN_IP=100,60', $envExample);
         $this->assertStringNotContainsString('APP_URL=http://localhost', $envExample);
         $this->assertStringNotContainsString('TRACKER_ANNOUNCE_URL=http://localhost', $envExample);
         $this->assertMatchesRegularExpression('/^APP_KEY=$/m', $envExample);

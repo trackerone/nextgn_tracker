@@ -151,12 +151,15 @@ Prefer container stdout/stderr for runtime logs unless the alpha host has explic
 
 ### Trusted proxies and HTTPS expectations
 
-Set `APP_URL` to the public HTTPS origin. If TLS terminates outside the app container, configure the reverse proxy and Laravel trusted proxy behavior so generated links, redirects, RSS links, storage URLs, and tracker announce URLs use HTTPS.
+Set `APP_URL` to the public HTTPS origin. If TLS terminates outside the app container, configure the reverse proxy to forward the original client IP, scheme, and host. Keep `TRUSTED_PROXIES` restricted to loopback and the private proxy network so rate limits and audit logs use the real client IP without accepting spoofed public headers.
 
 ### Rate limit and security configuration
 
 ```env
 SECURITY_LOCKDOWN=false
+SECURITY_RATE_LIMIT_LOGIN=5,1
+SECURITY_RATE_LIMIT_LOGIN_ACCOUNT=20,60
+SECURITY_RATE_LIMIT_LOGIN_IP=100,60
 SECURITY_RATE_LIMIT_API=60
 SECURITY_RATE_LIMIT_MODERATION=30
 SECURITY_MAX_INPUT_LENGTH=10000
