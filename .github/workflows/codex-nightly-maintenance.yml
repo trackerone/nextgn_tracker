@@ -1,8 +1,8 @@
-name: Codex Nightly Maintenance
+name: Codex Weekly Maintenance
 
 on:
   schedule:
-    - cron: '17 3 * * *'
+    - cron: '17 3 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -54,7 +54,7 @@ jobs:
         with:
           script: |
             const today = new Date().toISOString().slice(0, 10);
-            const title = `[Maintenance] Nightly checks failed on ${today}`;
+            const title = `[Maintenance] Weekly checks failed on ${today}`;
 
             const existing = await github.rest.search.issuesAndPullRequests({
               q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${title}"`,
@@ -67,12 +67,12 @@ jobs:
             }
 
             const body = [
-              'Nightly Codex maintenance checks failed.',
+              'Weekly Codex maintenance checks failed.',
               '',
               `- Workflow run: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               '- This report is informational and does not auto-merge changes.',
               '- Investigate failing step and open a scoped fix PR.',
-            ].join('\n');
+            ].join('\\n');
 
             await github.rest.issues.create({
               owner: context.repo.owner,
