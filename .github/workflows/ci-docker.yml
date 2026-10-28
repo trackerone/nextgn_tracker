@@ -118,6 +118,10 @@ jobs:
             -e TRACKER_ANNOUNCE_URL=http://127.0.0.1:10000/announce/%s \
             -e DB_CONNECTION=sqlite \
             -e DB_DATABASE=/app/database/database.sqlite \
+            -e SESSION_DRIVER=file \
+            -e CACHE_STORE=file \
+            -e QUEUE_CONNECTION=sync \
+            -e LOG_CHANNEL=stderr \
             --entrypoint sh nextgn-tracker:arm64 -c \
             'touch /app/database/database.sqlite && php artisan migrate --force && exec sh /app/tools/entrypoint.sh'
 
