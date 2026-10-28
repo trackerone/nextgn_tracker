@@ -106,3 +106,32 @@ jobs:
           frankenphp validate
           --config /app/deploy/frankenphp/Caddyfile
           --adapter caddyfile
+      
+      - name: Start ARM64 production runtime with SQLite and verify HTTP health
+        run: |
+          key="base64:$(head -c 32 /dev/urandom | base64 -w0)"
+          docker run -d --name nextgn-arm64-http -p 127.0.0.1:10000:10000 \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY="$key" \
+            -e APP_URL=http://127.0.0.1:10000 \
+            -e TRACKER_ANNOUNCE_URL=http://127.0.0.1:10000/announce/%s \
+            -e DB_CONNECTION=sqlite \
+            -e DB_DATABASE=/app/database/database.sqlite \
+            --entrypoint sh nextgn-tracker:arm64 -c \
+            'touch /app/database/database.sqlite && php artisan migrate --force && exec sh /app/tools/entrypoint.sh'
+
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:10000/health | grep -q '"status":"ok"'; then
+              echo "ARM64 NextGN HTTP health smoke passed"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs nextgn-arm64-http
+          exit 1
+
+      - name: Remove ARM64 test container
+        if: always()
+        run: docker rm -f nextgn-arm64-http 2>/dev/null || true
+
