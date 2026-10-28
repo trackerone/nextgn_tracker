@@ -52,3 +52,94 @@ jobs:
           frankenphp validate
           --config /app/deploy/frankenphp/Caddyfile
           --adapter caddyfile
+
+
+  arm64-docker-smoke:
+    name: ARM64 native Docker smoke
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Confirm ARM64 runner
+        run: |
+          uname -m
+          test "$(uname -m)" = "aarch64"
+
+      - name: Build production image for ARM64
+        run: docker build --platform linux/arm64 -t nextgn-tracker:arm64 .
+
+      - name: Confirm resulting image architecture
+        run: |
+          docker image inspect nextgn-tracker:arm64 --format '{{.Architecture}}/{{.Os}}'
+          test "$(docker image inspect nextgn-tracker:arm64 --format '{{.Architecture}}')" = "arm64"
+          docker run --rm --entrypoint uname nextgn-tracker:arm64 -m | grep -qx aarch64
+
+      - name: Verify compiled Vite assets on ARM64
+        run: >-
+          docker run --rm --entrypoint php nextgn-tracker:arm64
+          /app/tools/verify-vite-assets.php
+
+      - name: Verify installed PHP production requirements on ARM64
+        run: >-
+          docker run --rm --entrypoint composer nextgn-tracker:arm64
+          check-platform-reqs --no-dev
+
+      - name: Verify FrankenPHP on ARM64
+        run: |
+          docker run --rm nextgn-tracker:arm64 frankenphp version \
+            || docker run --rm nextgn-tracker:arm64 frankenphp --version
+
+      - name: Verify runtime user is non-root on ARM64
+        run: |
+          runtime_user="$(docker run --rm --entrypoint id nextgn-tracker:arm64)"
+          echo "$runtime_user"
+          if echo "$runtime_user" | grep -q 'uid=0'; then
+            echo "Docker image must not start as root." >&2
+            exit 1
+          fi
+
+      - name: Validate FrankenPHP configuration on ARM64
+        run: >-
+          docker run --rm nextgn-tracker:arm64
+          frankenphp validate
+          --config /app/deploy/frankenphp/Caddyfile
+          --adapter caddyfile
+      
+      - name: Start ARM64 production runtime with SQLite and verify HTTP health
+        run: |
+          key="base64:$(head -c 32 /dev/urandom | base64 -w0)"
+          docker run -d --name nextgn-arm64-http -p 127.0.0.1:10000:10000 \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY="$key" \
+            -e APP_URL=http://127.0.0.1:10000 \
+            -e TRACKER_ANNOUNCE_URL=http://127.0.0.1:10000/announce/%s \
+            -e DB_CONNECTION=sqlite \
+            -e DB_DATABASE=/app/database/database.sqlite \
+            -e SESSION_DRIVER=file \
+            -e CACHE_STORE=file \
+            -e QUEUE_CONNECTION=sync \
+            -e LOG_CHANNEL=stderr \
+            --entrypoint sh nextgn-tracker:arm64 -c \
+            'touch /app/database/database.sqlite && php artisan migrate --force && exec sh /app/tools/entrypoint.sh'
+
+          for attempt in {1..8}; do
+            if curl --fail --silent --show-error http://127.0.0.1:10000/health | grep -q '"status":"ok"'; then
+              echo "ARM64 NextGN HTTP health smoke passed"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ARM64 HTTP health failed. Container diagnostics:"
+          docker logs --tail=100 nextgn-arm64-http
+          docker exec nextgn-arm64-http sh -c 'echo "--- Laravel logs ---"; ls -la /app/storage/logs; tail -n 120 /app/storage/logs/*.log 2>/dev/null || true' || true
+          echo "HTTP response:"
+          curl -si --max-time 10 -H 'Accept: application/json' http://127.0.0.1:10000/health || true
+          exit 1
+
+      - name: Remove ARM64 test container
+        if: always()
+        run: docker rm -f nextgn-arm64-http 2>/dev/null || true
+
