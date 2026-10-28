@@ -1,0 +1,58 @@
+name: One-time security dependency remediation
+
+on:
+  push:
+    branches:
+      - security/consolidate-dependabot-20261028
+    paths:
+      - .github/workflows/security-temp-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  remediate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout security branch
+        uses: actions/checkout@v4
+        with:
+          ref: security/consolidate-dependabot-20261028
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, curl, dom, fileinfo, gd, intl, mbstring, pdo_mysql, pdo_sqlite, xml, zip
+          tools: composer:v2
+          coverage: none
+      - name: Remove unused shadcn CLI and apply compatible npm security fixes
+        run: |
+          npm uninstall --save-dev --ignore-scripts shadcn-ui
+          npm audit fix --ignore-scripts
+          npm audit --json > npm-security-after.json || true
+          node - <<'NODE'
+          const a=require('./npm-security-after.json');
+          console.log('AFTER_NPM',JSON.stringify(a.metadata?.vulnerabilities || {}));
+          for(const [n,v] of Object.entries(a.vulnerabilities||{}))
+            console.log('REMAINING_NPM',JSON.stringify({name:n,severity:v.severity,fixAvailable:v.fixAvailable}));
+          NODE
+      - name: Apply targeted compatible Composer security updates
+        run: |
+          composer update league/commonmark livewire/livewire symfony/http-foundation symfony/mime zbateson/mail-mime-parser --with-all-dependencies --no-scripts --no-interaction --prefer-dist --no-progress
+          composer audit --locked --format=json > composer-security-after.json || true
+          php -r '$d=json_decode(file_get_contents("composer-security-after.json"),true);foreach(($d["advisories"]??[]) as $n=>$vs){foreach($vs as $v)echo "REMAINING_COMPOSER ".$n." ".($v["title"]??"")."\n";}echo "REMAINING_COMPOSER_COUNT ".array_sum(array_map("count",$d["advisories"]??[]))."\n";'
+      - name: Commit only dependency manifests and lock files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json composer.lock
+          git diff --cached --stat
+          if git diff --cached --quiet; then
+            echo "No dependency changes to commit"
+          else
+            git commit -m "fix(deps): consolidate npm and Composer security patches"
+            git push origin HEAD:refs/heads/security/consolidate-dependabot-20261028
+          fi
