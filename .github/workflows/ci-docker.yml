@@ -121,14 +121,18 @@ jobs:
             --entrypoint sh nextgn-tracker:arm64 -c \
             'touch /app/database/database.sqlite && php artisan migrate --force && exec sh /app/tools/entrypoint.sh'
 
-          for attempt in {1..30}; do
+          for attempt in {1..8}; do
             if curl --fail --silent --show-error http://127.0.0.1:10000/health | grep -q '"status":"ok"'; then
               echo "ARM64 NextGN HTTP health smoke passed"
               exit 0
             fi
             sleep 2
           done
-          docker logs nextgn-arm64-http
+          echo "ARM64 HTTP health failed. Container diagnostics:"
+          docker logs --tail=100 nextgn-arm64-http
+          docker exec nextgn-arm64-http sh -c 'echo "--- Laravel logs ---"; ls -la /app/storage/logs; tail -n 120 /app/storage/logs/*.log 2>/dev/null || true' || true
+          echo "HTTP response:"
+          curl -si --max-time 10 -H 'Accept: application/json' http://127.0.0.1:10000/health || true
           exit 1
 
       - name: Remove ARM64 test container
