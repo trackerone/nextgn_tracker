@@ -52,3 +52,57 @@ jobs:
           frankenphp validate
           --config /app/deploy/frankenphp/Caddyfile
           --adapter caddyfile
+
+
+  arm64-docker-smoke:
+    name: ARM64 native Docker smoke
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Confirm ARM64 runner
+        run: |
+          uname -m
+          test "$(uname -m)" = "aarch64"
+
+      - name: Build production image for ARM64
+        run: docker build --platform linux/arm64 -t nextgn-tracker:arm64 .
+
+      - name: Confirm resulting image architecture
+        run: |
+          docker image inspect nextgn-tracker:arm64 --format '{{.Architecture}}/{{.Os}}'
+          test "$(docker image inspect nextgn-tracker:arm64 --format '{{.Architecture}}')" = "arm64"
+          docker run --rm --entrypoint uname nextgn-tracker:arm64 -m | grep -qx aarch64
+
+      - name: Verify compiled Vite assets on ARM64
+        run: >-
+          docker run --rm --entrypoint php nextgn-tracker:arm64
+          /app/tools/verify-vite-assets.php
+
+      - name: Verify installed PHP production requirements on ARM64
+        run: >-
+          docker run --rm --entrypoint composer nextgn-tracker:arm64
+          check-platform-reqs --no-dev
+
+      - name: Verify FrankenPHP on ARM64
+        run: |
+          docker run --rm nextgn-tracker:arm64 frankenphp version \
+            || docker run --rm nextgn-tracker:arm64 frankenphp --version
+
+      - name: Verify runtime user is non-root on ARM64
+        run: |
+          runtime_user="$(docker run --rm --entrypoint id nextgn-tracker:arm64)"
+          echo "$runtime_user"
+          if echo "$runtime_user" | grep -q 'uid=0'; then
+            echo "Docker image must not start as root." >&2
+            exit 1
+          fi
+
+      - name: Validate FrankenPHP configuration on ARM64
+        run: >-
+          docker run --rm nextgn-tracker:arm64
+          frankenphp validate
+          --config /app/deploy/frankenphp/Caddyfile
+          --adapter caddyfile
