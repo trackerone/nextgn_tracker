@@ -468,127 +468,125 @@ body {
   margin: -.25rem 0 .1rem;
 }
 
-/* Approved cinematic reference refinement — v2. The photographic background
-   is delivered as a local WebP asset (never a third-party hotlink). */
+/* Floating portal revision: keep the existing card width and tuck the
+   feature row inside it, without increasing overall dimensions. */
 .nextgn-auth-scene {
-  background: #050915 url("/images/nextgn-auth-cinematic-background.webp") center center / cover no-repeat;
+  background: #050915 url("/images/NEXTGN-Fullscreen-Cinematic.webp") center center / cover no-repeat;
+  filter: none;
 }
 
 .nextgn-auth-scene::after {
-  background:
-    radial-gradient(ellipse 33% 50% at 50% 48%, rgba(2, 5, 15, .09), transparent 100%),
-    linear-gradient(180deg, rgba(1, 4, 11, .12) 0%, transparent 18%, transparent 76%, rgba(1, 4, 11, .60) 100%);
+  background: linear-gradient(180deg, rgba(1, 4, 14, .06), rgba(1, 4, 14, 0) 38%, rgba(1, 4, 14, .13) 100%);
 }
 
 .nextgn-auth-layout {
-  gap: clamp(2rem, 5vh, 3.4rem);
-  padding: clamp(2rem, 5vh, 3.8rem) 1.25rem 2rem;
+  gap: 0;
+  padding: 1.5rem 1rem;
 }
 
 .nextgn-auth-card {
   width: min(100%, clamp(720px, 44vw, 880px));
-  padding: clamp(3rem, 5vw, 4.25rem) clamp(2rem, 5.5vw, 5.4rem) clamp(2.4rem, 4vw, 3.25rem);
-  border: 1px solid rgba(167, 128, 253, .61);
-  border-radius: 43px;
-  background:
-    linear-gradient(145deg, rgba(23, 29, 48, .94) 0%, rgba(7, 13, 28, .96) 55%, rgba(12, 13, 36, .96) 100%);
-  box-shadow:
-    0 48px 115px rgba(0, 0, 0, .77),
-    0 0 70px rgba(109, 64, 221, .28),
-    inset 0 2px 0 rgba(204, 175, 255, .18),
-    inset 0 -3px 0 rgba(164, 81, 255, .65);
+  padding: clamp(1.9rem, 3.1vw, 2.8rem) clamp(2rem, 5.5vw, 5.4rem) 1.35rem;
+  border: 1px solid rgba(202, 164, 255, .64);
+  border-radius: 38px;
+  background: linear-gradient(145deg, rgba(23, 29, 50, .80), rgba(6, 11, 27, .81) 62%, rgba(12, 10, 33, .79));
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow: 0 38px 105px rgba(0, 0, 0, .64),
+              0 0 62px rgba(115, 45, 241, .25),
+              inset 0 1px 0 rgba(255, 255, 255, .26),
+              inset 0 0 34px rgba(130, 83, 244, .10),
+              inset 0 -3px 0 rgba(153, 76, 255, .66);
 }
 
 .nextgn-auth-card::before {
-  top: -65px;
-  left: -65px;
-  width: 225px;
-  height: 115px;
-  filter: blur(38px);
-  background: rgba(137, 81, 255, .40);
+  top: -55px;
+  left: -48px;
+  background: rgba(149, 95, 255, .39);
 }
 
 .nextgn-auth-card::after {
-  right: -75px;
-  bottom: -115px;
-  width: 275px;
-  height: 205px;
-  filter: blur(45px);
-  background: rgba(153, 61, 251, .51);
+  right: -58px;
+  bottom: -60px;
+  background: rgba(146, 53, 235, .47);
 }
 
 .nextgn-auth-wordmark {
-  font-size: clamp(4.45rem, 7.6vw, 6.25rem);
-  padding: .25rem .4rem .4rem;
-  letter-spacing: -.10em;
+  font-size: clamp(4.1rem, 6.6vw, 5.45rem);
 }
 
 .nextgn-auth-eyebrow {
-  margin-top: .6rem;
-  font-size: .83rem;
-  letter-spacing: .43em;
+  margin-top: .2rem;
 }
 
 .nextgn-auth-values {
-  gap: .8rem;
-  margin: 1.9rem 0 2.3rem;
-  padding: 1.55rem 0 0;
-  font-size: 1rem;
-  letter-spacing: .07em;
+  gap: .6rem;
+  margin: 1rem 0 1.3rem;
+  padding-top: 1rem;
+  font-size: .84rem;
+  letter-spacing: .065em;
 }
 
 .nextgn-auth-form {
-  gap: 1.15rem;
+  gap: .75rem;
 }
 
 .nextgn-auth-field {
-  min-height: 65px;
-  padding: 0 1.25rem;
-}
-
-.nextgn-auth-field input {
-  font-size: 1.1rem;
+  min-height: 55px;
+  background: rgba(8, 12, 30, .48);
+  border-color: rgba(177, 185, 226, .35);
 }
 
 .nextgn-auth-submit {
-  min-height: 68px;
-  margin-top: .4rem;
-  font-size: 1.25rem;
+  min-height: 56px;
+  margin-top: .2rem;
 }
 
 .nextgn-auth-register {
-  margin-top: 2.3rem;
-  padding-top: 1.8rem;
-  font-size: 1.05rem;
+  margin-top: 1.1rem;
+  padding-top: 1rem;
 }
 
 .nextgn-auth-highlights {
-  gap: 1rem 0;
-  max-width: 1200px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  max-width: none;
+  width: 100%;
+  margin-top: 1rem;
+  padding-top: .9rem;
+  border-top: 1px solid rgba(179, 191, 224, .16);
 }
 
 .nextgn-auth-highlight {
-  padding: .45rem 1.6rem;
-  font-size: .94rem;
+  justify-content: center;
+  gap: .32rem;
+  padding: .15rem .25rem;
+  font-size: .69rem;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
 
 .nextgn-auth-highlight svg {
-  width: 29px;
-  height: 29px;
+  display: block;
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+}
+
+.nextgn-auth-card--register {
+  padding: 2.2rem 2rem;
 }
 
 @media (max-width: 740px) {
   .nextgn-auth-layout {
-    gap: 1.7rem;
-    padding: 1.4rem .9rem 1.7rem;
-  }
-
-  .nextgn-auth-scene {
-    background-position: center;
+    padding: 1rem .75rem;
   }
 
   .nextgn-auth-card {
-    padding: 2.25rem 1.3rem 1.8rem;
+    width: 100%;
+    padding: 1.8rem 1.2rem 1.25rem;
     border-radius: 28px;
   }
 
@@ -596,152 +594,34 @@ body {
     font-size: clamp(3.25rem, 12vw, 4.4rem);
   }
 
-  .nextgn-auth-eyebrow {
-    font-size: .62rem;
-    letter-spacing: .29em;
-  }
-
   .nextgn-auth-values {
-    margin: 1.3rem 0 1.65rem;
-    gap: .4rem;
-    font-size: .73rem;
-    letter-spacing: .035em;
+    margin: 1rem 0 1.25rem;
+    font-size: .68rem;
+    gap: .33rem;
   }
 
-  .nextgn-auth-field {
-    min-height: 57px;
+  .nextgn-auth-highlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: .6rem;
   }
 
-  .nextgn-auth-submit {
-    min-height: 60px;
+  .nextgn-auth-highlight:nth-child(2) {
+    border-right: 0;
   }
 
   .nextgn-auth-highlight {
-    width: 50%;
-    padding: .5rem .3rem;
-    font-size: .74rem;
+    width: auto;
   }
 
-  .nextgn-auth-highlight svg {
-    width: 22px;
-    height: 22px;
+  .nextgn-auth-card--register {
+    padding: 1.8rem 1.2rem;
   }
 }
 
-@media (max-width: 420px) {
-  .nextgn-auth-values {
-    gap: .27rem;
-    font-size: .64rem;
+@media (prefers-reduced-transparency: reduce) {
+  .nextgn-auth-card {
+    background: rgba(9, 12, 29, .96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
-}
-
-/* Media wall extends across the whole viewport, including behind the card.
-   Each tile is a CSS view onto one edge of the locally hosted cinematic art.
-   The art is intentionally repeated at differing scale and angle; no raster
-   editing and no third-party image requests are required. */
-.nextgn-auth-gallery {
-  position: absolute;
-  inset: -5%;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.nextgn-auth-gallery-tile {
-  position: absolute;
-  display: block;
-  width: clamp(230px, 23vw, 390px);
-  aspect-ratio: 1.7 / 1;
-  border: 2px solid rgba(132, 154, 203, .34);
-  border-radius: 20px;
-  background-image: url("/images/nextgn-auth-cinematic-background.webp");
-  background-repeat: no-repeat;
-  background-size: 400% auto;
-  box-shadow: 0 16px 46px rgba(0,0,0,.52), 0 0 32px rgba(75, 80, 161, .18);
-  filter: brightness(1.28) saturate(1.18);
-}
-
-.tile-top-one {
-  left: 25%;
-  top: -8%;
-  background-position: 0% 16%;
-  transform: rotate(-10deg);
-}
-.tile-top-two {
-  left: 46%;
-  top: -9%;
-  background-position: 100% 12%;
-  transform: rotate(10deg);
-}
-.tile-top-three {
-  left: 68%;
-  top: -4%;
-  background-position: 0% 59%;
-  transform: rotate(-9deg);
-}
-.tile-mid-left {
-  left: 19%;
-  top: 33%;
-  background-position: 0% 62%;
-  transform: rotate(11deg);
-}
-.tile-mid-right {
-  right: 17%;
-  top: 32%;
-  background-position: 100% 61%;
-  transform: rotate(-8deg);
-}
-.tile-bottom-one {
-  left: 22%;
-  bottom: -7%;
-  background-position: 100% 67%;
-  transform: rotate(8deg);
-}
-.tile-bottom-two {
-  left: 44%;
-  bottom: -14%;
-  background-position: 0% 13%;
-  transform: rotate(-12deg);
-}
-.tile-bottom-three {
-  left: 65%;
-  bottom: -8%;
-  background-position: 100% 23%;
-  transform: rotate(7deg);
-}
-
-/* Retain a legible glass foreground without covering the media backdrop. */
-.nextgn-auth-scene::after {
-  background:
-    linear-gradient(180deg, rgba(2, 5, 14, .12), transparent 20%, transparent 76%, rgba(2, 5, 14, .25));
-}
-
-@media (max-width: 740px) {
-  .nextgn-auth-gallery-tile {
-    width: clamp(140px, 46vw, 250px);
-    border-radius: 14px;
-  }
-  .tile-top-one { left: -13%; top: 1%; }
-  .tile-top-two { left: 45%; top: -5%; }
-  .tile-top-three { left: 83%; top: 15%; }
-  .tile-mid-left { left: -18%; top: 35%; }
-  .tile-mid-right { right: -18%; top: 39%; }
-  .tile-bottom-one { left: -15%; bottom: 3%; }
-  .tile-bottom-two { left: 37%; bottom: -11%; }
-  .tile-bottom-three { left: 88%; bottom: 1%; }
-}
-
-/* FINAL PHOTO-BACKDROP COMPOSITION
-   Single real backdrop fills the whole viewport; the Laravel form is
-   rendered separately above it. No pseudo poster outlines or SVG tiles. */
-.nextgn-auth-scene {
-  background: #050915 url("/images/NEXTGN-Fullscreen-Cinematic.webp") center center / cover no-repeat;
-}
-.nextgn-auth-gallery {
-  display: none;
-}
-.nextgn-auth-scene::after {
-  background: linear-gradient(180deg, rgba(1,4,14,.08), rgba(1,4,14,.05) 35%, rgba(1,4,14,.12) 70%, rgba(1,4,14,.4));
-}
-.nextgn-auth-card {
-  background: linear-gradient(145deg, rgba(19,24,44,.92), rgba(4,8,23,.94) 55%, rgba(11,10,30,.94));
 }
