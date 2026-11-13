@@ -471,7 +471,7 @@ body {
 /* Floating portal revision: keep the existing card width and tuck the
    feature row inside it, without increasing overall dimensions. */
 .nextgn-auth-scene {
-  background: #050915 url("/images/NEXTGN-Fullscreen-Cinematic.webp") center center / cover no-repeat;
+  background: #050915 url("/images/NEXTGN-Fullscreen-Cinematic-v2.webp") center center / cover no-repeat;
   filter: none;
 }
 
