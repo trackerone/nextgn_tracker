@@ -729,3 +729,19 @@ body {
   .tile-bottom-two { left: 37%; bottom: -11%; }
   .tile-bottom-three { left: 88%; bottom: 1%; }
 }
+
+/* FINAL PHOTO-BACKDROP COMPOSITION
+   Single real backdrop fills the whole viewport; the Laravel form is
+   rendered separately above it. No pseudo poster outlines or SVG tiles. */
+.nextgn-auth-scene {
+  background: #050915 url("/images/NEXTGN-Fullscreen-Cinematic.webp") center center / cover no-repeat;
+}
+.nextgn-auth-gallery {
+  display: none;
+}
+.nextgn-auth-scene::after {
+  background: linear-gradient(180deg, rgba(1,4,14,.08), rgba(1,4,14,.05) 35%, rgba(1,4,14,.12) 70%, rgba(1,4,14,.4));
+}
+.nextgn-auth-card {
+  background: linear-gradient(145deg, rgba(19,24,44,.92), rgba(4,8,23,.94) 55%, rgba(11,10,30,.94));
+}
