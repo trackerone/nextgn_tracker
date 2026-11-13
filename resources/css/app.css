@@ -634,3 +634,98 @@ body {
     font-size: .64rem;
   }
 }
+
+/* Media wall extends across the whole viewport, including behind the card.
+   Each tile is a CSS view onto one edge of the locally hosted cinematic art.
+   The art is intentionally repeated at differing scale and angle; no raster
+   editing and no third-party image requests are required. */
+.nextgn-auth-gallery {
+  position: absolute;
+  inset: -5%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.nextgn-auth-gallery-tile {
+  position: absolute;
+  display: block;
+  width: clamp(230px, 23vw, 390px);
+  aspect-ratio: 1.7 / 1;
+  border: 2px solid rgba(132, 154, 203, .34);
+  border-radius: 20px;
+  background-image: url("/images/nextgn-auth-cinematic-background.webp");
+  background-repeat: no-repeat;
+  background-size: 400% auto;
+  box-shadow: 0 16px 46px rgba(0,0,0,.52), 0 0 32px rgba(75, 80, 161, .18);
+  filter: brightness(1.28) saturate(1.18);
+}
+
+.tile-top-one {
+  left: 25%;
+  top: -8%;
+  background-position: 0% 16%;
+  transform: rotate(-10deg);
+}
+.tile-top-two {
+  left: 46%;
+  top: -9%;
+  background-position: 100% 12%;
+  transform: rotate(10deg);
+}
+.tile-top-three {
+  left: 68%;
+  top: -4%;
+  background-position: 0% 59%;
+  transform: rotate(-9deg);
+}
+.tile-mid-left {
+  left: 19%;
+  top: 33%;
+  background-position: 0% 62%;
+  transform: rotate(11deg);
+}
+.tile-mid-right {
+  right: 17%;
+  top: 32%;
+  background-position: 100% 61%;
+  transform: rotate(-8deg);
+}
+.tile-bottom-one {
+  left: 22%;
+  bottom: -7%;
+  background-position: 100% 67%;
+  transform: rotate(8deg);
+}
+.tile-bottom-two {
+  left: 44%;
+  bottom: -14%;
+  background-position: 0% 13%;
+  transform: rotate(-12deg);
+}
+.tile-bottom-three {
+  left: 65%;
+  bottom: -8%;
+  background-position: 100% 23%;
+  transform: rotate(7deg);
+}
+
+/* Retain a legible glass foreground without covering the media backdrop. */
+.nextgn-auth-scene::after {
+  background:
+    linear-gradient(180deg, rgba(2, 5, 14, .12), transparent 20%, transparent 76%, rgba(2, 5, 14, .25));
+}
+
+@media (max-width: 740px) {
+  .nextgn-auth-gallery-tile {
+    width: clamp(140px, 46vw, 250px);
+    border-radius: 14px;
+  }
+  .tile-top-one { left: -13%; top: 1%; }
+  .tile-top-two { left: 45%; top: -5%; }
+  .tile-top-three { left: 83%; top: 15%; }
+  .tile-mid-left { left: -18%; top: 35%; }
+  .tile-mid-right { right: -18%; top: 39%; }
+  .tile-bottom-one { left: -15%; bottom: 3%; }
+  .tile-bottom-two { left: 37%; bottom: -11%; }
+  .tile-bottom-three { left: 88%; bottom: 1%; }
+}
