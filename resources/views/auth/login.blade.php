@@ -10,7 +10,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
     <body class="nextgn-auth-body">
-        <div class="nextgn-auth-scene" aria-hidden="true"></div>
+        @include('partials.auth-scene')
 
         <main class="nextgn-auth-layout">
             <section class="nextgn-auth-card" aria-labelledby="nextgn-login-heading">
