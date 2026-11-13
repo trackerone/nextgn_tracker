@@ -467,3 +467,170 @@ body {
 .nextgn-auth-field-note {
   margin: -.25rem 0 .1rem;
 }
+
+/* Approved cinematic reference refinement — v2. The photographic background
+   is delivered as a local WebP asset (never a third-party hotlink). */
+.nextgn-auth-scene {
+  background: #050915 url("/images/nextgn-auth-cinematic-background.webp") center center / cover no-repeat;
+}
+
+.nextgn-auth-scene::after {
+  background:
+    radial-gradient(ellipse 33% 50% at 50% 48%, rgba(2, 5, 15, .09), transparent 100%),
+    linear-gradient(180deg, rgba(1, 4, 11, .12) 0%, transparent 18%, transparent 76%, rgba(1, 4, 11, .60) 100%);
+}
+
+.nextgn-auth-layout {
+  gap: clamp(2rem, 5vh, 3.4rem);
+  padding: clamp(2rem, 5vh, 3.8rem) 1.25rem 2rem;
+}
+
+.nextgn-auth-card {
+  width: min(100%, 790px);
+  padding: clamp(3rem, 5vw, 4.25rem) clamp(2rem, 5.5vw, 5.4rem) clamp(2.4rem, 4vw, 3.25rem);
+  border: 1px solid rgba(167, 128, 253, .61);
+  border-radius: 43px;
+  background:
+    linear-gradient(145deg, rgba(23, 29, 48, .94) 0%, rgba(7, 13, 28, .96) 55%, rgba(12, 13, 36, .96) 100%);
+  box-shadow:
+    0 48px 115px rgba(0, 0, 0, .77),
+    0 0 70px rgba(109, 64, 221, .28),
+    inset 0 2px 0 rgba(204, 175, 255, .18),
+    inset 0 -3px 0 rgba(164, 81, 255, .65);
+}
+
+.nextgn-auth-card::before {
+  top: -65px;
+  left: -65px;
+  width: 225px;
+  height: 115px;
+  filter: blur(38px);
+  background: rgba(137, 81, 255, .40);
+}
+
+.nextgn-auth-card::after {
+  right: -75px;
+  bottom: -115px;
+  width: 275px;
+  height: 205px;
+  filter: blur(45px);
+  background: rgba(153, 61, 251, .51);
+}
+
+.nextgn-auth-wordmark {
+  font-size: clamp(4.45rem, 7.6vw, 6.25rem);
+  padding: .25rem .4rem .4rem;
+  letter-spacing: -.10em;
+}
+
+.nextgn-auth-eyebrow {
+  margin-top: .6rem;
+  font-size: .83rem;
+  letter-spacing: .43em;
+}
+
+.nextgn-auth-values {
+  gap: .8rem;
+  margin: 1.9rem 0 2.3rem;
+  padding: 1.55rem 0 0;
+  font-size: 1rem;
+  letter-spacing: .07em;
+}
+
+.nextgn-auth-form {
+  gap: 1.15rem;
+}
+
+.nextgn-auth-field {
+  min-height: 65px;
+  padding: 0 1.25rem;
+}
+
+.nextgn-auth-field input {
+  font-size: 1.1rem;
+}
+
+.nextgn-auth-submit {
+  min-height: 68px;
+  margin-top: .4rem;
+  font-size: 1.25rem;
+}
+
+.nextgn-auth-register {
+  margin-top: 2.3rem;
+  padding-top: 1.8rem;
+  font-size: 1.05rem;
+}
+
+.nextgn-auth-highlights {
+  gap: 1rem 0;
+  max-width: 1200px;
+}
+
+.nextgn-auth-highlight {
+  padding: .45rem 1.6rem;
+  font-size: .94rem;
+}
+
+.nextgn-auth-highlight svg {
+  width: 29px;
+  height: 29px;
+}
+
+@media (max-width: 740px) {
+  .nextgn-auth-layout {
+    gap: 1.7rem;
+    padding: 1.4rem .9rem 1.7rem;
+  }
+
+  .nextgn-auth-scene {
+    background-position: center;
+  }
+
+  .nextgn-auth-card {
+    padding: 2.25rem 1.3rem 1.8rem;
+    border-radius: 28px;
+  }
+
+  .nextgn-auth-wordmark {
+    font-size: clamp(3.25rem, 12vw, 4.4rem);
+  }
+
+  .nextgn-auth-eyebrow {
+    font-size: .62rem;
+    letter-spacing: .29em;
+  }
+
+  .nextgn-auth-values {
+    margin: 1.3rem 0 1.65rem;
+    gap: .4rem;
+    font-size: .73rem;
+    letter-spacing: .035em;
+  }
+
+  .nextgn-auth-field {
+    min-height: 57px;
+  }
+
+  .nextgn-auth-submit {
+    min-height: 60px;
+  }
+
+  .nextgn-auth-highlight {
+    width: 50%;
+    padding: .5rem .3rem;
+    font-size: .74rem;
+  }
+
+  .nextgn-auth-highlight svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (max-width: 420px) {
+  .nextgn-auth-values {
+    gap: .27rem;
+    font-size: .64rem;
+  }
+}
