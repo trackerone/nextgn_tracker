@@ -42,6 +42,7 @@ final class TorrentUploadRules
         ];
 
         return [
+            'metadata_reviewed' => ['sometimes', 'boolean'],
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'type' => ['required', 'string', 'in:movie,tv,music,game,software,other'],

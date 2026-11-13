@@ -25,8 +25,10 @@
         @else
             <p class="mt-4 text-sm leading-6 text-slate-400">Scan the QR code with a TOTP-compatible authenticator app. Then enter the current six-digit code to confirm the setup.</p>
 
-            <div class="mt-6 grid gap-6 md:grid-cols-[auto_1fr]">
-                <div class="rounded-2xl bg-white p-4 text-slate-950">{!! $qrCodeSvg !!}</div>
+            <div class="mt-6 grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+                <div class="h-56 w-56 max-w-full self-start rounded-2xl bg-white p-4 text-slate-950">
+                    <img src="data:image/svg+xml;base64,{{ base64_encode($qrCodeSvg) }}" width="192" height="192" class="h-full w-full" alt="Scan this QR code in your authenticator app">
+                </div>
                 <div>
                     <p class="text-sm font-semibold text-white">Manual setup key</p>
                     <code class="mt-2 block break-all rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-brand">{{ $secretKey }}</code>

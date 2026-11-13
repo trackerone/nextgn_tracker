@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Security\SanitizationService;
 use App\Services\Uploads\UploadPathGenerator;
+use App\Support\Torrents\TorrentPayloadFiles;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -49,8 +50,9 @@ final class TorrentIngestService
 
         $name = $this->sanitizeName($attributes['name'] ?? $this->extractName($info));
         $slug = $this->generateUniqueSlug($name);
-        $sizeBytes = $this->calculateSizeBytes($info);
-        $fileCount = $this->calculateFileCount($info);
+        $stats = TorrentPayloadFiles::stats($info);
+        $sizeBytes = $stats['size'];
+        $fileCount = $stats['count'];
 
         $storageDirectory = (string) config('upload.torrents.directory', 'torrents');
         $storageDisk = (string) config('upload.torrents.disk', 'torrents');
@@ -124,48 +126,6 @@ final class TorrentIngestService
         }
 
         return $name;
-    }
-
-    /**
-     * @param  array<string, mixed>  $info
-     */
-    private function calculateSizeBytes(array $info): int
-    {
-        if (isset($info['length']) && is_numeric($info['length'])) {
-            return (int) $info['length'];
-        }
-
-        $files = $info['files'] ?? null;
-
-        if (! is_array($files) || $files === []) {
-            throw new InvalidArgumentException('Torrent files metadata is missing.');
-        }
-
-        $total = 0;
-
-        foreach ($files as $file) {
-            $length = $file['length'] ?? null;
-
-            if (! is_numeric($length)) {
-                throw new InvalidArgumentException('Torrent file entry is missing length.');
-            }
-
-            $total += (int) $length;
-        }
-
-        return $total;
-    }
-
-    /**
-     * @param  array<string, mixed>  $info
-     */
-    private function calculateFileCount(array $info): int
-    {
-        if (isset($info['files']) && is_array($info['files'])) {
-            return count($info['files']);
-        }
-
-        return 1;
     }
 
     private function sanitizeName(string $name): string

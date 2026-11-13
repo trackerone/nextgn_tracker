@@ -4,23 +4,23 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>@yield('title', config('app.name', 'NextGN Tracker'))</title>
+        <title>@yield('title', config('app.name', 'NEXTGN'))</title>
         @yield('meta')
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
     <body class="min-h-screen bg-slate-950 font-sans text-slate-100">
         @php
-            $navLink = 'rounded-full px-3 py-2 text-sm font-medium transition hover:bg-slate-800/80 hover:text-white';
+            $navLink = 'shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition hover:bg-slate-800/80 hover:text-white';
             $activeNavLink = 'bg-brand/15 text-brand ring-1 ring-brand/30';
             $inactiveNavLink = 'text-slate-300';
         @endphp
         <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-            <div class="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 md:px-6">
+            <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 md:px-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NextGN Tracker') }} dashboard">
+                    <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NEXTGN') }} dashboard">
                         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
                         <span>
-                            <span class="block text-base font-semibold leading-tight text-white">{{ config('app.name', 'NextGN Tracker') }}</span>
+                            <span class="block text-base font-semibold leading-tight text-white">{{ config('app.name', 'NEXTGN') }}</span>
                             <span class="block text-xs font-medium text-slate-500 group-hover:text-slate-400">Community tracker</span>
                         </span>
                     </a>
@@ -39,7 +39,7 @@
                 </div>
 
                 @auth
-                    <nav class="flex gap-2 overflow-x-auto pb-1" aria-label="Primary navigation">
+                    <nav class="flex flex-wrap items-center gap-1" aria-label="Primary navigation">
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
                         <a href="{{ route('torrents.upload') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.upload') ? $activeNavLink : $inactiveNavLink }}">Upload</a>
@@ -67,7 +67,7 @@
                 @endauth
             </div>
         </header>
-        <main class="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
+        <main class="mx-auto w-full max-w-[1600px] px-4 py-8 md:px-6">
             @if (session('status'))
                 <div class="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ session('status') }}
@@ -87,5 +87,6 @@
 
             @yield('content')
         </main>
+        @stack('scripts')
     </body>
 </html>

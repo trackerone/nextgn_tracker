@@ -7,7 +7,7 @@ use App\Models\Torrent;
 use App\Models\TorrentMetadata;
 use Illuminate\Support\ViewErrorBag;
 
-it('keeps browse rows clean while preserving metadata on details', function (): void {
+it('shows useful language metadata in browse and on details', function (): void {
     $user = createUserWithRole('user1');
     $torrent = Torrent::factory()->create([
         'name' => 'Feature.Film.2026.1080p.WEB-DL-GRP',
@@ -35,9 +35,9 @@ it('keeps browse rows clean while preserving metadata on details', function (): 
         ->get(route('torrents.index', ['grouped' => '0']))
         ->assertOk()
         ->assertSee('Feature.Film.2026.1080p.WEB-DL-GRP')
-        ->assertDontSee('Lang: EN')
-        ->assertDontSee('Audio: JA')
-        ->assertDontSee('Subs: EN,JA,ES');
+        ->assertSee('Lang: EN')
+        ->assertSee('Audio: JA')
+        ->assertSee('Subs: EN,JA,ES');
 
     $this->actingAs($user)
         ->get(route('torrents.show', ['torrent' => $torrent]))
