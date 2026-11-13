@@ -486,7 +486,7 @@ body {
 }
 
 .nextgn-auth-card {
-  width: min(100%, 790px);
+  width: min(100%, clamp(720px, 44vw, 880px));
   padding: clamp(3rem, 5vw, 4.25rem) clamp(2rem, 5.5vw, 5.4rem) clamp(2.4rem, 4vw, 3.25rem);
   border: 1px solid rgba(167, 128, 253, .61);
   border-radius: 43px;
