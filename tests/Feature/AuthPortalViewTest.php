@@ -14,7 +14,9 @@ class AuthPortalViewTest extends TestCase
             ->assertOk()
             ->assertSee('nextgn-auth-card')
             ->assertSee('Private community tracker')
-            ->assertSee('Metadata-first discovery')
+            ->assertSee('Verified releases')
+            ->assertSee('Discovery')
+            ->assertSee('Active community')
             ->assertSee('Create an account')
             ->assertSee('name="email"', false)
             ->assertSee('name="password"', false);
