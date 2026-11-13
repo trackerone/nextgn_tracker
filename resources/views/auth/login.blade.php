@@ -96,7 +96,6 @@
                         <a href="{{ route('register') }}">Create an account</a>
                     </div>
                 @endif
-            </section>
 
             <footer class="nextgn-auth-highlights" aria-label="NextGN principles">
                 <div class="nextgn-auth-highlight">
@@ -128,6 +127,9 @@
                     <span>Active community</span>
                 </div>
             </footer>
+            </section>
+
+
         </main>
     </body>
 </html>
