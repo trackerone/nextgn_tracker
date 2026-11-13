@@ -117,7 +117,7 @@
                         <circle cx="11" cy="11" r="7" />
                         <path d="m16.5 16.5 5 5M8 11h6M11 8v6" />
                     </svg>
-                    <span>Metadata-first discovery</span>
+                    <span>Discovery</span>
                 </div>
                 <div class="nextgn-auth-highlight">
                     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
