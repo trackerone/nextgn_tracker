@@ -421,3 +421,49 @@ body {
     transition: none;
   }
 }
+
+/* Invite-based registration keeps the same floating portal styling. */
+.nextgn-auth-card--register {
+  max-width: 650px;
+}
+
+.nextgn-auth-card--register .nextgn-auth-wordmark {
+  font-size: clamp(2.8rem, 6vw, 4.2rem);
+}
+
+.nextgn-auth-card--register .nextgn-auth-field {
+  min-height: 54px;
+}
+
+.nextgn-auth-card--register .nextgn-auth-form {
+  gap: .85rem;
+}
+
+.nextgn-auth-register-heading {
+  margin: 1.4rem 0 1.5rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid rgba(195, 199, 222, .11);
+  text-align: center;
+}
+
+.nextgn-auth-register-heading h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 750;
+}
+
+.nextgn-auth-register-heading p,
+.nextgn-auth-field-note {
+  color: #abb5cd;
+  font-size: .83rem;
+  line-height: 1.5;
+}
+
+.nextgn-auth-register-heading p {
+  margin: .4rem 0 0;
+}
+
+.nextgn-auth-field-note {
+  margin: -.25rem 0 .1rem;
+}
