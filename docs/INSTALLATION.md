@@ -79,6 +79,8 @@ npm install
 php artisan key:generate
 php artisan migrate
 php artisan storage:link
+php artisan db:seed --class=RoleSeeder
+php artisan db:seed --class=CategorySeeder
 ```
 
 Common failures:
@@ -142,3 +144,19 @@ Use this after `.env` changes, DB driver changes, or route/config edits that do 
 
 - For frontend/npm/Vite details, see [FRONTEND-SETUP.md](FRONTEND-SETUP.md).
 - For production deployment and runtime operations, see [PRODUCTION-OPERATIONS.md](PRODUCTION-OPERATIONS.md).
+
+
+## Local function-test fixes
+
+The upload form accepts a torrent and optional NFO first. Use **Analyse files** to preview detected metadata before submitting. DOS/CP437 NFO artwork and Windows-1252 text are converted to UTF-8; unmarked legacy encodings remain heuristic. Multiple distinct IMDb IDs trigger a collection warning instead of silently choosing one film.
+
+Existing uploads can have padding included in their stored file count and display size. Preview corrections, then apply them explicitly:
+
+```bash
+php artisan torrents:refresh-file-stats
+php artisan torrents:refresh-file-stats --apply
+```
+
+This updates database statistics only. It does not rewrite stored `.torrent` payloads, hashes, pieces, or announce URLs.
+
+After merging the route fix, a test server with the earlier manual `routes/web.php` patch should inspect `git diff -- routes/web.php`. If that diff contains only the already-merged route move, restore that file before pulling. Preserve any other local changes. Rebuild assets and clear route/view caches after updating.

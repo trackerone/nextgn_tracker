@@ -15,6 +15,8 @@ final class TorrentMetadataPresenter
         $rows = [
             self::fact('Type', self::formatType($metadata['type'] ?? null)),
             self::fact('Resolution', self::formatResolution($metadata['resolution'] ?? null)),
+            self::fact('Video codec', self::formatText($metadata['video_codec'] ?? null)),
+            self::fact('Audio codec', self::formatText($metadata['audio_codec'] ?? null)),
             self::fact('Source', self::formatText($metadata['source'] ?? null)),
             self::fact('Release group', self::formatText($metadata['release_group'] ?? null)),
             self::fact('Year', self::formatYear($metadata['year'] ?? null)),

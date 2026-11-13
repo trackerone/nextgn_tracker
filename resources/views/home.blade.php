@@ -60,7 +60,8 @@
         </section>
 
 
-        <section class="rounded-2xl border border-brand/30 bg-brand/10 p-5">
+        <details class="rounded-2xl border border-brand/30 bg-brand/10 p-5">
+            <summary class="cursor-pointer text-sm font-semibold text-slate-200">Tracker quick start</summary>
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.2em] text-brand">Core tracker path</p>
@@ -80,7 +81,7 @@
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">4. Download</span><br>Use the personalized .torrent file.</li>
                 <li class="rounded-xl border border-slate-800 bg-slate-950/40 p-3"><span class="font-semibold text-white">5. Follow</span><br>Save updates with metadata.</li>
             </ol>
-        </section>
+        </details>
 
         <section class="grid gap-4 md:grid-cols-3">
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">

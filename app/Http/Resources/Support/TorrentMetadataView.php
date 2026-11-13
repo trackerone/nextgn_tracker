@@ -91,6 +91,10 @@ final class TorrentMetadataView
     public function toArray(): array
     {
         $metadata = $this->metadata();
+        $rawPayload = $metadata?->raw_payload;
+        $payload = is_array($rawPayload) ? $rawPayload : [];
+        $codecs = $this->torrent->codecs;
+        $legacyCodecs = is_array($codecs) ? $codecs : [];
 
         return [
             'title' => $metadata?->title,
@@ -105,8 +109,15 @@ final class TorrentMetadataView
             'subtitles' => $metadata?->subtitles,
             'imdb_id' => $metadata !== null ? $metadata->imdb_id : $this->torrent->imdb_id,
             'tmdb_id' => $metadata !== null ? $metadata->tmdb_id : $this->torrent->tmdb_id,
+            'video_codec' => $this->codecText($payload['video_codec'] ?? $legacyCodecs['video'] ?? null),
+            'audio_codec' => $this->codecText($payload['audio_codec'] ?? $legacyCodecs['audio'] ?? null),
             'nfo' => $metadata !== null ? $metadata->nfo : $this->torrent->nfo_text,
         ];
+    }
+
+    private function codecText(mixed $value): ?string
+    {
+        return is_string($value) && trim($value) !== '' ? trim($value) : null;
     }
 
     private function metadata(): ?TorrentMetadata

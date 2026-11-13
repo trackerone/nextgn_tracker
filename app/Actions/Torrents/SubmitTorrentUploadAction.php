@@ -91,7 +91,10 @@ final class SubmitTorrentUploadAction
                 'tags' => $data['tags'] ?? null,
                 'source' => $data['source'] ?? $metadata->source,
                 'resolution' => $data['resolution'] ?? $metadata->resolution,
-                'codecs' => $data['codecs'] ?? null,
+                'codecs' => array_filter([
+                    'video' => $data['codecs']['video'] ?? $metadata->videoCodec,
+                    'audio' => $data['codecs']['audio'] ?? $metadata->audioCodec,
+                ]),
                 'nfo_text' => $metadata->rawNfo,
                 'nfo_storage_path' => $nfoStoragePath,
                 'imdb_id' => $data['imdb_id'] ?? $metadata->imdbId,
@@ -177,10 +180,26 @@ final class SubmitTorrentUploadAction
             'subtitle_language',
             'subtitles',
         ] as $field) {
-            if (array_key_exists($field, $data)) {
+            if (isset($data[$field]) && $data[$field] !== '') {
                 $attributes[$field] = $data[$field];
             }
         }
+
+        if (($data['metadata_reviewed'] ?? false) === true || ($data['metadata_reviewed'] ?? null) === '1') {
+            foreach (['source', 'resolution'] as $field) {
+                if (isset($data[$field]) && $data[$field] !== '') {
+                    $attributes[$field] = $data[$field];
+                }
+            }
+        }
+
+        $rawPayload = is_array($attributes['raw_payload'] ?? null) ? $attributes['raw_payload'] : [];
+        foreach (['video' => 'video_codec', 'audio' => 'audio_codec'] as $input => $field) {
+            if (isset($data['codecs'][$input]) && $data['codecs'][$input] !== '') {
+                $rawPayload[$field] = $data['codecs'][$input];
+            }
+        }
+        $attributes['raw_payload'] = $rawPayload;
 
         return CanonicalTorrentMetadata::fromArray($attributes);
     }

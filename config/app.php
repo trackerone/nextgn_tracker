@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'name' => env('APP_NAME', 'NextGN Tracker'),
+    'name' => env('APP_NAME') === 'Laravel' ? 'NEXTGN' : env('APP_NAME', 'NEXTGN'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'https://nextgn-tracker.local'),
