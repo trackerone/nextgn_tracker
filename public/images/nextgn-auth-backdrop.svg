@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-label="Abstract cinematic release artwork">
+  <defs>
+    <radialGradient id="night"><stop stop-color="#1b1b3b"/><stop offset=".63" stop-color="#091523"/><stop offset="1" stop-color="#030812"/></radialGradient>
+    <linearGradient id="space" x2=".8" y2="1"><stop stop-color="#13344e"/><stop offset=".48" stop-color="#081a2e"/><stop offset="1" stop-color="#020b16"/></linearGradient>
+    <linearGradient id="mountain" x2=".8" y2="1"><stop stop-color="#376e9b"/><stop offset=".55" stop-color="#194361"/><stop offset="1" stop-color="#09151c"/></linearGradient>
+    <linearGradient id="portrait" x2="1" y2="1"><stop stop-color="#283d58"/><stop offset=".5" stop-color="#182331"/><stop offset="1" stop-color="#070d1b"/></linearGradient>
+    <linearGradient id="portraitSkin" x2="1" y2=".9"><stop stop-color="#c9ad9f"/><stop offset=".65" stop-color="#917e83"/><stop offset="1" stop-color="#514c60"/></linearGradient>
+    <linearGradient id="city" x2=".7" y2="1"><stop stop-color="#163452"/><stop offset=".53" stop-color="#142333"/><stop offset="1" stop-color="#080d1a"/></linearGradient>
+    <linearGradient id="window" x2="0" y2="1"><stop stop-color="#233c60" stop-opacity=".48"/><stop offset="1" stop-color="#0a1326" stop-opacity=".45"/></linearGradient>
+    <radialGradient id="flare"><stop stop-color="#8942ef" stop-opacity=".3"/><stop offset="1" stop-color="#6a3cf2" stop-opacity="0"/></radialGradient>
+    <radialGradient id="blueflare"><stop stop-color="#0e73b8" stop-opacity=".24"/><stop offset="1" stop-color="#0e73b8" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-40%" width="160%" height="190%"><feGaussianBlur stdDeviation="19"/></filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="5"/></filter>
+    <clipPath id="frame"><rect width="425" height="230" rx="23"/></clipPath>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#night)"/>
+  <ellipse cx="300" cy="300" rx="560" ry="340" fill="url(#blueflare)"/>
+  <ellipse cx="1300" cy="490" rx="550" ry="380" fill="url(#flare)"/>
+  <ellipse cx="800" cy="780" rx="550" ry="180" fill="url(#flare)" opacity=".5"/>
+
+  <!-- Left: space exploration release -->
+  <g transform="translate(-65 120) rotate(12 220 116)" opacity=".86">
+    <rect x="10" y="18" width="425" height="230" rx="24" fill="#000" opacity=".75" filter="url(#shadow)"/>
+    <g clip-path="url(#frame)">
+      <rect width="425" height="230" fill="url(#space)"/>
+      <circle cx="260" cy="65" r="88" fill="#14405d" opacity=".35"/>
+      <circle cx="295" cy="92" r="72" stroke="#65a1bd" stroke-opacity=".2" stroke-width="2" fill="none"/>
+      <g fill="#bbd7eb" opacity=".6"><circle cx="40" cy="39" r="1.5"/><circle cx="76" cy="133" r="1"/><circle cx="335" cy="22" r="1"/><circle cx="405" cy="115" r="1.5"/><circle cx="120" cy="50" r="1"/></g>
+      <path d="M65 260q11-65 83-76 71 11 88 76" fill="#b6c6d2" opacity=".6"/>
+      <path d="M102 194q-42-45-32-100 11-65 75-68 67 7 78 71 3 44-29 91" fill="#9fbdcc" opacity=".76" stroke="#c4dde8" stroke-width="9"/>
+      <ellipse cx="149" cy="103" rx="55" ry="65" fill="#09283d" stroke="#bfd8dd" stroke-width="11"/>
+      <path d="M104 71q36-38 83-3c-27-12-58-5-78 28Z" fill="#6aa6bb" opacity=".55"/>
+      <path d="M114 172q25 19 64 0" stroke="#d9eced" stroke-opacity=".65" stroke-width="6" fill="none"/>
+      <rect x="330" y="17" width="76" height="34" rx="8" fill="#121a23" stroke="#e6b96e" stroke-opacity=".6"/>
+      <text x="342" y="39" font-size="18" font-family="sans-serif" font-weight="700" fill="#e2cf9f">4K</text>
+      <text x="372" y="39" font-size="16" font-family="sans-serif" fill="#e2cf9f">HDR</text>
+    </g>
+    <rect width="425" height="230" rx="23" stroke="#91acc6" stroke-opacity=".4" fill="none" stroke-width="3"/>
+  </g>
+
+  <!-- Left: mountain discovery poster -->
+  <g transform="translate(-75 395) rotate(11 220 115)" opacity=".85">
+    <rect x="10" y="18" width="425" height="230" rx="24" fill="#000" opacity=".74" filter="url(#shadow)"/>
+    <g clip-path="url(#frame)">
+      <rect width="425" height="230" fill="url(#mountain)"/>
+      <circle cx="245" cy="100" r="75" fill="#c1d9e1" opacity=".19" filter="url(#soft)"/>
+      <path d="M-20 180 100 54 195 153 245 76 365 216 440 150v90H-20Z" fill="#66879b"/>
+      <path d="m100 54 32 56-32-13-20 18Zm145 22 25 52-27-15-27 9Z" fill="#c9dde0" opacity=".65"/>
+      <path d="M-20 214 116 118 190 191 295 98 450 242v15H-20Z" fill="#24495b"/>
+      <path d="M-20 218Q120 190 440 196v70H-20Z" fill="#102f30"/>
+      <path d="M-20 227Q140 205 440 215" stroke="#92aa98" stroke-width="8" opacity=".3" filter="url(#soft)" fill="none"/>
+      <rect x="317" y="18" width="90" height="31" rx="6" fill="#18202b" fill-opacity=".7"/>
+      <text x="328" y="40" font-family="sans-serif" font-weight="700" font-size="19" fill="#d2dce3">WEB-DL</text>
+    </g>
+    <rect width="425" height="230" rx="23" stroke="#829eaf" stroke-opacity=".38" fill="none" stroke-width="3"/>
+  </g>
+
+  <!-- Right: atmospheric character portrait -->
+  <g transform="translate(1230 154) rotate(9 200 110)" opacity=".89">
+    <rect x="12" y="18" width="425" height="230" rx="24" fill="#000" opacity=".8" filter="url(#shadow)"/>
+    <g clip-path="url(#frame)">
+      <rect width="425" height="230" fill="url(#portrait)"/>
+      <path d="M95 245Q150 108 250 70q80-10 172 160" fill="#111b30"/>
+      <path d="M210 30q92-63 132 48 18 86-48 132l-92-22-22-78Z" fill="#262333"/>
+      <path d="M226 56Q274 31 316 61q36 31 26 80-20 51-75 74l-52-34q-34-60 11-125Z" fill="url(#portraitSkin)"/>
+      <path d="M227 62Q280-6 326 54q-8 29-53 43-30 10-43 42-30-28-3-77Z" fill="#282332"/>
+      <path d="M282 108q29-10 46-2" stroke="#292531" stroke-width="6" opacity=".8" fill="none"/>
+      <path d="M293 117q18 1 29-3" stroke="#e3e2db" stroke-width="2.5" fill="none"/>
+      <path d="M321 140l13 5-15 8M299 177q16 3 34-4" stroke="#7d495d" stroke-width="4" fill="none"/>
+      <path d="M203 225q65-41 126-19l77 65H175Z" fill="#161a2b"/>
+      <path d="M350 51q55 105 20 177" stroke="#3b3440" stroke-width="22" opacity=".66" fill="none"/>
+    </g>
+    <rect width="425" height="230" rx="23" stroke="#8796bc" stroke-opacity=".34" fill="none" stroke-width="3"/>
+  </g>
+
+  <!-- Right: neon night drive -->
+  <g transform="translate(1218 428) rotate(8 210 120)" opacity=".9">
+    <rect x="12" y="18" width="425" height="230" rx="24" fill="#000" opacity=".75" filter="url(#shadow)"/>
+    <g clip-path="url(#frame)">
+      <rect width="425" height="230" fill="url(#city)"/>
+      <g fill="#142c46"><rect x="0" y="47" width="36" height="116"/><rect x="52" y="31" width="40" height="130"/><rect x="102" y="70" width="50" height="94"/><rect x="182" y="29" width="54" height="132"/><rect x="243" y="59" width="40" height="104"/><rect x="304" y="36" width="60" height="127"/><rect x="372" y="67" width="52" height="102"/></g>
+      <g fill="#e17881" opacity=".58"><rect x="53" y="57" width="3" height="9"/><rect x="84" y="97" width="3" height="9"/><rect x="195" y="62" width="3" height="9"/><rect x="323" y="81" width="3" height="9"/><rect x="387" y="109" width="3" height="9"/></g>
+      <path d="m0 170 425-27v87H0Z" fill="#111725"/>
+      <path d="M74 231 163 149M360 230 283 154" stroke="#89b7d5" stroke-opacity=".25" stroke-width="3"/>
+      <path d="M125 176q60-61 171-12l39 23-6 29H120Z" fill="#131a26" stroke="#6984a0" stroke-width="2"/>
+      <path d="M174 172q36-30 78-21l35 23Z" fill="#2e5370"/>
+      <rect x="126" y="191" width="22" height="10" rx="3" fill="#f95357"/>
+      <rect x="305" y="183" width="23" height="9" rx="3" fill="#f95357"/>
+      <ellipse cx="136" cy="213" rx="23" ry="8" fill="#fc464e" opacity=".35" filter="url(#soft)"/>
+      <ellipse cx="315" cy="214" rx="30" ry="8" fill="#fc464e" opacity=".3" filter="url(#soft)"/>
+      <rect x="326" y="15" width="82" height="34" rx="7" fill="#1b1b23" stroke="#f1c77a" stroke-opacity=".6"/>
+      <text x="336" y="39" font-size="18" font-family="sans-serif" font-weight="700" fill="#e2cf9f">4K</text>
+      <text x="368" y="39" font-size="16" font-family="sans-serif" fill="#e2cf9f">HDR</text>
+    </g>
+    <rect width="425" height="230" rx="23" stroke="#758caa" stroke-opacity=".4" fill="none" stroke-width="3"/>
+  </g>
+
+  <!-- Secondary abstract tiles, behind the main scenes -->
+  <g transform="translate(-148 705) rotate(12 210 115)" opacity=".23">
+    <rect width="425" height="230" rx="22" fill="url(#window)" stroke="#6c81b1" stroke-width="2"/>
+    <path d="M10 100 420 60M10 120 420 80M10 140 420 100" stroke="#b7bed7" stroke-width="10" opacity=".4"/>
+  </g>
+  <g transform="translate(1290 696) rotate(8 210 115)" opacity=".33">
+    <rect width="425" height="230" rx="22" fill="#193448" stroke="#788a9f" stroke-width="2"/>
+    <circle cx="204" cy="92" r="30" fill="#07111e"/>
+    <path d="M133 237q7-102 72-104 65 2 80 104" fill="#07111e"/>
+  </g>
+  <rect width="1600" height="900" fill="url(#night)" opacity=".12"/>
+</svg>
