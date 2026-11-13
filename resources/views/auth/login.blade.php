@@ -1,53 +1,43 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <title>Login — {{ config('app.name', 'NextGN Tracker') }}</title>
+        <meta name="robots" content="noindex, nofollow">
+        <meta name="theme-color" content="#060a15">
+        <title>Log in — {{ config('app.name', 'NextGN Tracker') }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
-    <body class="min-h-screen bg-slate-950 font-sans text-slate-100">
-        <main class="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-8 px-4 py-10 md:px-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <section class="space-y-8">
-                <div class="inline-flex items-center gap-3 rounded-full border border-brand/30 bg-brand/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand">
-                    Private community tracker
-                </div>
-                <div>
-                    <h1 class="max-w-3xl text-4xl font-semibold tracking-tight text-white md:text-6xl">
-                        Find, share and discuss curated releases with the NextGN community.
-                    </h1>
-                    <p class="mt-5 max-w-2xl text-base leading-7 text-slate-300">
-                        NextGN connects torrent discovery, upload moderation, forum discussion, follows, and private messages in a focused member experience.
-                    </p>
-                </div>
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                        <p class="font-semibold text-white">Discover</p>
-                        <p class="mt-2 text-sm text-slate-400">Browse verified releases with filters, metadata, seed context, and freeleech signals when available.</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                        <p class="font-semibold text-white">Contribute</p>
-                        <p class="mt-2 text-sm text-slate-400">Upload clean releases, then follow moderation feedback from your dashboard.</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-                        <p class="font-semibold text-white">Connect</p>
-                        <p class="mt-2 text-sm text-slate-400">Keep forum activity, private messages, follows, and account ratio context close together.</p>
-                    </div>
-                </div>
-            </section>
+    <body class="nextgn-auth-body">
+        <div class="nextgn-auth-scene" aria-hidden="true"></div>
 
-            <section class="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl shadow-slate-950/50 md:p-8">
-                <div class="mb-6">
-                    <p class="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Member access</p>
-                    <h2 class="mt-2 text-2xl font-semibold text-white">Login</h2>
-                    <p class="mt-2 text-sm text-slate-400">Use your tracker account to continue to the dashboard.</p>
-                </div>
+        <main class="nextgn-auth-layout">
+            <section class="nextgn-auth-card" aria-labelledby="nextgn-login-heading">
+                <header class="nextgn-auth-brand">
+                    <h1 class="nextgn-auth-wordmark" id="nextgn-login-heading" aria-label="NextGN">
+                        <span>NEXT</span><span class="nextgn-auth-wordmark-accent">GN</span>
+                    </h1>
+                    <p class="nextgn-auth-eyebrow">Private community tracker</p>
+                </header>
+
+                <p class="nextgn-auth-values">
+                    <span>Metadata</span><span aria-hidden="true">•</span>
+                    <span>Discovery</span><span aria-hidden="true">•</span>
+                    <span>Tracker</span><span aria-hidden="true">•</span>
+                    <span>Community</span>
+                </p>
+
+                @if (session('status'))
+                    <div class="nextgn-auth-notice nextgn-auth-notice--success" role="status">
+                        {{ session('status') }}
+                    </div>
+                @endif
 
                 @if ($errors->any())
-                    <div class="mb-5 rounded-xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100" role="alert">
-                        <p class="font-semibold">Please fix the following errors:</p>
-                        <ul class="mt-1 list-disc space-y-1 pl-5">
+                    <div class="nextgn-auth-notice nextgn-auth-notice--error" role="alert">
+                        <p>We couldn't sign you in. Please check the following:</p>
+                        <ul>
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
@@ -55,27 +45,89 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ url('/login') }}" class="space-y-4">
+                <form method="POST" action="{{ url('/login') }}" class="nextgn-auth-form">
                     @csrf
-                    <label class="block text-sm font-medium text-slate-300">
-                        Email
-                        <input name="email" type="email" value="{{ old('email') }}" required autofocus autocomplete="email" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
+                    <label class="nextgn-auth-field">
+                        <span class="sr-only">Email</span>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="14" rx="2" />
+                            <path d="m4 7 8 6 8-6" />
+                        </svg>
+                        <input
+                            name="email"
+                            type="email"
+                            value="{{ old('email') }}"
+                            placeholder="Email"
+                            required
+                            autofocus
+                            autocomplete="email"
+                            aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                        >
                     </label>
-                    <label class="block text-sm font-medium text-slate-300">
-                        Password
-                        <input name="password" type="password" required autocomplete="current-password" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-slate-100 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20">
+
+                    <label class="nextgn-auth-field">
+                        <span class="sr-only">Password</span>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <rect x="4.5" y="10" width="15" height="11" rx="2" />
+                            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                            <path d="M12 14v3" />
+                        </svg>
+                        <input
+                            name="password"
+                            type="password"
+                            placeholder="Password"
+                            required
+                            autocomplete="current-password"
+                            aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}"
+                        >
                     </label>
-                    <button type="submit" class="w-full rounded-xl bg-brand px-4 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20 transition hover:bg-brand/90">
-                        Login to dashboard
+
+                    <button type="submit" class="nextgn-auth-submit">
+                        <span>Log in</span>
+                        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M4 12h16M13 5l7 7-7 7" />
+                        </svg>
                     </button>
                 </form>
 
                 @if (Route::has('register'))
-                    <p class="mt-5 text-center text-sm text-slate-400">
-                        Have an invite? <a href="{{ route('register') }}" class="font-semibold text-brand hover:text-brand/80">Create your account</a>.
-                    </p>
+                    <div class="nextgn-auth-register">
+                        <span>New here?</span>
+                        <a href="{{ route('register') }}">Create an account</a>
+                    </div>
                 @endif
             </section>
+
+            <footer class="nextgn-auth-highlights" aria-label="NextGN principles">
+                <div class="nextgn-auth-highlight">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m12 2 8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z" />
+                        <path d="m9 12 2 2 4-4" />
+                    </svg>
+                    <span>Private community</span>
+                </div>
+                <div class="nextgn-auth-highlight">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="m12 2 10 5-10 5L2 7l10-5Z" />
+                        <path d="m2 12 10 5 10-5M2 17l10 5 10-5" />
+                    </svg>
+                    <span>Verified releases</span>
+                </div>
+                <div class="nextgn-auth-highlight">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7" />
+                        <path d="m16.5 16.5 5 5M8 11h6M11 8v6" />
+                    </svg>
+                    <span>Metadata-first discovery</span>
+                </div>
+                <div class="nextgn-auth-highlight">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="9" cy="8" r="3" />
+                        <path d="M2 20v-2a7 7 0 0 1 14 0v2M16 5a3 3 0 0 1 0 6M18 14a6 6 0 0 1 4 6" />
+                    </svg>
+                    <span>Active community</span>
+                </div>
+            </footer>
         </main>
     </body>
 </html>
