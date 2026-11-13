@@ -20,16 +20,16 @@ final class TorrentMetadataView
     /**
      * @return array<string, int|string|null>
      */
-    public static function forTorrent(Torrent $torrent): array
+    public static function forTorrent(Torrent $torrent, bool $includeCodecs = false): array
     {
-        return self::fromTorrent($torrent)->toArray();
+        return self::fromTorrent($torrent)->toArray($includeCodecs);
     }
 
     /**
      * @param  iterable<int, Model>  $torrents
      * @return array<int, array<string, int|string|null>>
      */
-    public static function mapByTorrentId(iterable $torrents): array
+    public static function mapByTorrentId(iterable $torrents, bool $includeCodecs = false): array
     {
         /** @var array<int, array<string, int|string|null>> $mapped */
         $mapped = [];
@@ -39,7 +39,7 @@ final class TorrentMetadataView
                 continue;
             }
 
-            $mapped[(int) $torrent->id] = self::forTorrent($torrent);
+            $mapped[(int) $torrent->id] = self::forTorrent($torrent, $includeCodecs);
         }
 
         return $mapped;
@@ -88,7 +88,7 @@ final class TorrentMetadataView
     /**
      * @return array<string, int|string|null>
      */
-    public function toArray(): array
+    public function toArray(bool $includeCodecs = false): array
     {
         $metadata = $this->metadata();
         $rawPayload = $metadata?->raw_payload;
@@ -96,7 +96,7 @@ final class TorrentMetadataView
         $codecs = $this->torrent->codecs;
         $legacyCodecs = is_array($codecs) ? $codecs : [];
 
-        return [
+        $values = [
             'title' => $metadata?->title,
             'year' => $metadata?->year,
             'type' => $metadata !== null ? $metadata->type : $this->torrent->type,
@@ -109,10 +109,15 @@ final class TorrentMetadataView
             'subtitles' => $metadata?->subtitles,
             'imdb_id' => $metadata !== null ? $metadata->imdb_id : $this->torrent->imdb_id,
             'tmdb_id' => $metadata !== null ? $metadata->tmdb_id : $this->torrent->tmdb_id,
-            'video_codec' => $this->codecText($payload['video_codec'] ?? $legacyCodecs['video'] ?? null),
-            'audio_codec' => $this->codecText($payload['audio_codec'] ?? $legacyCodecs['audio'] ?? null),
             'nfo' => $metadata !== null ? $metadata->nfo : $this->torrent->nfo_text,
         ];
+
+        if ($includeCodecs) {
+            $values['video_codec'] = $this->codecText($payload['video_codec'] ?? $legacyCodecs['video'] ?? null);
+            $values['audio_codec'] = $this->codecText($payload['audio_codec'] ?? $legacyCodecs['audio'] ?? null);
+        }
+
+        return $values;
     }
 
     private function codecText(mixed $value): ?string

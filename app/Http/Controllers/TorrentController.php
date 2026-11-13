@@ -83,7 +83,7 @@ final class TorrentController extends Controller
         ));
         /** @var Collection<int, Torrent> $torrentCollection */
         $torrentCollection = $torrents->getCollection();
-        $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrentCollection);
+        $torrentMetadata = TorrentMetadataView::mapByTorrentId($torrentCollection, includeCodecs: true);
         $torrentMetadataQuality = TorrentMetadataQuality::mapByTorrentId($torrentCollection, $torrentMetadata);
         $torrentBrowseRows = $rowPresenter->map($torrentCollection, $torrentMetadata, $torrentMetadataQuality);
         $releaseFamilies = $groupedBrowse
@@ -130,7 +130,7 @@ final class TorrentController extends Controller
         }
 
         $metadataRecordExists = $model->getRelationValue('metadata') !== null;
-        $metadata = TorrentMetadataView::forTorrent($model);
+        $metadata = TorrentMetadataView::forTorrent($model, includeCodecs: true);
         $quality = TorrentMetadataQuality::evaluate($metadata, $model->name);
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
         $metadataEnrichmentOutcome = TorrentMetadataView::fromTorrent($model)->enrichmentOutcome();

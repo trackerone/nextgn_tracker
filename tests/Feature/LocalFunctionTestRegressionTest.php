@@ -28,7 +28,7 @@ final class LocalFunctionTestRegressionTest extends TestCase
         Storage::fake('torrents');
         $response = $this->actingAs(User::factory()->create())->postJson(route('torrents.upload.analyse'), [
             'torrent_file' => $this->torrentFile(),
-            'nfo_file' => UploadedFile::fake()->createWithContent('test.nfo', $this->legacyNfo()),
+            'nfo_file' => UploadedFile::fake()->createWithContent('test.nfo', $this->legacyNfo())->mimeType('text/plain'),
         ]);
 
         $response->assertOk()
@@ -52,7 +52,7 @@ final class LocalFunctionTestRegressionTest extends TestCase
             ->assertUnprocessable()->assertJsonValidationErrors('torrent_file');
         $this->postJson(route('torrents.upload.analyse'), [
             'torrent_file' => $this->torrentFile(),
-            'nfo_file' => UploadedFile::fake()->createWithContent('notes.nfo', 'Notes'),
+            'nfo_file' => UploadedFile::fake()->createWithContent('notes.nfo', 'Notes')->mimeType('text/plain'),
             'nfo_text' => 'Also notes',
         ])->assertUnprocessable()->assertJsonValidationErrors('nfo_text');
     }
@@ -70,12 +70,12 @@ final class LocalFunctionTestRegressionTest extends TestCase
             'audio_language' => null,
             'subtitles' => null,
             'torrent_file' => $this->torrentFile(),
-            'nfo_file' => UploadedFile::fake()->createWithContent('test.nfo', $this->legacyNfo()),
+            'nfo_file' => UploadedFile::fake()->createWithContent('test.nfo', $this->legacyNfo())->mimeType('text/plain'),
         ]);
 
         $response->assertRedirect();
         $torrent = Torrent::query()->firstOrFail();
-        $metadata = TorrentMetadataView::forTorrent($torrent);
+        $metadata = TorrentMetadataView::forTorrent($torrent, includeCodecs: true);
         $this->assertSame(3, $torrent->file_count);
         $this->assertSame(3005, $torrent->size_bytes);
         $this->assertSame('en', $metadata['audio_language']);

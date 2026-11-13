@@ -40,7 +40,7 @@ final class TorrentBrowseRowPresenter
                 ),
                 'title' => $metadata['title'] ?? null,
                 'year' => $metadata['year'] ?? null,
-                'category_label' => $torrent->category?->name ?? 'Uncategorized',
+                'category_label' => $torrent->category->name ?? 'Uncategorized',
                 'source_label' => $this->upperText($metadata['source'] ?? null),
                 'codec_label' => implode(' / ', array_filter([$metadata['video_codec'] ?? null, $metadata['audio_codec'] ?? null])),
                 'language_badges' => $metadataBadges,

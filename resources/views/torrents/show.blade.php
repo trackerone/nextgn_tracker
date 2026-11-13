@@ -83,7 +83,7 @@
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-slate-950/40 md:p-8">
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
-                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">{{ $torrent->status === \App\Models\Torrent::STATUS_PUBLISHED ? 'Approved torrent' : 'Torrent '.$torrent->status }}</p>
+                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">{{ $torrent->isApproved() ? 'Approved torrent' : 'Torrent '.$torrent->status->value }}</p>
                     <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
                     <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
                 </div>
