@@ -561,11 +561,11 @@ body {
 .nextgn-auth-highlight {
   justify-content: center;
   gap: .32rem;
-  padding: .15rem .25rem;
+  padding: .15rem .2rem;
   font-size: .69rem;
   line-height: 1.2;
   text-align: center;
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .nextgn-auth-highlight svg {
