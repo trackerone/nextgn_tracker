@@ -15,7 +15,7 @@
             $inactiveNavLink = 'text-slate-300';
         @endphp
         <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-            <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-4 px-4 py-4 md:px-6">
+            <div class="mx-auto flex w-full max-w-none flex-col gap-4 px-[2%] py-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NEXTGN') }} dashboard">
                         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
@@ -67,7 +67,7 @@
                 @endauth
             </div>
         </header>
-        <main class="mx-auto w-full max-w-[1600px] px-4 py-8 md:px-6">
+        <main class="mx-auto w-full min-w-0 max-w-none px-[2%] py-8">
             @if (session('status'))
                 <div class="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ session('status') }}
