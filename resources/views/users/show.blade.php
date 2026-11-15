@@ -27,4 +27,3 @@
         @endauth
     </section>
 @endsection
-

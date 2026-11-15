@@ -18,4 +18,3 @@ final class UserProfileController extends Controller
         ]);
     }
 }
-

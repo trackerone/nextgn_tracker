@@ -48,7 +48,7 @@
         <div class="mt-4 grid gap-3 lg:grid-cols-2">
             @forelse ($activePeers as $peer)
                 <article class="min-w-0 rounded-xl border border-slate-700 p-4">
-                    <h3 class="font-semibold">{{ $peer->torrent?->name ?? 'Torrent unavailable' }}</h3>
+                    <h3 class="font-semibold">@if ($peer->torrent)<a class="text-brand" href="{{ route('torrents.show', $peer->torrent) }}">{{ $peer->torrent->name }}</a>@else Torrent unavailable @endif</h3>
                     <p class="mt-2 text-sm text-slate-300">{{ $peer->is_seeder ? 'Seeding' : 'Downloading' }} · Remaining {{ \Illuminate\Support\Number::fileSize($peer->left) }}</p>
                     <p class="mt-1 text-xs text-slate-400">Last announce: {{ $peer->last_announce_at?->toDayDateTimeString() }}</p>
                 </article>
@@ -64,7 +64,7 @@
         <div class="mt-4 grid gap-3 lg:grid-cols-2">
             @forelse ($history as $entry)
                 <article class="min-w-0 rounded-xl border border-slate-700 p-4">
-                    <h3 class="font-semibold">{{ $entry->torrent?->name ?? 'Torrent unavailable' }}</h3>
+                    <h3 class="font-semibold">@if ($entry->torrent)<a class="text-brand" href="{{ route('torrents.show', $entry->torrent) }}">{{ $entry->torrent->name }}</a>@else Torrent unavailable @endif</h3>
                     <p class="mt-2 text-sm text-slate-300">Uploaded {{ \Illuminate\Support\Number::fileSize($entry->uploaded) }} · Downloaded {{ \Illuminate\Support\Number::fileSize($entry->downloaded) }}</p>
                     <p class="mt-1 text-xs text-slate-400">{{ $entry->completed_at ? 'Completed '.$entry->completed_at->toDayDateTimeString() : 'No completion reported' }}</p>
                 </article>

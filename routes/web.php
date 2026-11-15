@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountInviteController;
-use App\Http\Controllers\AccountPeopleController;
 use App\Http\Controllers\AccountNotificationController;
+use App\Http\Controllers\AccountPeopleController;
 use App\Http\Controllers\AccountRssController;
 use App\Http\Controllers\AccountRssPresetController;
 use App\Http\Controllers\AccountSnatchController;
@@ -370,4 +370,3 @@ Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
 Route::middleware(['throttle:120,1'])
     ->get('/scrape/{passkey}', ScrapeController::class)
     ->name('scrape');
-

@@ -46,9 +46,10 @@ final class AccountOverviewTest extends TestCase
         UserTorrent::factory()->create(['user_id' => $user->id, 'torrent_id' => $active->id, 'completed_at' => now()]);
         UserTorrent::factory()->create(['user_id' => $other->id, 'torrent_id' => $foreign->id]);
 
-        $this->actingAs($user)->get(route('account.index'))->assertOk()
-            ->assertSee($active->name)->assertDontSee($foreign->name)->assertDontSee($expired->name)
-            ->assertViewHas('seeding', 1)->assertViewHas('completed', 1);
+        $response = $this->actingAs($user)->get(route('account.index'))->assertOk()
+            ->assertSee($active->name)->assertDontSee($foreign->name)->assertDontSee($expired->name);
+        $this->assertMatchesRegularExpression('/Currently seeding<\/h2>\s*<p[^>]*>1<\/p>/', $response->getContent());
+        $this->assertMatchesRegularExpression('/Completed torrents<\/h2>\s*<p[^>]*>1<\/p>/', $response->getContent());
         $this->get(route('users.show', $user->publicProfileRouteKey()))->assertOk()
             ->assertDontSee($user->email)->assertDontSee($user->passkey)->assertDontSee($active->name);
     }
