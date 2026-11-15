@@ -87,7 +87,8 @@ final class HnrService
 
     public function recovering(User $user, Torrent $torrent): bool
     {
-        return HnrObligation::query()->where('user_id', $user->id)->where('torrent_id', $torrent->id)->exists();
+        return (int) $torrent->user_id === (int) $user->id
+            || HnrObligation::query()->where('user_id', $user->id)->where('torrent_id', $torrent->id)->exists();
     }
 
     public function evaluate(User $user): void

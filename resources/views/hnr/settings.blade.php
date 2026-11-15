@@ -4,7 +4,7 @@
 <div class="min-w-0 space-y-6 break-words">
     <h1 class="text-3xl font-bold">HnR rules and review</h1>
     <a href="{{ route('sysop.settings.edit') }}" class="inline-block text-brand">Back to site settings</a>
-    <p class="text-sm text-slate-300">Rules use tracker-validated physical bytes, including freeleech. Ratio or completed-torrent seed time can fulfill an obligation. Default seed time is 72 hours, not IPT's 336 hours. Choose your values before enabling enforcement.</p>
+    <p class="text-sm text-slate-300">Rules use tracker-validated physical bytes, including freeleech. Ratio or completed-torrent seed time can fulfill an obligation. The provisional default is 72 hours. Choose your values before enabling enforcement.</p>
     <form method="POST" action="{{ route('sysop.hnr.update') }}" class="space-y-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         @csrf
         @method('PATCH')

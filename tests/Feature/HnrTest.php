@@ -130,6 +130,8 @@ final class HnrTest extends TestCase
         $this->assertTrue($hnr->restricted($user));
         $this->assertSame('hnr_restricted', app(DownloadEligibilityPolicy::class)->check($user, Torrent::factory()->create())['reason']);
         $this->assertSame('hnr_recovery', app(DownloadEligibilityPolicy::class)->check($user, $row->torrent)['reason']);
+        $ownUpload = Torrent::factory()->create(['user_id' => $user->id]);
+        $this->assertSame('hnr_recovery', app(DownloadEligibilityPolicy::class)->check($user, $ownUpload)['reason']);
         Peer::factory()->for($user)->for($row->torrent)->create(['last_announce_at' => now(), 'left' => 0]);
         $hnr->evaluate($user);
         $this->assertFalse($hnr->restricted($user));
