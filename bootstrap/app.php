@@ -43,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         RepositoryServiceProvider::class,
     ])
     ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('hnr:evaluate')->hourly()->withoutOverlapping(60);
         $schedule->command('tracker:prune-ghost-peers')
             ->everyTenMinutes()
             ->withoutOverlapping(10);

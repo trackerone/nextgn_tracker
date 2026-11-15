@@ -51,6 +51,7 @@
     </form>
     <section class="rounded-2xl border border-slate-800 p-5">
         <h2 class="text-lg font-semibold">Other administration</h2>
+        <a href="{{ route('sysop.hnr.edit') }}" class="mt-3 inline-block text-brand">HnR rules, warnings and staff review</a>
         <div class="mt-3 flex flex-wrap gap-4 text-sm text-brand">
             <a href="{{ route('admin.settings.ratio.edit') }}">User class thresholds</a>
             <a href="{{ route('admin.settings.metadata.edit') }}">Metadata providers and credentials</a>

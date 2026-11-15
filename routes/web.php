@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\ConversationMessageController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\HnrController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyUploadsController;
 use App\Http\Controllers\NotificationWatchPresetController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\SavedIntentController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\StaffAlphaFeedbackController;
+use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
@@ -164,6 +166,10 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
     });
 
 Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
+    Route::get('/hnr', [HnrSettingsController::class, 'edit'])->name('hnr.edit');
+    Route::patch('/hnr', [HnrSettingsController::class, 'update'])->name('hnr.update');
+    Route::post('/hnr/obligations/{obligation}/waive', [HnrSettingsController::class, 'waive'])->whereNumber('obligation')->name('hnr.waive');
+    Route::post('/hnr/accounts/{user:public_slug}/reset', [HnrSettingsController::class, 'reset'])->name('hnr.reset');
     Route::get('/settings', [SiteSettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
@@ -305,6 +311,7 @@ Route::middleware(['auth'])->group(function (): void {
         ->whereNumber('savedIntent')
         ->name('account.saved-intents.destroy');
 
+    Route::get('/account/hnr', [HnrController::class, 'index'])->name('account.hnr');
     Route::get('/account', [AccountController::class, 'index'])->name('account.index');
     Route::get('/account/settings', [AccountController::class, 'edit'])->name('account.settings.edit');
     Route::patch('/account/settings', [AccountController::class, 'update'])->middleware('throttle:10,1')->name('account.settings.update');

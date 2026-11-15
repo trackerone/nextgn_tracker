@@ -8,6 +8,7 @@ use App\Contracts\TorrentRepositoryInterface;
 use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Hnr\HnrService;
 use App\Services\Tracker\AnnounceCreditPolicy;
 use App\Services\Tracker\AnnounceIntegrityEvaluation;
 use App\Services\Tracker\UserRatioStatsRecorder;
@@ -27,6 +28,7 @@ final class PeerEventProcessor
         private readonly TwentyByteParamDecoder $decoder,
         private readonly UserRatioStatsRecorder $ratioStatsRecorder,
         private readonly AnnounceCreditPolicy $creditPolicy,
+        private readonly HnrService $hnr,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -36,7 +38,13 @@ final class PeerEventProcessor
             return AnnounceResult::failure('peer_id must be exactly 20 bytes.');
         }
 
-        if ($data->event === 'started' && $data->left > 0 && ! $this->isStaff($user)) {
+        $hnrRestricted = $this->hnr->restricted($user);
+        $hnrRecovery = $hnrRestricted && $this->hnr->recovering($user, $torrent);
+        if ($data->left > 0 && $hnrRestricted && ! $hnrRecovery) {
+            return AnnounceResult::failure('New downloads are restricted by HnR. Resume outstanding torrents or contact staff.');
+        }
+
+        if ($data->event === 'started' && $data->left > 0 && ! $this->isStaff($user) && ! $hnrRecovery) {
             $ratio = $user->ratio();
 
             if ($ratio !== null && $ratio < self::MIN_RATIO_FOR_NEW_DOWNLOAD) {
@@ -52,6 +60,9 @@ final class PeerEventProcessor
                 ->lockForUpdate()
                 ->first();
 
+            $integrity = $this->creditPolicy->evaluate($oldPeer, $data, $torrent);
+            $this->hnr->record($user, $torrent, $data, $integrity, $oldPeer);
+
             if ($data->event === null && $this->shouldShortCircuitDuplicateAnnounce($request, $data, $oldPeer)) {
                 $this->securityLogger->log(
                     request: $request,
@@ -62,10 +73,10 @@ final class PeerEventProcessor
                     context: ['torrent_id' => $torrent->getKey()],
                 );
 
+                $oldPeer?->forceFill(['last_announce_at' => now()])->save();
+
                 return ['short_circuit' => true];
             }
-
-            $integrity = $this->creditPolicy->evaluate($oldPeer, $data, $torrent);
 
             $this->persistPeerState($request, $user, $torrent, $data, $peerId, $oldPeer);
 
