@@ -7,7 +7,7 @@
     <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         <h2 class="text-xl font-semibold">{{ !$rules['enabled'] ? 'HnR enforcement is disabled' : ($exempt ? 'Your role is exempt' : ($restricted ? 'New downloads restricted' : 'HnR monitoring is enabled')) }}</h2>
         <p class="mt-3 text-sm">Warnings: {{ $state?->warnings ?? 0 }} · Overdue torrents: {{ $overdue }}</p>
-        <p class="mt-2 text-sm text-slate-400">Seed each fully downloaded torrent to a ratio of {{ $rules['ratio'] }} or for {{ $rules['seed_hours'] }} hours. Freeleech also requires seeding. Partial downloads owe only the bytes actually downloaded; the seed-time alternative starts after completion.</p>
+        <p class="mt-2 text-sm text-slate-400">Current rules for new obligations: seed each fully downloaded torrent to a ratio of {{ $rules['ratio'] }} or for {{ $rules['seed_hours'] }} hours. Freeleech also requires seeding. Partial downloads owe only the bytes actually downloaded; the seed-time alternative starts after completion.</p>
         <p class="mt-2 text-sm text-slate-400">A warning requires at least {{ $rules['torrent_threshold'] }} outstanding torrents with no tracker activity for {{ $rules['grace_hours'] }} hours. There is at most one warning every {{ $rules['warning_interval_days'] }} days. After {{ $rules['warnings_before_restriction'] }} warnings, a further eligible review can restrict new downloads. One warning expires every {{ $rules['warning_decay_days'] }} days without a new warning.</p>
         <p class="mt-2 text-sm text-slate-400">Reviews run hourly when the server scheduler runs. Seeding again can restore access at the next review. Existing torrents remain available for recovery. Seed time is counted from fresh tracker reports, never from offline time.</p>
         <p class="mt-2 text-sm text-slate-400">Requirements shown on each obligation were fixed when it began. New seed-time and ratio settings apply to new obligations. Tracking starts with validated transfers after activation; old downloads are not backfilled.</p>
@@ -26,6 +26,7 @@
                     <h3 class="font-semibold">{{ $row->torrent?->name ?? 'Torrent unavailable' }}</h3>
                     <p class="mt-2 font-semibold text-brand">{{ $status }}</p>
                     <p class="mt-2 text-sm">Downloaded {{ \Illuminate\Support\Number::fileSize($row->downloaded_bytes) }} · Uploaded {{ \Illuminate\Support\Number::fileSize($row->uploaded_bytes) }}</p>
+                    <p class="mt-2 text-xs text-slate-400">Requirement fixed when tracking began: {{ $row->created_at?->toFormattedDateString() }}</p>
                     <p class="mt-2 text-sm">Torrent ratio: {{ $row->downloaded_bytes > 0 ? number_format($row->uploaded_bytes / $row->downloaded_bytes, 3) : '—' }} / {{ $row->required_ratio }}</p>
                     <p class="mt-2 text-sm">Seeded {{ number_format($row->seed_seconds / 3600, 2) }} / {{ $row->required_seed_seconds / 3600 }} hours · Remaining {{ number_format(max(0, $row->required_seed_seconds - $row->seed_seconds) / 3600, 2) }} hours</p>
                     @if (!$row->completed_at)<p class="mt-2 text-xs text-slate-400">Partial download: seed-time alternative is not active yet.</p>@endif

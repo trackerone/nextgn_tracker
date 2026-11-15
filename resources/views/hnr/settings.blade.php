@@ -4,7 +4,7 @@
 <div class="min-w-0 space-y-6 break-words">
     <h1 class="text-3xl font-bold">HnR rules and review</h1>
     <a href="{{ route('sysop.settings.edit') }}" class="inline-block text-brand">Back to site settings</a>
-    <p class="text-sm text-slate-300">Rules use tracker-validated physical bytes, including freeleech. Ratio or completed-torrent seed time can fulfill an obligation. The provisional default is 72 hours. Choose your values before enabling enforcement.</p>
+    <p class="text-sm text-slate-300">Rules use tracker-validated physical bytes, including freeleech. Ratio or completed-torrent seed time can fulfill an obligation. Current saved requirement for new obligations: ratio {{ $rules['ratio'] }} or {{ $rules['seed_hours'] }} hours of seeding after completion. Choose your values before enabling enforcement.</p>
     <form method="POST" action="{{ route('sysop.hnr.update') }}" class="space-y-5 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         @csrf
         @method('PATCH')
@@ -35,7 +35,7 @@
             @forelse ($cases as $case)
                 <article class="min-w-0 rounded-2xl border border-slate-800 p-4">
                     <p class="font-semibold">{{ $case->user?->name }} · {{ $case->torrent?->name ?? 'Torrent unavailable' }}</p>
-                    <p class="mt-2 text-sm">Last activity: {{ $case->last_seen_at }} · Seeded {{ number_format($case->seed_seconds / 3600, 2) }} / {{ $case->required_seed_seconds / 3600 }} hours</p>
+                    <p class="mt-2 text-sm">Last activity: {{ $case->last_seen_at }} · Seeded {{ number_format($case->seed_seconds / 3600, 2) }} / {{ $case->required_seed_seconds / 3600 }} hours (requirement fixed when tracking began)</p>
                     <form method="POST" action="{{ route('sysop.hnr.waive', $case) }}" class="mt-3 flex flex-wrap gap-3">
                         @csrf
                         <input name="reason" required maxlength="1000" placeholder="Required reason for waiver" aria-label="Waiver reason" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm">
