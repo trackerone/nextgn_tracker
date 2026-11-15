@@ -258,6 +258,11 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
         ->middleware([$searchThrottle, $torrentBrowseThrottle])
         ->name('torrents.index');
 
+    Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
+    Route::post('/torrents/upload/analyse', [TorrentUploadController::class, 'analyse'])
+        ->middleware('throttle:30,1')
+        ->name('torrents.upload.analyse');
+
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
         ->middleware($torrentDetailsThrottle)
         ->name('torrents.show');
@@ -277,7 +282,6 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/alpha/feedback', [AlphaFeedbackController::class, 'create'])->name('alpha.feedback.create');
     Route::post('/alpha/feedback', [AlphaFeedbackController::class, 'store'])->name('alpha.feedback.store');
 
-    Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
     Route::post('/torrents', [TorrentUploadController::class, 'store'])
         ->middleware('throttle:torrent-upload')
         ->name('torrents.store');

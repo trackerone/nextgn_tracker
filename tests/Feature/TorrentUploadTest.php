@@ -251,7 +251,7 @@ class TorrentUploadTest extends TestCase
         self::assertSame('da,no,sv', TorrentMetadataView::forTorrent($torrent)['subtitles']);
     }
 
-    public function test_blank_optional_upload_metadata_persists_as_null(): void
+    public function test_blank_optional_upload_metadata_preserves_detected_values(): void
     {
         Storage::fake('torrents');
         Storage::fake('nfo');
@@ -276,7 +276,7 @@ class TorrentUploadTest extends TestCase
 
         $metadata = Torrent::query()->latest('id')->firstOrFail()->metadata()->firstOrFail();
 
-        self::assertNull($metadata->title);
+        self::assertSame('Blank Metadata Upload', $metadata->title);
         self::assertNull($metadata->year);
         self::assertNull($metadata->release_group);
         self::assertNull($metadata->imdb_id);

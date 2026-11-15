@@ -51,6 +51,8 @@ final class AdminTwoFactorAuthenticationTest extends TestCase
         $response = $this->get(route('admin-two-factor.setup'));
         $response->assertSuccessful();
         $response->assertSee('Recovery codes');
+        $response->assertSee('data:image/svg+xml;base64,', false);
+        $response->assertSee('width="192"', false);
 
         $admin->refresh();
         $secret = $this->decryptedSecret($admin);

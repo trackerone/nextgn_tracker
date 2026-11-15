@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Torrents;
 
 use App\Services\BencodeService;
+use App\Support\Uploads\UploadTextEncoding;
 use Illuminate\Support\Str;
 
 final class TorrentMetadataExtractor
@@ -21,7 +22,8 @@ final class TorrentMetadataExtractor
         if (is_array($decoded)) {
             $info = $decoded['info'] ?? null;
             if (is_array($info) && is_string($info['name'] ?? null)) {
-                $infoName = trim($info['name']);
+                $name = is_string($info['name.utf-8'] ?? null) ? $info['name.utf-8'] : $info['name'];
+                $infoName = trim(UploadTextEncoding::toUtf8($name));
             }
         }
 
@@ -46,10 +48,18 @@ final class TorrentMetadataExtractor
                 rawNfo: null,
                 rawName: $infoName,
                 parsedName: $titleFromName,
+                videoCodec: $this->extractVideoCodec($infoName),
             );
         }
 
         $imdbId = $this->extractImdbId($normalizedNfo);
+        if (
+            preg_match_all('/\btt\d{7,8}\b/i', $normalizedNfo, $identities) > 1
+            && count(array_unique($identities[0])) > 1
+        ) {
+            $imdbId = null;
+            $year = null;
+        }
         $tmdbId = $this->extractTmdbId($normalizedNfo);
         $title = $this->extractTitle($normalizedNfo) ?? $titleFromName;
 
@@ -66,6 +76,10 @@ final class TorrentMetadataExtractor
             rawNfo: $normalizedNfo,
             rawName: $infoName,
             parsedName: $title,
+            audioLanguage: $this->extractNfoLanguages($normalizedNfo, 'AUD[iI]O[ ._]LANG'),
+            subtitles: $this->extractNfoLanguages($normalizedNfo, 'SUBT[iI]TLES'),
+            videoCodec: $this->extractVideoCodec($normalizedNfo) ?? $this->extractVideoCodec($infoName),
+            audioCodec: $this->extractAudioCodec($normalizedNfo),
         );
     }
 
@@ -127,11 +141,47 @@ final class TorrentMetadataExtractor
             return null;
         }
 
+        $rawNfo = UploadTextEncoding::toUtf8($rawNfo);
         $normalized = preg_replace("/\r\n?/", "\n", $rawNfo) ?? $rawNfo;
         $normalized = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $normalized) ?? $normalized;
         $normalized = trim($normalized);
 
         return $normalized === '' ? null : $normalized;
+    }
+
+    private function extractVideoCodec(?string $text): ?string
+    {
+        if ($text !== null && preg_match('/\b(HEVC|H[ .]?265|x265|AVC|H[ .]?264|x264|AV1)\b/i', $text, $match) === 1) {
+            return strtoupper($match[1]);
+        }
+
+        return null;
+    }
+
+    private function extractAudioCodec(string $text): ?string
+    {
+        if (preg_match('/\b(TRUEHD|DTS(?:[ -]HD)?|E[ .-]?AC[ .-]?3|AC[ .-]?3|AAC|FLAC|OPUS)\b/i', $text, $match) === 1) {
+            return strtoupper($match[1]);
+        }
+
+        return null;
+    }
+
+    private function extractNfoLanguages(string $text, string $label): ?string
+    {
+        if (preg_match('/'.$label.'[ ._:=-]+([^\r\n]+)/i', $text, $match) !== 1) {
+            return null;
+        }
+
+        $languages = [];
+        $codes = ['ENG' => 'en', 'DAN' => 'da', 'FIN' => 'fi', 'NOR' => 'no', 'SWE' => 'sv', 'GER' => 'de', 'FRE' => 'fr', 'SPA' => 'es'];
+        foreach (preg_split('/[^A-Za-z]+/', $match[1]) ?: [] as $token) {
+            if (isset($codes[strtoupper($token)])) {
+                $languages[] = $codes[strtoupper($token)];
+            }
+        }
+
+        return $languages === [] ? null : implode(', ', array_unique($languages));
     }
 
     private function extractImdbId(string $text): ?string

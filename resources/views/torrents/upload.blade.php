@@ -47,17 +47,17 @@
             </div>
         @endif
 
-        <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Upload readiness guide</h2>
+        <details class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/45 p-5">
+            <summary class="cursor-pointer text-sm font-semibold uppercase tracking-wide text-slate-300">Upload readiness guide</summary>
             <div class="mt-4 grid gap-3 text-sm leading-6 text-slate-300 md:grid-cols-2">
                 <p><span class="font-semibold text-white">Clean torrent.</span> Start with an unmodified private torrent file and a release name moderators can recognize.</p>
                 <p><span class="font-semibold text-white">Metadata expected.</span> Fill the existing title, category, type, source, resolution, language, subtitle, and ID fields when you know them.</p>
                 <p><span class="font-semibold text-white">After submit.</span> The upload enters moderation before it is visible in browse, details, RSS, or follow matches.</p>
                 <p><span class="font-semibold text-white">Rejected uploads.</span> Check <a href="{{ route('my.uploads') }}" class="font-semibold text-brand hover:text-brand/80">My uploads</a> for the reason, then recover with a cleaner file or clearer metadata on a new submission.</p>
             </div>
-        </section>
+        </details>
 
-        <form method="POST" action="{{ route('torrents.store') }}" enctype="multipart/form-data" class="mt-6 space-y-6 [&_label]:text-sm [&_label]:font-semibold [&_label]:text-slate-300 [&_input]:mt-1 [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-700 [&_input]:bg-slate-950/60 [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-sm [&_input]:text-slate-100 [&_select]:mt-1 [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-700 [&_select]:bg-slate-950/60 [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-sm [&_select]:text-slate-100 [&_textarea]:mt-1 [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-slate-700 [&_textarea]:bg-slate-950/60 [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:text-sm [&_textarea]:text-slate-100">
+        <form id="torrent-upload-form" data-analysis-url="{{ route('torrents.upload.analyse') }}" method="POST" action="{{ route('torrents.store') }}" enctype="multipart/form-data" class="mt-6 space-y-6 [&_label]:text-sm [&_label]:font-semibold [&_label]:text-slate-300 [&_input]:mt-1 [&_input]:w-full [&_input]:rounded-xl [&_input]:border [&_input]:border-slate-700 [&_input]:bg-slate-950/60 [&_input]:px-3 [&_input]:py-2.5 [&_input]:text-sm [&_input]:text-slate-100 [&_select]:mt-1 [&_select]:w-full [&_select]:rounded-xl [&_select]:border [&_select]:border-slate-700 [&_select]:bg-slate-950/60 [&_select]:px-3 [&_select]:py-2.5 [&_select]:text-sm [&_select]:text-slate-100 [&_textarea]:mt-1 [&_textarea]:w-full [&_textarea]:rounded-xl [&_textarea]:border [&_textarea]:border-slate-700 [&_textarea]:bg-slate-950/60 [&_textarea]:px-3 [&_textarea]:py-2.5 [&_textarea]:text-sm [&_textarea]:text-slate-100">
             @csrf
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
@@ -69,7 +69,21 @@
             </fieldset>
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
-                <legend class="px-1 text-base font-semibold text-white">2. Release metadata</legend>
+                <legend class="px-1 text-base font-semibold text-white">2. NFO details</legend>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div><label for="nfo_file">NFO file (optional)</label><input type="file" name="nfo_file" id="nfo_file" accept=".nfo,.txt,text/plain"></div>
+                    <div><label for="nfo_text">NFO text (optional)</label><textarea id="nfo_text" name="nfo_text" rows="5">{{ old('nfo_text') }}</textarea></div>
+                </div>
+            </fieldset>
+
+            <div class="rounded-2xl border border-brand/40 bg-brand/5 p-4">
+                <button type="button" id="analyse-upload" class="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-slate-950">Analyse files</button>
+                <p id="upload-analysis-status" class="mt-3 text-sm text-slate-300" role="status" aria-live="polite">Choose your torrent and optional NFO, then analyse them. Review the detected details below.</p>
+            </div>
+            <input type="hidden" name="metadata_reviewed" id="metadata-reviewed" value="{{ old('metadata_reviewed', '0') }}">
+
+            <fieldset class="rounded-2xl border border-slate-800 p-4">
+                <legend class="px-1 text-base font-semibold text-white">3. Review release metadata</legend>
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label for="name">Release name</label><input type="text" id="name" name="name" value="{{ old('name') }}" required></div>
                     <div><label for="title">Title</label><input type="text" id="title" name="title" value="{{ old('title') }}" placeholder="Movie or series title"></div>
@@ -78,7 +92,12 @@
                         <label for="category_id">Category</label>
                         <select id="category_id" name="category_id"><option value="">Select a category</option>@foreach ($categories as $category)<option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select>
                     </div>
-                    <div><label for="type">Type</label><select id="type" name="type" required>@php($types = ['movie', 'tv', 'music', 'game', 'software', 'other'])@foreach ($types as $type)<option value="{{ $type }}" @selected(old('type', 'movie') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></div>
+                    <div><label for="type">Type</label><select id="type" name="type" required><option value="">Choose type</option>@php($types = ['movie', 'tv', 'music', 'game', 'software', 'other'])@foreach ($types as $type)<option value="{{ $type }}" @selected(old('type', '') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></div>
+                </div>
+                <p class="mt-3 text-xs text-slate-400">Torrent file, release name and type are required. Other fields are optional; detected values can be corrected.</p>
+                <details class="mt-4 rounded-xl border border-slate-700 p-4" id="upload-extra-metadata">
+                    <summary class="cursor-pointer text-sm font-semibold text-slate-200">Additional release metadata</summary>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div><label for="source">Source</label><input type="text" id="source" name="source" value="{{ old('source') }}" placeholder="WEB, BluRay, HDTV"></div>
                     <div><label for="resolution">Resolution</label><input type="text" id="resolution" name="resolution" value="{{ old('resolution') }}" placeholder="2160p, 1080p, 720p"></div>
                     <div><label for="release_group">Release group</label><input type="text" id="release_group" name="release_group" value="{{ old('release_group') }}" placeholder="NTB, FLUX, GRP"></div>
@@ -92,16 +111,9 @@
                     <div><label for="subtitle_language">Subtitle language</label><input type="text" id="subtitle_language" name="subtitle_language" value="{{ old('subtitle_language') }}" placeholder="Spanish or es"></div>
                     <div><label for="subtitles">Subtitles</label><input type="text" id="subtitles" name="subtitles" value="{{ old('subtitles') }}" placeholder="English, Japanese, Spanish"></div>
                 </div>
+                </details>
                 <p class="mt-3 text-xs text-slate-500">Examples: {{ implode(', ', $languageExamples) }}. Use labels or short codes; multiple subtitles can be comma-separated.</p>
                 <div class="mt-4"><label for="description">Description (Markdown supported)</label><textarea id="description" name="description" rows="6">{{ old('description') }}</textarea></div>
-            </fieldset>
-
-            <fieldset class="rounded-2xl border border-slate-800 p-4">
-                <legend class="px-1 text-base font-semibold text-white">3. NFO details</legend>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div><label for="nfo_file">NFO file (optional)</label><input type="file" name="nfo_file" id="nfo_file" accept=".nfo,.txt,text/plain"></div>
-                    <div><label for="nfo_text">NFO text (optional)</label><textarea id="nfo_text" name="nfo_text" rows="5">{{ old('nfo_text') }}</textarea></div>
-                </div>
             </fieldset>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -111,3 +123,7 @@
         </form>
     </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/nextgn-upload.js') }}" defer></script>
+@endpush

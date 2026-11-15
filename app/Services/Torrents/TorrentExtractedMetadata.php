@@ -19,6 +19,10 @@ final readonly class TorrentExtractedMetadata
         public ?string $rawNfo,
         public ?string $rawName = null,
         public ?string $parsedName = null,
+        public ?string $audioLanguage = null,
+        public ?string $subtitles = null,
+        public ?string $videoCodec = null,
+        public ?string $audioCodec = null,
     ) {}
 
     public static function empty(): self
@@ -62,6 +66,10 @@ final readonly class TorrentExtractedMetadata
             'raw_nfo' => $this->rawNfo,
             'raw_name' => $this->rawName,
             'parsed_name' => $this->parsedName,
+            'audio_language' => $this->audioLanguage,
+            'subtitles' => $this->subtitles,
+            'video_codec' => $this->videoCodec,
+            'audio_codec' => $this->audioCodec,
         ], static fn (?string $value): bool => $value !== null);
     }
 }

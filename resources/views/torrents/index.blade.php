@@ -43,7 +43,7 @@
 @endsection
 
 @section('content')
-    <div class="grid gap-6 xl:grid-cols-[20rem_minmax(0,1fr)]">
+    <div class="grid gap-6 xl:grid-cols-[16rem_minmax(0,1fr)]">
         <aside class="space-y-4 xl:sticky xl:top-6 xl:self-start">
             <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
                 <div class="mb-4 space-y-1">
@@ -53,6 +53,9 @@
                 </div>
 
                 <form method="GET" action="{{ route('torrents.index') }}" class="space-y-4">
+                    @if ($types === [] && $resolutions === [] && $sources === [])
+                        <p class="text-xs text-slate-400">Filter choices appear when approved torrents contain metadata.</p>
+                    @endif
                     <div class="space-y-3 rounded-lg border border-slate-800 bg-slate-950/30 p-3">
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Search</span>
@@ -193,7 +196,7 @@
             </div>
         </aside>
 
-        <section class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
+        <section class="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
             <div class="flex flex-col gap-2 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
@@ -221,7 +224,7 @@
                             </div>
 
                             <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20" aria-label="Scrollable release versions table">
-                                <table class="min-w-[46rem] text-sm">
+                                <table class="nextgn-results-table w-full text-sm">
                                     <thead class="bg-slate-950/60 text-[11px] uppercase tracking-wide text-slate-500">
                                         <tr>
                                             <th class="px-3 py-2 text-left font-semibold">Name / release title</th>
@@ -246,7 +249,7 @@
                                                 $rowTone = $isPrimary ? 'bg-emerald-500/[0.04] ring-1 ring-inset ring-emerald-500/10' : 'hover:bg-slate-800/35';
                                             @endphp
                                             <tr class="{{ $rowTone }}">
-                                                <td class="min-w-[22rem] px-3 py-2.5 align-top">
+                                                <td class="nextgn-release-name px-3 py-2.5 align-top">
                                                     <div class="flex items-start gap-2">
                                                         <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $isPrimary ? 'bg-emerald-400' : 'bg-slate-600' }}" aria-hidden="true"></span>
                                                         <div class="min-w-0 space-y-1">
@@ -254,21 +257,27 @@
                                                                 @if ($isFreeleech)
                                                                     <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
                                                                 @endif
-                                                                <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                                                <a href="{{ route('torrents.show', $torrent) }}" class="break-words font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                             </div>
                                                             <p class="text-xs leading-5 text-slate-500">
                                                                 {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
                                                             </p>
+                                                            <p class="text-xs leading-5 text-slate-300">{{ collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') }}</p>
+                                                            @if (! empty($row['language_badges']))
+                                                                <p class="text-xs leading-5 text-sky-200">{{ implode(' · ', $row['language_badges']) }}</p>
+                                                            @endif
+
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
-                                                <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
-                                                <td class="px-3 py-2.5 text-right align-top">
+                                                <td data-label="Size" class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                                <td data-label="Seed" class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                                <td data-label="Leech" class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                                <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
+                                                <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                                <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
                                                     <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
+                                                    <a href="{{ route('torrents.download', $torrent) }}" class="mt-2 inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -289,7 +298,7 @@
                 </div>
             @else
                 <div class="overflow-x-auto" aria-label="Scrollable torrent results table">
-                    <table class="min-w-[46rem] divide-y divide-slate-800 text-sm">
+                    <table class="nextgn-results-table w-full divide-y divide-slate-800 text-sm">
                         <thead class="bg-slate-900/80 text-[11px] uppercase tracking-wide text-slate-500">
                             <tr>
                                 <th class="px-3 py-2 text-left">Name / release title</th>
@@ -312,7 +321,7 @@
                                     $uploadedDate = $row['uploaded_date'] ?? '—';
                                 @endphp
                                 <tr class="hover:bg-slate-800/35">
-                                    <td class="min-w-[22rem] px-3 py-2.5 align-top">
+                                    <td class="nextgn-release-name px-3 py-2.5 align-top">
                                         <div class="flex items-start gap-2">
                                             <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-600" aria-hidden="true"></span>
                                             <div class="min-w-0 space-y-1">
@@ -320,21 +329,27 @@
                                                     @if ($isFreeleech)
                                                         <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
                                                     @endif
-                                                    <a href="{{ route('torrents.show', $torrent) }}" class="font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                                    <a href="{{ route('torrents.show', $torrent) }}" class="break-words font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                 </div>
                                                 <p class="text-xs leading-5 text-slate-500">
                                                     {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
                                                 </p>
+                                                            <p class="text-xs leading-5 text-slate-300">{{ collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') }}</p>
+                                                            @if (! empty($row['language_badges']))
+                                                                <p class="text-xs leading-5 text-sky-200">{{ implode(' · ', $row['language_badges']) }}</p>
+                                                            @endif
+
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
-                                    <td class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
-                                    <td class="px-3 py-2.5 text-right align-top">
+                                    <td data-label="Size" class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                    <td data-label="Seed" class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                    <td data-label="Leech" class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                    <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
+                                    <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                    <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
                                         <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
+                                                    <a href="{{ route('torrents.download', $torrent) }}" class="mt-2 inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
                                     </td>
                                 </tr>
                             @empty

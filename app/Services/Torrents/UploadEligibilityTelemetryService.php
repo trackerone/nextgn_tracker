@@ -11,11 +11,17 @@ final class UploadEligibilityTelemetryService
 {
     public function record(User $user, UploadEligibilityDecision $decision): void
     {
+        $context = $decision->context;
+        // Raw NFO belongs in NFO storage, not in every eligibility log entry.
+        if (is_array($context['extracted_metadata'] ?? null)) {
+            unset($context['extracted_metadata']['raw_nfo']);
+        }
+
         $payload = [
             'user_id' => (int) $user->getKey(),
             'allowed' => $decision->allowed,
             'reason' => $decision->reason?->value,
-            'context' => $decision->context,
+            'context' => $context,
         ];
 
         UploadEligibilityEvent::query()->create($payload);

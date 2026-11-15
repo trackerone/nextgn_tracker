@@ -76,6 +76,8 @@ final readonly class CanonicalTorrentMetadata
             'resolution' => $resolvedResolution,
             'source' => $resolvedSource,
             'release_group' => $metadata->releaseGroup,
+            'audio_language' => $metadata->audioLanguage,
+            'subtitles' => $metadata->subtitles,
             'imdb_id' => $metadata->imdbId,
             'tmdb_id' => $metadata->tmdbId,
             'nfo' => $metadata->rawNfo,

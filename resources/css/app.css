@@ -625,3 +625,63 @@ body {
     backdrop-filter: none;
   }
 }
+
+
+/* Compact tracker results: keep actions and metadata visible at every width. */
+.nextgn-results-table {
+  table-layout: fixed;
+}
+
+.nextgn-results-table th:first-child {
+  width: 40%;
+}
+
+.nextgn-results-table td {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+  .nextgn-results-table,
+  .nextgn-results-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .nextgn-results-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .nextgn-results-table tbody tr {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .35rem;
+    padding: .5rem;
+  }
+
+  .nextgn-results-table td {
+    min-width: 0;
+    padding: .5rem;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .nextgn-results-table td:first-child,
+  .nextgn-results-table td:last-child,
+  .nextgn-results-table td[colspan] {
+    grid-column: 1 / -1;
+  }
+
+  .nextgn-results-table td[data-label]::before {
+    display: block;
+    margin-bottom: .2rem;
+    color: #94a3b8;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    font-size: .65rem;
+    font-weight: 500;
+    content: attr(data-label);
+  }
+}
