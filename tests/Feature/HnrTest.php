@@ -259,6 +259,40 @@ final class HnrTest extends TestCase
         $this->assertSame(0, $row->fresh()->seed_seconds);
     }
 
+    public function test_saved_rule_text_updates_on_both_pages_and_existing_requirements_are_labeled(): void
+    {
+        $user = User::factory()->create();
+        $existing = $this->obligation($user);
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $rules = array_replace(HnrSettings::DEFAULTS, [
+            'enabled' => true,
+            'seed_hours' => 24,
+            'ratio' => 1.5,
+            'grace_hours' => 6,
+            'torrent_threshold' => 7,
+            'warning_interval_days' => 3,
+            'warning_decay_days' => 5,
+            'warnings_before_restriction' => 2,
+        ]);
+        $this->actingAs($sysop)->patch(route('sysop.hnr.update'), $rules)->assertRedirect();
+        $this->get(route('sysop.hnr.edit'))->assertOk()
+            ->assertSeeText('Current saved requirement for new obligations: ratio 1.5 or 24 hours')
+            ->assertDontSeeText('The provisional default is 72 hours');
+        $this->actingAs($user)->get(route('account.hnr'))->assertOk()
+            ->assertSeeText('Current rules for new obligations: seed each fully downloaded torrent to a ratio of 1.5 or for 24 hours')
+            ->assertSeeText('at least 7 outstanding torrents')
+            ->assertSeeText('no tracker activity for 6 hours')
+            ->assertSeeText('one warning every 3 days')
+            ->assertSeeText('After 2 warnings')
+            ->assertSeeText('every 5 days')
+            ->assertSeeText('Requirement fixed when tracking began');
+        $this->assertSame(259200, $existing->fresh()->required_seed_seconds);
+        $rules['seed_hours'] = 48;
+        $this->actingAs($sysop)->patch(route('sysop.hnr.update'), $rules)->assertRedirect();
+        $this->get(route('sysop.hnr.edit'))->assertOk()->assertSeeText('ratio 1.5 or 48 hours');
+        $this->actingAs($user)->get(route('account.hnr'))->assertOk()->assertSeeText('ratio of 1.5 or for 48 hours');
+    }
+
     private function enable(array $overrides = []): void
     {
         foreach (array_replace(HnrSettings::DEFAULTS, ['enabled' => true], $overrides) as $key => $value) {

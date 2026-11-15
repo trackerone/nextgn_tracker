@@ -1103,8 +1103,9 @@ class AnnounceTest extends TestCase
         $this->assertCount(50, $payload['peers']);
     }
 
-    public function test_exact_duplicate_no_event_announce_short_circuits_without_hidden_side_effects(): void
+    public function test_exact_duplicate_no_event_announce_refreshes_liveness_without_recounting_transfers(): void
     {
+        $this->travelTo(now()->startOfSecond());
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
         [$torrent, $infoHashHex] = $this->createTorrentWithInfoHashHex('torrent-duplicate-no-event');
@@ -1134,6 +1135,7 @@ class AnnounceTest extends TestCase
             ->where('peer_id', hex2bin($requesterPeerIdHex))
             ->firstOrFail();
 
+        $this->travel(1)->minutes();
         $response = $this->announce($user, $infoHashHex, [
             'peer_id' => $requesterPeerIdHex,
             'uploaded' => 123,
@@ -1149,11 +1151,16 @@ class AnnounceTest extends TestCase
 
         $peerAfter = $peerBefore->fresh();
         $this->assertNotNull($peerAfter);
-        $this->assertSame($peerBefore->updated_at?->toDateTimeString(), $peerAfter->updated_at?->toDateTimeString());
+        $this->assertSame(now()->toDateTimeString(), $peerAfter->last_announce_at?->toDateTimeString());
+        $this->assertSame($peerBefore->uploaded, $peerAfter->uploaded);
+        $this->assertSame($peerBefore->downloaded, $peerAfter->downloaded);
+        $this->assertSame($peerBefore->left, $peerAfter->left);
 
         $userTorrentAfter = $userTorrentBefore->fresh();
         $this->assertNotNull($userTorrentAfter);
         $this->assertSame($userTorrentBefore->last_announce_at?->toDateTimeString(), $userTorrentAfter->last_announce_at?->toDateTimeString());
+        $this->assertSame($userTorrentBefore->uploaded, $userTorrentAfter->uploaded);
+        $this->assertSame($userTorrentBefore->downloaded, $userTorrentAfter->downloaded);
     }
 
     public function test_default_peer_list_order_is_deterministic_when_announces_share_timestamp(): void
