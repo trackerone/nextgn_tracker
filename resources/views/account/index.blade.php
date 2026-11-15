@@ -39,7 +39,8 @@
         </div>
         <div class="rounded-2xl border border-slate-800 p-5">
             <h2 class="text-lg font-semibold">Hit &amp; Run (HnR)</h2>
-            <p class="mt-2 text-sm text-slate-400">HnR rules and penalties are not implemented yet. This is not a verified zero-HnR status. Your recorded transfer and completion history is shown below.</p>
+            <p class="mt-2 text-sm text-slate-400">{{ $hnrEnabled ? 'HnR monitoring enabled' : 'HnR enforcement is disabled' }} · {{ $hnrWarnings }} warnings</p>
+            <a href="{{ route('account.hnr') }}" class="mt-3 inline-block text-sm text-brand">Open my HnR status and obligations</a>
         </div>
     </section>
     <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">

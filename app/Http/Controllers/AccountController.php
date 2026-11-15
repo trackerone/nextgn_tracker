@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\HnrAccount;
 use App\Models\Peer;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Hnr\HnrSettings;
 use App\Services\Logging\AuditLogger;
 use App\Services\Tracker\PasskeyService;
 use Illuminate\Http\RedirectResponse;
@@ -28,6 +30,8 @@ final class AccountController extends Controller
             ->where('last_announce_at', '>', now()->subMinutes(max(1, $minutes)));
 
         return $this->privateView('account.index', [
+            'hnrWarnings' => HnrAccount::query()->where('user_id', $user->id)->value('warnings') ?? 0,
+            'hnrEnabled' => app(HnrSettings::class)->enabled(),
             'accountUser' => $user,
             'uploaded' => $user->totalUploaded(),
             'downloaded' => $user->totalDownloaded(),

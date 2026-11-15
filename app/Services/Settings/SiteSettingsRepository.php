@@ -30,6 +30,15 @@ final class SiteSettingsRepository
         'runtime.jobs.tracker.peer.cleanup.enabled' => ['value' => 'true', 'type' => 'bool'],
     ];
 
+    /**
+     * @param  list<string>  $keys
+     * @return array<string, string>
+     */
+    public function getMany(array $keys): array
+    {
+        return SiteSetting::query()->whereIn('key', $keys)->pluck('value', 'key')->all();
+    }
+
     public function getBool(string $key): bool
     {
         return filter_var($this->value($key), FILTER_VALIDATE_BOOLEAN);

@@ -27,7 +27,7 @@ final class AccountOverviewTest extends TestCase
             $user = User::factory()->create(['role' => $role]);
             $this->actingAs($user)->get(route('home'))->assertOk()->assertSee(route('account.index'));
             $this->get(route('account.index'))->assertOk()
-                ->assertSee($user->email)->assertSee('My private account')->assertSee('HnR rules and penalties are not implemented yet.')
+                ->assertSee($user->email)->assertSee('My private account')->assertSee('HnR enforcement is disabled')
                 ->assertHeader('Cache-Control', 'no-store, private');
         }
     }

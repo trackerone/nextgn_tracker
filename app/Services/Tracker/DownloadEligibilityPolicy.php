@@ -7,16 +7,23 @@ namespace App\Services\Tracker;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Models\UserStat;
+use App\Services\Hnr\HnrService;
 
 final class DownloadEligibilityPolicy
 {
-    public function __construct(private readonly RatioRulesConfig $ratioRulesConfig) {}
+    public function __construct(private readonly RatioRulesConfig $ratioRulesConfig, private readonly HnrService $hnr) {}
 
     /**
      * @return array{allowed: bool, reason: string}
      */
     public function check(User $user, Torrent $torrent): array
     {
+        if ($this->hnr->restricted($user)) {
+            return $this->hnr->recovering($user, $torrent)
+                ? ['allowed' => true, 'reason' => 'hnr_recovery']
+                : ['allowed' => false, 'reason' => 'hnr_restricted'];
+        }
+
         if (! $this->ratioRulesConfig->enforcementEnabled()) {
             return ['allowed' => true, 'reason' => 'enforcement_disabled'];
         }

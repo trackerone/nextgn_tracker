@@ -1,6 +1,7 @@
 <nav class="flex flex-wrap gap-2 text-sm" aria-label="Account navigation">
     @foreach ([
         'account.index' => 'Overview',
+        'account.hnr' => 'HnR & seeding obligations',
         'account.settings.edit' => 'Account settings',
         'account.access' => 'API keys & passkey',
         'account.rss.index' => 'RSS feeds',
