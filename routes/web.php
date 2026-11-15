@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountInviteController;
+use App\Http\Controllers\AccountPeopleController;
 use App\Http\Controllers\AccountNotificationController;
 use App\Http\Controllers\AccountRssController;
 use App\Http\Controllers\AccountRssPresetController;
@@ -300,6 +302,15 @@ Route::middleware(['auth'])->group(function (): void {
         ->whereNumber('savedIntent')
         ->name('account.saved-intents.destroy');
 
+    Route::get('/account', [AccountController::class, 'index'])->name('account.index');
+    Route::get('/account/settings', [AccountController::class, 'edit'])->name('account.settings.edit');
+    Route::patch('/account/settings', [AccountController::class, 'update'])->middleware('throttle:10,1')->name('account.settings.update');
+    Route::get('/account/access', [AccountController::class, 'access'])->name('account.access');
+    Route::post('/account/passkey/rotate', [AccountController::class, 'rotatePasskey'])->middleware('throttle:5,1')->name('account.passkey.rotate');
+    Route::get('/account/people', [AccountPeopleController::class, 'index'])->name('account.people');
+    Route::post('/account/people/{user:public_slug}', [AccountPeopleController::class, 'store'])->middleware('throttle:30,1')->name('account.people.store');
+    Route::delete('/account/people/{user:public_slug}', [AccountPeopleController::class, 'destroy'])->middleware('throttle:30,1')->name('account.people.destroy');
+
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
     Route::get('/account/notifications', [AccountNotificationController::class, 'index'])->name('account.notifications.index');
@@ -359,3 +370,4 @@ Route::middleware(['throttle:120,1', 'tracker.validate-announce'])
 Route::middleware(['throttle:120,1'])
     ->get('/scrape/{passkey}', ScrapeController::class)
     ->name('scrape');
+

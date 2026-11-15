@@ -12,6 +12,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -226,6 +227,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function snatches(): HasMany
     {
         return $this->userTorrents();
+    }
+
+    public function following(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'user_follows', 'follower_id', 'following_id')->withTimestamps();
+    }
+
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'user_follows', 'following_id', 'follower_id')->withTimestamps();
     }
 
     public function torrentFollows(): HasMany
@@ -490,3 +501,4 @@ class User extends Authenticatable implements MustVerifyEmail
         };
     }
 }
+

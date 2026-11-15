@@ -14,5 +14,17 @@
                 <dd class="mt-1 text-sm font-semibold text-white">{{ optional($profileUser->created_at)->toFormattedDateString() ?? 'Unknown' }}</dd>
             </div>
         </dl>
+        @auth
+            @if (auth()->user()->is($profileUser))
+                <a href="{{ route('account.index') }}" class="mt-5 inline-block text-sm text-brand">Open my private account</a>
+            @else
+                <form method="POST" action="{{ route($isFollowing ? 'account.people.destroy' : 'account.people.store', $profileUser->publicProfileRouteKey()) }}" class="mt-5">
+                    @csrf
+                    @if ($isFollowing) @method('DELETE') @endif
+                    <button class="rounded-xl border border-slate-700 px-4 py-2 text-sm">{{ $isFollowing ? 'Unfollow member' : 'Follow member' }}</button>
+                </form>
+            @endif
+        @endauth
     </section>
 @endsection
+
