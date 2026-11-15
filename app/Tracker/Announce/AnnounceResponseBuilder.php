@@ -6,18 +6,21 @@ namespace App\Tracker\Announce;
 
 use App\Models\Peer;
 use App\Models\Torrent;
+use App\Services\Settings\TrackerRuntimeSettings;
 use DateTimeInterface;
 
 final class AnnounceResponseBuilder
 {
+    public function __construct(private readonly TrackerRuntimeSettings $settings) {}
+
     public function successWithPeers(Torrent $torrent, string $excludingPeerId, int $numwant): AnnounceResult
     {
-        $activeSince = now()->subMinutes(max(1, (int) config('tracker.ghost_peer_timeout_minutes')));
+        $activeSince = now()->subMinutes(max(1, $this->settings->ghostTimeout()));
 
         return AnnounceResult::success([
             'complete' => (int) $torrent->seeders,
             'incomplete' => (int) $torrent->leechers,
-            'interval' => 1800,
+            'interval' => $this->settings->announceInterval(),
             'peers' => $this->peersForResponse(
                 torrentId: (int) $torrent->getKey(),
                 excludingPeer: $excludingPeerId,
@@ -29,12 +32,12 @@ final class AnnounceResponseBuilder
 
     public function successWithoutPeers(Torrent $torrent): AnnounceResult
     {
-        $activeSince = now()->subMinutes(max(1, (int) config('tracker.ghost_peer_timeout_minutes')));
+        $activeSince = now()->subMinutes(max(1, $this->settings->ghostTimeout()));
 
         return AnnounceResult::success([
             'complete' => $this->activePeerCount((int) $torrent->getKey(), true, $activeSince),
             'incomplete' => $this->activePeerCount((int) $torrent->getKey(), false, $activeSince),
-            'interval' => 1800,
+            'interval' => $this->settings->announceInterval(),
             'peers' => [],
         ]);
     }

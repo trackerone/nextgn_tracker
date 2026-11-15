@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Services\Settings\TrackerRuntimeSettings;
 use App\Services\Tracker\GhostPeerPruner;
 use Illuminate\Console\Command;
 
@@ -13,12 +14,12 @@ final class PruneGhostPeersCommand extends Command
 
     protected $description = 'Remove tracker peers that have not announced within the configured timeout.';
 
-    public function handle(GhostPeerPruner $pruner): int
+    public function handle(GhostPeerPruner $pruner, TrackerRuntimeSettings $settings): int
     {
-        $timeoutMinutes = (int) config('tracker.ghost_peer_timeout_minutes');
+        $timeoutMinutes = $settings->ghostTimeout();
 
         if ($timeoutMinutes < 1) {
-            $this->error('TRACKER_GHOST_TIMEOUT_MINUTES must be at least 1.');
+            $this->error('TRACKER_GHOST_TIMEOUT_MINUTES must be at least 1. Check the Site settings override too.');
 
             return self::FAILURE;
         }

@@ -40,9 +40,11 @@ final class SiteSettingsRepository
         return (float) $this->value($key);
     }
 
-    public function getInt(string $key): int
+    public function getInt(string $key, int $default = 0): int
     {
-        return (int) $this->value($key);
+        $value = $this->value($key);
+
+        return $value === '' ? $default : (int) $value;
     }
 
     public function getString(string $key): string

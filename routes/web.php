@@ -36,6 +36,7 @@ use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
+use App\Http\Controllers\Sysop\SiteSettingsController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
@@ -161,6 +162,8 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
     });
 
 Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
+    Route::get('/settings', [SiteSettingsController::class, 'edit'])->name('settings.edit');
+    Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
 });

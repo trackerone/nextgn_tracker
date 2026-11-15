@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Settings\TrackerRuntimeSettings;
 use App\Tracker\Announce\AnnounceResult;
 use App\Tracker\Announce\PasskeyUserResolver;
 use App\Tracker\Announce\TorrentAccessResolver;
@@ -16,10 +17,9 @@ use Illuminate\Support\Collection;
 
 final class ScrapeController extends Controller
 {
-    private const MAX_INFO_HASHES = 50;
-
     public function __construct(
         private readonly BencodeService $bencode,
+        private readonly TrackerRuntimeSettings $trackerSettings,
         private readonly PasskeyUserResolver $passkeyUserResolver,
         private readonly TorrentAccessResolver $torrentAccessResolver,
     ) {}
@@ -38,7 +38,7 @@ final class ScrapeController extends Controller
 
         $hashes = $this->allInfoHashParams($request);
 
-        if (count($hashes) > self::MAX_INFO_HASHES) {
+        if (count($hashes) > $this->trackerSettings->scrapeLimit()) {
             return response(
                 $this->bencode->encode(['failure reason' => 'Too many info_hash values requested.']),
                 200,
