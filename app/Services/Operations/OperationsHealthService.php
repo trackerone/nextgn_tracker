@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Operations;
 
 use App\Services\Security\ProductionSecurityReadinessService;
+use App\Services\Settings\TrackerRuntimeSettings;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -14,23 +15,29 @@ final class OperationsHealthService
 {
     public function __construct(
         private readonly ProductionSecurityReadinessService $productionReadinessService,
+        private readonly TrackerRuntimeSettings $trackerSettings,
     ) {}
 
     public function collect(): array
     {
         $securityReadiness = $this->productionReadinessService->evaluate();
 
+        $production = (string) config('app.env') === 'production';
         $cards = [
             $this->applicationCard(),
-            $this->securityCard($securityReadiness),
+            $this->securityCard(),
             $this->databaseCard(),
             $this->cacheCard(),
             $this->schedulerCard(),
             $this->queueCard(),
             $this->storageCard(),
             $this->trackerCard(),
-            $this->productionReadinessCard($securityReadiness),
         ];
+
+        $readinessCard = $this->productionReadinessCard($securityReadiness);
+        if ($production) {
+            $cards[] = $readinessCard;
+        }
 
         $warnings = collect($cards)
             ->whereIn('status', ['warning', 'critical'])
@@ -42,7 +49,11 @@ final class OperationsHealthService
 
         return [
             'status' => $this->overallStatus($cards),
-            'cards' => $cards,
+            'cards' => array_values(array_filter($cards, static fn (array $card): bool => $card['group'] !== 'Production Readiness')),
+            'production_card' => $readinessCard,
+            'production_checks' => $securityReadiness['checks'],
+            'is_production' => $production,
+            'checked_at' => now()->toIso8601String(),
             'warnings' => $warnings,
         ];
     }
@@ -87,7 +98,7 @@ final class OperationsHealthService
         );
     }
 
-    private function securityCard(array $securityReadiness): array
+    private function securityCard(): array
     {
         $requireNonce = (bool) config('security.api.require_nonce', true);
 
@@ -105,7 +116,7 @@ final class OperationsHealthService
             $actions[] = 'Enable API nonce requirement (API_REQUIRE_NONCE=true).';
         }
 
-        if ($allowLegacyKeys) {
+        if ($allowLegacyKeys && (string) config('app.env') === 'production') {
             $status = $status === 'critical' ? 'critical' : 'warning';
 
             $actions[] = 'Disable legacy API key mode (SECURITY_API_ALLOW_LEGACY_KEYS=false).';
@@ -125,12 +136,7 @@ final class OperationsHealthService
                         ? 'legacy keys allowed'
                         : 'legacy keys blocked'
                 ),
-                sprintf(
-                    'Production security readiness: %s',
-                    $securityReadiness['passed']
-                        ? 'pass'
-                        : 'attention required'
-                ),
+                'Configuration snapshot only; no live security probe was performed.',
             ],
             $actions
         );
@@ -162,7 +168,9 @@ final class OperationsHealthService
         try {
             Cache::store()->put('ops-health', 'ok', 5);
 
-            Cache::store()->get('ops-health');
+            if (Cache::store()->get('ops-health') !== 'ok') {
+                throw new \RuntimeException('Cache readback did not match.');
+            }
 
             return $this->card(
                 'Cache/Redis',
@@ -194,7 +202,10 @@ final class OperationsHealthService
 
     private function schedulerCard(): array
     {
-        $items = ['Visibility only: scheduler actions are not available from this dashboard.'];
+        $items = [
+            'Visibility only: scheduler actions are not available from this dashboard.',
+            'Execution not verified: this only reads schedule definitions, not cron activity or last successful runs.',
+        ];
         $actions = [];
 
         try {
@@ -226,7 +237,7 @@ final class OperationsHealthService
             $actions[] = 'Validate cron is running php artisan schedule:run every minute.';
         }
 
-        return $this->card('Scheduler', empty($actions) ? 'ok' : 'warning', $items, $actions);
+        return $this->card('Scheduler', empty($actions) ? 'info' : 'warning', $items, $actions);
     }
 
     private function queueCard(): array
@@ -235,6 +246,7 @@ final class OperationsHealthService
             sprintf('Queue connection: %s', (string) config('queue.default')),
             sprintf('Queue failed-job driver: %s', (string) config('queue.failed.driver', 'database-uuids')),
             'Visibility only: retry/flush actions are intentionally disabled here.',
+            'Worker execution not verified. Zero failed jobs is not a worker heartbeat.',
         ];
 
         $actions = [];
@@ -265,7 +277,7 @@ final class OperationsHealthService
             $actions[] = 'Create/verify failed_jobs table and queue worker visibility.';
         }
 
-        return $this->card('Queue', empty($actions) ? 'ok' : 'warning', $items, array_values(array_unique($actions)));
+        return $this->card('Queue', empty($actions) ? 'info' : 'warning', $items, array_values(array_unique($actions)));
     }
 
     private function storageCard(): array
@@ -289,27 +301,18 @@ final class OperationsHealthService
 
     private function trackerCard(): array
     {
+        $limit = $this->trackerSettings->scrapeLimit();
+
         return $this->card(
             'Tracker',
-            'warning',
+            $limit > 0 ? 'info' : 'critical',
             [
-                'Tracker scrape hard-cap status: not configured in current runtime config',
-                sprintf(
-                    'HMAC nonce enforcement: %s',
-                    (bool) config('security.api.require_nonce', true)
-                        ? 'enabled'
-                        : 'disabled'
-                ),
-                sprintf(
-                    'Legacy API-key enforcement: %s',
-                    (bool) config('security.api.allow_legacy_keys', true)
-                        ? 'legacy allowed'
-                        : 'legacy blocked'
-                ),
+                sprintf('Maximum torrents per scrape: %d (enforced by the scrape endpoint).', $limit),
+                sprintf('Announce interval: %d seconds.', $this->trackerSettings->announceInterval()),
+                sprintf('Peer timeout: %d minutes.', $this->trackerSettings->ghostTimeout()),
+                'Configuration only: announce, scrape and peer cleanup execution have not been probed.',
             ],
-            [
-                'Define and expose tracker scrape hard-cap config for operational visibility.',
-            ]
+            $limit > 0 ? [] : ['Set a positive scrape request limit in Site settings.'],
         );
     }
 
@@ -322,7 +325,7 @@ final class OperationsHealthService
 
         return $this->card(
             'Production Readiness',
-            $failedChecks === 0 ? 'ok' : 'warning',
+            (string) config('app.env') !== 'production' ? 'info' : ($failedChecks === 0 ? 'ok' : 'warning'),
             [
                 sprintf(
                     'Readiness checks passed: %s',
@@ -333,9 +336,9 @@ final class OperationsHealthService
                     $failedChecks
                 ),
             ],
-            $failedChecks > 0
+            $failedChecks > 0 && (string) config('app.env') === 'production'
                 ? [
-                    'Run php artisan security:production-check and remediate reported checks.',
+                    'Run php artisan nextgn:production-check and remediate reported checks.',
                 ]
                 : []
         );
@@ -359,7 +362,7 @@ final class OperationsHealthService
             return 'warning';
         }
 
-        return 'ok';
+        return collect($cards)->contains(fn (array $card): bool => $card['status'] === 'info') ? 'info' : 'ok';
     }
 
     private function card(

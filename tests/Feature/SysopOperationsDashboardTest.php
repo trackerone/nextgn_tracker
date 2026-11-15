@@ -45,10 +45,10 @@ final class SysopOperationsDashboardTest extends TestCase
             ->assertSee('Sysop Operations Dashboard')
             ->assertSeeText('Alpha launch readiness')
             ->assertSeeText('browse/detail/upload smoke checks')
-            ->assertSee('Runtime Job Controls (Safe Scope)')
+            ->assertSee('Background job settings')
             ->assertSee('Ghost Peer Cleanup')
-            ->assertSee('Immutable Critical')
-            ->assertSee('Sysop Controllable')
+            ->assertSee('Protected core task')
+            ->assertSee('Disable optional job')
             ->assertSee('Visibility only: scheduler actions are not available from this dashboard.')
             ->assertSee('Visibility only: retry/flush actions are intentionally disabled here.');
     }
@@ -112,4 +112,39 @@ final class SysopOperationsDashboardTest extends TestCase
             ->assertSee('Cache store: array (unavailable)')
             ->assertSee('Configured tasks: unavailable');
     }
+    public function test_local_deployment_requirements_are_informational_and_tracker_limit_is_real(): void
+    {
+        config()->set('app.env', 'local');
+        config()->set('app.debug', true);
+        config()->set('security.production_hardening_enabled', false);
+        config()->set('security.api.require_nonce', true);
+        config()->set('security.api.allow_legacy_keys', true);
+        config()->set('tracker.scrape_max_info_hashes', 37);
+
+        $health = app(\App\Services\Operations\OperationsHealthService::class)->collect();
+        $cards = collect($health['cards'])->keyBy('group');
+
+        $this->assertSame('info', $health['production_card']['status']);
+        $this->assertSame([], $health['production_card']['next_actions']);
+        $this->assertSame('info', $cards['Scheduler']['status']);
+        $this->assertSame('info', $cards['Queue']['status']);
+        $this->assertSame('info', $cards['Tracker']['status']);
+        $this->assertContains('Maximum torrents per scrape: 37 (enforced by the scrape endpoint).', $cards['Tracker']['items']);
+        $this->assertNotEmpty($health['production_checks']);
+        $this->assertNotContains('Disable legacy API key mode (SECURITY_API_ALLOW_LEGACY_KEYS=false).', $health['warnings']);
+    }
+
+    public function test_cache_readback_failure_is_not_reported_as_healthy(): void
+    {
+        $store = \Mockery::mock();
+        $store->shouldReceive('put')->once()->andReturn(true);
+        $store->shouldReceive('get')->once()->andReturn(null);
+        Cache::shouldReceive('store')->twice()->andReturn($store);
+
+        $health = app(\App\Services\Operations\OperationsHealthService::class)->collect();
+        $cards = collect($health['cards'])->keyBy('group');
+
+        $this->assertSame('warning', $cards['Cache/Redis']['status']);
+    }
+
 }
