@@ -26,7 +26,7 @@
                     </a>
                     @auth
                         <div class="flex flex-wrap items-center gap-2 text-sm text-slate-300">
-                            <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
+                            <a href="{{ route('account.index') }}" class="max-w-full break-words rounded-lg px-2 py-1 font-semibold text-white hover:bg-slate-800" aria-label="My account: {{ auth()->user()->name }}">{{ auth()->user()->name }}</a>
                             <span class="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
                                 {{ auth()->user()->role_label }}
                             </span>

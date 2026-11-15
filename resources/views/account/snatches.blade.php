@@ -7,6 +7,7 @@
 @endsection
 
 @section('content')
+    @include('account.navigation')
     <div class="space-y-6">
         <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
             <h1 class="text-2xl font-semibold text-white">Ratio and completed torrents</h1>

@@ -3,6 +3,7 @@
 @section('title', 'RSS Feeds')
 
 @section('content')
+    @include('account.navigation')
     <section class="space-y-6">
         <div>
             <p class="text-sm font-semibold uppercase tracking-wide text-brand">Account</p>
