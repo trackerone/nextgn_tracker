@@ -26,7 +26,9 @@
     </style>
 </head>
 <body>
+@if (auth()->user()?->isSysop())
 <a href="{{ route('sysop.settings.edit') }}">Back to site settings</a>
+@endif
 <h1>Metadata Settings</h1>
 <p>Only credential status is displayed. Stored secrets are never shown.</p>
 <div id="status" class="status" hidden></div>

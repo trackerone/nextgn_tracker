@@ -112,6 +112,7 @@ final class SysopOperationsDashboardTest extends TestCase
             ->assertSee('Cache store: array (unavailable)')
             ->assertSee('Configured tasks: unavailable');
     }
+
     public function test_local_deployment_requirements_are_informational_and_tracker_limit_is_real(): void
     {
         config()->set('app.env', 'local');
@@ -139,12 +140,11 @@ final class SysopOperationsDashboardTest extends TestCase
         $store = \Mockery::mock();
         $store->shouldReceive('put')->once()->andReturn(true);
         $store->shouldReceive('get')->once()->andReturn(null);
-        Cache::shouldReceive('store')->twice()->andReturn($store);
+        Cache::shouldReceive('store')->andReturn($store);
 
         $health = app(\App\Services\Operations\OperationsHealthService::class)->collect();
         $cards = collect($health['cards'])->keyBy('group');
 
         $this->assertSame('warning', $cards['Cache/Redis']['status']);
     }
-
 }
