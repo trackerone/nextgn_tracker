@@ -209,7 +209,52 @@ final class HnrTest extends TestCase
         }
         $this->assertSame(5400, $row->fresh()->seed_seconds);
         $this->assertSame(1000, $row->fresh()->downloaded_bytes);
-        $this->assertTrue(Peer::query()->where('user_id', $user->id)->firstOrFail()->last_announce_at->equalTo(now()));
+        $this->assertSame(now()->getTimestamp(), Peer::query()->where('user_id', $user->id)->firstOrFail()->last_announce_at->getTimestamp());
+    }
+
+    public function test_reenable_restarts_grace_and_repeated_stopped_reports_cannot_hide_overdue_obligations(): void
+    {
+        $this->enable(['enabled' => false]);
+        $user = User::factory()->create();
+        $row = $this->obligation($user);
+        $this->travel(10)->days();
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $rules = array_replace(HnrSettings::DEFAULTS, ['enabled' => true, 'grace_hours' => 1, 'torrent_threshold' => 1]);
+        $this->actingAs($sysop)->patch(route('sysop.hnr.update'), $rules)->assertRedirect();
+        $this->assertSame(0, app(HnrService::class)->overdueCount($user));
+        $this->travel(2)->hours();
+        $stopped = new AnnounceRequestData('', str_repeat('a', 20), 6881, 0, 0, 0, 'stopped', 50, null);
+        app(HnrService::class)->record($user, $row->torrent, $stopped, $this->credit(0, 0), null);
+        $this->assertSame(1, app(HnrService::class)->overdueCount($user));
+    }
+
+    public function test_new_downloading_announces_are_blocked_but_recovery_and_seeding_are_allowed(): void
+    {
+        $this->enable();
+        $user = User::factory()->create();
+        $row = $this->obligation($user);
+        HnrAccount::query()->create(['user_id' => $user->id, 'warnings' => 3, 'restricted_at' => now()]);
+        $other = Torrent::factory()->create();
+        $announce = function (Torrent $torrent, int $left) use ($user): array {
+            $url = '/announce/'.$user->ensurePasskey().'?'.http_build_query(['info_hash' => $torrent->info_hash, 'peer_id' => bin2hex(str_repeat('b', 20)), 'port' => 6881, 'uploaded' => 0, 'downloaded' => 0, 'left' => $left, 'event' => 'started']);
+            $reply = $this->get($url)->assertOk();
+
+            return app(BencodeService::class)->decode($reply->getContent());
+        };
+        $this->assertArrayHasKey('failure reason', $announce($other, 1000));
+        $this->assertArrayNotHasKey('failure reason', $announce($row->torrent, 1000));
+        $this->assertArrayNotHasKey('failure reason', $announce($other, 0));
+    }
+
+    public function test_suspicious_reports_do_not_earn_seed_time(): void
+    {
+        $this->enable();
+        $user = User::factory()->create();
+        $row = $this->obligation($user);
+        $peer = Peer::factory()->for($user)->for($row->torrent)->create(['left' => 0, 'last_announce_at' => now()]);
+        $this->travel(30)->minutes();
+        app(HnrService::class)->record($user, $row->torrent, $this->data(), new AnnounceIntegrityEvaluation(0, 0, false, ['uploaded_implausible']), $peer);
+        $this->assertSame(0, $row->fresh()->seed_seconds);
     }
 
     private function enable(array $overrides = []): void

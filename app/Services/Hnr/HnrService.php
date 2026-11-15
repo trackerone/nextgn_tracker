@@ -52,7 +52,9 @@ final class HnrService
             if ($data->left === 0 && ! $credit->isSuspicious()) {
                 $row->completed_at ??= now();
             }
-            $row->last_seen_at = now();
+            if ($data->event !== 'stopped' || $oldPeer !== null) {
+                $row->last_seen_at = now();
+            }
             $row->last_counted_at = now();
             $met = $row->downloaded_bytes > 0 && $row->uploaded_bytes >= $row->downloaded_bytes * $row->required_ratio;
             $met = $met || ($row->completed_at !== null && $row->seed_seconds >= $row->required_seed_seconds);
@@ -64,7 +66,7 @@ final class HnrService
     public function outstanding(User $user): Builder
     {
         return HnrObligation::query()->where('user_id', $user->id)->whereNull('fulfilled_at')->whereNull('waived_at')
-            ->whereHas('torrent', fn (Builder $query): Builder => $query->displayable());
+            ->whereIn('torrent_id', Torrent::query()->displayable()->select('id'));
     }
 
     public function overdueCount(User $user): int
