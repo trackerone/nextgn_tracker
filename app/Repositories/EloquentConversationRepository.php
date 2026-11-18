@@ -33,6 +33,7 @@ class EloquentConversationRepository implements ConversationRepositoryInterface
                     ])
                     ->with('sender:id,name'),
             ])
+            ->withCount(['messages as unread_count' => static fn ($query) => $query->whereNull('read_at')->where('sender_id', '!=', $user->id)])
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')
             ->paginate($perPage);

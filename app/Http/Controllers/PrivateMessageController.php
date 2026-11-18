@@ -11,8 +11,8 @@ use App\Models\Conversation;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
 use App\Services\MarkdownService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class PrivateMessageController extends Controller
@@ -23,21 +23,48 @@ class PrivateMessageController extends Controller
         private readonly MessageRepositoryInterface $messages,
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): Response
     {
         $user = $request->user();
 
         /** @var \Illuminate\Pagination\LengthAwarePaginator $conversations */
         $conversations = $this->conversations->paginateForUser($user, perPage: 20);
 
+        if (! $request->expectsJson()) {
+            return response()->view('pm.index', ['conversations' => $conversations])->header('Cache-Control', 'private, no-store');
+        }
+
         return response()->json($conversations->getCollection());
     }
 
-    public function show(Request $request, Conversation $conversation): JsonResponse
+    public function create(Request $request): Response
+    {
+        $recipient = null;
+        if ($request->filled('recipient')) {
+            $data = $request->validate(['recipient' => ['string', 'exists:users,public_slug']]);
+            $recipient = User::query()->where('public_slug', $data['recipient'])->firstOrFail();
+        }
+
+        return response()->view('pm.create', ['recipient' => $recipient])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function show(Request $request, Conversation $conversation): Response
     {
         $this->authorize('view', $conversation);
 
         $userId = (int) $request->user()->getKey();
+        if (! $request->expectsJson()) {
+            $conversation->load(['userA:id,name,public_slug', 'userB:id,name,public_slug']);
+            $messages = $conversation->messages()->with('sender:id,name,public_slug')->orderBy('created_at')->orderBy('id')->paginate(20);
+            $conversation->messages()->whereIn('id', $messages->getCollection()->pluck('id'))
+                ->whereNull('read_at')->where('sender_id', '!=', $userId)->update(['read_at' => now()]);
+
+            return response()->view('pm.show', [
+                'conversation' => $conversation,
+                'messages' => $messages,
+                'otherUser' => (int) $conversation->user_a_id === $userId ? $conversation->userB : $conversation->userA,
+            ])->header('Cache-Control', 'private, no-store');
+        }
 
         $conversation->messages()
             ->whereNull('read_at')
@@ -65,15 +92,22 @@ class PrivateMessageController extends Controller
         return response()->json($conversation);
     }
 
-    public function store(StartConversationRequest $request): JsonResponse
+    public function store(StartConversationRequest $request): Response
     {
         $user = $request->user();
         $data = $request->validated();
 
         $senderId = (int) $user->getKey();
-        $recipientId = (int) $data['recipient_id'];
+        $recipient = $request->expectsJson()
+            ? User::query()->findOrFail((int) $data['recipient_id'])
+            : User::query()->where('public_slug', $data['recipient_slug'])->firstOrFail();
+        $recipientId = (int) $recipient->getKey();
 
         if ($senderId === $recipientId) {
+            if (! $request->expectsJson()) {
+                throw ValidationException::withMessages(['recipient_slug' => 'You cannot message yourself.']);
+            }
+
             return response()->json([
                 'message' => 'You cannot message yourself.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -81,7 +115,6 @@ class PrivateMessageController extends Controller
 
         $html = $this->markdownService->render($data['body_md']);
 
-        $recipient = User::query()->findOrFail($recipientId);
         $conversation = $this->conversations->startConversation($user, $recipient);
 
         $message = $this->messages->sendMessage($conversation, [
@@ -101,6 +134,12 @@ class PrivateMessageController extends Controller
 
         if ($recipient !== null) {
             $recipient->notify(new NewPrivateMessageNotification($message));
+        }
+
+        if (! $request->expectsJson()) {
+            $page = max(1, (int) ceil($conversation->messages()->count() / 20));
+
+            return redirect(route('pm.show', ['conversation' => $conversation->id, 'page' => $page]).'#message-'.$message->id)->with('status', 'Message sent.');
         }
 
         return response()->json([

@@ -215,6 +215,7 @@ Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name
 */
 Route::middleware(['auth', 'role.min:1', 'throttle:60,1'])->group(function (): void {
     Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
+    Route::get('/forum/new-topic', [TopicController::class, 'create'])->name('topics.create');
     Route::get('/topics/{topic:slug}', [TopicController::class, 'show'])->name('topics.show');
 
     Route::post('/topics', [TopicController::class, 'store'])->name('topics.store');
@@ -236,6 +237,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
         ->middleware('role.min:10')
         ->name('topics.destroy');
 
+    Route::get('/posts/{post}/edit', [PostController::class, 'edit'])->name('posts.edit');
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
     Route::post('/posts/{post}/restore', [PostController::class, 'restore'])->withTrashed()->name('posts.restore');
@@ -248,6 +250,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
 */
 Route::middleware(['auth', 'role.min:1'])->group(function (): void {
     Route::get('/pm', [PrivateMessageController::class, 'index'])->name('pm.index');
+    Route::get('/pm/create', [PrivateMessageController::class, 'create'])->name('pm.create');
     Route::get('/pm/{conversation}', [PrivateMessageController::class, 'show'])->name('pm.show');
 
     Route::post('/pm', [PrivateMessageController::class, 'store'])

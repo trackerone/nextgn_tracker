@@ -11,7 +11,6 @@ use App\Models\Topic;
 use App\Services\MarkdownService;
 use App\Services\TopicSlugService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,18 +26,35 @@ class TopicController extends Controller
         // Dependencies are injected via the constructor.
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): Response
     {
         $topics = $this->topics->paginate(perPage: 20);
+
+        if (! $request->expectsJson()) {
+            return response()->view('forum.index', ['topics' => $topics]);
+        }
 
         return response()->json($this->formatTopics($topics));
     }
 
-    public function show(Topic $topic): JsonResponse
+    public function create(): Response
     {
-        $topic->load(['author:id,name,role_id', 'author.role:id,name']);
+        $this->authorize('create', Topic::class);
+
+        return response()->view('forum.create');
+    }
+
+    public function show(Request $request, Topic $topic): Response
+    {
+        $this->authorize('view', $topic);
+
+        $topic->load(['author:id,name,role_id,public_slug', 'author.role:id,name']);
         $topic->loadCount('posts');
         $posts = $this->posts->paginateForTopic($topic, perPage: 20);
+
+        if (! $request->expectsJson()) {
+            return response()->view('forum.show', ['topic' => $topic, 'posts' => $posts]);
+        }
 
         return response()->json([
             'topic' => $topic,
@@ -46,7 +62,7 @@ class TopicController extends Controller
         ]);
     }
 
-    public function store(StoreTopicRequest $request): JsonResponse
+    public function store(StoreTopicRequest $request): Response
     {
         $this->authorize('create', Topic::class);
 
@@ -74,10 +90,14 @@ class TopicController extends Controller
 
         $topic->load(['author.role', 'posts.author.role']);
 
+        if (! $request->expectsJson()) {
+            return redirect()->route('topics.show', ['topic' => $topic->slug])->with('status', 'Topic created.');
+        }
+
         return response()->json($topic, Response::HTTP_CREATED);
     }
 
-    public function update(Request $request, Topic $topic): JsonResponse
+    public function update(Request $request, Topic $topic): Response
     {
         $this->authorize('update', $topic);
 
@@ -89,10 +109,14 @@ class TopicController extends Controller
             'title' => $validated['title'],
         ]);
 
+        if (! $request->expectsJson()) {
+            return redirect()->route('topics.show', ['topic' => $updated->slug])->with('status', 'Topic updated.');
+        }
+
         return response()->json($updated);
     }
 
-    public function toggleLock(Topic $topic): JsonResponse
+    public function toggleLock(Request $request, Topic $topic): Response
     {
         $this->authorize('lock', $topic);
 
@@ -100,10 +124,14 @@ class TopicController extends Controller
             'is_locked' => $topic->is_locked ? false : true,
         ]);
 
+        if (! $request->expectsJson()) {
+            return redirect()->route('topics.show', ['topic' => $updated->slug])->with('status', 'Topic updated.');
+        }
+
         return response()->json($updated);
     }
 
-    public function togglePin(Topic $topic): JsonResponse
+    public function togglePin(Request $request, Topic $topic): Response
     {
         $this->authorize('pin', $topic);
 
@@ -111,20 +139,32 @@ class TopicController extends Controller
             'is_pinned' => $topic->is_pinned ? false : true,
         ]);
 
+        if (! $request->expectsJson()) {
+            return redirect()->route('topics.show', ['topic' => $updated->slug])->with('status', 'Topic updated.');
+        }
+
         return response()->json($updated);
     }
 
-    public function destroy(Request $request, Topic $topic): JsonResponse
+    public function destroy(Request $request, Topic $topic): Response
     {
         $this->authorize('delete', $topic);
 
         if ($topic->posts()->exists()) {
+            if (! $request->expectsJson()) {
+                return redirect()->route('topics.show', ['topic' => $topic->slug])->withErrors(['forum' => 'Topic must be empty before deletion.']);
+            }
+
             return response()->json([
                 'message' => 'Topic must be empty before deletion.',
             ], Response::HTTP_FORBIDDEN);
         }
 
         $topic->delete();
+
+        if (! $request->expectsJson()) {
+            return redirect()->route('topics.index')->with('status', 'Empty topic deleted.');
+        }
 
         return response()->json([], Response::HTTP_NO_CONTENT);
     }

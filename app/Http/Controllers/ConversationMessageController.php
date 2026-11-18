@@ -11,7 +11,6 @@ use App\Models\Message;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
 use App\Services\MarkdownService;
-use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class ConversationMessageController extends Controller
@@ -21,7 +20,7 @@ class ConversationMessageController extends Controller
         private readonly MessageRepositoryInterface $messages,
     ) {}
 
-    public function store(StoreMessageRequest $request, Conversation $conversation): JsonResponse
+    public function store(StoreMessageRequest $request, Conversation $conversation): Response
     {
         $this->authorize('create', [Message::class, $conversation]);
 
@@ -42,6 +41,12 @@ class ConversationMessageController extends Controller
 
         if ($recipient !== null) {
             $recipient->notify(new NewPrivateMessageNotification($message));
+        }
+
+        if (! $request->expectsJson()) {
+            $page = max(1, (int) ceil($conversation->messages()->count() / 20));
+
+            return redirect(route('pm.show', ['conversation' => $conversation->id, 'page' => $page]).'#message-'.$message->id)->with('status', 'Reply sent.');
         }
 
         return response()->json($message, Response::HTTP_CREATED);
