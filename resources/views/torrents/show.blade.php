@@ -284,6 +284,7 @@
                                     'imdb' => 'IMDb link only',
                                     'open_library' => 'Open Library',
                                     'musicbrainz' => 'MusicBrainz',
+                                    'tvmaze' => 'TVmaze',
                                     'none' => 'Disable external lookup',
                                 ][$source] }}</option>
                             @endforeach
@@ -312,6 +313,27 @@
                 </dl>
             </section>
         @endisset
+        @isset($tvmazeDetails)
+            <section class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <h2 class="text-lg font-semibold text-white">
+                    {{ $tvmazeDetails['title'] ?? $torrent->name }}@if ($tvmazeDetails['year']) ({{ $tvmazeDetails['year'] }})@endif
+                </h2>
+                @if ($tvmazeDetails['overview'])
+                    <p class="mt-2 text-sm text-slate-300">{{ $tvmazeDetails['overview'] }}</p>
+                @endif
+                @if ($tvmazeDetails['episode'])
+                    <h3 class="mt-4 text-sm font-semibold text-white">{{ $tvmazeDetails['episode'] }}</h3>
+                    @if ($tvmazeDetails['episode_overview'])
+                        <p class="mt-1 text-sm text-slate-300">{{ $tvmazeDetails['episode_overview'] }}</p>
+                    @endif
+                @endif
+                <p class="mt-3 text-xs text-slate-300">
+                    Source <a class="text-cyan-200 underline" href="{{ $tvmazeDetails['url'] }}" rel="noopener noreferrer" target="_blank">TVmaze</a>
+                    · <a class="text-cyan-200 underline" href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a> · summaries displayed as plain text
+                </p>
+            </section>
+        @endisset
+
         @isset($catalogDetails)
             <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Catalog information">
                 <h2 class="text-lg font-semibold text-white">{{ $catalogDetails['title'] ?? $torrent->name }}</h2>

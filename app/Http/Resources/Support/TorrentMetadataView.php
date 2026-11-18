@@ -202,6 +202,29 @@ final class TorrentMetadataView
         ];
     }
 
+    /** @return array{url: string, title: ?string, year: ?int, overview: ?string, episode: ?string, episode_overview: ?string}|null */
+    public function tvmazeDetails(): ?array
+    {
+        $metadata = $this->torrent->getRelationValue('externalMetadata');
+        if (! $metadata instanceof TorrentExternalMetadata) {
+            return null;
+        }
+
+        $id = data_get($metadata->providers_payload, 'tvmaze.show_id');
+        if (! is_int($id) || $id < 1) {
+            return null;
+        }
+
+        return [
+            'url' => 'https://www.tvmaze.com/shows/'.$id,
+            'title' => $this->codecText($metadata->title),
+            'year' => $metadata->year,
+            'overview' => $this->codecText($metadata->overview),
+            'episode' => $this->codecText(data_get($metadata->providers_payload, 'tvmaze.episode')),
+            'episode_overview' => $this->codecText(data_get($metadata->providers_payload, 'tvmaze.episode_overview')),
+        ];
+    }
+
     private function codecText(mixed $value): ?string
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : null;

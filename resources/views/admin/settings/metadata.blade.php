@@ -60,6 +60,7 @@
                         'imdb' => 'IMDb link only',
                         'open_library' => 'Open Library',
                         'musicbrainz' => 'MusicBrainz',
+                        'tvmaze' => 'TVmaze',
                         'none' => 'Disable external lookup',
                     ][$source] }}</option>
                 @endforeach

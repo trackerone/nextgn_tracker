@@ -14,6 +14,7 @@ use App\Services\Metadata\Providers\MusicBrainzMetadataProvider;
 use App\Services\Metadata\Providers\OpenLibraryMetadataProvider;
 use App\Services\Metadata\Providers\TmdbMetadataProvider;
 use App\Services\Metadata\Providers\TraktMetadataProvider;
+use App\Services\Metadata\Providers\TvmazeMetadataProvider;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
@@ -67,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
             $app->make(ImdbMetadataProvider::class),
             $app->make(OpenLibraryMetadataProvider::class),
             $app->make(MusicBrainzMetadataProvider::class),
+            $app->make(TvmazeMetadataProvider::class),
         ];
     }
 

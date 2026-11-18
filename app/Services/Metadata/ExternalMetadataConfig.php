@@ -10,7 +10,7 @@ final class ExternalMetadataConfig
 {
     public const SOURCE_OPTIONS = [
         'movie' => ['default', 'tmdb', 'trakt', 'imdb', 'none'],
-        'tv' => ['default', 'tmdb', 'trakt', 'imdb', 'none'],
+        'tv' => ['default', 'tmdb', 'trakt', 'imdb', 'tvmaze', 'none'],
         'book' => ['default', 'open_library', 'none'],
         'music' => ['default', 'musicbrainz', 'none'],
     ];

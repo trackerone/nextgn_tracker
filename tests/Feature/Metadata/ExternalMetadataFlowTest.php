@@ -123,6 +123,65 @@ final class ExternalMetadataFlowTest extends TestCase
         Http::assertSent(static fn (\Illuminate\Http\Client\Request $request): bool => str_contains(urldecode($request->url()), 'releasegroup:"Test Album" AND artist:"Test Artist"'));
     }
 
+    public function test_sysop_tvmaze_selection_enriches_a_series_and_its_episode(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.sources_by_media_type', '{"tv":"tvmaze"}', 'json');
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.tvmaze.com/lookup/shows?imdb=tt1234567' => Http::response('', 301, ['Location' => 'https://api.tvmaze.com/shows/10']),
+            'https://api.tvmaze.com/shows/10' => Http::response([
+                'id' => 10,
+                'name' => 'Test Show',
+                'premiered' => '2020-01-01',
+                'summary' => '<p>Show summary</p>',
+                'externals' => ['imdb' => 'tt1234567'],
+            ]),
+            'https://api.tvmaze.com/shows/10/episodebynumber?season=2&number=5' => Http::response([
+                'name' => 'Test Episode',
+                'summary' => '<p>Episode summary</p>',
+            ]),
+        ]);
+        $torrent = Torrent::factory()->create([
+            'type' => 'tv',
+            'name' => 'Test.Show.S02E05.1080p',
+            'imdb_id' => 'tt1234567',
+        ]);
+
+        $metadata = app(ExternalMetadataEnricher::class)->enrich($torrent);
+
+        $this->assertSame('enriched', $metadata->enrichment_status);
+        $this->assertSame('Test Show', $metadata->title);
+        $this->assertSame('Show summary', $metadata->overview);
+        $this->assertSame('S02E05 · Test Episode', data_get($metadata->providers_payload, 'tvmaze.episode'));
+        Http::assertSentCount(3);
+    }
+
+    public function test_tvmaze_leaves_an_ambiguous_series_unmatched(): void
+    {
+        $this->setSiteSetting('metadata.enrichment.enabled', 'true', 'bool');
+        $this->setSiteSetting('metadata.providers.sources_by_media_type', '{"tv":"tvmaze"}', 'json');
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.tvmaze.com/search/shows?*' => Http::response([
+                ['show' => ['id' => 10, 'name' => 'Test Show', 'premiered' => '2020-01-01']],
+                ['show' => ['id' => 11, 'name' => 'Test Show', 'premiered' => '2001-01-01']],
+            ]),
+        ]);
+        $torrent = Torrent::factory()->create([
+            'type' => 'tv',
+            'name' => 'Test_Show_S02E05_1080p',
+            'imdb_id' => null,
+        ]);
+
+        $metadata = app(ExternalMetadataEnricher::class)->enrich($torrent);
+
+        $this->assertSame('skipped', $metadata->enrichment_status);
+        $this->assertStringContainsString('No unique TVmaze show match.', (string) $metadata->last_error);
+        Http::assertSentCount(1);
+        Http::assertSent(static fn (\Illuminate\Http\Client\Request $request): bool => str_contains(urldecode($request->url()), 'q=Test Show'));
+    }
+
     public function test_torrent_api_resources_include_external_metadata_when_available(): void
     {
         $user = User::factory()->create();

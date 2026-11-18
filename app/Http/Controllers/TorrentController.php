@@ -146,7 +146,8 @@ final class TorrentController extends Controller
         $type = $metadata['type'] ?? null;
         $mediaType = ExternalMetadataConfig::mediaType(is_string($type) ? $type : null, $model->category?->slug);
         $sourceOptions = ExternalMetadataConfig::SOURCE_OPTIONS[$mediaType ?? ''] ?? [];
-        $externalDetailsEnabled = $metadataConfig->sourceFor($mediaType, (int) $model->id) !== 'none';
+        $metadataSource = $metadataConfig->sourceFor($mediaType, (int) $model->id);
+        $externalDetailsEnabled = $metadataSource !== 'none';
 
         $eligibility = $request->user() !== null
             ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
@@ -213,6 +214,7 @@ final class TorrentController extends Controller
             'rottenTomatoes' => ($metadata['type'] ?? null) === 'movie'
                 ? $metadataConfig->rottenTomatoesRatings($metadata['imdb_id'] ?? null)
                 : null,
+            'tvmazeDetails' => $metadataSource === 'tvmaze' ? $metadataView->tvmazeDetails() : null,
             'catalogDetails' => $externalDetailsEnabled ? $metadataView->catalogDetails() : null,
             'nfoText' => $nfoText,
             'eligibility' => $eligibility,

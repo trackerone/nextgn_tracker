@@ -7,7 +7,10 @@
     <header>
         <h1 class="text-2xl font-semibold text-white">Site settings</h1>
         <p class="mt-2 text-sm text-slate-300">Saved in the database and used by new tracker requests and cleanup runs. Changes are recorded in the audit log.</p>
-        <a href="{{ route('sysop.operations.index') }}" class="mt-3 inline-flex text-sm text-brand">Back to operations</a>
+        <div class="mt-3 flex flex-wrap gap-4 text-sm text-brand">
+            <a href="{{ route('sysop.operations.index') }}">Back to operations</a>
+            <a href="{{ route('admin.settings.metadata.edit') }}">Metadata sources and credentials</a>
+        </div>
     </header>
     <form method="POST" action="{{ route('sysop.settings.update') }}" class="space-y-6">
         @csrf
