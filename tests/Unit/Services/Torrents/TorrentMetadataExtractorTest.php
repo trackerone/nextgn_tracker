@@ -81,6 +81,16 @@ final class TorrentMetadataExtractorTest extends TestCase
         $this->assertSame('https://www.themoviedb.org/movie/12345', $metadata->tmdbUrl);
     }
 
+    public function test_extractor_uses_release_name_id_when_the_nfo_has_no_id(): void
+    {
+        $metadata = $this->extractor->extract(
+            $this->samplePayload('Movie.Title.2024.tt7654321.1080p'),
+            rawNfo: 'Title: Movie Title',
+        );
+
+        $this->assertSame('tt7654321', $metadata->imdbId);
+    }
+
     private function samplePayload(string $name): string
     {
         return app(BencodeService::class)->encode([
