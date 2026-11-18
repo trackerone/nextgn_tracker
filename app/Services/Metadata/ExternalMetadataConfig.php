@@ -128,7 +128,9 @@ final class ExternalMetadataConfig
     /** @return list<string> */
     public function providerPriorityFor(?string $mediaType, ?int $torrentId = null): array
     {
-        return match ($this->sourceFor($mediaType, $torrentId)) {
+        $source = $this->sourceFor($mediaType, $torrentId);
+
+        return match ($source) {
             'none' => [],
             'default' => $this->providerPriority(),
             default => [$source],
