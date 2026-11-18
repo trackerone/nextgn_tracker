@@ -113,7 +113,7 @@ final class ExternalMetadataEnricher
             ? (string) $canonical->tmdb_id
             : ($torrent->tmdb_id !== null ? (string) $torrent->tmdb_id : null);
 
-        $type = $canonical?->type ?? $torrent->type;
+        $type = $canonical->type ?? $torrent->type;
         $category = in_array($type, [null, 'other'], true) ? $torrent->category?->slug : null;
 
         return new ExternalMetadataLookup(
