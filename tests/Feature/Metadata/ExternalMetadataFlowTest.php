@@ -104,11 +104,12 @@ final class ExternalMetadataFlowTest extends TestCase
             ]]),
             'musicbrainz.org/*' => Http::response(['release-groups' => [
                 ['title' => 'Test Album', 'id' => '12345678-1234-4234-8234-123456789abc', 'first-release-date' => '2002-01-01', 'artist-credit' => [['name' => 'Test Artist']]],
+                ['title' => 'Test Album', 'id' => '12345678-1234-4234-8234-123456789abd', 'first-release-date' => '2002-01-01', 'artist-credit' => [['name' => 'Other Artist']]],
             ]]),
         ]);
         $category = Category::query()->firstOrCreate(['slug' => 'books'], ['name' => 'Books', 'position' => 10]);
         $book = Torrent::factory()->create(['type' => 'other', 'name' => 'Test Book', 'category_id' => $category->id]);
-        $album = Torrent::factory()->create(['type' => 'music', 'name' => 'Test Album']);
+        $album = Torrent::factory()->create(['type' => 'music', 'name' => 'Test Artist - Test Album (2002)']);
         $enricher = app(ExternalMetadataEnricher::class);
 
         $bookMetadata = $enricher->enrich($book);
@@ -119,6 +120,7 @@ final class ExternalMetadataFlowTest extends TestCase
         $this->assertSame('music', $albumMetadata->media_type);
         $this->assertSame(['Test Artist'], data_get($albumMetadata->providers_payload, 'musicbrainz.creators'));
         Http::assertSentCount(2);
+        Http::assertSent(static fn (\Illuminate\Http\Client\Request $request): bool => str_contains(urldecode($request->url()), 'releasegroup:"Test Album" AND artist:"Test Artist"'));
     }
 
     public function test_torrent_api_resources_include_external_metadata_when_available(): void

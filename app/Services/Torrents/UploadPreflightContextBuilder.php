@@ -175,6 +175,8 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             title: $canonical->title,
             year: $canonical->year,
             mediaType: $mediaType,
+            releaseName: $canonical->rawName,
+            nfo: $canonical->nfo,
         );
 
         foreach ($this->externalMetadataConfig->providerPriorityFor($mediaType) as $providerKey) {

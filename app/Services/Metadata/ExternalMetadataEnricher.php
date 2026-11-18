@@ -123,6 +123,8 @@ final class ExternalMetadataEnricher
             title: $canonical !== null ? $canonical->title : $torrent->name,
             year: $canonical !== null ? $canonical->year : null,
             mediaType: ExternalMetadataConfig::mediaType($type, $category),
+            releaseName: $canonical->raw_name ?? $torrent->name,
+            nfo: $canonical->nfo ?? $torrent->nfo_text,
         );
     }
 
