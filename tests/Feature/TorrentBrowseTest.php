@@ -121,7 +121,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSeeText('Leech');
         $response->assertSeeText('Snatches');
         $response->assertSeeText('Added');
-        $response->assertSeeText('Inspect');
+        $response->assertSeeText('Download');
     }
 
     public function test_authenticated_user_sees_browse_save_view_action(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources\Support;
 
 use App\Models\Torrent;
+use App\Models\TorrentExternalMetadata;
 use App\Models\TorrentMetadata;
 use Illuminate\Database\Eloquent\Model;
 
@@ -118,6 +119,60 @@ final class TorrentMetadataView
         }
 
         return $values;
+    }
+
+    /**
+     * @return array{title: ?string, overview: ?string, poster: ?string, year: ?int, cast: list<array{name: string, role: ?string, portrait: ?string}>, trailer: ?string}|null
+     */
+    public function filmDetails(): ?array
+    {
+        $external = $this->torrent->getRelationValue('externalMetadata');
+        if (! $external instanceof TorrentExternalMetadata || $external->media_type !== 'movie') {
+            return null;
+        }
+
+        $cast = [];
+        $people = data_get($external->providers_payload, 'tmdb.credits.cast', []);
+        foreach (is_array($people) ? $people : [] as $person) {
+            if (! is_array($person) || ! is_string($person['name'] ?? null)) {
+                continue;
+            }
+
+            $cast[] = [
+                'name' => $person['name'],
+                'role' => $this->codecText($person['character'] ?? null),
+                'portrait' => $this->tmdbImage($person['profile_path'] ?? null, 'w185'),
+            ];
+        }
+
+        $trailer = null;
+        $videos = data_get($external->providers_payload, 'tmdb.videos.results', []);
+        foreach (is_array($videos) ? $videos : [] as $video) {
+            if (is_array($video) && ($video['site'] ?? null) === 'YouTube' && ($video['type'] ?? null) === 'Trailer'
+                && is_string($video['key'] ?? null) && preg_match('/^[A-Za-z0-9_-]{11}$/D', $video['key']) === 1) {
+                $trailer ??= $video['key'];
+                if (($video['official'] ?? false) === true) {
+                    $trailer = $video['key'];
+                    break;
+                }
+            }
+        }
+
+        return [
+            'title' => $this->codecText($external->title),
+            'overview' => $this->codecText($external->overview),
+            'poster' => $this->tmdbImage($external->poster_path, 'w500'),
+            'year' => is_int($external->year) ? $external->year : null,
+            'cast' => $cast,
+            'trailer' => $trailer,
+        ];
+    }
+
+    private function tmdbImage(mixed $path, string $size): ?string
+    {
+        return is_string($path) && preg_match('~^/[A-Za-z0-9_-]+\\.(?:jpg|png|webp)$~iD', $path) === 1
+            ? 'https://image.tmdb.org/t/p/'.$size.$path
+            : null;
     }
 
     private function codecText(mixed $value): ?string

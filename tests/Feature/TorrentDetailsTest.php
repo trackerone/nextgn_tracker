@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Torrent;
+use App\Models\TorrentExternalMetadata;
 use App\Models\TorrentMetadata;
 use App\Models\User;
 use App\Models\UserStat;
+use App\Services\BencodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -45,6 +48,7 @@ final class TorrentDetailsTest extends TestCase
         $response->assertSee('7654321');
         $response->assertSee('&lt;script&gt;alert', false);
         $response->assertSee('Example nfo content');
+        $this->assertMatchesRegularExpression('/<details\b[^>]*>\s*<summary[^>]*>NFO<\/summary>/', (string) $response->getContent());
         $response->assertSee('<meta name="robots" content="noindex, nofollow">', false);
     }
 
@@ -72,6 +76,42 @@ final class TorrentDetailsTest extends TestCase
         $this->assertStringNotContainsString('<script>alert(1)</script>', $content);
         $this->assertStringNotContainsString('<img', $content);
         $this->assertStringNotContainsString('<img src=x onerror=alert(1)>', $content);
+    }
+
+    public function test_details_show_release_files_and_enriched_film_without_padding(): void
+    {
+        $user = User::factory()->create();
+        $torrent = Torrent::factory()->create();
+        TorrentExternalMetadata::factory()->for($torrent)->create([
+            'media_type' => 'movie',
+            'title' => 'Film title',
+            'overview' => 'Film synopsis.',
+            'poster_path' => '/poster.jpg',
+            'providers_payload' => [
+                'tmdb' => [
+                    'credits' => ['cast' => [['name' => 'Actor Name', 'character' => 'Lead role', 'profile_path' => '/actor.jpg']]],
+                    'videos' => ['results' => [['site' => 'YouTube', 'type' => 'Trailer', 'official' => true, 'key' => 'XqMKdHcs5kQ']]],
+                ],
+            ],
+        ]);
+        Storage::fake('torrents')->put($torrent->torrentStoragePath(), app(BencodeService::class)->encode([
+            'info' => ['files' => [
+                ['path' => ['Feature', 'film.mkv'], 'length' => 512],
+                ['path' => ['.pad', '32'], 'length' => 32],
+            ]],
+        ]));
+
+        $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
+
+        $response->assertOk()
+            ->assertSee('Film synopsis.')
+            ->assertSee('https://image.tmdb.org/t/p/w500/poster.jpg', false)
+            ->assertSee('Actor Name')
+            ->assertSee('Lead role')
+            ->assertSee('data-trailer-id="XqMKdHcs5kQ"', false)
+            ->assertSee('Feature/film.mkv')
+            ->assertDontSee('.pad/32');
+        $this->assertStringContainsString('frame-src https://www.youtube-nocookie.com', (string) $response->headers->get('Content-Security-Policy'));
     }
 
     public function test_details_page_shows_metadata_fallback_when_metadata_missing(): void
@@ -103,7 +143,7 @@ final class TorrentDetailsTest extends TestCase
             ->assertSee('Metadata is not available for this torrent yet.');
     }
 
-    public function test_details_page_shows_usage_guidance_and_missing_description_state(): void
+    public function test_details_page_shows_missing_description_state(): void
     {
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create([
@@ -114,12 +154,10 @@ final class TorrentDetailsTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
 
         $response->assertOk();
-        $response->assertSee('How to use this torrent');
-        $response->assertSee('Check metadata.');
         $response->assertSee('No description was provided.');
     }
 
-    public function test_details_page_shows_release_decision_summary_structure(): void
+    public function test_details_page_shows_release_facts(): void
     {
         $user = User::factory()->create();
         $torrent = Torrent::factory()->create(['name' => 'Decision Summary Detail']);
@@ -127,11 +165,10 @@ final class TorrentDetailsTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
 
         $response->assertOk();
-        $response->assertSeeText('Release decision summary');
-        $response->assertSeeText('Version');
-        $response->assertSeeText('Swarm');
-        $response->assertSeeText('Download state');
-        $response->assertSeeText('Follow path');
+        $response->assertSeeText('Torrent facts');
+        $response->assertSeeText('Seeders');
+        $response->assertSeeText('Leechers');
+        $response->assertSeeText('Snatches');
     }
 
     public function test_details_page_shows_eligibility_message_for_ratio_denial(): void

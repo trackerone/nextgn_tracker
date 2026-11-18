@@ -31,7 +31,7 @@ final class ResponseGuard
             return $response;
         }
 
-        $this->applySecurityHeaders($response);
+        $this->applySecurityHeaders($response, $request->routeIs('torrents.show'));
         $this->sanitizeBody($response);
 
         return $response;
@@ -52,22 +52,23 @@ final class ResponseGuard
         return $request->expectsJson();
     }
 
-    private function applySecurityHeaders(Response $response): void
+    private function applySecurityHeaders(Response $response, bool $allowTorrentMedia): void
     {
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('X-XSS-Protection', '0');
-        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy());
+        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy($allowTorrentMedia));
     }
 
-    private function contentSecurityPolicy(): string
+    private function contentSecurityPolicy(bool $allowTorrentMedia): string
     {
         return implode('; ', [
             "default-src 'self'",
             "script-src 'self'",
             "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data:",
+            $allowTorrentMedia ? "img-src 'self' data: https://image.tmdb.org https://i.ytimg.com" : "img-src 'self' data:",
+            $allowTorrentMedia ? 'frame-src https://www.youtube-nocookie.com' : "frame-src 'none'",
             "font-src 'self'",
             "object-src 'none'",
             "frame-ancestors 'none'",

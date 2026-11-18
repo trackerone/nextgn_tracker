@@ -9,6 +9,7 @@ use App\Http\Requests\BrowseTorrentsRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Services\BencodeService;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Tracker\DownloadEligibilityPolicy;
@@ -17,11 +18,15 @@ use App\Support\Torrents\TorrentBrowseQuery;
 use App\Support\Torrents\TorrentBrowseRowPresenter;
 use App\Support\Torrents\TorrentMetadataQuality;
 use App\Support\Torrents\TorrentModerationMetadataReview;
+use App\Support\Torrents\TorrentPayloadFiles;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
+use League\Flysystem\FilesystemException;
 
 final class TorrentController extends Controller
 {
@@ -129,11 +134,13 @@ final class TorrentController extends Controller
             return response()->json($model);
         }
 
+        $model->loadMissing('externalMetadata');
         $metadataRecordExists = $model->getRelationValue('metadata') !== null;
         $metadata = TorrentMetadataView::forTorrent($model, includeCodecs: true);
         $quality = TorrentMetadataQuality::evaluate($metadata, $model->name);
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
-        $metadataEnrichmentOutcome = TorrentMetadataView::fromTorrent($model)->enrichmentOutcome();
+        $metadataView = TorrentMetadataView::fromTorrent($model);
+        $metadataEnrichmentOutcome = $metadataView->enrichmentOutcome();
 
         $eligibility = $request->user() !== null
             ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
@@ -167,7 +174,6 @@ final class TorrentController extends Controller
         $descriptionHtml = nl2br(e($descriptionText));
 
         $nfoText = (string) ($metadata['nfo'] ?? '');
-        $nfoHtml = nl2br(e($nfoText));
         $hasDisplayableMetadata = collect([
             $metadata['year'] ?? null,
             $metadata['type'] ?? null,
@@ -194,8 +200,9 @@ final class TorrentController extends Controller
             'torrent' => $model,
             'metadata' => $metadata,
             'descriptionHtml' => $descriptionHtml,
+            'contentFiles' => $this->contentFiles($model),
+            'film' => $metadataView->filmDetails(),
             'nfoText' => $nfoText,
-            'nfoHtml' => $nfoHtml,
             'eligibility' => $eligibility,
             'eligibilityMessage' => $eligibilityMessage,
             'eligibilityTitle' => $eligibilityTitle,
@@ -209,5 +216,23 @@ final class TorrentController extends Controller
             'hasMetadataRecord' => $metadataRecordExists,
             'hasDisplayableMetadata' => $hasDisplayableMetadata,
         ]);
+    }
+
+    /** @return list<array{path: string, size: int}> */
+    private function contentFiles(Torrent $torrent): array
+    {
+        try {
+            $payload = Storage::disk((string) config('upload.torrents.disk', 'torrents'))->get($torrent->torrentStoragePath());
+            if ($payload === null) {
+                return [];
+            }
+
+            $decoded = app(BencodeService::class)->decode($payload);
+            $info = is_array($decoded) ? ($decoded['info'] ?? null) : null;
+
+            return is_array($info) ? TorrentPayloadFiles::listing($info) : [];
+        } catch (InvalidArgumentException|FilesystemException) {
+            return [];
+        }
     }
 }

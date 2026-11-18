@@ -8,6 +8,7 @@ use App\Services\Metadata\Contracts\ExternalMetadataProvider;
 use App\Services\Metadata\DTO\ExternalMetadataLookup;
 use App\Services\Metadata\DTO\ExternalMetadataResult;
 use App\Services\Metadata\ExternalMetadataConfig;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory as HttpFactory;
 
 final class TmdbMetadataProvider implements ExternalMetadataProvider
@@ -42,7 +43,11 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
         try {
             $payload = null;
 
-            if ($lookup->imdbId !== null) {
+            if ($lookup->tmdbId !== null && ctype_digit($lookup->tmdbId) && in_array($lookup->mediaType, ['movie', 'tv'], true)) {
+                $payload = $this->details($baseUrl, $apiKey, $lookup->mediaType, $lookup->tmdbId);
+            }
+
+            if ($payload === null && $lookup->imdbId !== null) {
                 $find = $this->http->baseUrl($baseUrl)
                     ->get(sprintf('/find/%s', $lookup->imdbId), [
                         'api_key' => $apiKey,
@@ -72,10 +77,14 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
                 return ExternalMetadataResult::skipped($this->providerKey(), 'No metadata found.');
             }
 
-            $posterPath = $this->nullableString($payload['poster_path'] ?? null);
-            $backdropPath = $this->nullableString($payload['backdrop_path'] ?? null);
             $mediaType = $this->normalizeMediaType($payload['media_type'] ?? $lookup->mediaType ?? 'unknown');
             $tmdbId = $this->nullableString($payload['id'] ?? null);
+            if ($mediaType === 'movie' && $tmdbId !== null && ctype_digit($tmdbId) && ! isset($payload['credits'])) {
+                $payload = array_replace($payload, $this->details($baseUrl, $apiKey, $mediaType, $tmdbId) ?? []);
+            }
+
+            $posterPath = $this->nullableString($payload['poster_path'] ?? null);
+            $backdropPath = $this->nullableString($payload['backdrop_path'] ?? null);
 
             return new ExternalMetadataResult(
                 provider: $this->providerKey(),
@@ -97,6 +106,23 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
         } catch (\Throwable $exception) {
             return ExternalMetadataResult::skipped($this->providerKey(), $exception->getMessage());
         }
+    }
+
+    /** @return array<string, mixed>|null */
+    private function details(string $baseUrl, string $apiKey, string $mediaType, string $id): ?array
+    {
+        try {
+            $response = $this->http->baseUrl($baseUrl)->timeout(5)->get('/'.$mediaType.'/'.$id, [
+                'api_key' => $apiKey,
+                'append_to_response' => 'credits,videos',
+            ]);
+        } catch (ConnectionException) {
+            return null;
+        }
+
+        $details = $response->successful() ? $response->json() : null;
+
+        return is_array($details) ? $details : null;
     }
 
     /** @param array<string, mixed> $payload */
