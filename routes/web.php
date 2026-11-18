@@ -41,6 +41,7 @@ use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
+use App\Http\Controllers\Sysop\TorrentMetadataSourceController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
@@ -166,6 +167,8 @@ Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
     });
 
 Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')->name('sysop.')->group(function (): void {
+    Route::post('/torrents/{torrent:id}/metadata-source', TorrentMetadataSourceController::class)
+        ->whereNumber('torrent')->name('torrents.metadata-source');
     Route::get('/hnr', [HnrSettingsController::class, 'edit'])->name('hnr.edit');
     Route::patch('/hnr', [HnrSettingsController::class, 'update'])->name('hnr.update');
     Route::post('/hnr/obligations/{obligation}/waive', [HnrSettingsController::class, 'waive'])->whereNumber('obligation')->name('hnr.waive');

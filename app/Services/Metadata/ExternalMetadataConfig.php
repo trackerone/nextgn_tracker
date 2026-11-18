@@ -110,12 +110,25 @@ final class ExternalMetadataConfig
         return $sources;
     }
 
-    /** @return list<string> */
-    public function providerPriorityFor(?string $mediaType): array
+    public function torrentSourceOverride(int $torrentId, ?string $mediaType): string
     {
-        $source = $this->sourcesByMediaType()[$mediaType ?? ''] ?? 'default';
+        $source = $this->settings->getString('metadata.providers.torrent.'.$torrentId);
+        $options = self::SOURCE_OPTIONS[$mediaType ?? ''] ?? [];
 
-        return match ($source) {
+        return $source !== 'default' && in_array($source, $options, true) ? $source : 'default';
+    }
+
+    public function sourceFor(?string $mediaType, ?int $torrentId = null): string
+    {
+        $override = $torrentId === null ? 'default' : $this->torrentSourceOverride($torrentId, $mediaType);
+
+        return $override !== 'default' ? $override : ($this->sourcesByMediaType()[$mediaType ?? ''] ?? 'default');
+    }
+
+    /** @return list<string> */
+    public function providerPriorityFor(?string $mediaType, ?int $torrentId = null): array
+    {
+        return match ($this->sourceFor($mediaType, $torrentId)) {
             'none' => [],
             'default' => $this->providerPriority(),
             default => [$source],

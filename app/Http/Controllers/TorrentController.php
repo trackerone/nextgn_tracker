@@ -142,6 +142,11 @@ final class TorrentController extends Controller
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
         $metadataView = TorrentMetadataView::fromTorrent($model);
         $metadataEnrichmentOutcome = $metadataView->enrichmentOutcome();
+        $metadataConfig = app(ExternalMetadataConfig::class);
+        $type = $metadata['type'] ?? null;
+        $mediaType = ExternalMetadataConfig::mediaType(is_string($type) ? $type : null, $model->category?->slug);
+        $sourceOptions = ExternalMetadataConfig::SOURCE_OPTIONS[$mediaType ?? ''] ?? [];
+        $externalDetailsEnabled = $metadataConfig->sourceFor($mediaType, (int) $model->id) !== 'none';
 
         $eligibility = $request->user() !== null
             ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
@@ -202,11 +207,13 @@ final class TorrentController extends Controller
             'metadata' => $metadata,
             'descriptionHtml' => $descriptionHtml,
             'contentFiles' => $this->contentFiles($model),
-            'film' => $metadataView->filmDetails(),
+            'film' => $externalDetailsEnabled ? $metadataView->filmDetails() : null,
+            'metadataSourceOptions' => $sourceOptions,
+            'metadataSourceOverride' => $metadataConfig->torrentSourceOverride((int) $model->id, $mediaType),
             'rottenTomatoes' => ($metadata['type'] ?? null) === 'movie'
-                ? app(ExternalMetadataConfig::class)->rottenTomatoesRatings($metadata['imdb_id'] ?? null)
+                ? $metadataConfig->rottenTomatoesRatings($metadata['imdb_id'] ?? null)
                 : null,
-            'catalogDetails' => $metadataView->catalogDetails(),
+            'catalogDetails' => $externalDetailsEnabled ? $metadataView->catalogDetails() : null,
             'nfoText' => $nfoText,
             'eligibility' => $eligibility,
             'eligibilityMessage' => $eligibilityMessage,

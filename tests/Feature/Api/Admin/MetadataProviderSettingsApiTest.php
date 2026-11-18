@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api\Admin;
 
+use App\Jobs\EnrichTorrentExternalMetadata;
+use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 final class MetadataProviderSettingsApiTest extends TestCase
@@ -51,6 +54,27 @@ final class MetadataProviderSettingsApiTest extends TestCase
         $payload['sources_by_media_type']['book'] = 'tmdb';
         $this->actingAs($admin)->postJson('/api/admin/settings/metadata/providers', $payload)
             ->assertUnprocessable()->assertJsonValidationErrors(['sources_by_media_type.book']);
+    }
+
+    public function test_sysop_can_override_and_restore_the_media_source_for_one_torrent(): void
+    {
+        Queue::fake();
+        $torrent = Torrent::factory()->create(['type' => 'music']);
+        $other = Torrent::factory()->create(['type' => 'music']);
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $url = route('sysop.torrents.metadata-source', ['torrent' => $torrent->id]);
+
+        $this->actingAs($admin)->post($url, ['source' => 'musicbrainz'])->assertForbidden();
+        $this->actingAs($sysop)->postJson($url, ['source' => 'tmdb'])->assertUnprocessable();
+        $this->post($url, ['source' => 'musicbrainz'])->assertRedirect(route('torrents.show', $torrent));
+        $config = app(ExternalMetadataConfig::class);
+        $this->assertSame(['musicbrainz'], $config->providerPriorityFor('music', (int) $torrent->id));
+        $this->assertSame($config->providerPriority(), $config->providerPriorityFor('music', (int) $other->id));
+        Queue::assertPushed(EnrichTorrentExternalMetadata::class);
+
+        $this->post($url, ['source' => 'default'])->assertRedirect();
+        $this->assertSame($config->providerPriority(), $config->providerPriorityFor('music', (int) $torrent->id));
     }
 
     public function test_only_sysop_can_publish_or_disable_licensed_rotten_tomatoes_scores(): void

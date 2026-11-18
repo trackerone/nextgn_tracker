@@ -270,6 +270,35 @@
                 </dl>
             </section>
         </div>
+        @if (auth()->user()?->isSysop() && ($metadataSourceOptions ?? []) !== [])
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                <form method="POST" action="{{ route('sysop.torrents.metadata-source', ['torrent' => $torrent->id]) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    <label class="text-sm font-semibold text-slate-200">Metadata source for this torrent
+                        <select name="source" class="mt-1 block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                            @foreach ($metadataSourceOptions as $source)
+                                <option value="{{ $source }}" @selected($source === $metadataSourceOverride)>{{ [
+                                    'default' => 'Use media-type settings',
+                                    'tmdb' => 'TMDb',
+                                    'trakt' => 'Trakt',
+                                    'imdb' => 'IMDb link only',
+                                    'open_library' => 'Open Library',
+                                    'musicbrainz' => 'MusicBrainz',
+                                    'none' => 'Disable external lookup',
+                                ][$source] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit" class="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-slate-950">Save source</button>
+                </form>
+                @error('source')
+                    <p class="mt-2 text-sm text-rose-200">{{ $message }}</p>
+                @enderror
+                @if (session('metadata_source_status'))
+                    <p role="status" class="mt-2 text-sm text-emerald-200">{{ session('metadata_source_status') }}</p>
+                @endif
+            </section>
+        @endif
         @isset($rottenTomatoes)
             <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Rotten Tomatoes ratings">
                 <a class="text-sm font-semibold text-cyan-200 underline" href="{{ $rottenTomatoes['url'] }}" rel="noopener noreferrer" target="_blank">Rotten Tomatoes®</a>

@@ -56,7 +56,7 @@ final class ExternalMetadataEnricher
         $useful = false;
         $unexpectedFailure = false;
 
-        foreach ($this->config->providerPriorityFor($lookup->mediaType) as $providerKey) {
+        foreach ($this->config->providerPriorityFor($lookup->mediaType, (int) $torrent->id) as $providerKey) {
             $provider = $this->providers[$providerKey] ?? null;
             if (! $provider instanceof ExternalMetadataProvider) {
                 continue;
