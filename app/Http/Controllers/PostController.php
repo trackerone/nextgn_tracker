@@ -116,7 +116,7 @@ class PostController extends Controller
     private function topicRedirect(Post $post, string $message): RedirectResponse
     {
         $topic = Topic::query()->whereKey($post->topic_id)->firstOrFail();
-        $position = $topic->posts()->withTrashed()->where('id', '<=', $post->id)->count();
+        $position = Post::query()->withTrashed()->where('topic_id', $topic->id)->where('id', '<=', $post->id)->count();
         $url = route('topics.show', ['topic' => $topic->slug, 'page' => max(1, (int) ceil($position / 20))]);
 
         return redirect($url.'#post-'.$post->id)->with('status', $message);
