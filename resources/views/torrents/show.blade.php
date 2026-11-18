@@ -270,6 +270,26 @@
                 </dl>
             </section>
         </div>
+        @isset($rottenTomatoes)
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Rotten Tomatoes ratings">
+                <a class="text-sm font-semibold text-cyan-200 underline" href="{{ $rottenTomatoes['url'] }}" rel="noopener noreferrer" target="_blank">Rotten Tomatoes®</a>
+                <dl class="mt-2 flex flex-wrap gap-6 text-sm text-slate-200">
+                    @if ($rottenTomatoes['critics'] !== null)
+                        <div><dt>Tomatometer®</dt><dd class="font-semibold">{{ $rottenTomatoes['critics'] }}%</dd></div>
+                    @endif
+                    @if ($rottenTomatoes['audience'] !== null)
+                        <div><dt>Popcornmeter®</dt><dd class="font-semibold">{{ $rottenTomatoes['audience'] }}%</dd></div>
+                    @endif
+                </dl>
+            </section>
+        @endisset
+        @isset($catalogDetails)
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Catalog information">
+                <h2 class="text-lg font-semibold text-white">{{ $catalogDetails['title'] ?? $torrent->name }}</h2>
+                <p class="mt-1 text-sm text-slate-300">{{ implode(' · ', array_filter([...$catalogDetails['creators'], $catalogDetails['year']])) }}</p>
+                <a class="mt-2 inline-block text-sm text-cyan-200 underline" href="{{ $catalogDetails['url'] }}" rel="noopener noreferrer" target="_blank">{{ $catalogDetails['source'] }}</a>
+            </section>
+        @endisset
         @if (! empty($torrent->tags))
             <div class="flex flex-wrap gap-2">
                 @foreach ($torrent->tags as $tag)

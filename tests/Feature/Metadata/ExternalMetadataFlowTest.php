@@ -7,6 +7,7 @@ namespace Tests\Feature\Metadata;
 use App\Actions\Torrents\PublishTorrentAction;
 use App\Enums\TorrentStatus;
 use App\Jobs\EnrichTorrentExternalMetadata;
+use App\Models\Category;
 use App\Models\SiteSetting;
 use App\Models\Torrent;
 use App\Models\TorrentExternalMetadata;
@@ -18,6 +19,7 @@ use App\Services\Metadata\DTO\ExternalMetadataResult;
 use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Metadata\ExternalMetadataEnricher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -90,6 +92,32 @@ final class ExternalMetadataFlowTest extends TestCase
             'torrent_id' => $torrent->id,
             'enrichment_status' => 'enriched',
         ]);
+    }
+
+    public function test_catalog_selection_enriches_books_and_music_with_their_own_sources(): void
+    {
+        $this->setSiteSetting('metadata.providers.sources_by_media_type', '{"book":"open_library","music":"musicbrainz"}', 'json');
+        Http::fake([
+            'openlibrary.org/*' => Http::response(['docs' => [
+                ['title' => 'Test Book', 'key' => '/works/OL123W', 'author_name' => ['Test Author'], 'first_publish_year' => 2001],
+            ]]),
+            'musicbrainz.org/*' => Http::response(['release-groups' => [
+                ['title' => 'Test Album', 'id' => '12345678-1234-4234-8234-123456789abc', 'first-release-date' => '2002-01-01', 'artist-credit' => [['name' => 'Test Artist']]],
+            ]]),
+        ]);
+        $category = Category::query()->firstOrCreate(['slug' => 'books'], ['name' => 'Books', 'position' => 10]);
+        $book = Torrent::factory()->create(['type' => 'other', 'name' => 'Test Book', 'category_id' => $category->id]);
+        $album = Torrent::factory()->create(['type' => 'music', 'name' => 'Test Album']);
+        $enricher = app(ExternalMetadataEnricher::class);
+
+        $bookMetadata = $enricher->enrich($book);
+        $albumMetadata = $enricher->enrich($album);
+
+        $this->assertSame('book', $bookMetadata->media_type);
+        $this->assertSame(['Test Author'], data_get($bookMetadata->providers_payload, 'open_library.creators'));
+        $this->assertSame('music', $albumMetadata->media_type);
+        $this->assertSame(['Test Artist'], data_get($albumMetadata->providers_payload, 'musicbrainz.creators'));
+        Http::assertSentCount(2);
     }
 
     public function test_torrent_api_resources_include_external_metadata_when_available(): void

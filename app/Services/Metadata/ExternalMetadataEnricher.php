@@ -56,7 +56,7 @@ final class ExternalMetadataEnricher
         $useful = false;
         $unexpectedFailure = false;
 
-        foreach ($this->config->providerPriority() as $providerKey) {
+        foreach ($this->config->providerPriorityFor($lookup->mediaType) as $providerKey) {
             $provider = $this->providers[$providerKey] ?? null;
             if (! $provider instanceof ExternalMetadataProvider) {
                 continue;
@@ -113,13 +113,16 @@ final class ExternalMetadataEnricher
             ? (string) $canonical->tmdb_id
             : ($torrent->tmdb_id !== null ? (string) $torrent->tmdb_id : null);
 
+        $type = $canonical?->type ?? $torrent->type;
+        $category = in_array($type, [null, 'other'], true) ? $torrent->category?->slug : null;
+
         return new ExternalMetadataLookup(
             imdbId: $canonical !== null ? $canonical->imdb_id : $torrent->imdb_id,
             tmdbId: $tmdbId,
             traktId: null,
             title: $canonical !== null ? $canonical->title : $torrent->name,
             year: $canonical !== null ? $canonical->year : null,
-            mediaType: $canonical !== null ? $canonical->type : $torrent->type,
+            mediaType: ExternalMetadataConfig::mediaType($type, $category),
         );
     }
 

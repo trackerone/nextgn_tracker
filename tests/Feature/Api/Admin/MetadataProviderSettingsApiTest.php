@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Api\Admin;
 
 use App\Models\User;
+use App\Services\Metadata\ExternalMetadataConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,6 +26,7 @@ final class MetadataProviderSettingsApiTest extends TestCase
                 'trakt' => ['enabled' => false],
                 'imdb' => ['enabled' => true],
             ],
+            'sources_by_media_type' => ['movie' => 'tmdb', 'tv' => 'none', 'book' => 'open_library', 'music' => 'musicbrainz'],
             'priority' => ['imdb', 'tmdb', 'trakt'],
         ];
 
@@ -39,5 +41,34 @@ final class MetadataProviderSettingsApiTest extends TestCase
         $response->assertJsonPath('priority.0', 'imdb');
 
         $this->assertDatabaseHas('site_settings', ['key' => 'metadata.providers.priority']);
+        $response->assertJsonPath('sources_by_media_type.book', 'open_library');
+        $config = app(ExternalMetadataConfig::class);
+        $this->assertSame(['tmdb'], $config->providerPriorityFor('movie'));
+        $this->assertSame([], $config->providerPriorityFor('tv'));
+        $this->assertSame(['open_library'], $config->providerPriorityFor('book'));
+        $this->assertSame(['musicbrainz'], $config->providerPriorityFor('music'));
+
+        $payload['sources_by_media_type']['book'] = 'tmdb';
+        $this->actingAs($admin)->postJson('/api/admin/settings/metadata/providers', $payload)
+            ->assertUnprocessable()->assertJsonValidationErrors(['sources_by_media_type.book']);
+    }
+
+    public function test_only_sysop_can_publish_or_disable_licensed_rotten_tomatoes_scores(): void
+    {
+        $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $url = '/api/admin/settings/metadata/rotten-tomatoes/tt0133093';
+        $rating = ['enabled' => true, 'slug' => 'the_matrix', 'critics' => 0, 'audience' => 90];
+
+        $this->actingAs($admin)->putJson($url, $rating)->assertForbidden();
+        $this->actingAs($sysop)->putJson($url, $rating)->assertOk();
+        $this->assertSame([
+            'url' => 'https://www.rottentomatoes.com/m/the_matrix',
+            'critics' => 0,
+            'audience' => 90,
+        ], app(ExternalMetadataConfig::class)->rottenTomatoesRatings('tt0133093'));
+
+        $this->putJson($url, ['enabled' => false])->assertOk();
+        $this->assertNull(app(ExternalMetadataConfig::class)->rottenTomatoesRatings('tt0133093'));
     }
 }

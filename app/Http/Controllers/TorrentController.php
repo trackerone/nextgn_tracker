@@ -10,6 +10,7 @@ use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Services\BencodeService;
+use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Tracker\DownloadEligibilityPolicy;
@@ -202,6 +203,10 @@ final class TorrentController extends Controller
             'descriptionHtml' => $descriptionHtml,
             'contentFiles' => $this->contentFiles($model),
             'film' => $metadataView->filmDetails(),
+            'rottenTomatoes' => ($metadata['type'] ?? null) === 'movie'
+                ? app(ExternalMetadataConfig::class)->rottenTomatoesRatings($metadata['imdb_id'] ?? null)
+                : null,
+            'catalogDetails' => $metadataView->catalogDetails(),
             'nfoText' => $nfoText,
             'eligibility' => $eligibility,
             'eligibilityMessage' => $eligibilityMessage,

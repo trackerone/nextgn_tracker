@@ -175,6 +175,33 @@ final class TorrentMetadataView
             : null;
     }
 
+    /** @return array{source: string, url: string, title: ?string, year: ?int, creators: list<string>}|null */
+    public function catalogDetails(): ?array
+    {
+        $metadata = $this->torrent->getRelationValue('externalMetadata');
+        if (! $metadata instanceof TorrentExternalMetadata || ! in_array($metadata->media_type, ['book', 'music'], true)) {
+            return null;
+        }
+
+        $book = $metadata->media_type === 'book';
+        $provider = $book ? 'open_library' : 'musicbrainz';
+        $id = data_get($metadata->providers_payload, $provider.'.catalog_id');
+
+        if (! is_string($id) || ($book ? preg_match('~^/works/OL[0-9]+W$~D', $id) !== 1 : ! \Illuminate\Support\Str::isUuid($id))) {
+            return null;
+        }
+
+        $creators = data_get($metadata->providers_payload, $provider.'.creators', []);
+
+        return [
+            'source' => $book ? 'Open Library' : 'MusicBrainz',
+            'url' => $book ? 'https://openlibrary.org'.$id : 'https://musicbrainz.org/release-group/'.$id,
+            'title' => $this->codecText($metadata->title),
+            'year' => $metadata->year,
+            'creators' => is_array($creators) ? array_values(array_filter($creators, 'is_string')) : [],
+        ];
+    }
+
     private function codecText(mixed $value): ?string
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : null;

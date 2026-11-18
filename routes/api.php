@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\Admin\MetadataCredentialSettingsController;
 use App\Http\Controllers\Api\Admin\MetadataProviderSettingsController;
+use App\Http\Controllers\Api\Admin\RottenTomatoesRatingsController;
 use App\Http\Controllers\Api\Admin\TrackerRatioSettingsController;
 use App\Http\Controllers\Api\DiscoveryExplainabilityController;
 use App\Http\Controllers\Api\DiscoveryHealthController;
@@ -55,6 +56,10 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
     Route::post('/ratio', [TrackerRatioSettingsController::class, 'update'])
         ->name('api.admin.settings.tracker.ratio.update');
 });
+
+Route::put('/admin/settings/metadata/rotten-tomatoes/{imdbId}', RottenTomatoesRatingsController::class)
+    ->middleware(['api', 'auth', 'role.level:sysop'])
+    ->where('imdbId', 'tt[0-9]{7,10}');
 
 Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
     Route::get('/providers', [MetadataProviderSettingsController::class, 'show'])

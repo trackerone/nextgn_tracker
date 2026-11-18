@@ -2,6 +2,7 @@
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
     const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
+    const mediaSources = Array.from(document.querySelectorAll('[data-media-source]'));
 
     const showStatus = (message) => {
         statusEl.textContent = message;
@@ -71,6 +72,10 @@
         document.getElementById('provider_imdb').checked = !!providerSettings.providers?.imdb?.enabled;
         document.getElementById('priority').value = Array.isArray(providerSettings.priority) ? providerSettings.priority.join(',') : 'tmdb,trakt,imdb';
 
+        mediaSources.forEach((field) => {
+            field.value = providerSettings.sources_by_media_type?.[field.dataset.mediaSource] ?? 'default';
+        });
+
         setBadge('status_tmdb_api_key', !!credentialStatus.tmdb?.has_api_key);
         setBadge('status_trakt_client_id', !!credentialStatus.trakt?.has_client_id);
         setBadge('status_trakt_client_secret', !!credentialStatus.trakt?.has_client_secret);
@@ -96,10 +101,35 @@
                         imdb: { enabled: document.getElementById('provider_imdb').checked },
                     },
                     priority,
+                    sources_by_media_type: Object.fromEntries(mediaSources.map((field) => [field.dataset.mediaSource, field.value])),
                 }),
             });
 
             showStatus('Provider settings saved.');
+        } catch (error) {
+            await showError(error);
+        }
+    });
+
+    document.getElementById('rotten-tomatoes-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const readScore = (id) => {
+            const value = document.getElementById(id).value;
+            return value === '' ? null : Number(value);
+        };
+
+        try {
+            const id = document.getElementById('rt_imdb_id').value;
+            await request(`/api/admin/settings/metadata/rotten-tomatoes/${encodeURIComponent(id)}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    enabled: document.getElementById('rt_enabled').checked,
+                    slug: document.getElementById('rt_slug').value || null,
+                    critics: readScore('rt_critics'),
+                    audience: readScore('rt_audience'),
+                }),
+            });
+            showStatus('Film ratings saved.');
         } catch (error) {
             await showError(error);
         }
