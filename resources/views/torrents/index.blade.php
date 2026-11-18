@@ -259,7 +259,7 @@
                                                                 <a href="{{ route('torrents.show', $torrent) }}" class="break-words [overflow-wrap:anywhere] font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                             </div>
                                                             @php
-                                                                $rowContext = collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, $row['release_group'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
+                                                                $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
                                                             @endphp
                                                             @if ($rowContext !== '')
                                                                 <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
@@ -329,7 +329,7 @@
                                                     <a href="{{ route('torrents.show', $torrent) }}" class="break-words [overflow-wrap:anywhere] font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                 </div>
                                                 @php
-                                                    $rowContext = collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, $row['release_group'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
+                                                    $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
                                                 @endphp
                                                 @if ($rowContext !== '')
                                                     <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
