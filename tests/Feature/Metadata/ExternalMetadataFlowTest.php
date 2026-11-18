@@ -97,6 +97,7 @@ final class ExternalMetadataFlowTest extends TestCase
     public function test_catalog_selection_enriches_books_and_music_with_their_own_sources(): void
     {
         $this->setSiteSetting('metadata.providers.sources_by_media_type', '{"book":"open_library","music":"musicbrainz"}', 'json');
+        Http::preventStrayRequests();
         Http::fake([
             'openlibrary.org/*' => Http::response(['docs' => [
                 ['title' => 'Test Book', 'key' => '/works/OL123W', 'author_name' => ['Test Author'], 'first_publish_year' => 2001],
