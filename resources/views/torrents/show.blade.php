@@ -4,7 +4,8 @@
     $metadata = $metadata ?? [];
     $descriptionHtml = $descriptionHtml ?? '';
     $nfoText = $nfoText ?? '';
-    $nfoHtml = $nfoHtml ?? '';
+    $contentFiles = $contentFiles ?? [];
+    $film = $film ?? null;
     $eligibilityMessage = $eligibilityMessage ?? null;
     $releaseAdvice = $releaseAdvice ?? [];
     $metadataQuality = $metadataQuality ?? [];
@@ -34,37 +35,19 @@
         $uploadMetadataFacts = is_array($uploadMetadata)
             ? \App\Support\Torrents\TorrentMetadataPresenter::detailFacts($uploadMetadata)
             : [];
-        $codecs = collect([$metadata['video_codec'] ?? null, $metadata['audio_codec'] ?? null])->filter()->implode(' / ') ?: 'n/a';
-        $quickFacts = array_values(array_filter([
-            ['label' => 'Size', 'value' => $torrent->formatted_size, 'hint' => 'Total payload size'],
-            ! empty($metadata['resolution']) ? ['label' => 'Resolution', 'value' => (string) $metadata['resolution'], 'hint' => 'Normalized playback quality'] : null,
-            ! empty($metadata['source']) ? ['label' => 'Source', 'value' => (string) $metadata['source'], 'hint' => 'Release source'] : null,
-            ['label' => 'Codecs', 'value' => $codecs, 'hint' => 'Audio/video codecs when available'],
-            ['label' => 'Seeders', 'value' => number_format($torrent->seeders), 'hint' => 'Peers currently uploading'],
-            ['label' => 'Leechers', 'value' => number_format($torrent->leechers), 'hint' => 'Peers currently downloading'],
-        ]));
         $meta = [
+            ['label' => 'Size', 'value' => $torrent->formatted_size],
             ['label' => 'Category', 'value' => $torrent->category?->name ?? 'Uncategorized'],
             ['label' => 'Files', 'value' => number_format($torrent->file_count)],
             ['label' => 'Uploaded', 'value' => optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently'],
-            ['label' => 'Completed', 'value' => number_format($torrent->completed)],
-        ];
-        $stats = [
-            ['label' => 'Seeders', 'value' => number_format($torrent->seeders), 'class' => 'text-emerald-400'],
-            ['label' => 'Leechers', 'value' => number_format($torrent->leechers), 'class' => 'text-amber-400'],
-            ['label' => 'Completed', 'value' => number_format($torrent->completed), 'class' => 'text-slate-100'],
+            ['label' => 'Seeders', 'value' => number_format($torrent->seeders)],
+            ['label' => 'Leechers', 'value' => number_format($torrent->leechers)],
+            ['label' => 'Snatches', 'value' => number_format($torrent->completed)],
         ];
         $links = array_filter([
-            ! empty($metadata['imdb_id']) ? ['label' => 'IMDb: '.$metadata['imdb_id'], 'url' => 'https://www.imdb.com/title/'.$metadata['imdb_id'].'/'] : null,
-            ! empty($metadata['tmdb_id']) ? ['label' => 'TMDB: '.$metadata['tmdb_id'], 'url' => 'https://www.themoviedb.org/movie/'.$metadata['tmdb_id']] : null,
+            ! empty($metadata['imdb_id']) ? ['label' => 'IMDb', 'url' => 'https://www.imdb.com/title/'.$metadata['imdb_id'].'/'] : null,
+            ! empty($metadata['tmdb_id']) ? ['label' => 'TMDb', 'url' => 'https://www.themoviedb.org/movie/'.$metadata['tmdb_id']] : null,
         ]);
-        $decisionVersion = collect([$metadata['type'] ?? null, $metadata['resolution'] ?? null, $metadata['source'] ?? null])
-            ->reject(fn ($value) => blank($value))
-            ->implode(' · ') ?: 'Version metadata pending';
-        $decisionSwarm = number_format($torrent->seeders).' seed / '.number_format($torrent->leechers).' leech / '.number_format($torrent->completed).' snatches';
-        $decisionDownloadState = ($eligibility['allowed'] ?? false) === true
-            ? 'Download available'
-            : 'Download needs attention';
     @endphp
     <div class="space-y-8">
         @if ($uploadMetadataFacts !== [])
@@ -81,6 +64,49 @@
             </section>
         @endif
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-slate-950/40 md:p-8">
+            @if ($film !== null)
+                <section class="mb-6 border-b border-slate-800 pb-6" aria-labelledby="film-heading">
+                    <div class="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
+                        @if ($film['poster'] !== null)
+                            <img src="{{ $film['poster'] }}" alt="" width="128" height="192" class="rounded-xl object-cover">
+                        @endif
+                        <div @class(['space-y-3', 'sm:col-span-2' => $film['poster'] === null])>
+                            <h2 id="film-heading" class="text-2xl font-bold text-white">
+                                {{ $film['title'] ?? $torrent->name }}@if ($film['year'] !== null) ({{ $film['year'] }})@endif
+                            </h2>
+                            @if ($film['overview'] !== null)
+                                <p class="max-w-prose text-sm leading-6 text-slate-300">{{ $film['overview'] }}</p>
+                            @endif
+                        </div>
+                    </div>
+                    @if ($film['cast'] !== [])
+                        <h3 class="mt-5 text-lg font-semibold text-white">Cast</h3>
+                        <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                            @foreach (array_slice($film['cast'], 0, 6) as $person)
+                                @include('torrents.partials.cast-member', ['person' => $person])
+                            @endforeach
+                        </ul>
+                        @if (count($film['cast']) > 6)
+                            <details class="mt-3">
+                                <summary class="cursor-pointer text-sm text-cyan-200">Show full cast</summary>
+                                <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                                    @foreach (array_slice($film['cast'], 6) as $person)
+                                        @include('torrents.partials.cast-member', ['person' => $person])
+                                    @endforeach
+                                </ul>
+                            </details>
+                        @endif
+                    @endif
+                    @if ($film['trailer'] !== null)
+                        <h3 class="mt-5 text-lg font-semibold text-white">Trailer</h3>
+                        <div class="mt-3 aspect-video w-full max-w-2xl overflow-hidden rounded-xl bg-slate-950">
+                            <a href="https://www.youtube.com/watch?v={{ $film['trailer'] }}" data-trailer-id="{{ $film['trailer'] }}" class="flex h-full w-full items-center justify-center bg-cover bg-center text-sm font-semibold text-white" style="background-image: url('https://i.ytimg.com/vi/{{ $film['trailer'] }}/hqdefault.jpg')">
+                                <span class="rounded-lg bg-slate-950/90 px-5 py-3">Play trailer</span>
+                            </a>
+                        </div>
+                    @endif
+                </section>
+            @endif
             <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                     <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">{{ $torrent->isApproved() ? 'Approved torrent' : 'Torrent '.$torrent->status->value }}</p>
@@ -97,6 +123,13 @@
                     </div>
                 @endcan
             </div>
+            @if ($links !== [])
+                <div class="mt-4 flex flex-wrap gap-2">
+                    @foreach ($links as $link)
+                        <a href="{{ $link['url'] }}" class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand" rel="noreferrer noopener" target="_blank">{{ $link['label'] }}</a>
+                    @endforeach
+                </div>
+            @endif
             @if (($releaseAdvice['upgrade_available'] ?? false) === true)
                 <section class="mt-5 rounded-2xl border border-amber-400/60 bg-amber-400/10 p-5 text-sm text-amber-50 shadow-lg shadow-amber-950/20" aria-label="Upgrade available">
                     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -131,30 +164,6 @@
                     </div>
                 </section>
             @endif
-            <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/45 p-5" aria-label="Release decision summary">
-                <div>
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Release decision summary</h2>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">A compact tracker check before you download or follow this release.</p>
-                </div>
-                <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Version</dt>
-                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionVersion }}</dd>
-                    </div>
-                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Swarm</dt>
-                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionSwarm }}</dd>
-                    </div>
-                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Download state</dt>
-                        <dd class="mt-1 text-sm font-semibold text-white">{{ $decisionDownloadState }}</dd>
-                    </div>
-                    <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3">
-                        <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Follow path</dt>
-                        <dd class="mt-1 text-sm font-semibold text-white">Use the follow action to track this release family.</dd>
-                    </div>
-                </dl>
-            </section>
             @can('moderate', $torrent)
                 <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5" aria-label="Staff review context">
                     @php
@@ -228,28 +237,6 @@
                     @endif
                 </section>
             @endcan
-            <section class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/35 p-5" aria-label="How to use this torrent">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">How to use this torrent</h2>
-                <div class="mt-3 grid gap-3 text-sm leading-6 text-slate-300 md:grid-cols-3">
-                    <p><span class="font-semibold text-white">Check metadata.</span> Confirm resolution, source, language and subtitle context before downloading.</p>
-                    <p><span class="font-semibold text-white">Check access.</span> The download status below explains whether this is ready, temporary, or action-required.</p>
-                    <p><span class="font-semibold text-white">Follow updates.</span> Following uses metadata so better versions and related releases are easier to find later.</p>
-                </div>
-            </section>
-            <section class="mt-8 space-y-4" aria-label="Quick facts">
-                <div>
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Quick facts</h2>
-                    <p class="mt-1 text-xs text-slate-500">Download-relevant metadata at a glance.</p>
-                </div>
-                <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    @foreach ($quickFacts as $item)
-                        <div class="rounded-2xl border border-slate-800 bg-slate-950/45 px-4 py-3.5 hover:border-slate-700" title="{{ $item['hint'] }}">
-                            <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $item['label'] }}</dt>
-                            <dd class="mt-1 text-lg font-bold leading-6 text-white">{{ $item['value'] }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-            </section>
             @if ($hasDisplayableMetadata)
                 <section class="mt-8 space-y-3" aria-label="Normalized metadata">
                     <div>
@@ -282,21 +269,6 @@
                     @endforeach
                 </dl>
             </section>
-            <div class="mt-8 grid gap-4 md:grid-cols-3">
-                @foreach ($stats as $stat)
-                    <div class="rounded-2xl bg-slate-950/60 p-4 text-center">
-                        <p class="text-xs uppercase tracking-wide text-slate-400">{{ $stat['label'] }}</p>
-                        <p class="text-3xl font-bold {{ $stat['class'] }}">{{ $stat['value'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-            @if ($links !== [])
-                <div class="mt-8 grid gap-4 md:grid-cols-2">
-                    @foreach ($links as $link)
-                        <a href="{{ $link['url'] }}" class="rounded-2xl border border-slate-800 px-4 py-3 text-sm text-slate-300 hover:border-brand" rel="noreferrer noopener" target="_blank">{{ $link['label'] }}</a>
-                    @endforeach
-                </div>
-            @endif
         </div>
         @if (! empty($torrent->tags))
             <div class="flex flex-wrap gap-2">
@@ -315,13 +287,29 @@
                 </div>
             @endif
         </section>
+        @if ($contentFiles !== [])
+            <details class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                <summary class="cursor-pointer text-lg font-semibold text-white">Files ({{ count($contentFiles) }})</summary>
+                <ul class="mt-3 divide-y divide-slate-800">
+                    @foreach ($contentFiles as $file)
+                        <li class="flex min-w-0 flex-wrap justify-between gap-2 py-2 text-sm text-slate-200">
+                            <span class="min-w-0 [overflow-wrap:anywhere]">{{ $file['path'] }}</span>
+                            <span class="whitespace-nowrap text-slate-400">{{ \Illuminate\Support\Number::fileSize($file['size']) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </details>
+        @endif
         @if (($nfoText ?? '') !== '')
-            <section class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-                <h2 class="text-lg font-semibold text-white">NFO</h2>
-                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{!! $nfoHtml !!}</pre>
-            </section>
+            <details class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+                <summary class="cursor-pointer text-lg font-semibold text-white">NFO</summary>
+                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{{ $nfoText }}</pre>
+            </details>
         @endif
     </div>
+    @if (($film['trailer'] ?? null) !== null)
+        <script src="{{ asset('js/nextgn-trailer.js') }}" defer></script>
+    @endif
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('form[data-submit-label]').forEach((form) => {

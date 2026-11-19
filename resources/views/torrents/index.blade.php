@@ -49,7 +49,6 @@
                 <div class="mb-4 space-y-1">
                     <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Browse</p>
                     <h1 class="text-xl font-semibold tracking-tight text-white">Filter first, then browse</h1>
-                    <p class="text-sm leading-6 text-slate-400">Search and metadata stay together so discovery feels intentional without crowding the results.</p>
                 </div>
 
                 <form method="GET" action="{{ route('torrents.index') }}" class="space-y-4">
@@ -233,7 +232,7 @@
                                             <th class="px-3 py-2 text-right font-semibold">Leech</th>
                                             <th class="px-3 py-2 text-right font-semibold">Snatches</th>
                                             <th class="px-3 py-2 text-right font-semibold">Added</th>
-                                            <th class="px-3 py-2 text-right font-semibold">Inspect</th>
+                                            <th class="px-3 py-2 text-right font-semibold">Download</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-slate-800/80 text-slate-100">
@@ -257,14 +256,13 @@
                                                                 @if ($isFreeleech)
                                                                     <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
                                                                 @endif
-                                                                <a href="{{ route('torrents.show', $torrent) }}" class="break-words font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                                                <a href="{{ route('torrents.show', $torrent) }}" class="break-words [overflow-wrap:anywhere] font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                             </div>
-                                                            <p class="text-xs leading-5 text-slate-500">
-                                                                {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
-                                                            </p>
-                                                            <p class="text-xs leading-5 text-slate-300">{{ collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') }}</p>
-                                                            @if (! empty($row['language_badges']))
-                                                                <p class="text-xs leading-5 text-sky-200">{{ implode(' · ', $row['language_badges']) }}</p>
+                                                            @php
+                                                                $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
+                                                            @endphp
+                                                            @if ($rowContext !== '')
+                                                                <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
                                                             @endif
 
                                                         </div>
@@ -276,8 +274,7 @@
                                                 <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                                 <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                                 <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
-                                                    <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
-                                                    <a href="{{ route('torrents.download', $torrent) }}" class="mt-2 inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
+                                                    <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -307,7 +304,7 @@
                                 <th class="px-3 py-2 text-right">Leech</th>
                                 <th class="px-3 py-2 text-right">Snatches</th>
                                 <th class="px-3 py-2 text-right">Added</th>
-                                <th class="px-3 py-2 text-right">Inspect</th>
+                                <th class="px-3 py-2 text-right">Download</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-800 text-slate-100">
@@ -329,15 +326,14 @@
                                                     @if ($isFreeleech)
                                                         <span class="rounded border border-cyan-500/50 bg-cyan-950/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-200">FL</span>
                                                     @endif
-                                                    <a href="{{ route('torrents.show', $torrent) }}" class="break-words font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
+                                                    <a href="{{ route('torrents.show', $torrent) }}" class="break-words [overflow-wrap:anywhere] font-semibold leading-5 text-white hover:text-brand">{{ $torrent->name }}</a>
                                                 </div>
-                                                <p class="text-xs leading-5 text-slate-500">
-                                                    {{ collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') ?: 'Metadata pending' }}
-                                                </p>
-                                                            <p class="text-xs leading-5 text-slate-300">{{ collect([$row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ') }}</p>
-                                                            @if (! empty($row['language_badges']))
-                                                                <p class="text-xs leading-5 text-sky-200">{{ implode(' · ', $row['language_badges']) }}</p>
-                                                            @endif
+                                                @php
+                                                    $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
+                                                @endphp
+                                                @if ($rowContext !== '')
+                                                    <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
+                                                @endif
 
                                             </div>
                                         </div>
@@ -348,8 +344,7 @@
                                     <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                     <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                     <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
-                                        <a href="{{ route('torrents.show', $torrent) }}" class="inline-flex rounded-lg border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-200 hover:border-brand hover:text-brand">Inspect</a>
-                                                    <a href="{{ route('torrents.download', $torrent) }}" class="mt-2 inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
+                                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
                                     </td>
                                 </tr>
                             @empty
