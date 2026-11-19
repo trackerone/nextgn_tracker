@@ -104,6 +104,8 @@ final class TorrentDetailsTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
 
         $response->assertOk()
+            ->assertSeeInOrder(['<h1', 'id="film-heading"', 'aria-label="Torrent facts"'], false)
+            ->assertSee('id="release-files"', false)
             ->assertSee('Film synopsis.')
             ->assertSee('https://image.tmdb.org/t/p/w500/poster.jpg', false)
             ->assertSee('Actor Name')

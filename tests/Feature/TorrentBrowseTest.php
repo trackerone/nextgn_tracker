@@ -59,7 +59,8 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents');
 
         $response->assertOk();
-        $response->assertSee('Filter first, then browse');
+        $response->assertSee('form="browse-filters"', false);
+        $response->assertSee('aria-label="Browse categories"', false);
         $response->assertSee('Metadata filters');
         $response->assertSee('Saved views');
         $response->assertSee('RSS');
@@ -115,7 +116,7 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.index', ['grouped' => '0']));
 
         $response->assertOk();
-        $response->assertSeeText('inspect the release details.');
+        $response->assertSee('Scrollable torrent results table');
         $response->assertSeeText('Size');
         $response->assertSeeText('Seed');
         $response->assertSeeText('Leech');
