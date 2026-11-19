@@ -8,7 +8,9 @@ use App\Jobs\EnrichTorrentExternalMetadata;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\Settings\SiteSettingsRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
@@ -75,6 +77,66 @@ final class MetadataProviderSettingsApiTest extends TestCase
 
         $this->post($url, ['source' => 'default'])->assertRedirect();
         $this->assertSame($config->providerPriority(), $config->providerPriorityFor('music', (int) $torrent->id));
+    }
+
+    public function test_sysop_can_import_a_film_by_imdb_id_for_ordinary_members(): void
+    {
+        config([
+            'metadata.tmdb.api_key' => 'test-key',
+            'metadata.tmdb.base_url' => 'https://api.themoviedb.org/3',
+        ]);
+        app(SiteSettingsRepository::class)->set('metadata.providers.tmdb.enabled', true, 'bool');
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.themoviedb.org/3/find/tt2294449?*' => Http::response([
+                'movie_results' => [['id' => 187017, 'title' => '22 Jump Street', 'media_type' => 'movie']],
+            ]),
+            'https://api.themoviedb.org/3/movie/187017?*' => Http::response([
+                'id' => 187017,
+                'title' => '22 Jump Street',
+                'release_date' => '2014-06-13',
+                'overview' => 'An undercover assignment at a college.',
+                'poster_path' => '/poster.jpg',
+                'credits' => ['cast' => [['name' => 'Jonah Hill', 'character' => 'Schmidt', 'profile_path' => '/hill.jpg']]],
+                'videos' => ['results' => [['site' => 'YouTube', 'type' => 'Trailer', 'key' => 'XqMKdHcs5kQ']]],
+            ]),
+        ]);
+
+        $torrent = Torrent::factory()->create(['type' => 'movie', 'imdb_id' => 'tt2294449', 'tmdb_id' => null]);
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $member = User::factory()->create();
+
+        $this->actingAs($sysop)
+            ->post(route('sysop.torrents.metadata-source', ['torrent' => $torrent->id]), ['source' => 'tmdb'])
+            ->assertRedirect(route('torrents.show', $torrent))
+            ->assertSessionHas('metadata_source_status', 'TMDb metadata updated.');
+
+        $this->actingAs($member)->get(route('torrents.show', $torrent))
+            ->assertOk()
+            ->assertSee('22 Jump Street')
+            ->assertSee('An undercover assignment at a college.')
+            ->assertSee('https://image.tmdb.org/t/p/w500/poster.jpg')
+            ->assertSee('Jonah Hill')
+            ->assertSee('https://image.tmdb.org/t/p/w185/hill.jpg')
+            ->assertSee('data-trailer-id="XqMKdHcs5kQ"', false);
+    }
+
+    public function test_sysop_gets_a_clear_warning_when_enrichment_is_disabled(): void
+    {
+        app(SiteSettingsRepository::class)->set('metadata.enrichment.enabled', false, 'bool');
+        Queue::fake();
+        Http::fake();
+
+        $torrent = Torrent::factory()->create(['type' => 'movie']);
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+
+        $this->actingAs($sysop)
+            ->post(route('sysop.torrents.metadata-source', ['torrent' => $torrent->id]), ['source' => 'tmdb'])
+            ->assertRedirect(route('torrents.show', $torrent))
+            ->assertSessionHas('metadata_source_warning', 'Source saved. Turn on Enable enrichment in Metadata settings, then try again.');
+
+        Queue::assertNothingPushed();
+        Http::assertNothingSent();
     }
 
     public function test_only_sysop_can_publish_or_disable_licensed_rotten_tomatoes_scores(): void

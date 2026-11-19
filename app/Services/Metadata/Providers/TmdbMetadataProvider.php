@@ -49,7 +49,7 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
             }
 
             if ($payload === null && $lookup->imdbId !== null) {
-                $find = $this->http->baseUrl($baseUrl)
+                $find = $this->http->baseUrl($baseUrl)->timeout(5)
                     ->get(sprintf('/find/%s', $lookup->imdbId), [
                         'api_key' => $apiKey,
                         'external_source' => 'imdb_id',
@@ -62,7 +62,7 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
 
             if ($payload === null && $lookup->title !== null) {
                 $searchPath = $lookup->mediaType === 'tv' ? '/search/tv' : '/search/movie';
-                $search = $this->http->baseUrl($baseUrl)
+                $search = $this->http->baseUrl($baseUrl)->timeout(5)
                     ->get($searchPath, [
                         'api_key' => $apiKey,
                         'query' => $lookup->title,

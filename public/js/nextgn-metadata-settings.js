@@ -55,7 +55,7 @@
     const setBadge = (id, hasValue) => {
         const el = document.getElementById(id);
         el.textContent = hasValue ? 'Configured' : 'Missing';
-        el.className = `badge ${hasValue ? 'badge-ok' : 'badge-missing'}`;
+        el.dataset.configured = String(hasValue);
     };
 
     const loadState = async () => {
@@ -143,13 +143,13 @@
                 throw new Error('TMDB API key is required.');
             }
 
-            await request('/api/admin/settings/metadata/credentials/tmdb', {
+            const status = await request('/api/admin/settings/metadata/credentials/tmdb', {
                 method: 'PUT',
                 body: JSON.stringify({ api_key: apiKey }),
             });
 
             document.getElementById('tmdb_api_key').value = '';
-            await loadState();
+            setBadge('status_tmdb_api_key', !!status.has_api_key);
             showStatus('TMDB credential updated.');
         } catch (error) {
             await showError(error);
@@ -169,14 +169,15 @@
             if (clientId) payload.client_id = clientId;
             if (clientSecret) payload.client_secret = clientSecret;
 
-            await request('/api/admin/settings/metadata/credentials/trakt', {
+            const status = await request('/api/admin/settings/metadata/credentials/trakt', {
                 method: 'PUT',
                 body: JSON.stringify(payload),
             });
 
             document.getElementById('trakt_client_id').value = '';
             document.getElementById('trakt_client_secret').value = '';
-            await loadState();
+            setBadge('status_trakt_client_id', !!status.has_client_id);
+            setBadge('status_trakt_client_secret', !!status.has_client_secret);
             showStatus('Trakt credential(s) updated.');
         } catch (error) {
             await showError(error);
@@ -190,8 +191,8 @@
             }
 
             try {
-                await request(`/api/admin/settings/metadata/credentials/${provider}/${field}`, { method: 'DELETE' });
-                await loadState();
+                const status = await request(`/api/admin/settings/metadata/credentials/${provider}/${field}`, { method: 'DELETE' });
+                setBadge(`status_${provider}_${field}`, !!status[`has_${field}`]);
                 showStatus(`${provider} ${field} cleared.`);
             } catch (error) {
                 await showError(error);
