@@ -290,11 +290,17 @@
                             @endforeach
                         </select>
                     </label>
-                    <button type="submit" class="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-slate-950">Save source</button>
+                    <button type="submit" class="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-slate-950">Save &amp; refresh</button>
                 </form>
                 @error('source')
                     <p class="mt-2 text-sm text-rose-200">{{ $message }}</p>
                 @enderror
+                @if (session('metadata_source_warning'))
+                    <p role="alert" class="mt-2 text-sm text-amber-200">
+                        {{ session('metadata_source_warning') }}
+                        <a href="{{ route('admin.settings.metadata.edit') }}" class="underline">Open metadata settings</a>
+                    </p>
+                @endif
                 @if (session('metadata_source_status'))
                     <p role="status" class="mt-2 text-sm text-emerald-200">{{ session('metadata_source_status') }}</p>
                 @endif
@@ -374,7 +380,7 @@
         @if (($nfoText ?? '') !== '')
             <details class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                 <summary class="cursor-pointer text-lg font-semibold text-white">NFO</summary>
-                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 text-sm text-slate-200">{{ $nfoText }}</pre>
+                <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 font-mono text-sm leading-none text-slate-200">{{ $nfoText }}</pre>
             </details>
         @endif
     </div>
