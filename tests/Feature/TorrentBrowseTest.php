@@ -60,6 +60,8 @@ final class TorrentBrowseTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('form="browse-filters"', false);
+        $response->assertSee('css/nextgn-browse.css', false);
+        $response->assertSee('class="nextgn-browse-layout"', false);
         $response->assertSee('aria-label="Browse categories"', false);
         $response->assertSee('Metadata filters');
         $response->assertSee('Saved views');

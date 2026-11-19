@@ -40,20 +40,21 @@
 
 @section('meta')
     <meta name="robots" content="noindex, nofollow">
+    <link rel="stylesheet" href="{{ asset('css/nextgn-browse.css') }}">
 @endsection
 
 @section('content')
-    <header class="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <header class="nextgn-browse-header mb-5 flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-semibold text-white">Browse</h1>
-        <div class="flex w-full max-w-2xl gap-2 sm:w-auto sm:flex-1">
+        <div class="nextgn-browse-search flex gap-2">
             <label for="browse-query" class="sr-only">Search releases</label>
             <input id="browse-query" form="browse-filters" type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
             <button form="browse-filters" type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Search</button>
         </div>
     </header>
 
-    <div class="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <aside class="space-y-4 xl:sticky xl:top-6 xl:self-start">
+    <div class="nextgn-browse-layout">
+        <aside class="min-w-0 space-y-4">
             <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
                 <h2 class="mb-3 text-sm font-semibold text-white">Filters</h2>
 

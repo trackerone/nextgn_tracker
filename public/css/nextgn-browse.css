@@ -1,0 +1,25 @@
+.nextgn-browse-layout {
+    display: grid;
+    gap: 1rem;
+}
+
+.nextgn-browse-header {
+    margin-bottom: 1rem;
+}
+
+.nextgn-browse-search {
+    width: min(100%, 40rem);
+}
+
+@media (min-width: 1024px) {
+    .nextgn-browse-layout {
+        grid-template-columns: 14rem minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .nextgn-browse-header {
+        display: grid;
+        grid-template-columns: 14rem minmax(0, 1fr);
+        gap: 1rem;
+    }
+}
