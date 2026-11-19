@@ -1,11 +1,9 @@
-<li class="min-w-0 overflow-hidden rounded-lg border border-slate-800">
+<li class="w-16 text-xs">
     @if ($person['portrait'] !== null)
-        <img src="{{ $person['portrait'] }}" alt="" width="185" height="278" loading="lazy" class="aspect-[2/3] w-full object-cover">
+        <img src="{{ $person['portrait'] }}" alt="" width="48" height="56" loading="lazy" class="h-14 w-12 rounded-md object-cover">
     @endif
-    <div class="space-y-1 p-2 text-sm">
-        <p class="font-semibold text-white">{{ $person['name'] }}</p>
-        @if ($person['role'] !== null)
-            <p class="text-slate-400">{{ $person['role'] }}</p>
-        @endif
-    </div>
+    <p class="mt-1 break-words font-medium leading-tight text-white">{{ $person['name'] }}</p>
+    @if ($person['role'] !== null)
+        <p class="break-words leading-tight text-slate-300">{{ $person['role'] }}</p>
+    @endif
 </li>

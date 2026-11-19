@@ -122,7 +122,7 @@ final class TorrentMetadataView
     }
 
     /**
-     * @return array{title: ?string, overview: ?string, poster: ?string, year: ?int, cast: list<array{name: string, role: ?string, portrait: ?string}>, trailer: ?string}|null
+     * @return array{title: ?string, overview: ?string, poster: ?string, backdrop: ?string, year: ?int, cast: list<array{name: string, role: ?string, portrait: ?string}>, trailer: ?string}|null
      */
     public function filmDetails(): ?array
     {
@@ -162,6 +162,7 @@ final class TorrentMetadataView
             'title' => $this->codecText($external->title),
             'overview' => $this->codecText($external->overview),
             'poster' => $this->tmdbImage($external->poster_path, 'w500'),
+            'backdrop' => $this->tmdbImage($external->backdrop_path, 'w1280'),
             'year' => is_int($external->year) ? $external->year : null,
             'cast' => $cast,
             'trailer' => $trailer,

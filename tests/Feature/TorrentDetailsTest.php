@@ -87,6 +87,7 @@ final class TorrentDetailsTest extends TestCase
             'title' => 'Film title',
             'overview' => 'Film synopsis.',
             'poster_path' => '/poster.jpg',
+            'backdrop_path' => '/backdrop.jpg',
             'providers_payload' => [
                 'tmdb' => [
                     'credits' => ['cast' => [['name' => 'Actor Name', 'character' => 'Lead role', 'profile_path' => '/actor.jpg']]],
@@ -108,6 +109,8 @@ final class TorrentDetailsTest extends TestCase
             ->assertSee('id="release-files"', false)
             ->assertSee('Film synopsis.')
             ->assertSee('https://image.tmdb.org/t/p/w500/poster.jpg', false)
+            ->assertSee('https://image.tmdb.org/t/p/w1280/backdrop.jpg', false)
+            ->assertSee('lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]', false)
             ->assertSee('Actor Name')
             ->assertSee('Lead role')
             ->assertSee('data-trailer-id="XqMKdHcs5kQ"', false)
