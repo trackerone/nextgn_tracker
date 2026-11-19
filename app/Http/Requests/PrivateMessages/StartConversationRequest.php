@@ -15,6 +15,13 @@ class StartConversationRequest extends FormRequest
 
     public function rules(): array
     {
+        if (! $this->expectsJson()) {
+            return [
+                'recipient_slug' => ['required', 'string', 'exists:users,public_slug'],
+                'body_md' => ['required', 'string', 'min:3'],
+            ];
+        }
+
         return [
             'recipient_id' => ['required', 'integer', 'exists:users,id'],
             'body_md' => ['required', 'string', 'min:3'],

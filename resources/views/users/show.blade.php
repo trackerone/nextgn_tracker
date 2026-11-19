@@ -18,6 +18,7 @@
             @if (auth()->user()->is($profileUser))
                 <a href="{{ route('account.index') }}" class="mt-5 inline-block text-sm text-brand">Open my private account</a>
             @else
+                <a href="{{ route('pm.create', ['recipient' => $profileUser->publicProfileRouteKey()]) }}" class="mt-5 inline-block rounded-xl border border-slate-700 px-4 py-2 text-sm">Send message</a>
                 <form method="POST" action="{{ route($isFollowing ? 'account.people.destroy' : 'account.people.store', $profileUser->publicProfileRouteKey()) }}" class="mt-5">
                     @csrf
                     @if ($isFollowing) @method('DELETE') @endif

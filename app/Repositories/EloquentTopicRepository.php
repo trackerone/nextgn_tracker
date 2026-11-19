@@ -15,11 +15,11 @@ class EloquentTopicRepository implements TopicRepositoryInterface
         return Topic::query()
             ->select(['id', 'user_id', 'slug', 'title', 'is_locked', 'is_pinned', 'created_at', 'updated_at'])
             ->with([
-                'author:id,name,role_id',
+                'author:id,name,role_id,public_slug',
                 'author.role:id,name',
                 'latestPost' => static fn ($query) => $query
                     ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
-                    ->with('author:id,name'),
+                    ->with('author:id,name,public_slug'),
             ])
             ->withCount('posts')
             ->orderByDesc('is_pinned')
@@ -50,11 +50,11 @@ class EloquentTopicRepository implements TopicRepositoryInterface
     private function loadSummaryRelations(Topic $topic): Topic
     {
         $topic->load([
-            'author:id,name,role_id',
+            'author:id,name,role_id,public_slug',
             'author.role:id,name',
             'latestPost' => static fn ($query) => $query
                 ->select(['posts.id', 'posts.topic_id', 'posts.user_id', 'posts.created_at'])
-                ->with('author:id,name'),
+                ->with('author:id,name,public_slug'),
         ]);
         $topic->loadCount('posts');
 

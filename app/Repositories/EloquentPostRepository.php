@@ -26,9 +26,9 @@ class EloquentPostRepository implements PostRepositoryInterface
                 'updated_at',
             ])
             ->withTrashed()
-            ->with(['author:id,name,role_id', 'author.role:id,name'])
+            ->with(['author:id,name,role_id,public_slug', 'author.role:id,name'])
             ->where('topic_id', $topic->getKey())
-            ->orderBy('created_at')
+            ->orderBy('created_at')->orderBy('id')
             ->paginate($perPage);
     }
 
