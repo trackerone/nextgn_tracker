@@ -98,46 +98,60 @@
                 </nav>
             @endif
             @if ($film !== null)
-                <section class="mt-5 border-t border-slate-800 pt-5" aria-labelledby="film-heading">
-                    <div class="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-                        @if ($film['poster'] !== null)
-                            <img src="{{ $film['poster'] }}" alt="" width="128" height="192" class="rounded-xl object-cover">
-                        @endif
-                        <div @class(['space-y-3', 'sm:col-span-2' => $film['poster'] === null])>
-                            <h2 id="film-heading" class="text-2xl font-bold text-white">
-                                {{ $film['title'] ?? $torrent->name }}@if ($film['year'] !== null) ({{ $film['year'] }})@endif
-                            </h2>
-                            @if ($film['overview'] !== null)
-                                <p class="max-w-prose text-sm leading-6 text-slate-300">{{ $film['overview'] }}</p>
-                            @endif
-                        </div>
-                    </div>
-                    @if ($film['cast'] !== [])
-                        <h3 class="mt-5 text-lg font-semibold text-white">Cast</h3>
-                        <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                            @foreach (array_slice($film['cast'], 0, 6) as $person)
-                                @include('torrents.partials.cast-member', ['person' => $person])
-                            @endforeach
-                        </ul>
-                        @if (count($film['cast']) > 6)
-                            <details class="mt-3">
-                                <summary class="cursor-pointer text-sm text-cyan-200">Show full cast</summary>
-                                <ul class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                                    @foreach (array_slice($film['cast'], 6) as $person)
+                <section class="relative isolate mt-5 overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60" aria-labelledby="film-heading">
+                    @if ($film['backdrop'] !== null)
+                        <img src="{{ $film['backdrop'] }}" alt="" decoding="async" class="pointer-events-none absolute inset-0 -z-10 h-full w-full object-cover opacity-60">
+                        <div class="pointer-events-none absolute inset-0 -z-10 bg-slate-950/45"></div>
+                    @endif
+
+                    <div @class([
+                        'grid items-start gap-5 p-4 md:p-5',
+                        'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]' => $film['trailer'] !== null,
+                    ])>
+                        <div class="min-w-0">
+                            <div class="flex items-start gap-4">
+                                @if ($film['poster'] !== null)
+                                    <img src="{{ $film['poster'] }}" alt="" width="96" height="144" class="aspect-[2/3] w-20 shrink-0 rounded-lg object-cover sm:w-24">
+                                @endif
+                                <div class="min-w-0 space-y-2">
+                                    <h2 id="film-heading" class="text-xl font-bold text-white">
+                                        {{ $film['title'] ?? $torrent->name }}@if ($film['year'] !== null) ({{ $film['year'] }})@endif
+                                    </h2>
+                                    @if ($film['overview'] !== null)
+                                        <p class="max-w-prose text-sm leading-relaxed text-slate-200">{{ $film['overview'] }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @if ($film['cast'] !== [])
+                                <h3 class="mt-3 text-sm font-semibold text-white">Cast</h3>
+                                <ul class="mt-2 flex flex-wrap gap-x-3 gap-y-2">
+                                    @foreach (array_slice($film['cast'], 0, 6) as $person)
                                         @include('torrents.partials.cast-member', ['person' => $person])
                                     @endforeach
                                 </ul>
-                            </details>
-                        @endif
-                    @endif
-                    @if ($film['trailer'] !== null)
-                        <h3 class="mt-5 text-lg font-semibold text-white">Trailer</h3>
-                        <div class="mt-3 aspect-video w-full max-w-2xl overflow-hidden rounded-xl bg-slate-950">
-                            <a href="https://www.youtube.com/watch?v={{ $film['trailer'] }}" data-trailer-id="{{ $film['trailer'] }}" class="flex h-full w-full items-center justify-center bg-cover bg-center text-sm font-semibold text-white" style="background-image: url('https://i.ytimg.com/vi/{{ $film['trailer'] }}/hqdefault.jpg')">
-                                <span class="rounded-lg bg-slate-950/90 px-5 py-3">Play trailer</span>
-                            </a>
+                                @if (count($film['cast']) > 6)
+                                    <details class="mt-2">
+                                        <summary class="cursor-pointer text-xs text-cyan-200">Show full cast</summary>
+                                        <ul class="mt-2 flex flex-wrap gap-x-3 gap-y-2">
+                                            @foreach (array_slice($film['cast'], 6) as $person)
+                                                @include('torrents.partials.cast-member', ['person' => $person])
+                                            @endforeach
+                                        </ul>
+                                    </details>
+                                @endif
+                            @endif
                         </div>
-                    @endif
+                        @if ($film['trailer'] !== null)
+                            <div class="min-w-0">
+                                <h3 class="mb-2 text-sm font-semibold text-white">Trailer</h3>
+                                <div class="aspect-video w-full overflow-hidden rounded-xl bg-slate-950">
+                                    <a href="https://www.youtube.com/watch?v={{ $film['trailer'] }}" data-trailer-id="{{ $film['trailer'] }}" class="flex h-full w-full items-center justify-center bg-cover bg-center text-sm font-semibold text-white" style="background-image: url('https://i.ytimg.com/vi/{{ $film['trailer'] }}/hqdefault.jpg')">
+                                        <span class="rounded-lg bg-slate-950/90 px-5 py-3">Play trailer</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </section>
             @endif
             @if (($releaseAdvice['upgrade_available'] ?? false) === true)
