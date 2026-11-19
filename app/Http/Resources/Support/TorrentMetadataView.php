@@ -175,6 +175,56 @@ final class TorrentMetadataView
             : null;
     }
 
+    /** @return array{source: string, url: string, title: ?string, year: ?int, creators: list<string>}|null */
+    public function catalogDetails(): ?array
+    {
+        $metadata = $this->torrent->getRelationValue('externalMetadata');
+        if (! $metadata instanceof TorrentExternalMetadata || ! in_array($metadata->media_type, ['book', 'music'], true)) {
+            return null;
+        }
+
+        $book = $metadata->media_type === 'book';
+        $provider = $book ? 'open_library' : 'musicbrainz';
+        $id = data_get($metadata->providers_payload, $provider.'.catalog_id');
+
+        if (! is_string($id) || ($book ? preg_match('~^/works/OL[0-9]+W$~D', $id) !== 1 : ! \Illuminate\Support\Str::isUuid($id))) {
+            return null;
+        }
+
+        $creators = data_get($metadata->providers_payload, $provider.'.creators', []);
+
+        return [
+            'source' => $book ? 'Open Library' : 'MusicBrainz',
+            'url' => $book ? 'https://openlibrary.org'.$id : 'https://musicbrainz.org/release-group/'.$id,
+            'title' => $this->codecText($metadata->title),
+            'year' => $metadata->year,
+            'creators' => is_array($creators) ? array_values(array_filter($creators, 'is_string')) : [],
+        ];
+    }
+
+    /** @return array{url: string, title: ?string, year: ?int, overview: ?string, episode: ?string, episode_overview: ?string}|null */
+    public function tvmazeDetails(): ?array
+    {
+        $metadata = $this->torrent->getRelationValue('externalMetadata');
+        if (! $metadata instanceof TorrentExternalMetadata) {
+            return null;
+        }
+
+        $id = data_get($metadata->providers_payload, 'tvmaze.show_id');
+        if (! is_int($id) || $id < 1) {
+            return null;
+        }
+
+        return [
+            'url' => 'https://www.tvmaze.com/shows/'.$id,
+            'title' => $this->codecText($metadata->title),
+            'year' => $metadata->year,
+            'overview' => $this->codecText($metadata->overview),
+            'episode' => $this->codecText(data_get($metadata->providers_payload, 'tvmaze.episode')),
+            'episode_overview' => $this->codecText(data_get($metadata->providers_payload, 'tvmaze.episode_overview')),
+        ];
+    }
+
     private function codecText(mixed $value): ?string
     {
         return is_string($value) && trim($value) !== '' ? trim($value) : null;

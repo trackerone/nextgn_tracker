@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Torrents;
 
+use App\Models\Category;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
@@ -55,7 +56,13 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             is_string($input['resolution'] ?? null) ? $input['resolution'] : null,
             is_string($input['source'] ?? null) ? $input['source'] : null,
         );
-        $externalMetadata = $this->lookupExternalMetadata($canonicalMetadata);
+        $category = null;
+        $categoryId = $input['category_id'] ?? null;
+        if (in_array($canonicalMetadata->type, [null, 'other'], true) && is_numeric($categoryId)) {
+            $category = Category::query()->find((int) $categoryId)?->slug;
+        }
+
+        $externalMetadata = $this->lookupExternalMetadata($canonicalMetadata, ExternalMetadataConfig::mediaType($canonicalMetadata->type, $category));
         $enrichmentOutcome = $this->externalMetadataEnrichmentService->enrich($canonicalMetadata, $externalMetadata);
 
         return $this->makeContext($user, $input, $this->buildPayloadContext(
@@ -155,7 +162,7 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
         ], static fn (mixed $value): bool => $value !== null);
     }
 
-    private function lookupExternalMetadata(CanonicalTorrentMetadata $canonical): ?ExternalMetadataResult
+    private function lookupExternalMetadata(CanonicalTorrentMetadata $canonical, ?string $mediaType): ?ExternalMetadataResult
     {
         if (! $this->externalMetadataConfig->enrichmentEnabled()) {
             return null;
@@ -167,10 +174,12 @@ final class UploadPreflightContextBuilder implements UploadPreflightContextBuild
             traktId: null,
             title: $canonical->title,
             year: $canonical->year,
-            mediaType: $canonical->type,
+            mediaType: $mediaType,
+            releaseName: $canonical->rawName,
+            nfo: $canonical->nfo,
         );
 
-        foreach ($this->externalMetadataConfig->providerPriority() as $providerKey) {
+        foreach ($this->externalMetadataConfig->providerPriorityFor($mediaType) as $providerKey) {
             $provider = $this->providers[$providerKey] ?? null;
             if (! $provider instanceof ExternalMetadataProvider || ! $provider->supports($lookup)) {
                 continue;

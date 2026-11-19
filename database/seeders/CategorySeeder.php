@@ -19,6 +19,7 @@ class CategorySeeder extends Seeder
             'Games',
             'Software',
             'Other',
+            'Books',
         ];
 
         foreach ($categories as $index => $name) {

@@ -11,7 +11,7 @@
         h2 { font-size: 1.2rem; font-weight: 600; margin-top: 1.5rem; }
         form { margin-top: 0.75rem; display: grid; gap: 1rem; max-width: 46rem; }
         label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.95rem; color: #cbd5f5; }
-        input[type="number"], input[type="text"], input[type="password"] { padding: 0.65rem; border-radius: 0.375rem; border: 1px solid #1e293b; background: #0b1120; color: #f8fafc; }
+        input[type="number"], input[type="text"], input[type="password"], select { padding: 0.65rem; border-radius: 0.375rem; border: 1px solid #1e293b; background: #0b1120; color: #f8fafc; }
         .row { display: flex; align-items: center; gap: 0.5rem; }
         .controls { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         button { padding: 0.6rem 0.95rem; border-radius: 0.375rem; border: none; background-color: #2563eb; color: white; font-weight: 600; cursor: pointer; }
@@ -48,10 +48,42 @@
         <input type="text" id="priority" required>
     </label>
 
+    <h2>Source by media type</h2>
+    @foreach (['movie' => 'Movies', 'tv' => 'TV series', 'book' => 'Books', 'music' => 'Music'] as $type => $label)
+        <label>{{ $label }}
+            <select data-media-source="{{ $type }}">
+                @foreach (\App\Services\Metadata\ExternalMetadataConfig::SOURCE_OPTIONS[$type] as $source)
+                    <option value="{{ $source }}">{{ [
+                        'default' => 'Use provider priority',
+                        'tmdb' => 'TMDb',
+                        'trakt' => 'Trakt',
+                        'imdb' => 'IMDb link only',
+                        'open_library' => 'Open Library',
+                        'musicbrainz' => 'MusicBrainz',
+                        'tvmaze' => 'TVmaze',
+                        'none' => 'Disable external lookup',
+                    ][$source] }}</option>
+                @endforeach
+            </select>
+        </label>
+    @endforeach
     <div class="controls">
         <button type="submit">Save provider settings</button>
     </div>
 </form>
+
+@if (auth()->user()?->isSysop())
+<form id="rotten-tomatoes-form">
+    <h2>Rotten Tomatoes ratings</h2>
+    <p>Enter scores manually for films you have permission to publish ratings for. <a href="https://www.rottentomatoes.com/help_desk/licensing" target="_blank" rel="noopener noreferrer">Licensing and access</a>.</p>
+    <label>IMDb ID <input type="text" id="rt_imdb_id" pattern="tt[0-9]{7,10}" required></label>
+    <label>Rotten Tomatoes film slug <input type="text" id="rt_slug" maxlength="150" pattern="[a-z0-9_\-]+" placeholder="the_matrix"></label>
+    <label>Tomatometer <input type="number" id="rt_critics" min="0" max="100"></label>
+    <label>Popcornmeter <input type="number" id="rt_audience" min="0" max="100"></label>
+    <label class="row"><input type="checkbox" id="rt_enabled" checked> Show ratings on this film</label>
+    <div class="controls"><button type="submit">Save film ratings</button></div>
+</form>
+@endif
 
 <h2>Credential status</h2>
 <ul>

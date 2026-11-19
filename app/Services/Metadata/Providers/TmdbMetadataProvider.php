@@ -25,7 +25,8 @@ final class TmdbMetadataProvider implements ExternalMetadataProvider
 
     public function supports(ExternalMetadataLookup $lookup): bool
     {
-        return $this->config->providerEnabled($this->providerKey())
+        return ! in_array($lookup->mediaType, ['book', 'music'], true)
+            && $this->config->providerEnabled($this->providerKey())
             && $this->config->tmdbApiKey() !== null
             && ($lookup->imdbId !== null || $lookup->title !== null || $lookup->tmdbId !== null);
     }

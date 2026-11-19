@@ -13,5 +13,7 @@ final readonly class ExternalMetadataLookup
         public ?string $title,
         public ?int $year,
         public ?string $mediaType,
+        public ?string $releaseName = null,
+        public ?string $nfo = null,
     ) {}
 }

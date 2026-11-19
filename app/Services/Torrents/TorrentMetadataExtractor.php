@@ -52,7 +52,7 @@ final class TorrentMetadataExtractor
             );
         }
 
-        $imdbId = $this->extractImdbId($normalizedNfo);
+        $imdbId = $this->extractImdbId($normalizedNfo) ?? $this->extractImdbId($infoName ?? '');
         if (
             preg_match_all('/\btt\d{7,8}\b/i', $normalizedNfo, $identities) > 1
             && count(array_unique($identities[0])) > 1
@@ -60,7 +60,7 @@ final class TorrentMetadataExtractor
             $imdbId = null;
             $year = null;
         }
-        $tmdbId = $this->extractTmdbId($normalizedNfo);
+        $tmdbId = $this->extractTmdbId($normalizedNfo) ?? $this->extractTmdbId($infoName ?? '');
         $title = $this->extractTitle($normalizedNfo) ?? $titleFromName;
 
         return new TorrentExtractedMetadata(

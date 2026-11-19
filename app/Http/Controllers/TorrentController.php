@@ -10,6 +10,7 @@ use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
 use App\Services\BencodeService;
+use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Tracker\DownloadEligibilityPolicy;
@@ -141,6 +142,12 @@ final class TorrentController extends Controller
         $metadataReview = TorrentModerationMetadataReview::fromQuality($quality);
         $metadataView = TorrentMetadataView::fromTorrent($model);
         $metadataEnrichmentOutcome = $metadataView->enrichmentOutcome();
+        $metadataConfig = app(ExternalMetadataConfig::class);
+        $type = $metadata['type'] ?? null;
+        $mediaType = ExternalMetadataConfig::mediaType(is_string($type) ? $type : null, $model->category?->slug);
+        $sourceOptions = ExternalMetadataConfig::SOURCE_OPTIONS[$mediaType ?? ''] ?? [];
+        $metadataSource = $metadataConfig->sourceFor($mediaType, (int) $model->id);
+        $externalDetailsEnabled = $metadataSource !== 'none';
 
         $eligibility = $request->user() !== null
             ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
@@ -201,7 +208,14 @@ final class TorrentController extends Controller
             'metadata' => $metadata,
             'descriptionHtml' => $descriptionHtml,
             'contentFiles' => $this->contentFiles($model),
-            'film' => $metadataView->filmDetails(),
+            'film' => $externalDetailsEnabled ? $metadataView->filmDetails() : null,
+            'metadataSourceOptions' => $sourceOptions,
+            'metadataSourceOverride' => $metadataConfig->torrentSourceOverride((int) $model->id, $mediaType),
+            'rottenTomatoes' => ($metadata['type'] ?? null) === 'movie'
+                ? $metadataConfig->rottenTomatoesRatings($metadata['imdb_id'] ?? null)
+                : null,
+            'tvmazeDetails' => $metadataSource === 'tvmaze' ? $metadataView->tvmazeDetails() : null,
+            'catalogDetails' => $externalDetailsEnabled ? $metadataView->catalogDetails() : null,
             'nfoText' => $nfoText,
             'eligibility' => $eligibility,
             'eligibilityMessage' => $eligibilityMessage,

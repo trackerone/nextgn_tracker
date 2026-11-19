@@ -270,6 +270,77 @@
                 </dl>
             </section>
         </div>
+        @if (auth()->user()?->isSysop() && ($metadataSourceOptions ?? []) !== [])
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+                <form method="POST" action="{{ route('sysop.torrents.metadata-source', ['torrent' => $torrent->id]) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    <label class="text-sm font-semibold text-slate-200">Metadata source for this torrent
+                        <select name="source" class="mt-1 block rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
+                            @foreach ($metadataSourceOptions as $source)
+                                <option value="{{ $source }}" @selected($source === $metadataSourceOverride)>{{ [
+                                    'default' => 'Use media-type settings',
+                                    'tmdb' => 'TMDb',
+                                    'trakt' => 'Trakt',
+                                    'imdb' => 'IMDb link only',
+                                    'open_library' => 'Open Library',
+                                    'musicbrainz' => 'MusicBrainz',
+                                    'tvmaze' => 'TVmaze',
+                                    'none' => 'Disable external lookup',
+                                ][$source] }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit" class="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-slate-950">Save source</button>
+                </form>
+                @error('source')
+                    <p class="mt-2 text-sm text-rose-200">{{ $message }}</p>
+                @enderror
+                @if (session('metadata_source_status'))
+                    <p role="status" class="mt-2 text-sm text-emerald-200">{{ session('metadata_source_status') }}</p>
+                @endif
+            </section>
+        @endif
+        @isset($rottenTomatoes)
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Rotten Tomatoes ratings">
+                <a class="text-sm font-semibold text-cyan-200 underline" href="{{ $rottenTomatoes['url'] }}" rel="noopener noreferrer" target="_blank">Rotten Tomatoes®</a>
+                <dl class="mt-2 flex flex-wrap gap-6 text-sm text-slate-200">
+                    @if ($rottenTomatoes['critics'] !== null)
+                        <div><dt>Tomatometer®</dt><dd class="font-semibold">{{ $rottenTomatoes['critics'] }}%</dd></div>
+                    @endif
+                    @if ($rottenTomatoes['audience'] !== null)
+                        <div><dt>Popcornmeter®</dt><dd class="font-semibold">{{ $rottenTomatoes['audience'] }}%</dd></div>
+                    @endif
+                </dl>
+            </section>
+        @endisset
+        @isset($tvmazeDetails)
+            <section class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                <h2 class="text-lg font-semibold text-white">
+                    {{ $tvmazeDetails['title'] ?? $torrent->name }}@if ($tvmazeDetails['year']) ({{ $tvmazeDetails['year'] }})@endif
+                </h2>
+                @if ($tvmazeDetails['overview'])
+                    <p class="mt-2 text-sm text-slate-300">{{ $tvmazeDetails['overview'] }}</p>
+                @endif
+                @if ($tvmazeDetails['episode'])
+                    <h3 class="mt-4 text-sm font-semibold text-white">{{ $tvmazeDetails['episode'] }}</h3>
+                    @if ($tvmazeDetails['episode_overview'])
+                        <p class="mt-1 text-sm text-slate-300">{{ $tvmazeDetails['episode_overview'] }}</p>
+                    @endif
+                @endif
+                <p class="mt-3 text-xs text-slate-300">
+                    Source <a class="text-cyan-200 underline" href="{{ $tvmazeDetails['url'] }}" rel="noopener noreferrer" target="_blank">TVmaze</a>
+                    · <a class="text-cyan-200 underline" href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener noreferrer" target="_blank">CC BY-SA 4.0</a> · summaries displayed as plain text
+                </p>
+            </section>
+        @endisset
+
+        @isset($catalogDetails)
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5" aria-label="Catalog information">
+                <h2 class="text-lg font-semibold text-white">{{ $catalogDetails['title'] ?? $torrent->name }}</h2>
+                <p class="mt-1 text-sm text-slate-300">{{ implode(' · ', array_filter([...$catalogDetails['creators'], $catalogDetails['year']])) }}</p>
+                <a class="mt-2 inline-block text-sm text-cyan-200 underline" href="{{ $catalogDetails['url'] }}" rel="noopener noreferrer" target="_blank">{{ $catalogDetails['source'] }}</a>
+            </section>
+        @endisset
         @if (! empty($torrent->tags))
             <div class="flex flex-wrap gap-2">
                 @foreach ($torrent->tags as $tag)

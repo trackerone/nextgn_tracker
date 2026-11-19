@@ -28,6 +28,7 @@ final class MetadataProviderSettingsController extends Controller
                 'trakt' => ['enabled' => $this->config->providerEnabled('trakt')],
                 'imdb' => ['enabled' => $this->config->providerEnabled('imdb')],
             ],
+            'sources_by_media_type' => $this->config->sourcesByMediaType(),
             'priority' => $this->config->providerPriority(),
         ]);
     }
@@ -43,6 +44,10 @@ final class MetadataProviderSettingsController extends Controller
         $this->settings->set('metadata.providers.trakt.enabled', data_get($validated, 'providers.trakt.enabled', false), 'bool');
         $this->settings->set('metadata.providers.imdb.enabled', data_get($validated, 'providers.imdb.enabled', false), 'bool');
         $this->settings->set('metadata.providers.priority', array_values($validated['priority']), 'json');
+
+        if (isset($validated['sources_by_media_type'])) {
+            $this->settings->set('metadata.providers.sources_by_media_type', $validated['sources_by_media_type'], 'json');
+        }
 
         return $this->show();
     }
