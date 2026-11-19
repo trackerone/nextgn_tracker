@@ -107,7 +107,7 @@ final class TorrentMetadataReadWebTest extends TestCase
         }
 
         $response->assertOk();
-        $response->assertSee('Filter first, then browse');
+        $response->assertSee('aria-label="Browse categories"', false);
         $response->assertSee('Core filters');
         $response->assertSee('Metadata filters');
         $response->assertSee('Type');
