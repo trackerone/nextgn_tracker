@@ -119,7 +119,7 @@ final class TorrentMetadataSurfaceConsistencyTest extends TestCase
         $this->assertStringContainsString('text/html', (string) $browseResponse->headers->get('content-type'));
         $this->assertStringContainsString('<!DOCTYPE html>', (string) $browseResponse->getContent());
 
-        $browseResponse->assertSee('Filter first, then browse');
+        $browseResponse->assertSee('aria-label="Browse categories"', false);
         $browseResponse->assertSee('Search');
         $browseResponse->assertSee('Core filters');
         $browseResponse->assertSee('Order by');

@@ -64,8 +64,41 @@
             </section>
         @endif
         <div class="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-2xl shadow-slate-950/40 md:p-8">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">{{ $torrent->isApproved() ? 'Approved torrent' : 'Torrent '.$torrent->status->value }}</p>
+                    <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
+                    <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
+                </div>
+                @can('download', $torrent)
+                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
+                            @csrf
+                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">Follow with metadata</button>
+                        </form>
+                    </div>
+                @endcan
+            </div>
+            @if ($links !== [])
+                <div class="mt-4 flex flex-wrap gap-2">
+                    @foreach ($links as $link)
+                        <a href="{{ $link['url'] }}" class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand" rel="noreferrer noopener" target="_blank">{{ $link['label'] }}</a>
+                    @endforeach
+                </div>
+            @endif
+            @if ($contentFiles !== [] || ($nfoText ?? '') !== '')
+                <nav class="mt-3 flex flex-wrap gap-4 text-sm text-cyan-200" aria-label="Release documents">
+                    @if ($contentFiles !== [])
+                        <a href="#release-files" class="underline">Files ({{ count($contentFiles) }})</a>
+                    @endif
+                    @if (($nfoText ?? '') !== '')
+                        <a href="#release-nfo" class="underline">NFO</a>
+                    @endif
+                </nav>
+            @endif
             @if ($film !== null)
-                <section class="mb-6 border-b border-slate-800 pb-6" aria-labelledby="film-heading">
+                <section class="mt-5 border-t border-slate-800 pt-5" aria-labelledby="film-heading">
                     <div class="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
                         @if ($film['poster'] !== null)
                             <img src="{{ $film['poster'] }}" alt="" width="128" height="192" class="rounded-xl object-cover">
@@ -107,29 +140,6 @@
                     @endif
                 </section>
             @endif
-            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.2em] text-emerald-400">{{ $torrent->isApproved() ? 'Approved torrent' : 'Torrent '.$torrent->status->value }}</p>
-                    <h1 class="mt-2 text-3xl font-bold text-white">{{ $torrent->name }}</h1>
-                    <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
-                </div>
-                @can('download', $torrent)
-                    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
-                        <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
-                            @csrf
-                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">Follow with metadata</button>
-                        </form>
-                    </div>
-                @endcan
-            </div>
-            @if ($links !== [])
-                <div class="mt-4 flex flex-wrap gap-2">
-                    @foreach ($links as $link)
-                        <a href="{{ $link['url'] }}" class="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand" rel="noreferrer noopener" target="_blank">{{ $link['label'] }}</a>
-                    @endforeach
-                </div>
-            @endif
             @if (($releaseAdvice['upgrade_available'] ?? false) === true)
                 <section class="mt-5 rounded-2xl border border-amber-400/60 bg-amber-400/10 p-5 text-sm text-amber-50 shadow-lg shadow-amber-950/20" aria-label="Upgrade available">
                     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -165,110 +175,114 @@
                 </section>
             @endif
             @can('moderate', $torrent)
-                <section class="mt-6 rounded-2xl border border-slate-800 bg-slate-950/50 p-5" aria-label="Staff review context">
-                    @php
-                        $staffStatus = ucfirst(str_replace('_', ' ', $torrent->status->value));
-                        $hasNfo = ($nfoText ?? '') !== '';
-                        $hasDescription = trim((string) ($torrent->description ?? '')) !== '';
-                    @endphp
-                    <div class="flex flex-col gap-2 text-sm text-slate-200">
-                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff review</p>
-                        <h2 class="text-lg font-semibold text-white">Moderation status and audit context</h2>
-                        <p><span class="font-semibold">Status:</span> <span @class([
-                            'rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide',
-                            'border-amber-500/50 bg-amber-500/10 text-amber-200' => $torrent->status->value === 'pending',
-                            'border-emerald-600/60 bg-emerald-500/10 text-emerald-200' => $torrent->status->value === 'published',
-                            'border-rose-600/60 bg-rose-500/10 text-rose-200' => $torrent->status->value === 'rejected',
-                            'border-slate-700 bg-slate-900 text-slate-300' => ! in_array($torrent->status->value, ['pending', 'published', 'rejected'], true),
-                        ])>{{ $staffStatus }}</span></p>
-                        @if ($torrent->moderator)
-                            <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
-                        @endif
-                        @if ($torrent->moderated_reason)
-                            <p><span class="font-semibold">Reason:</span> {{ $torrent->moderated_reason }}</p>
-                        @endif
-                    </div>
-                    <dl class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploader</dt><dd class="mt-1 text-sm font-semibold text-white">@if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</dd></div>
-                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted / Updated</dt><dd class="mt-1 text-sm font-semibold text-white">{{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? '—' }}</dd><dd class="text-xs text-slate-400">Updated {{ optional($torrent->updated_at)->toDayDateTimeString() ?? '—' }}</dd></div>
-                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Upload context</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->original_filename ?? 'Original filename unavailable' }}</dd><dd class="text-xs text-slate-400">{{ number_format($torrent->file_count) }} files • {{ $torrent->formatted_size }}</dd></div>
-                        <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Completeness</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $hasDescription ? 'Description' : 'No description' }} • {{ $hasNfo ? 'NFO' : 'No NFO' }}</dd><dd class="text-xs text-slate-400">{{ $hasMetadataRecord ? 'Metadata record present' : 'No metadata record' }}</dd></div>
-                    </dl>
-                    <div class="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
-                        <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Release metadata and signals</h3>
-                        @if ($metadataFacts !== [])
-                            <p class="mt-2">{{ collect($metadataFacts)->map(fn ($item) => $item['label'].': '.$item['value'])->implode(' • ') }}</p>
-                        @else
-                            <p class="mt-2 text-slate-500">No normalized release metadata is available yet. Review the title, category, description, and NFO before deciding.</p>
-                        @endif
-                        @if (($releaseAdvice['upgrade_available'] ?? false) === true)
-                            <p class="mt-2 text-amber-200">A better version is already known for this release family.</p>
-                        @elseif (($releaseAdvice['best_version_is_current_upload'] ?? false) === true)
-                            <p class="mt-2 text-emerald-200">This appears to be the best known version in its release family.</p>
-                        @endif
-                        @if (($metadataEnrichmentOutcome['conflicts'] ?? []) !== [])
-                            <p class="mt-2 text-amber-200">External metadata conflict: {{ implode(', ', $metadataEnrichmentOutcome['conflicts']) }}</p>
-                        @endif
-                    </div>
-                    <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
-                        <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2" data-submit-label="Publishing…">
-                            @csrf
-                            <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Publish torrent</button>
-                        </form>
-                        <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
-                            @csrf
-                            <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Reject reason
-                                <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40" placeholder="What should the uploader fix?" />
-                            </label>
-                            <p class="text-xs leading-5 text-slate-500">Required. This reason is retained with the moderation record, so make it specific and actionable.</p>
-                            <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300">Reject with reason</button>
-                        </form>
-                        <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
-                            @csrf
-                            <button type="submit" class="rounded-xl border border-rose-500/60 bg-rose-950/30 px-4 py-2 text-sm font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete</button>
-                        </form>
-                    </div>
-                    @if (($metadataReview['needs_review'] ?? false) === true)
-                        <div class="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
-                            <p class="font-semibold">Metadata review needed ({{ $metadataQuality['review_category'] ?? 'warning' }})</p>
-                            <p>Missing: {{ implode(', ', $metadataQuality['missing_fields'] ?? []) }}</p>
-                            <p>Labels: {{ implode(', ', $metadataReview['labels'] ?? []) }}</p>
+                <details class="mt-5 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                    <summary class="cursor-pointer text-sm font-semibold text-slate-200">Staff moderation</summary>
+                    <section class="mt-4" aria-label="Staff review context">
+                        @php
+                            $staffStatus = ucfirst(str_replace('_', ' ', $torrent->status->value));
+                            $hasNfo = ($nfoText ?? '') !== '';
+                            $hasDescription = trim((string) ($torrent->description ?? '')) !== '';
+                        @endphp
+                        <div class="flex flex-col gap-2 text-sm text-slate-200">
+                            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">Staff review</p>
+                            <h2 class="text-lg font-semibold text-white">Moderation status and audit context</h2>
+                            <p><span class="font-semibold">Status:</span> <span @class([
+                                'rounded-full border px-2 py-0.5 text-xs font-bold uppercase tracking-wide',
+                                'border-amber-500/50 bg-amber-500/10 text-amber-200' => $torrent->status->value === 'pending',
+                                'border-emerald-600/60 bg-emerald-500/10 text-emerald-200' => $torrent->status->value === 'published',
+                                'border-rose-600/60 bg-rose-500/10 text-rose-200' => $torrent->status->value === 'rejected',
+                                'border-slate-700 bg-slate-900 text-slate-300' => ! in_array($torrent->status->value, ['pending', 'published', 'rejected'], true),
+                            ])>{{ $staffStatus }}</span></p>
+                            @if ($torrent->moderator)
+                                <p><span class="font-semibold">Moderator:</span> {{ $torrent->moderator->name }} • {{ optional($torrent->moderated_at)->toDayDateTimeString() }}</p>
+                            @endif
+                            @if ($torrent->moderated_reason)
+                                <p><span class="font-semibold">Reason:</span> {{ $torrent->moderated_reason }}</p>
+                            @endif
                         </div>
-                    @endif
-                </section>
+                        <dl class="mt-4 divide-y divide-slate-800 xl:grid-cols-4">
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Uploader</dt><dd class="mt-1 text-sm font-semibold text-white">@if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</dd></div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted / Updated</dt><dd class="mt-1 text-sm font-semibold text-white">{{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? '—' }}</dd><dd class="text-xs text-slate-400">Updated {{ optional($torrent->updated_at)->toDayDateTimeString() ?? '—' }}</dd></div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Upload context</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $torrent->original_filename ?? 'Original filename unavailable' }}</dd><dd class="text-xs text-slate-400">{{ number_format($torrent->file_count) }} files • {{ $torrent->formatted_size }}</dd></div>
+                            <div class="rounded-xl border border-slate-800 bg-slate-900/70 px-4 py-3"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Completeness</dt><dd class="mt-1 text-sm font-semibold text-white">{{ $hasDescription ? 'Description' : 'No description' }} • {{ $hasNfo ? 'NFO' : 'No NFO' }}</dd><dd class="text-xs text-slate-400">{{ $hasMetadataRecord ? 'Metadata record present' : 'No metadata record' }}</dd></div>
+                        </dl>
+                        <div class="mt-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-300">
+                            <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Release metadata and signals</h3>
+                            @if ($metadataFacts !== [])
+                                <p class="mt-2">{{ collect($metadataFacts)->map(fn ($item) => $item['label'].': '.$item['value'])->implode(' • ') }}</p>
+                            @else
+                                <p class="mt-2 text-slate-500">No normalized release metadata is available yet. Review the title, category, description, and NFO before deciding.</p>
+                            @endif
+                            @if (($releaseAdvice['upgrade_available'] ?? false) === true)
+                                <p class="mt-2 text-amber-200">A better version is already known for this release family.</p>
+                            @elseif (($releaseAdvice['best_version_is_current_upload'] ?? false) === true)
+                                <p class="mt-2 text-emerald-200">This appears to be the best known version in its release family.</p>
+                            @endif
+                            @if (($metadataEnrichmentOutcome['conflicts'] ?? []) !== [])
+                                <p class="mt-2 text-amber-200">External metadata conflict: {{ implode(', ', $metadataEnrichmentOutcome['conflicts']) }}</p>
+                            @endif
+                        </div>
+                        <div class="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
+                            <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" class="flex items-center gap-2" data-submit-label="Publishing…">
+                                @csrf
+                                <button type="submit" class="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Publish torrent</button>
+                            </form>
+                            <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-1 flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
+                                @csrf
+                                <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Reject reason
+                                    <input type="text" name="reason" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40" placeholder="What should the uploader fix?" />
+                                </label>
+                                <p class="text-xs leading-5 text-slate-500">Required. This reason is retained with the moderation record, so make it specific and actionable.</p>
+                                <button type="submit" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300">Reject with reason</button>
+                            </form>
+                            <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" class="flex items-center gap-2" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
+                                @csrf
+                                <button type="submit" class="rounded-xl border border-rose-500/60 bg-rose-950/30 px-4 py-2 text-sm font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete</button>
+                            </form>
+                        </div>
+                        @if (($metadataReview['needs_review'] ?? false) === true)
+                            <div class="mt-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
+                                <p class="font-semibold">Metadata review needed ({{ $metadataQuality['review_category'] ?? 'warning' }})</p>
+                                <p>Missing: {{ implode(', ', $metadataQuality['missing_fields'] ?? []) }}</p>
+                                <p>Labels: {{ implode(', ', $metadataReview['labels'] ?? []) }}</p>
+                            </div>
+                        @endif
+                    </section>
+                </details>
             @endcan
-            @if ($hasDisplayableMetadata)
-                <section class="mt-8 space-y-3" aria-label="Normalized metadata">
-                    <div>
-                        <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Release metadata</h2>
-                        <p class="mt-1 text-xs text-slate-500">Normalized fields used for browsing, grouping and upgrade recommendations.</p>
+            <div class="mt-5 grid items-start gap-4 lg:grid-cols-2">
+                @if ($hasDisplayableMetadata)
+                    <section class="space-y-2 rounded-xl border border-slate-800 bg-slate-950/30 p-4" aria-label="Normalized metadata">
+                        <div>
+                            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Release metadata</h2>
+                        </div>
+                        <dl class="divide-y divide-slate-800">
+                            @foreach ($metadataFacts as $item)
+                                <div class="flex justify-between gap-3 py-1.5">
+                                    <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
+                                    <dd class="break-words text-right text-sm font-semibold text-white">{{ $item['value'] }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </section>
+                @else
+                    <div class="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm leading-6 text-slate-300">
+                        <p class="font-semibold text-white">Metadata is not available for this torrent yet.</p>
+                        <p class="mt-1">This can be normal for older or freshly moderated uploads. Use the title, category, size and swarm stats for now; staff can enrich metadata later.</p>
                     </div>
-                    <dl class="grid gap-3 rounded-2xl border border-slate-800 bg-slate-950/30 p-4 md:grid-cols-3">
-                        @foreach ($metadataFacts as $item)
-                            <div class="rounded-xl bg-slate-900/60 px-3 py-3">
+                @endif
+                <section class="space-y-2 rounded-xl border border-slate-800 bg-slate-950/30 p-4" aria-label="Torrent facts">
+                    <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Torrent facts</h2>
+                    <dl class="grid gap-3 md:grid-cols-2">
+                        @foreach ($meta as $item)
+                            <div class="flex justify-between gap-3 py-1.5">
                                 <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
-                                <dd class="mt-1 text-base font-semibold leading-6 text-white">{{ $item['value'] }}</dd>
+                                <dd class="break-words text-right text-sm font-semibold text-white">{{ $item['value'] }}</dd>
                             </div>
                         @endforeach
                     </dl>
                 </section>
-            @else
-                <div class="mt-8 rounded-2xl border border-slate-800 bg-slate-950/40 p-4 text-sm leading-6 text-slate-300">
-                    <p class="font-semibold text-white">Metadata is not available for this torrent yet.</p>
-                    <p class="mt-1">This can be normal for older or freshly moderated uploads. Use the title, category, size and swarm stats for now; staff can enrich metadata later.</p>
-                </div>
-            @endif
-            <section class="mt-8 space-y-4" aria-label="Torrent facts">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-300">Torrent facts</h2>
-                <dl class="grid gap-3 md:grid-cols-2">
-                    @foreach ($meta as $item)
-                        <div class="rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3.5 hover:border-slate-700">
-                            <dt class="text-xs uppercase tracking-wide text-slate-400">{{ $item['label'] }}</dt>
-                            <dd class="mt-1 text-sm font-semibold leading-6 text-white">{{ $item['value'] }}</dd>
-                        </div>
-                    @endforeach
-                </dl>
-            </section>
+            </div>
         </div>
         @if (auth()->user()?->isSysop() && ($metadataSourceOptions ?? []) !== [])
             <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
@@ -365,7 +379,7 @@
             @endif
         </section>
         @if ($contentFiles !== [])
-            <details class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <details id="release-files" class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                 <summary class="cursor-pointer text-lg font-semibold text-white">Files ({{ count($contentFiles) }})</summary>
                 <ul class="mt-3 divide-y divide-slate-800">
                     @foreach ($contentFiles as $file)
@@ -378,7 +392,7 @@
             </details>
         @endif
         @if (($nfoText ?? '') !== '')
-            <details class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+            <details id="release-nfo" class="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
                 <summary class="cursor-pointer text-lg font-semibold text-white">NFO</summary>
                 <pre class="mt-4 overflow-x-auto rounded-2xl bg-slate-950/70 p-4 font-mono text-sm leading-none text-slate-200">{{ $nfoText }}</pre>
             </details>

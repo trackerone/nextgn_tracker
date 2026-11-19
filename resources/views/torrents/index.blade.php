@@ -43,29 +43,24 @@
 @endsection
 
 @section('content')
-    <div class="grid gap-6 xl:grid-cols-[16rem_minmax(0,1fr)]">
+    <header class="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-semibold text-white">Browse</h1>
+        <div class="flex w-full max-w-2xl gap-2 sm:w-auto sm:flex-1">
+            <label for="browse-query" class="sr-only">Search releases</label>
+            <input id="browse-query" form="browse-filters" type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
+            <button form="browse-filters" type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Search</button>
+        </div>
+    </header>
+
+    <div class="grid gap-4 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <aside class="space-y-4 xl:sticky xl:top-6 xl:self-start">
             <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
-                <div class="mb-4 space-y-1">
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Browse</p>
-                    <h1 class="text-xl font-semibold tracking-tight text-white">Filter first, then browse</h1>
-                </div>
+                <h2 class="mb-3 text-sm font-semibold text-white">Filters</h2>
 
-                <form method="GET" action="{{ route('torrents.index') }}" class="space-y-4">
+                <form id="browse-filters" method="GET" action="{{ route('torrents.index') }}" class="space-y-3">
                     @if ($types === [] && $resolutions === [] && $sources === [])
                         <p class="text-xs text-slate-400">Filter choices appear when approved torrents contain metadata.</p>
                     @endif
-                    <div class="space-y-3 rounded-lg border border-slate-800 bg-slate-950/30 p-3">
-                        <div class="flex items-center justify-between gap-3">
-                            <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Search</span>
-                            <span class="text-[11px] text-slate-500">Tracker-style query</span>
-                        </div>
-                        <label class="block text-sm font-semibold text-slate-300">
-                            <span class="sr-only">Search</span>
-                            <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-brand focus:outline-none" placeholder="Try: source:web-dl res:1080p rg:<release-group> sub:<language>">
-                        </label>
-                    </div>
-
                     <div class="grid gap-3 rounded-lg border border-slate-800 bg-slate-950/20 p-3">
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Core filters</span>
@@ -196,12 +191,18 @@
         </aside>
 
         <section class="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
-            <div class="flex flex-col gap-2 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Results</p>
-                    <p class="text-sm text-slate-400">Scan size, swarm, snatches, and added date before you inspect the release details.</p>
-                </div>
-                <p class="text-xs text-slate-500">{{ $torrents->total() }} results</p>
+            @php
+                $categoryQuery = request()->except(['page', 'category', 'category_id', 'type']);
+                $activeCategory = (string) ($filters['category_id'] ?? '');
+            @endphp
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 px-3 py-2">
+                <nav class="flex max-w-full gap-1 overflow-x-auto" aria-label="Browse categories">
+                    <a href="{{ route('torrents.index', $categoryQuery) }}" @if ($activeCategory === '') aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">All</a>
+                    @foreach ($categories as $category)
+                        <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
+                    @endforeach
+                </nav>
+                <p class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
             </div>
 
             @if ($groupedBrowse)
@@ -248,7 +249,7 @@
                                                 $rowTone = $isPrimary ? 'bg-emerald-500/[0.04] ring-1 ring-inset ring-emerald-500/10' : 'hover:bg-slate-800/35';
                                             @endphp
                                             <tr class="{{ $rowTone }}">
-                                                <td class="nextgn-release-name px-3 py-2.5 align-top">
+                                                <td class="nextgn-release-name px-3 py-1.5 align-top">
                                                     <div class="flex items-start gap-2">
                                                         <span class="mt-1 h-2.5 w-2.5 rounded-full {{ $isPrimary ? 'bg-emerald-400' : 'bg-slate-600' }}" aria-hidden="true"></span>
                                                         <div class="min-w-0 space-y-1">
@@ -262,19 +263,19 @@
                                                                 $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
                                                             @endphp
                                                             @if ($rowContext !== '')
-                                                                <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
+                                                                <p class="text-xs leading-4 text-slate-400">{{ $rowContext }}</p>
                                                             @endif
 
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td data-label="Size" class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                                <td data-label="Seed" class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
-                                                <td data-label="Leech" class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
-                                                <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
-                                                <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
-                                                <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
-                                                    <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
+                                                <td data-label="Size" class="px-3 py-1.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                                <td data-label="Seed" class="px-3 py-1.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                                <td data-label="Leech" class="px-3 py-1.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                                <td data-label="Snatches" class="px-3 py-1.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
+                                                <td data-label="Added" class="whitespace-nowrap px-3 py-1.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                                <td data-label="Actions" class="px-3 py-1.5 text-right align-top">
+                                                    <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-md border border-slate-700 px-2 py-0.5 text-xs font-semibold text-cyan-100 hover:border-brand" aria-label="Download {{ $torrent->name }}">Download</a>
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -318,7 +319,7 @@
                                     $uploadedDate = $row['uploaded_date'] ?? '—';
                                 @endphp
                                 <tr class="hover:bg-slate-800/35">
-                                    <td class="nextgn-release-name px-3 py-2.5 align-top">
+                                    <td class="nextgn-release-name px-3 py-1.5 align-top">
                                         <div class="flex items-start gap-2">
                                             <span class="mt-1 h-2.5 w-2.5 rounded-full bg-slate-600" aria-hidden="true"></span>
                                             <div class="min-w-0 space-y-1">
@@ -332,19 +333,19 @@
                                                     $rowContext = collect([$row['type_label'] ?? null, $row['resolution_label'] ?? null, $row['release_group'] ?? null, $row['category_label'] ?? null, $row['year'] ?? null, $row['source_label'] ?? null, $row['codec_label'] ?? null, ...($row['language_badges'] ?? [])])->reject(fn ($value) => blank($value) || $value === '—')->implode(' · ');
                                                 @endphp
                                                 @if ($rowContext !== '')
-                                                    <p class="text-xs leading-5 text-slate-400">{{ $rowContext }}</p>
+                                                    <p class="text-xs leading-4 text-slate-400">{{ $rowContext }}</p>
                                                 @endif
 
                                             </div>
                                         </div>
                                     </td>
-                                    <td data-label="Size" class="px-3 py-2.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
-                                    <td data-label="Seed" class="px-3 py-2.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
-                                    <td data-label="Leech" class="px-3 py-2.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
-                                    <td data-label="Snatches" class="px-3 py-2.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
-                                    <td data-label="Added" class="whitespace-nowrap px-3 py-2.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
-                                    <td data-label="Actions" class="px-3 py-2.5 text-right align-top">
-                                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-lg bg-brand px-3 py-1 text-xs font-semibold text-slate-950" aria-label="Download {{ $torrent->name }}">Download</a>
+                                    <td data-label="Size" class="px-3 py-1.5 text-right align-top font-mono text-xs text-slate-200">{{ $torrent->formatted_size }}</td>
+                                    <td data-label="Seed" class="px-3 py-1.5 text-right align-top font-mono text-sm font-bold text-rose-300" aria-label="{{ $seedersFormatted }} seeders">{{ $seedersFormatted }}</td>
+                                    <td data-label="Leech" class="px-3 py-1.5 text-right align-top font-mono text-sm text-amber-300" aria-label="{{ $leechersFormatted }} leechers">{{ $leechersFormatted }}</td>
+                                    <td data-label="Snatches" class="px-3 py-1.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
+                                    <td data-label="Added" class="whitespace-nowrap px-3 py-1.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
+                                    <td data-label="Actions" class="px-3 py-1.5 text-right align-top">
+                                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-md border border-slate-700 px-2 py-0.5 text-xs font-semibold text-cyan-100 hover:border-brand" aria-label="Download {{ $torrent->name }}">Download</a>
                                     </td>
                                 </tr>
                             @empty
