@@ -58,10 +58,10 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
 });
 
 Route::put('/admin/settings/metadata/rotten-tomatoes/{imdbId}', RottenTomatoesRatingsController::class)
-    ->middleware(['api', 'auth', 'role.level:sysop'])
+    ->middleware(['web', 'auth', 'role.level:sysop'])
     ->where('imdbId', 'tt[0-9]{7,10}');
 
-Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
+Route::middleware(['web', 'auth', 'role.level:admin'])->prefix('admin/settings/metadata')->group(function (): void {
     Route::get('/providers', [MetadataProviderSettingsController::class, 'show'])
         ->name('api.admin.settings.metadata.providers.show');
 
