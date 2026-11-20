@@ -11,27 +11,15 @@
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
     $browseUser = auth()->user();
-    $rssQuery = collect(request()->only([
-        'q',
-        'type',
-        'resolution',
-        'source',
-        'release_group',
-        'language',
-        'audio_language',
-        'subtitle_language',
-        'subtitles',
-        'freeleech',
-    ]))->filter(static fn ($value): bool => filled($value))->all();
-    $rssCategory = request()->query('category', request()->query('category_id'));
-
-    if (filled($rssCategory)) {
-        $rssQuery['category'] = $rssCategory;
+    $rssQuery = collect($filters)->only(['q', 'type', 'resolution', 'source', 'release_group', 'language', 'audio_language', 'subtitle_language', 'year'])
+        ->merge(request()->only(['subtitles', 'freeleech']))
+        ->filter(static fn ($value): bool => filled($value))->all();
+    if (filled($filters['category_id'] ?? null)) {
+        $rssQuery['category'] = $filters['category_id'];
     }
-
     $rssUrl = $browseUser?->rss_token !== null
-        ? route('rss.feed', array_merge(['token' => (string) $browseUser->rss_token], $rssQuery))
-        : route('account.rss.index');
+        ? route('rss.feed', ['token' => $browseUser->rss_token, ...$rssQuery])
+        : null;
 @endphp
 
 @extends('layouts.app')
@@ -180,7 +168,6 @@
 
                 <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
                     <a href="{{ route('account.saved-intents.index') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
-                    <a data-browse-rss href="{{ $rssUrl }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
                 </div>
                 <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: @include('partials.search-alias-guidance', ['variant' => 'examples'])</p>
             </div>
@@ -198,6 +185,20 @@
                         <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
                     @endforeach
                 </nav>
+                <details id="search-feed" class="text-sm" @if (request()->boolean('rss_ready')) open @endif>
+                    <summary class="cursor-pointer rounded-lg px-3 py-2 text-brand">RSS for this search</summary>
+                    @if ($rssUrl)
+                        <label class="block py-2">Copy feed URL
+                            <input readonly value="{{ $rssUrl }}" class="block w-full rounded border border-slate-700 bg-slate-950 p-2">
+                        </label>
+                        <a href="{{ $rssUrl }}" class="text-brand">Open feed</a>
+                    @else
+                        <form method="POST" action="{{ route('account.rss.enable', $rssQuery) }}" class="py-2">
+                            @csrf
+                            <button type="submit" class="text-brand">Create my feed URL</button>
+                        </form>
+                    @endif
+                </details>
                 <p data-browse-result-count class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
             </div>
 

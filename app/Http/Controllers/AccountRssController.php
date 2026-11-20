@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RssFeedRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,19 @@ final class AccountRssController extends Controller
             'feedUrl' => $user->rss_token !== null ? route('rss.feed', ['token' => $user->rss_token]) : null,
             'presets' => $user->rssFeedPresets()->latest()->get(),
         ]);
+    }
+
+    public function enable(RssFeedRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        if ($user->rss_token === null) {
+            User::query()->whereKey($user->getKey())->whereNull('rss_token')
+                ->update(['rss_token' => $user->generateRssToken()]);
+        }
+
+        return redirect()->route('torrents.index', $request->validated() + ['rss_ready' => 1])->withFragment('search-feed');
     }
 
     public function rotate(Request $request): RedirectResponse

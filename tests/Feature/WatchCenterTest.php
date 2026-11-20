@@ -23,7 +23,7 @@ final class WatchCenterTest extends TestCase
         $this->actingAs($user)
             ->get(route('my.watch-center'))
             ->assertOk()
-            ->assertSee('Watch Center')
+            ->assertSee('Search alerts')
             ->assertSee('Watch Presets')
             ->assertSee('RSS Presets')
             ->assertSee('Recent Watch Matches')

@@ -12,6 +12,21 @@ final class DiscoveryNavigationContractTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_member_navigation_keeps_personal_links_under_the_username(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $response = $this->get(route('home'))->assertOk();
+        $document = new \DOMDocument;
+        @$document->loadHTML((string) $response->getContent());
+        $xpath = new \DOMXPath($document);
+        foreach (['my.follows', 'my.watch-center', 'my.uploads', 'account.snatches', 'pm.index', 'account.rss.index'] as $route) {
+            $href = route($route);
+            $this->assertEquals(1, $xpath->evaluate('count(//details/nav[@aria-label="User menu"]/a[@href="'.$href.'"])'));
+            $this->assertEquals(0, $xpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a[@href="'.$href.'"])'));
+        }
+        $this->assertEquals(4, $xpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a)'));
+    }
+
     public function test_my_discovery_named_route_generates_the_discovery_path(): void
     {
         self::assertSame('/my/discovery', route('my.discovery', [], false));

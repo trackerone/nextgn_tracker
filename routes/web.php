@@ -351,6 +351,7 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('account.watch-presets.destroy');
 
     Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
+    Route::post('/account/rss/enable', [AccountRssController::class, 'enable'])->name('account.rss.enable');
     Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
     Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->name('account.rss.presets.create');
     Route::post('/account/rss/presets', [AccountRssPresetController::class, 'store'])->name('account.rss.presets.store');

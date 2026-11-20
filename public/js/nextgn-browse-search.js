@@ -49,7 +49,7 @@
                 throw new Error('Browse results missing');
             }
 
-            for (const selector of ['#browse-results', '[data-browse-saved-filters]', '[data-browse-rss]']) {
+            for (const selector of ['#browse-results', '[data-browse-saved-filters]']) {
                 const replacement = page.querySelector(selector);
                 if (replacement) {
                     document.querySelector(selector)?.replaceWith(replacement);

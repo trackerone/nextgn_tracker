@@ -50,13 +50,14 @@ final class RssFeedRequest extends FormRequest
             'subtitle_language' => ['nullable', 'string', 'max:32', 'regex:'.self::LANGUAGE_PATTERN],
             'subtitles' => ['nullable', 'string', 'max:255', 'regex:'.self::LANGUAGE_PATTERN],
             'freeleech' => ['nullable', 'boolean'],
+            'year' => ['nullable', 'integer', 'min:1900', 'max:2100'],
             'category' => ['nullable', 'integer', 'exists:categories,id'],
             'limit' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ];
     }
 
     /**
-     * @return array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}
+     * @return array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}
      */
     public function filters(): array
     {

@@ -22,7 +22,7 @@ final class TorrentRssFeedBuilder
     ) {}
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}  $filters
      */
     public function build(User $user, array $filters): string
     {
@@ -49,7 +49,7 @@ final class TorrentRssFeedBuilder
     }
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}  $filters
      * @return Collection<int, Torrent>
      */
     private function eligibleTorrents(User $user, array $filters): Collection
@@ -89,7 +89,7 @@ final class TorrentRssFeedBuilder
     }
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}  $filters
      */
     private function matchesFilters(Torrent $torrent, array $filters): bool
     {
