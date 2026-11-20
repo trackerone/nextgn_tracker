@@ -61,11 +61,13 @@ final class AccountOverviewTest extends TestCase
         $values = ['name' => 'New name', 'email' => 'new@example.test', 'current_password' => 'wrong', 'role' => User::ROLE_SYSOP];
         $this->actingAs($user)->patch(route('account.settings.update'), $values)->assertSessionHasErrors('current_password');
         $this->assertNotSame('New name', $user->fresh()->name);
+        $values['name'] = $user->name;
         $values['current_password'] = 'OldPassword123!';
         $values['password'] = $values['password_confirmation'] = 'NewPassword123!';
         $this->patch(route('account.settings.update'), $values)->assertRedirect(route('account.settings.edit'));
         $user->refresh();
         $this->assertSame('new@example.test', $user->email);
+        $this->assertSame($values['name'], $user->name);
         $this->assertNull($user->email_verified_at);
         $this->assertSame($slug, $user->public_slug);
         $this->assertSame(User::ROLE_USER, $user->role);
