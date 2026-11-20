@@ -3,7 +3,7 @@
 @section('title', 'Metadata settings — NEXTGN')
 
 @section('content')
-<div class="mx-auto max-w-5xl space-y-6">
+<div class="space-y-6">
 @if (auth()->user()?->isSysop())
 <a href="{{ route('sysop.settings.edit') }}" class="text-sm text-brand">Back to site settings</a>
 @endif

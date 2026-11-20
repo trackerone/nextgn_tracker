@@ -1,8 +1,3 @@
-.nextgn-release-page {
-    max-width: 54rem;
-    margin-inline: auto;
-}
-
 .nextgn-release-card { padding: clamp(.875rem, 2vw, 1.25rem); }
 .nextgn-release-title {
     font-size: clamp(1.125rem, 2.5vw, 1.5rem);

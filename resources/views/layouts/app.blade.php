@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>@yield('title', config('app.name', 'NEXTGN'))</title>
+        <link rel="stylesheet" href="{{ asset('css/nextgn-layout.css') }}">
         @yield('meta')
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
@@ -15,7 +16,7 @@
             $inactiveNavLink = 'text-slate-300';
         @endphp
         <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-            <div class="mx-auto flex w-full max-w-none flex-col gap-4 px-[2%] py-4">
+            <div class="nextgn-site-width flex flex-col gap-4 py-4">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NEXTGN') }} dashboard">
                         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
@@ -68,7 +69,7 @@
                 @endauth
             </div>
         </header>
-        <main class="mx-auto w-full min-w-0 max-w-none px-[2%] py-8">
+        <main class="nextgn-site-width min-w-0 py-8">
             @if (session('status'))
                 <div class="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ session('status') }}
