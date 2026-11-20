@@ -19,8 +19,18 @@ final class TorrentBrowseQuery
 
             if ($searchText !== '') {
                 $search = mb_strtolower($searchText);
-                $query->where(function (Builder $inner) use ($search): void {
-                    $inner->whereRaw('LOWER(name) LIKE ?', ['%'.$search.'%']);
+                $normalized = trim(preg_replace('/[ ._-]+/u', ' ', $search) ?? $search);
+                $escape = static fn (string $text): string => '%'.strtr($text, ['!' => '!!', '%' => '!%', '_' => '!_']).'%';
+
+                $query->where(function (Builder $inner) use ($search, $normalized, $escape): void {
+                    $inner->whereRaw("LOWER(torrents.name) LIKE ? ESCAPE '!'", [$escape($search)]);
+
+                    if (str_contains($normalized, ' ')) {
+                        $inner->orWhereRaw(
+                            "REPLACE(REPLACE(REPLACE(LOWER(torrents.name), '.', ' '), '_', ' '), '-', ' ') LIKE ? ESCAPE '!'",
+                            [$escape($normalized)],
+                        );
+                    }
                 });
             }
 

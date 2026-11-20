@@ -49,11 +49,12 @@
         <h1 class="text-2xl font-semibold text-white">Browse</h1>
         <div class="nextgn-browse-search flex gap-2">
             <label for="browse-query" class="sr-only">Search releases</label>
-            <input id="browse-query" form="browse-filters" type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
+            <input id="browse-query" form="browse-filters" type="search" name="q" maxlength="255" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
             <button form="browse-filters" type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Search</button>
         </div>
     </header>
 
+    <p id="browse-search-status" role="status" class="sr-only"></p>
     <div class="nextgn-browse-layout">
         <aside class="min-w-0 space-y-4">
             <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
@@ -148,11 +149,13 @@
 
                 <form method="POST" action="{{ route('account.saved-intents.store') }}" class="mt-4 border-t border-slate-800 pt-4">
                     @csrf
-                    @foreach (['q', 'type', 'resolution', 'source', 'category_id', 'order', 'direction', 'grouped'] as $key)
-                        @if (($filters[$key] ?? '') !== '' && ($filters[$key] ?? null) !== null)
-                            <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
-                        @endif
-                    @endforeach
+                    <div data-browse-saved-filters>
+                        @foreach (['q', 'type', 'resolution', 'source', 'category_id', 'order', 'direction', 'grouped'] as $key)
+                            @if (($filters[$key] ?? '') !== '' && ($filters[$key] ?? null) !== null)
+                                <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
+                            @endif
+                        @endforeach
+                    </div>
                     <label class="block text-sm font-semibold text-slate-300">
                         <span class="mb-1 block text-xs uppercase tracking-wide text-slate-400">Saved view name</span>
                         <input
@@ -171,7 +174,7 @@
 
                 <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
                     <a href="{{ route('account.saved-intents.index') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
-                    <a href="{{ $rssUrl }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
+                    <a data-browse-rss href="{{ $rssUrl }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
                 </div>
                 <div
                     data-discovery-browse-teaser
@@ -192,7 +195,7 @@
             </div>
         </aside>
 
-        <section class="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
+        <section id="browse-results" aria-label="Search results" class="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
             @php
                 $categoryQuery = request()->except(['page', 'category', 'category_id', 'type']);
                 $activeCategory = (string) ($filters['category_id'] ?? '');
@@ -204,7 +207,7 @@
                         <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
                     @endforeach
                 </nav>
-                <p class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
+                <p data-browse-result-count class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
             </div>
 
             @if ($groupedBrowse)
@@ -373,3 +376,7 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('js/nextgn-browse-search.js') }}" defer></script>
+@endpush
