@@ -5,7 +5,6 @@ import CreateTopicForm from './components/forum/CreateTopicForm';
 import TopicList from './components/forum/TopicList';
 import TopicView from './components/forum/TopicView';
 import DiscoveryLandingWidget from './components/discovery/DiscoveryLandingWidget';
-import BrowseDiscoveryTeaser from './components/discovery/BrowseDiscoveryTeaser';
 import RssDiscoverySuggestions from './components/discovery/RssDiscoverySuggestions';
 import WatchDiscoverySuggestions from './components/discovery/WatchDiscoverySuggestions';
 import DiscoveryHealthPanel from './components/discovery/DiscoveryHealthPanel';
@@ -141,18 +140,6 @@ if (element) {
   ReactDOM.createRoot(element).render(
     <React.StrictMode>
       <App />
-    </React.StrictMode>,
-  );
-}
-
-const browseDiscoveryTeaserElement = document.querySelector<HTMLElement>('[data-discovery-browse-teaser]');
-
-if (browseDiscoveryTeaserElement) {
-  const discoveryUrl = browseDiscoveryTeaserElement.dataset.discoveryUrl ?? '/account/discovery';
-
-  ReactDOM.createRoot(browseDiscoveryTeaserElement).render(
-    <React.StrictMode>
-      <BrowseDiscoveryTeaser discoveryUrl={discoveryUrl} />
     </React.StrictMode>,
   );
 }

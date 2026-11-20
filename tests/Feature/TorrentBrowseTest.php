@@ -39,7 +39,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
-    public function test_authenticated_user_sees_discovery_teaser_mount_contract(): void
+    public function test_member_browse_omits_the_retired_discovery_teaser(): void
     {
         $user = User::factory()->create();
         Torrent::factory()->create();
