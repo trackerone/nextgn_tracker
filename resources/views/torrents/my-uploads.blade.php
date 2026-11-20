@@ -14,6 +14,13 @@
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/60 shadow-xl shadow-slate-900/30">
+            @if ($uploads->isEmpty())
+                <div class="px-5 py-10 text-center sm:px-8">
+                    <h2 class="text-lg font-semibold text-white">No uploads submitted yet</h2>
+                    <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-400">Share a clean release with metadata and files ready for review. Pending, approved, and rejected status updates will appear here with staff feedback when action is needed.</p>
+                    <a href="{{ route('torrents.upload') }}" class="mt-5 inline-flex max-w-full justify-center rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-slate-950">Upload your first torrent</a>
+                </div>
+            @else
             <div class="overflow-x-auto" aria-label="Scrollable my uploads table">
                 <table class="min-w-[42rem] divide-y divide-slate-800 text-sm">
                 <thead class="bg-slate-900/80 text-xs uppercase tracking-wide text-slate-400">
@@ -25,7 +32,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800 text-slate-100">
-                    @forelse ($uploads as $torrent)
+                    @foreach ($uploads as $torrent)
                         @php
                             $statusClasses = match ($torrent->status->value) {
                                 \App\Models\Torrent::STATUS_PUBLISHED => 'border-emerald-500/50 bg-emerald-500/10 text-emerald-200',
@@ -53,23 +60,14 @@
                             </td>
                             <td class="px-4 py-3 text-right text-slate-400">{{ optional($torrent->uploaded_at ?? $torrent->created_at)->toDateTimeString() ?? '—' }}</td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-4 py-10 text-center">
-                                <div class="mx-auto max-w-xl">
-                                    <h2 class="text-lg font-semibold text-white">No uploads submitted yet</h2>
-                                    <p class="mt-2 text-sm text-slate-400">Share a clean release with metadata and files ready for review. Pending, approved, and rejected status updates will appear here with staff feedback when action is needed.</p>
-                                    <a href="{{ route('torrents.upload') }}" class="mt-4 inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Upload your first torrent</a>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
                 </table>
             </div>
             <div class="border-t border-slate-800 bg-slate-900/70 px-4 py-3">
                 {{ $uploads->links() }}
             </div>
+            @endif
         </div>
     </div>
 @endsection

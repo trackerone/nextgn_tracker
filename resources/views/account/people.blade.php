@@ -3,7 +3,7 @@
 @section('content')
 <div class="space-y-6">
     <h1 class="text-3xl font-bold">People and followers</h1>
-    @include('account.navigation')
+    
     <p class="text-sm text-slate-400">Open a member's public profile, for example from an upload, to follow them. These lists are private to your account. A follow does not grant access to private messages or account data.</p>
     <div class="grid gap-6 lg:grid-cols-2">
         @foreach (['Following' => $following, 'Followers' => $followers] as $heading => $people)
