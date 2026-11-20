@@ -48,8 +48,13 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertSeeText('Core tracker path');
         $response->assertSeeText('ordinary tracker path');
         $response->assertSeeText('Browse torrents');
-        $response->assertSeeText('Upload release');
-        $response->assertSeeText('My uploads');
+        $response->assertDontSeeText('Upload release');
+        $response->assertDontSeeText('My uploads');
+
+        $uploader = User::factory()->create(['role' => User::ROLE_UPLOADER]);
+        $uploaderResponse = $this->actingAs($uploader)->get(route('home'));
+        $uploaderResponse->assertSeeText('Upload release');
+        $uploaderResponse->assertSeeText('My uploads');
     }
 
     public function test_staff_moderation_page_renders_and_non_staff_is_forbidden(): void
