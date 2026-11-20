@@ -9,8 +9,8 @@ use App\Http\Requests\PrivateMessages\StoreMessageRequest;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Notifications\PrivateMessageNotificationDispatcher;
 use App\Services\MarkdownService;
+use App\Services\Notifications\PrivateMessageNotificationDispatcher;
 use Symfony\Component\HttpFoundation\Response;
 
 class ConversationMessageController extends Controller
