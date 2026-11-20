@@ -45,18 +45,18 @@
 
 @section('content')
 <div class="nextgn-browse-page">
-    <header class="nextgn-browse-header mb-5 flex flex-wrap items-center gap-3">
-        <h1 class="text-2xl font-semibold text-white">Browse</h1>
-        <div class="nextgn-browse-search flex gap-2">
-            <label for="browse-query" class="sr-only">Search releases</label>
-            <input id="browse-query" form="browse-filters" type="search" name="q" maxlength="255" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
-            <button form="browse-filters" type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Search</button>
-        </div>
-    </header>
-
-    <p id="browse-search-status" role="status" class="sr-only"></p>
     <div class="nextgn-browse-layout">
-        <aside class="min-w-0 space-y-4">
+        <header class="nextgn-browse-header flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl font-semibold text-white">Browse</h1>
+            <div class="nextgn-browse-search flex gap-2">
+                <label for="browse-query" class="sr-only">Search releases</label>
+                <input id="browse-query" form="browse-filters" type="search" name="q" maxlength="255" value="{{ $filters['q'] ?? '' }}" class="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white focus:border-brand" placeholder="Search releases">
+                <button form="browse-filters" type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Search</button>
+            </div>
+            <p id="browse-search-status" role="status" class="sr-only"></p>
+        </header>
+
+        <aside class="nextgn-browse-filters min-w-0 space-y-4">
             <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
                 <h2 class="mb-3 text-sm font-semibold text-white">Filters</h2>
 
@@ -195,7 +195,7 @@
             </div>
         </aside>
 
-        <section id="browse-results" aria-label="Search results" class="min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
+        <section id="browse-results" aria-label="Search results" class="nextgn-browse-results min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg shadow-slate-900/20">
             @php
                 $categoryQuery = request()->except(['page', 'category', 'category_id', 'type']);
                 $activeCategory = (string) ($filters['category_id'] ?? '');
@@ -218,16 +218,6 @@
                             $familyRows = $family['torrents'] ?? collect([$primary])->merge($family['alternatives']);
                         @endphp
                         <section class="px-3 py-3">
-                            <div class="mb-2 flex flex-wrap items-baseline justify-between gap-2 px-1">
-                                <h3 class="text-sm font-semibold tracking-tight text-white">
-                                    {{ $family['title'] }}
-                                    @if ($family['year'] !== null)
-                                        <span class="font-normal text-slate-400">({{ $family['year'] }})</span>
-                                    @endif
-                                </h3>
-                                <span class="text-[11px] uppercase tracking-wide text-slate-500">{{ $familyRows->count() }} versions</span>
-                            </div>
-
                             <div class="overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/20" aria-label="Scrollable release versions table">
                                 <table class="nextgn-results-table w-full text-sm">
                                     <thead class="bg-slate-950/60 text-[11px] uppercase tracking-wide text-slate-500">

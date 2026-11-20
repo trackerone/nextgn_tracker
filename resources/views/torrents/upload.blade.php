@@ -7,7 +7,7 @@
 @endsection
 
 @section('content')
-    <div class="mx-auto w-full max-w-5xl rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-slate-950/50 md:p-8">
+    <div class="rounded-3xl border border-slate-800 bg-slate-900/80 p-5 shadow-2xl shadow-slate-950/50 md:p-8">
         <h1 class="text-2xl font-semibold text-white">Upload torrent</h1>
         <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Add a torrent with clear metadata so members and moderators can understand the release before it becomes visible in browse, RSS, or follow matches.</p>
 
