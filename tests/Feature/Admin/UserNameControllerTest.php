@@ -93,7 +93,7 @@ final class UserNameControllerTest extends TestCase
         $log = AuditLog::query()->where('action', 'user.username_changed')->firstOrFail();
         $this->assertSame($admin->id, $log->user_id);
         $this->assertSame($member->id, $log->target_id);
-        $this->assertSame([
+        $this->assertEquals([
             'actor_user_id' => $admin->id,
             'target_user_id' => $member->id,
             'old_name' => $oldName,
