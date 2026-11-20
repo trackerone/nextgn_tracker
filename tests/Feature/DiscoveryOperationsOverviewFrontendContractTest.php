@@ -79,7 +79,7 @@ it('keeps the discovery operations overview endpoint centralized in the overview
 });
 
 it('mounts a readonly discovery operations overview surface', function (): void {
-    $discoveryView = discoveryOperationsOverviewFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = discoveryOperationsOverviewFrontendSource('resources/views/admin/discovery.blade.php');
     $appSource = discoveryOperationsOverviewFrontendSource('resources/js/app.tsx');
     $panelSource = discoveryOperationsOverviewFrontendSource('resources/js/components/discovery/DiscoveryOperationsOverviewPanel.tsx');
 

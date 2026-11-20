@@ -50,7 +50,6 @@ function frontendFilesContaining(string $directory, string $needle): array
 it('keeps discovery.ts as the single discovery home client', function (): void {
     $discoveryClient = frontendSource('resources/js/lib/discovery.ts');
     $landingWidget = frontendSource('resources/js/components/discovery/DiscoveryLandingWidget.tsx');
-    $browseTeaser = frontendSource('resources/js/components/discovery/BrowseDiscoveryTeaser.tsx');
 
     expect($discoveryClient)
         ->toContain("export const DISCOVERY_HOME_ENDPOINT = '/api/discovery/home' as const")
@@ -59,11 +58,6 @@ it('keeps discovery.ts as the single discovery home client', function (): void {
         ->toContain('fetchJson<DiscoveryHomePayload>(DISCOVERY_HOME_ENDPOINT)');
 
     expect($landingWidget)
-        ->toContain('fetchDiscoveryHome')
-        ->not->toContain("'/api/discovery/home'")
-        ->not->toContain('fetchJson');
-
-    expect($browseTeaser)
         ->toContain('fetchDiscoveryHome')
         ->not->toContain("'/api/discovery/home'")
         ->not->toContain('fetchJson');
@@ -107,20 +101,12 @@ it('keeps discovery.ts as the typed watch preset suggestions client', function (
         ->toContain('discoveryWatchPresetSuggestionsUrl(options.category)');
 });
 
-it('keeps landing and browse teaser aligned to shared discovery home assumptions', function (): void {
+it('keeps the landing widget aligned to shared discovery home assumptions', function (): void {
     $landingWidget = frontendSource('resources/js/components/discovery/DiscoveryLandingWidget.tsx');
-    $browseTeaser = frontendSource('resources/js/components/discovery/BrowseDiscoveryTeaser.tsx');
 
     expect($landingWidget)
         ->toContain('DISCOVERY_HOME_TRENDING_WINDOW')
         ->toContain('DISCOVERY_AGGREGATE_LIMIT')
-        ->not->toContain("'30d'")
-        ->not->toContain('= 25')
-        ->not->toContain('fetch(')
-        ->not->toContain('axios');
-
-    expect($browseTeaser)
-        ->toContain('payload.summary.trending.window')
         ->not->toContain("'30d'")
         ->not->toContain('= 25')
         ->not->toContain('fetch(')

@@ -104,7 +104,7 @@ it('keeps the recommendation candidates endpoint centralized in the candidates c
 });
 
 it('mounts a readonly recommendation candidates discovery surface without final output', function (): void {
-    $discoveryView = recommendationCandidatesFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationCandidatesFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationCandidatesFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationCandidatesFrontendSource('resources/js/components/discovery/RecommendationCandidatesPanel.tsx');
 

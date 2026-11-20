@@ -27,7 +27,7 @@ final class RecommendationSignalsApiTest extends TestCase
 
     public function test_authenticated_user_can_read_metadata_recommendation_signals_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'uploaded_at' => now()->subDay(),
         ]);
@@ -88,7 +88,7 @@ final class RecommendationSignalsApiTest extends TestCase
 
     public function test_recommendation_signals_keep_visibility_filtering_delegated_to_shared_services(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $visibleTorrent = Torrent::factory()->create([
             'uploaded_at' => now()->subDay(),
@@ -150,7 +150,7 @@ final class RecommendationSignalsApiTest extends TestCase
 
     public function test_recommendation_signals_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

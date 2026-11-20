@@ -119,7 +119,7 @@ it('keeps the recommendation engine endpoint centralized in the engine foundatio
 });
 
 it('mounts a readonly recommendation engine foundation discovery surface without torrent output', function (): void {
-    $discoveryView = recommendationEngineFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationEngineFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationEngineFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationEngineFoundationPanel.tsx');
 
@@ -204,7 +204,7 @@ it('keeps the recommendation candidates endpoint centralized in the candidate cl
 });
 
 it('mounts a readonly recommendation candidates surface without torrent output or personalization', function (): void {
-    $discoveryView = recommendationEngineFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationEngineFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationEngineFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationEngineFrontendSource('resources/js/components/discovery/RecommendationCandidatesPanel.tsx');
 

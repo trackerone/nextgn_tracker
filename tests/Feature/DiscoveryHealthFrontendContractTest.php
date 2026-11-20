@@ -86,7 +86,7 @@ it('keeps the discovery health endpoint centralized in the health client', funct
 });
 
 it('mounts a readonly discovery health discovery surface', function (): void {
-    $discoveryView = discoveryHealthFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = discoveryHealthFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = discoveryHealthFrontendSource('resources/js/app.tsx');
     $panelSource = discoveryHealthFrontendSource('resources/js/components/discovery/DiscoveryHealthPanel.tsx');
 

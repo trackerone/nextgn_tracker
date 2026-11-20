@@ -88,7 +88,7 @@ it('keeps the recommendation explainability endpoint centralized in the explaina
 });
 
 it('mounts a readonly recommendation explainability discovery surface', function (): void {
-    $discoveryView = recommendationExplainabilityFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationExplainabilityFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationExplainabilityFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationExplainabilityFrontendSource('resources/js/components/discovery/RecommendationExplainabilityPanel.tsx');
 

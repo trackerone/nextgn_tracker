@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Watch Center')
+@section('title', 'Search alerts')
 
 @section('content')
     @php
@@ -21,7 +21,7 @@
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-wide text-brand">Account</p>
-                <h1 class="mt-2 text-3xl font-bold text-white">Watch Center</h1>
+                <h1 class="mt-2 text-3xl font-bold text-white">Search alerts</h1>
                 <p class="mt-2 max-w-3xl text-sm text-slate-400">
                     Monitor saved watch filters, RSS presets, recent matches, and internal watch notifications from one place.
                 </p>

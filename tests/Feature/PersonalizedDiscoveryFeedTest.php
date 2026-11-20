@@ -53,7 +53,7 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($user)->get(route('my.discovery'));
+        $response = $this->actingAs($user)->get(route('my.follows'));
 
         $response->assertOk();
         $response->assertSee($relevant->name);
@@ -117,7 +117,7 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($user)->get(route('my.discovery'));
+        $response = $this->actingAs($user)->get(route('my.follows'));
 
         $response->assertOk();
         $response->assertSeeInOrder([
@@ -131,11 +131,11 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->get(route('my.discovery'));
+        $response = $this->actingAs($user)->get(route('my.follows'));
 
         $response->assertOk();
-        $response->assertSee('Personalization starts with follows');
-        $response->assertSee('Create your first follow');
+        $response->assertSee('No followed titles yet');
+        $response->assertSee('Follow series');
     }
 
     public function test_feed_renders_empty_state_when_no_matches_exist(): void
@@ -150,10 +150,10 @@ final class PersonalizedDiscoveryFeedTest extends TestCase
 
         Torrent::factory()->create(['name' => 'Completely Different']);
 
-        $response = $this->actingAs($user)->get(route('my.discovery'));
+        $response = $this->actingAs($user)->get(route('my.follows'));
 
         $response->assertOk();
-        $response->assertSee('No matches from your follows yet');
-        $response->assertSee('Update follow preferences');
+        $response->assertSee('No matches yet.');
+        $response->assertSee('No Match Title');
     }
 }

@@ -202,8 +202,8 @@ final class TorrentFollowFlowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('1 new matches');
-        $response->assertSee('New / unseen (1)');
-        $response->assertSee('All matches (2)');
+        $response->assertSee('New match');
+        $response->assertSee($oldMatch->name);
         $response->assertSee($newMatch->name);
 
         $follow->refresh();
@@ -211,7 +211,7 @@ final class TorrentFollowFlowTest extends TestCase
 
         $secondResponse = $this->actingAs($user)->get('/my/follows');
         $secondResponse->assertSee('0 new matches');
-        $secondResponse->assertSee('New / unseen (0)');
+        $secondResponse->assertDontSee('New match');
 
         $this->travelBack();
     }
@@ -236,7 +236,7 @@ final class TorrentFollowFlowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('1 new matches');
-        $response->assertSee('New / unseen (1)');
+        $response->assertSee('New match');
 
         $follow->refresh();
         $this->assertNotNull($follow->last_checked_at);

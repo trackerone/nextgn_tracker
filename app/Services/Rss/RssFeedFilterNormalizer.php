@@ -19,6 +19,7 @@ final class RssFeedFilterNormalizer
         'release_group',
         'freeleech',
         'category',
+        'year',
         'language',
         'audio_language',
         'subtitle_language',
@@ -41,7 +42,7 @@ final class RssFeedFilterNormalizer
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit: int}
+     * @return array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}
      */
     public function normalize(array $input): array
     {
@@ -68,6 +69,7 @@ final class RssFeedFilterNormalizer
             'subtitle_language' => $normalized['subtitle_language'],
             'subtitles' => $normalized['subtitles'],
             'freeleech' => $freeleech === null || $freeleech === '' ? null : filter_var($freeleech, FILTER_VALIDATE_BOOLEAN),
+            'year' => filled($safe['year'] ?? null) ? (int) $safe['year'] : null,
             'category' => $category === null || $category === '' ? null : (int) $category,
             'limit' => min(self::MAX_LIMIT, max(1, (int) $limit)),
         ];

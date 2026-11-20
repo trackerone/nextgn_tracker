@@ -6,121 +6,41 @@ namespace App\Services\Torrents;
 
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
-use App\Models\TorrentFollow;
-use App\Models\User;
-use App\Support\Torrents\TorrentMetadataPresenter;
 use App\Support\Torrents\TorrentMetadataQuality;
-use App\Support\Torrents\TorrentReleaseBadgePresenter;
 use App\Support\Torrents\TorrentReleaseFamilyGrouper;
 use Illuminate\Support\Collection;
 
 final class PersonalizedDiscoveryFeedBuilder
 {
     public function __construct(
-        private readonly TorrentFollowInbox $inbox,
         private readonly TorrentReleaseFamilyGrouper $releaseFamilyGrouper
     ) {}
 
     /**
-     * @return array{
-     *     hasFollows: bool,
-     *     hasResults: bool,
-     *     families: array<int, array{
-     *         key: string,
-     *         title: string,
-     *         year: int|null,
-     *         primary: Torrent,
-     *         alternatives: Collection<int, Torrent>,
-     *         qualityBadges: array<int, string>,
-     *         metadataBadges: array<int, string>,
-     *         isUnseen: bool
-     *     }>
-     * }
+     * @param  Collection<int, Torrent>  $matchedTorrents
+     * @param  Collection<int, Torrent>  $newMatches
+     * @return array<int, array<string, mixed>>
      */
-    public function buildFor(User $user): array
+    public function families(Collection $matchedTorrents, Collection $newMatches): array
     {
-        /** @var Collection<int, TorrentFollow> $follows */
-        $follows = $user->torrentFollows()
-            ->orderByDesc('created_at')
-            ->get();
-
-        if ($follows->isEmpty()) {
-            return [
-                'hasFollows' => false,
-                'hasResults' => false,
-                'families' => [],
-            ];
-        }
-
-        $inboxItems = $this->inbox->build($follows);
-        $matchedTorrents = collect($inboxItems)
-            ->flatMap(fn (array $item): Collection => $item['allMatches'])
-            ->unique(fn (Torrent $torrent): int => (int) $torrent->id)
-            ->values();
-
-        /** @var Collection<int, Torrent> $matchedTorrents */
-        if ($matchedTorrents->isEmpty()) {
-            return [
-                'hasFollows' => true,
-                'hasResults' => false,
-                'families' => [],
-            ];
-        }
-
         $metadataByTorrentId = TorrentMetadataView::mapByTorrentId($matchedTorrents);
         $qualityByTorrentId = TorrentMetadataQuality::mapByTorrentId($matchedTorrents, $metadataByTorrentId);
-        $seenStateByTorrentId = [];
-
-        foreach ($inboxItems as $item) {
-            /** @var Collection<int, Torrent> $allMatches */
-            $allMatches = $item['allMatches'];
-            $newMatchLookup = $item['newMatches']
-                ->pluck('id')
-                ->mapWithKeys(fn (mixed $id): array => [(int) $id => true])
-                ->all();
-
-            foreach ($allMatches as $matchedTorrent) {
-                $torrentId = (int) $matchedTorrent->id;
-                $isNewForFollow = isset($newMatchLookup[$torrentId]);
-
-                $seenStateByTorrentId[$torrentId] = [
-                    'hasNew' => ($seenStateByTorrentId[$torrentId]['hasNew'] ?? false) || $isNewForFollow,
-                    'hasSeen' => ($seenStateByTorrentId[$torrentId]['hasSeen'] ?? false) || ! $isNewForFollow,
-                ];
-            }
-        }
-
-        $unseenTorrentIds = collect($seenStateByTorrentId)
-            ->filter(fn (array $state): bool => $state['hasNew'] && ! $state['hasSeen'])
-            ->keys()
-            ->map(fn (mixed $id): int => (int) $id)
-            ->all();
-        $unseenLookup = array_fill_keys($unseenTorrentIds, true);
+        $unseenLookup = array_fill_keys($newMatches->pluck('id')->all(), true);
 
         $families = $this->releaseFamilyGrouper->group($matchedTorrents, $metadataByTorrentId);
 
-        $rankedFamilies = collect($families)
-            ->map(function (array $family) use ($metadataByTorrentId, $qualityByTorrentId, $unseenLookup): array {
+        return collect($families)
+            ->map(function (array $family) use ($qualityByTorrentId, $unseenLookup): array {
                 $primary = $family['primary'];
-                $primaryMetadata = $metadataByTorrentId[(int) $primary->id] ?? [];
                 $primaryQuality = $qualityByTorrentId[(int) $primary->id] ?? [];
-                $qualityBadges = TorrentReleaseBadgePresenter::browseBadges(
-                    $primaryQuality,
-                    $family['alternatives']->isNotEmpty()
-                );
-
-                $isUnseen = isset($unseenLookup[(int) $primary->id]);
+                $isUnseen = isset($unseenLookup[(int) $primary->id])
+                    || $family['alternatives']->contains(fn (Torrent $torrent): bool => isset($unseenLookup[(int) $torrent->id]));
                 $isFeatured = $family['alternatives']->isNotEmpty()
                     || (($primaryQuality['completeness'] ?? 'low') === 'high');
 
                 return [
-                    'key' => $family['key'],
-                    'title' => $family['title'],
-                    'year' => $family['year'],
                     'primary' => $primary,
                     'alternatives' => $family['alternatives'],
-                    'qualityBadges' => $qualityBadges,
-                    'metadataBadges' => TorrentMetadataPresenter::listingBadges($primaryMetadata),
                     'isUnseen' => $isUnseen,
                     'sort' => [
                         $isUnseen ? 1 : 0,
@@ -148,11 +68,5 @@ final class PersonalizedDiscoveryFeedBuilder
             })
             ->values()
             ->all();
-
-        return [
-            'hasFollows' => true,
-            'hasResults' => $rankedFamilies !== [],
-            'families' => $rankedFamilies,
-        ];
     }
 }

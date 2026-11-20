@@ -112,7 +112,7 @@ it('keeps recommendation signals endpoint usage inside the recommendation signal
 });
 
 it('mounts a readonly recommendation signals discovery surface without torrent recommendation language', function (): void {
-    $discoveryView = recommendationSignalsFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationSignalsFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationSignalsFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationSignalsFrontendSource('resources/js/components/discovery/RecommendationSignalsPanel.tsx');
 

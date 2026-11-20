@@ -39,7 +39,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(Torrent::query()->latest('id')->first()?->name ?? '');
     }
 
-    public function test_authenticated_user_sees_discovery_teaser_mount_contract(): void
+    public function test_member_browse_omits_the_retired_discovery_teaser(): void
     {
         $user = User::factory()->create();
         Torrent::factory()->create();
@@ -47,8 +47,8 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents');
 
         $response->assertOk();
-        $response->assertSee('data-discovery-browse-teaser', false);
-        $response->assertSee('data-discovery-url="'.route('my.discovery').'"', false);
+        $response->assertDontSee('data-discovery-browse-teaser', false);
+        $response->assertDontSee('data-discovery-url="'.route('my.discovery').'"', false);
     }
 
     public function test_authenticated_user_sees_filter_first_browse_shell(): void
@@ -199,14 +199,14 @@ final class TorrentBrowseTest extends TestCase
 
         $expected = route('rss.feed', [
             'token' => $user->rss_token,
-            'q' => 'Matrix rg:NTB',
+            'q' => 'Matrix',
             'type' => 'movie',
-            'resolution' => '2160p',
-            'source' => 'BLURAY',
             'release_group' => 'NTB',
             'language' => 'da',
-            'audio_language' => 'Danish',
+            'audio_language' => 'danish',
             'subtitle_language' => 'no',
+            'resolution' => '2160p',
+            'source' => 'BLURAY',
             'subtitles' => 'da,no,sv',
             'freeleech' => '1',
             'category' => $category->id,
@@ -216,15 +216,20 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee(e($expected), false);
     }
 
-    public function test_browse_rss_action_falls_back_to_account_rss_without_token(): void
+    public function test_first_search_feed_retains_criteria_and_retries_keep_the_same_token(): void
     {
         $user = User::factory()->create(['rss_token' => null]);
-        Torrent::factory()->create();
-
-        $response = $this->actingAs($user)->get('/torrents');
-
-        $response->assertOk();
-        $response->assertSee(e(route('account.rss.index')), false);
+        $criteria = ['year' => 2024, 'resolution' => '2160p'];
+        $response = $this->actingAs($user)->get(route('torrents.index', $criteria));
+        $response->assertOk()->assertSee('Create my feed URL');
+        $url = route('account.rss.enable', $criteria);
+        $this->post($url)->assertRedirect();
+        $token = $user->refresh()->rss_token;
+        $this->assertNotNull($token);
+        $this->followingRedirects()->post($url)->assertSee(e(route('rss.feed', [
+            'token' => $token, 'resolution' => '2160p', 'year' => 2024,
+        ])), false);
+        $this->assertSame($token, $user->refresh()->rss_token);
     }
 
     public function test_grouped_browse_renders_release_families_with_compact_best_marker(): void

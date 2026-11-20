@@ -14,6 +14,9 @@
             'audio_language',
             'subtitle_language',
             'subtitles',
+            'year',
+            'category',
+            'freeleech',
         ]);
         $filters = $preset?->filters ?? $queryFilters;
         $value = static fn (string $key, mixed $default = '') => old($key, $filters[$key] ?? $default);
@@ -52,6 +55,7 @@
                     'resolution' => 'Resolution',
                     'source' => 'Source',
                     'release_group' => 'Release group',
+                    'year' => 'Year',
                     'category' => 'Category ID',
                     'language' => 'Language',
                     'audio_language' => 'Audio language',

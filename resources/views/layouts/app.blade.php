@@ -26,16 +26,43 @@
                         </span>
                     </a>
                     @auth
-                        <div class="flex flex-wrap items-center gap-2 text-sm text-slate-300">
-                            <a href="{{ route('account.index') }}" class="max-w-full break-words rounded-lg px-2 py-1 font-semibold text-white hover:bg-slate-800" aria-label="My account: {{ auth()->user()->name }}">{{ auth()->user()->name }}</a>
-                            <span class="rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-200">
-                                {{ auth()->user()->role_label }}
-                            </span>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300 hover:border-rose-400/60 hover:text-white">Logout</button>
-                            </form>
-                        </div>
+                        <details class="relative ml-auto min-w-0 max-w-full">
+                            <summary class="cursor-pointer rounded-lg px-3 py-2 font-semibold text-white [overflow-wrap:anywhere]">
+                                {{ auth()->user()->name }}
+                                <span class="text-xs uppercase text-slate-400">{{ auth()->user()->role_label }}</span>
+                            </summary>
+                            <nav aria-label="User menu" class="absolute right-0 z-50 mt-1 grid max-h-[65vh] w-60 max-w-[92vw] gap-1 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-xl">
+                                <a href="{{ route('account.index') }}" class="{{ $navLink }}">My account</a>
+                                <a href="{{ route('account.rss.index') }}" class="{{ $navLink }}">RSS feeds</a>
+                                <a href="{{ route('account.notifications.index') }}" class="{{ $navLink }}">Notifications</a>
+                                <a href="{{ route('my.watch-center') }}" class="{{ $navLink }} {{ request()->routeIs('my.watch-center', 'account.notifications.*', 'account.rss.*', 'account.watch-presets.*') ? $activeNavLink : $inactiveNavLink }}">Search alerts</a>
+                                <a href="{{ route('my.follows') }}" class="{{ $navLink }} {{ request()->routeIs('my.follows') ? $activeNavLink : $inactiveNavLink }} inline-flex items-center gap-2">
+                                    <span>Follows</span>
+                                    @if (($followNavNewCount ?? 0) > 0)
+                                        <span class="rounded-full border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">{{ $followNavNewCount }}</span>
+                                    @endif
+                                </a>
+                                <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
+                                <a href="{{ route('alpha.feedback.create') }}" class="{{ $navLink }} {{ request()->routeIs('alpha.feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha feedback</a>
+                                <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">Messages</a>
+                                <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio & snatches</a>
+                                @if (auth()->user()?->isStaff())
+                                    <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
+                                    <a href="{{ route('staff.alpha-feedback.index') }}" class="{{ $navLink }} {{ request()->routeIs('staff.alpha-feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha intake</a>
+                                @endif
+                                @can('isAdmin')
+                                    <a href="{{ route('admin.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('admin.discovery') ? $activeNavLink : $inactiveNavLink }}">Release review</a>
+                                @endcan
+                                @if (auth()->user()?->isSysop())
+                                    <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Sysop operations</a>
+                                    <a href="{{ route('sysop.settings.edit') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.settings.*') ? $activeNavLink : $inactiveNavLink }}">Site settings</a>
+                                @endif
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button class="{{ $navLink }} w-full text-left" type="submit">Logout</button>
+                                </form>
+                            </nav>
+                        </details>
                     @endauth
                 </div>
 
@@ -44,27 +71,7 @@
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
                         <a href="{{ route('torrents.upload') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.upload') ? $activeNavLink : $inactiveNavLink }}">Upload</a>
-                        <a href="{{ route('my.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('my.discovery') ? $activeNavLink : $inactiveNavLink }}">Discovery</a>
-                        <a href="{{ route('my.watch-center') }}" class="{{ $navLink }} {{ request()->routeIs('my.watch-center', 'account.notifications.*', 'account.rss.*', 'account.watch-presets.*') ? $activeNavLink : $inactiveNavLink }}">Watch Center</a>
-                        <a href="{{ route('my.follows') }}" class="{{ $navLink }} {{ request()->routeIs('my.follows') ? $activeNavLink : $inactiveNavLink }} inline-flex items-center gap-2">
-                            <span>Follows</span>
-                            @if (($followNavNewCount ?? 0) > 0)
-                                <span class="rounded-full border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">{{ $followNavNewCount }}</span>
-                            @endif
-                        </a>
-                        <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
-                        <a href="{{ route('alpha.feedback.create') }}" class="{{ $navLink }} {{ request()->routeIs('alpha.feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha feedback</a>
                         <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
-                        <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">Messages</a>
-                        <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio & snatches</a>
-                        @if (auth()->user()?->isStaff())
-                            <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
-                            <a href="{{ route('staff.alpha-feedback.index') }}" class="{{ $navLink }} {{ request()->routeIs('staff.alpha-feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha intake</a>
-                        @endif
-                        @if (auth()->user()?->isSysop())
-                            <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Sysop operations</a>
-                            <a href="{{ route('sysop.settings.edit') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.settings.*') ? $activeNavLink : $inactiveNavLink }}">Site settings</a>
-                        @endif
                     </nav>
                 @endauth
             </div>

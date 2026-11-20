@@ -111,6 +111,23 @@ final class RssFeedTest extends TestCase
         $response->assertDontSee($miss->name);
     }
 
+    public function test_feed_keeps_year_and_matches_subtitles_in_a_language_list(): void
+    {
+        $user = $this->rssUser();
+        foreach (['Current release' => 2024, 'Older release' => 2019] as $name => $year) {
+            $torrent = Torrent::factory()->create(['name' => $name]);
+            TorrentMetadata::query()->create([
+                'torrent_id' => $torrent->id,
+                'title' => $name,
+                'year' => $year,
+                'subtitles' => 'English, Danish',
+            ]);
+        }
+
+        $this->get(route('rss.feed', ['token' => $user->rss_token, 'year' => 2024, 'subtitle_language' => 'da']))
+            ->assertOk()->assertSee('Current release')->assertDontSee('Older release');
+    }
+
     public function test_limit_is_capped_to_one_hundred_items(): void
     {
         $user = $this->rssUser();

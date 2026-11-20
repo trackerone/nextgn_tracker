@@ -27,7 +27,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_catalog_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -52,7 +52,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
     {
         $this->seedDrilldownCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown', ['field' => 'category']))
             ->assertOk()
             ->assertJsonPath('filters.field', 'category')
@@ -68,7 +68,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
     {
         $this->seedDrilldownCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown', ['status' => 'weakly_discoverable']))
             ->assertOk()
             ->assertJsonPath('filters.status', 'weakly_discoverable')
@@ -81,7 +81,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
     {
         $this->seedDrilldownCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown', ['priority' => 'missing_core_metadata']))
             ->assertOk()
             ->assertJsonPath('filters.priority', 'missing_core_metadata')
@@ -93,7 +93,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
     {
         $this->seedDrilldownCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown', ['field' => 'source', 'status' => 'weakly_discoverable']))
             ->assertOk()
             ->assertJsonPath('summary.total_matching_torrents', 1)
@@ -103,7 +103,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
 
     public function test_invalid_field_and_status_return_validation_errors(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)
             ->getJson(route('api.discovery.operations-drilldown', ['field' => 'score']))
@@ -118,7 +118,7 @@ final class DiscoveryOperationsDrilldownApiTest extends TestCase
 
     public function test_discovery_operations_drilldown_response_shape_remains_stable(): void
     {
-        $payload = $this->actingAs(User::factory()->create())
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-drilldown'))
             ->assertOk()
             ->json();

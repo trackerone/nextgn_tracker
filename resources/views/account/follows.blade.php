@@ -23,31 +23,23 @@
                     {{ $item['follow']->type ?? 'any type' }} · {{ $item['follow']->resolution ?? 'any resolution' }} · {{ $item['follow']->source ?? 'any source' }} · {{ $item['follow']->year ?? 'any year' }}
                 </p>
 
-                <div class="mt-4 grid gap-6 lg:grid-cols-2">
-                    <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">New / unseen ({{ $item['newCount'] }})</p>
-                        <div class="space-y-2">
-                            @forelse ($item['newMatches'] as $match)
-                                <a href="{{ route('torrents.show', $match) }}" class="block rounded-xl border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-100 hover:border-emerald-400">
-                                    {{ $match->name }}
-                                </a>
-                            @empty
-                                <p class="text-sm text-slate-400">No new matches.</p>
-                            @endforelse
-                        </div>
-                    </div>
-                    <div>
-                        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-300">All matches ({{ $item['allMatches']->count() }})</p>
-                        <div class="space-y-2">
-                            @forelse ($item['allMatches'] as $match)
-                                <a href="{{ route('torrents.show', $match) }}" class="block rounded-xl border border-slate-800 px-3 py-2 text-sm text-slate-200 hover:border-emerald-500/60">
-                                    {{ $match->name }}
-                                </a>
-                            @empty
-                                <p class="text-sm text-slate-400">No matches yet.</p>
-                            @endforelse
-                        </div>
-                    </div>
+                <div class="mt-4 space-y-3">
+                    @forelse ($item['families'] as $family)
+                        <article class="min-w-0 rounded-xl border border-slate-800 p-3 [overflow-wrap:anywhere]">
+                            @if ($family['isUnseen'])<span class="text-xs text-emerald-300">New match</span>@endif
+                            <a href="{{ route('torrents.show', $family['primary']) }}" class="block text-brand">{{ $family['primary']->name }}</a>
+                            @if ($family['alternatives']->isNotEmpty())
+                                <details class="mt-2 text-sm">
+                                    <summary>Other versions ({{ $family['alternatives']->count() }})</summary>
+                                    @foreach ($family['alternatives'] as $alternative)
+                                        <a href="{{ route('torrents.show', $alternative) }}" class="mt-2 block text-brand">{{ $alternative->name }}</a>
+                                    @endforeach
+                                </details>
+                            @endif
+                        </article>
+                    @empty
+                        <p class="text-sm text-slate-400">No matches yet.</p>
+                    @endforelse
                 </div>
             </section>
         @empty

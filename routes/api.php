@@ -83,27 +83,35 @@ Route::middleware(['api', 'auth'])->group(function (): void {
         ->name('api.discovery.home');
 
     Route::get('/discovery/health', DiscoveryHealthController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.discovery.health');
 
     Route::get('/discovery/explainability', DiscoveryExplainabilityController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.discovery.explainability');
 
     Route::get('/discovery/operations-command-center', DiscoveryOperationsCommandCenterController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-command-center');
 
     Route::get('/discovery/operations-overview', DiscoveryOperationsOverviewController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-overview');
 
     Route::get('/discovery/operations-priorities', DiscoveryOperationsPriorityController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-priorities');
 
     Route::get('/discovery/operations-drilldown', DiscoveryOperationsDrilldownController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-drilldown');
 
     Route::get('/discovery/operations-action-hints', DiscoveryOperationsActionHintController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-action-hints');
 
     Route::get('/discovery/operations-review-queue', DiscoveryOperationsReviewQueueController::class)
+        ->middleware(['web', 'role.level:admin'])
         ->name('api.discovery.operations-review-queue');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
@@ -125,27 +133,35 @@ Route::middleware(['api', 'auth'])->group(function (): void {
         ->name('api.discovery.trending');
 
     Route::get('/recommendations/signals', RecommendationSignalsController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.signals');
 
     Route::get('/recommendations/engine', RecommendationEngineController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.engine');
 
     Route::get('/recommendations/candidates', RecommendationCandidatesController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.candidates');
 
     Route::get('/recommendations/output', RecommendationOutputController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.output');
 
     Route::get('/recommendations/preview', RecommendationPreviewController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.preview');
 
     Route::get('/recommendations/torrents', RecommendationTorrentsController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.torrents');
 
     Route::get('/recommendations/health', RecommendationHealthController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.health');
 
     Route::get('/recommendations/explainability', RecommendationExplainabilityController::class)
+        ->middleware(['web', 'role.level:sysop'])
         ->name('api.recommendations.explainability');
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])

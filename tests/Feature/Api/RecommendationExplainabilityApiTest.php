@@ -27,7 +27,7 @@ final class RecommendationExplainabilityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_recommendation_explainability_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $this->actingAs($user)
             ->getJson(route('api.recommendations.explainability'))
@@ -44,7 +44,7 @@ final class RecommendationExplainabilityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_populated_recommendation_explainability_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'name' => 'Explainable WEB-DL 1080p',
             'seeders' => 42,
@@ -105,7 +105,7 @@ final class RecommendationExplainabilityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_partial_and_missing_metadata_explainability_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'name' => 'Partial Metadata WEB-DL 1080p',
             'seeders' => 12,
@@ -138,7 +138,7 @@ final class RecommendationExplainabilityApiTest extends TestCase
 
     public function test_recommendation_explainability_response_shape_remains_stable(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $payload = $this->actingAs($user)
             ->getJson(route('api.recommendations.explainability'))
@@ -160,7 +160,7 @@ final class RecommendationExplainabilityApiTest extends TestCase
 
     public function test_recommendation_explainability_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

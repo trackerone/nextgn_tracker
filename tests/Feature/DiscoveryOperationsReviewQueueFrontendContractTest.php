@@ -45,9 +45,9 @@ it('exports the discovery operations review queue typed client contract', functi
         ->toContain('fetchJson<DiscoveryOperationsReviewQueueResponse>');
 });
 
-it('mounts the discovery operations review queue panel on the account discovery surface', function (): void {
+it('mounts the discovery operations review queue panel on the staff discovery surface', function (): void {
     $appSource = discoveryOperationsReviewQueueFrontendSource('resources/js/app.tsx');
-    $bladeSource = discoveryOperationsReviewQueueFrontendSource('resources/views/account/discovery.blade.php');
+    $bladeSource = discoveryOperationsReviewQueueFrontendSource('resources/views/admin/discovery.blade.php');
 
     expect($appSource)
         ->toContain("import DiscoveryOperationsReviewQueuePanel from './components/discovery/DiscoveryOperationsReviewQueuePanel'")

@@ -11,27 +11,15 @@
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
     $browseUser = auth()->user();
-    $rssQuery = collect(request()->only([
-        'q',
-        'type',
-        'resolution',
-        'source',
-        'release_group',
-        'language',
-        'audio_language',
-        'subtitle_language',
-        'subtitles',
-        'freeleech',
-    ]))->filter(static fn ($value): bool => filled($value))->all();
-    $rssCategory = request()->query('category', request()->query('category_id'));
-
-    if (filled($rssCategory)) {
-        $rssQuery['category'] = $rssCategory;
+    $rssQuery = collect($filters)->only(['q', 'type', 'resolution', 'source', 'release_group', 'language', 'audio_language', 'subtitle_language', 'year'])
+        ->merge(request()->only(['subtitles', 'freeleech']))
+        ->filter(static fn ($value): bool => filled($value))->all();
+    if (filled($filters['category_id'] ?? null)) {
+        $rssQuery['category'] = $filters['category_id'];
     }
-
     $rssUrl = $browseUser?->rss_token !== null
-        ? route('rss.feed', array_merge(['token' => (string) $browseUser->rss_token], $rssQuery))
-        : route('account.rss.index');
+        ? route('rss.feed', ['token' => $browseUser->rss_token, ...$rssQuery])
+        : null;
 @endphp
 
 @extends('layouts.app')
@@ -118,6 +106,12 @@
                         <summary class="cursor-pointer text-xs font-semibold uppercase tracking-wide text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand/60">Metadata filters</summary>
                         <p class="mt-2 text-xs leading-5 text-slate-500">Use metadata to narrow discovery without adding extra row clutter.</p>
                         <div class="mt-3 grid gap-3">
+                            @foreach (['language' => 'Language', 'audio_language' => 'Audio language'] as $field => $label)
+                                <label class="text-sm font-semibold text-slate-300">
+                                    <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">{{ $label }}</span>
+                                    <input name="{{ $field }}" maxlength="80" value="{{ $filters[$field] ?? '' }}" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                                </label>
+                            @endforeach
                             @if ($categories->isNotEmpty())
                                 <label class="text-sm font-semibold text-slate-300">
                                     <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">Category</span>
@@ -159,7 +153,7 @@
                 <form method="POST" action="{{ route('account.saved-intents.store') }}" class="mt-4 border-t border-slate-800 pt-4">
                     @csrf
                     <div data-browse-saved-filters>
-                        @foreach (['q', 'type', 'resolution', 'source', 'category_id', 'order', 'direction', 'grouped'] as $key)
+                        @foreach (['q', 'type', 'resolution', 'source', 'category_id', 'language', 'audio_language', 'subtitle_language', 'order', 'direction', 'grouped'] as $key)
                             @if (($filters[$key] ?? '') !== '' && ($filters[$key] ?? null) !== null)
                                 <input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">
                             @endif
@@ -183,22 +177,6 @@
 
                 <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
                     <a href="{{ route('account.saved-intents.index') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
-                    <a data-browse-rss href="{{ $rssUrl }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">RSS</a>
-                </div>
-                <div
-                    data-discovery-browse-teaser
-                    data-discovery-url="{{ route('my.discovery') }}"
-                    class="mt-4"
-                >
-                    <div class="rounded-xl border border-slate-800 bg-slate-900/75 p-4 shadow-lg shadow-slate-900/20">
-                        <div class="space-y-3">
-                            <div class="h-4 w-28 rounded bg-slate-800/80"></div>
-                            <div class="space-y-2">
-                                <div class="h-3 w-full rounded bg-slate-800/70"></div>
-                                <div class="h-3 w-5/6 rounded bg-slate-800/70"></div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: @include('partials.search-alias-guidance', ['variant' => 'examples'])</p>
             </div>
@@ -216,6 +194,21 @@
                         <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
                     @endforeach
                 </nav>
+                <a href="{{ route('account.watch-presets.create', $rssQuery) }}" class="rounded-lg px-3 py-2 text-sm text-brand">Watch this search</a>
+                <details id="search-feed" class="text-sm" @if (request()->boolean('rss_ready')) open @endif>
+                    <summary class="cursor-pointer rounded-lg px-3 py-2 text-brand">RSS for this search</summary>
+                    @if ($rssUrl)
+                        <label class="block py-2">Copy feed URL
+                            <input readonly value="{{ $rssUrl }}" class="block w-full rounded border border-slate-700 bg-slate-950 p-2">
+                        </label>
+                        <a href="{{ $rssUrl }}" class="text-brand">Open feed</a>
+                    @else
+                        <form method="POST" action="{{ route('account.rss.enable', $rssQuery) }}" class="py-2">
+                            @csrf
+                            <button type="submit" class="text-brand">Create my feed URL</button>
+                        </form>
+                    @endif
+                </details>
                 <p data-browse-result-count class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
             </div>
 

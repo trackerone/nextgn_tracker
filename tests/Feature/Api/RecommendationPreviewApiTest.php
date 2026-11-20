@@ -27,7 +27,7 @@ final class RecommendationPreviewApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_recommendation_preview_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $this->actingAs($user)
             ->getJson(route('api.recommendations.preview'))
@@ -45,7 +45,7 @@ final class RecommendationPreviewApiTest extends TestCase
 
     public function test_authenticated_user_can_read_populated_recommendation_preview_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'name' => 'Example WEB-DL 1080p',
             'uploaded_at' => now()->subDay(),
@@ -92,7 +92,7 @@ final class RecommendationPreviewApiTest extends TestCase
 
     public function test_recommendation_preview_endpoint_excludes_personalization_and_history_contracts(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $payload = $this->actingAs($user)
             ->getJson(route('api.recommendations.preview'))
@@ -115,7 +115,7 @@ final class RecommendationPreviewApiTest extends TestCase
 
     public function test_recommendation_preview_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

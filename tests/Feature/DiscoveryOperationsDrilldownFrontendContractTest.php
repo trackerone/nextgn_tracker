@@ -40,8 +40,8 @@ it('exports the discovery operations drilldown client contract', function (): vo
         ->toContain('fetchJson<DiscoveryOperationsDrilldownResponse>');
 });
 
-it('mounts the discovery operations drilldown panel on the account discovery surface', function (): void {
-    expect(discoveryOperationsDrilldownFrontendSource('resources/views/account/discovery.blade.php'))
+it('mounts the discovery operations drilldown panel on the staff discovery surface', function (): void {
+    expect(discoveryOperationsDrilldownFrontendSource('resources/views/admin/discovery.blade.php'))
         ->toContain('data-discovery-operations-drilldown');
 
     expect(discoveryOperationsDrilldownFrontendSource('resources/js/app.tsx'))

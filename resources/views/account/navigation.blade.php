@@ -4,6 +4,8 @@
         'account.hnr' => 'HnR & seeding obligations',
         'account.settings.edit' => 'Account settings',
         'account.access' => 'API keys & passkey',
+        'my.watch-center' => 'Search alerts',
+        'pm.index' => 'Messages',
         'account.rss.index' => 'RSS feeds',
         'account.people' => 'People',
         'account.snatches' => 'Completed torrents',

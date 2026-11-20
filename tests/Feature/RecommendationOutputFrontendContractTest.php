@@ -105,7 +105,7 @@ it('keeps the recommendation output endpoint centralized in the output groups cl
 });
 
 it('mounts a readonly recommendation output discovery surface for metadata groups only', function (): void {
-    $discoveryView = recommendationOutputFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationOutputFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationOutputFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationOutputFrontendSource('resources/js/components/discovery/RecommendationOutputPanel.tsx');
 

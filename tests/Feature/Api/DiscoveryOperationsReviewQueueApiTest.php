@@ -27,7 +27,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_catalog_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-review-queue'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -52,7 +52,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
     public function test_filters_return_matching_review_queue_items(): void
     {
         $this->seedReviewQueueCatalog();
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)
             ->getJson(route('api.discovery.operations-review-queue', ['field' => 'category']))
@@ -85,7 +85,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
     {
         $this->seedReviewQueueCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-review-queue', ['field' => 'source', 'status' => 'weakly_discoverable']))
             ->assertOk()
             ->assertJsonPath('summary.total_queue_items', 1)
@@ -95,7 +95,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
 
     public function test_invalid_field_status_priority_and_severity_return_validation_errors(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)->getJson(route('api.discovery.operations-review-queue', ['field' => 'score']))->assertUnprocessable()->assertJsonValidationErrors('field');
         $this->actingAs($user)->getJson(route('api.discovery.operations-review-queue', ['status' => 'ranked']))->assertUnprocessable()->assertJsonValidationErrors('status');
@@ -107,7 +107,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
     {
         $this->seedReviewQueueCatalog();
 
-        $payload = $this->actingAs(User::factory()->create())
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-review-queue'))
             ->assertOk()
             ->json();
@@ -122,7 +122,7 @@ final class DiscoveryOperationsReviewQueueApiTest extends TestCase
     {
         $this->seedReviewQueueCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-review-queue'))
             ->assertOk()
             ->assertJsonPath('queue.0.mutation_allowed', false)

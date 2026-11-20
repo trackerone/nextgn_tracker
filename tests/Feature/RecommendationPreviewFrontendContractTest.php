@@ -86,7 +86,7 @@ it('keeps the recommendation preview endpoint centralized in the preview client'
 });
 
 it('mounts a readonly recommendation preview discovery surface', function (): void {
-    $discoveryView = recommendationPreviewFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationPreviewFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationPreviewFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationPreviewFrontendSource('resources/js/components/discovery/RecommendationPreviewPanel.tsx');
 

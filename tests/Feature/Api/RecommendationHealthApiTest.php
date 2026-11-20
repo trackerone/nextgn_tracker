@@ -31,7 +31,7 @@ final class RecommendationHealthApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_recommendation_health_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $this->actingAs($user)
             ->getJson(route('api.recommendations.health'))
@@ -66,7 +66,7 @@ final class RecommendationHealthApiTest extends TestCase
 
     public function test_authenticated_user_can_read_populated_recommendation_health_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $category = Category::factory()->create(['name' => 'Movies']);
         $torrent = Torrent::factory()->create([
             'category_id' => $category->id,
@@ -132,7 +132,7 @@ final class RecommendationHealthApiTest extends TestCase
 
     public function test_recommendation_health_response_shape_remains_stable(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $payload = $this->actingAs($user)
             ->getJson(route('api.recommendations.health'))
@@ -165,7 +165,7 @@ final class RecommendationHealthApiTest extends TestCase
 
     public function test_recommendation_health_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

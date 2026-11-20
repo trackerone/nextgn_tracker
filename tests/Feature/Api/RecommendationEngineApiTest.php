@@ -27,7 +27,7 @@ final class RecommendationEngineApiTest extends TestCase
 
     public function test_authenticated_user_can_read_engine_foundation_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'uploaded_at' => now()->subDay(),
         ]);
@@ -103,7 +103,7 @@ final class RecommendationEngineApiTest extends TestCase
 
     public function test_recommendation_engine_endpoint_excludes_recommended_torrent_and_personalization_output(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $response = $this->actingAs($user)
             ->getJson(route('api.recommendations.engine'));
@@ -130,7 +130,7 @@ final class RecommendationEngineApiTest extends TestCase
 
     public function test_recommendation_engine_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

@@ -36,11 +36,15 @@ final class TorrentRssFilterMatcher
     ];
 
     /**
-     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, limit?: int}  $filters
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit?: int}  $filters
      */
     public function matches(Torrent $torrent, array $filters): bool
     {
         $metadata = TorrentMetadataView::forTorrent($torrent);
+
+        if (isset($filters['year']) && (int) ($metadata['year'] ?? 0) !== $filters['year']) {
+            return false;
+        }
 
         if ($filters['category'] !== null && (int) $torrent->category_id !== $filters['category']) {
             return false;
@@ -56,10 +60,15 @@ final class TorrentRssFilterMatcher
             }
         }
 
-        foreach (['language', 'audio_language', 'subtitle_language'] as $field) {
+        foreach (['language', 'audio_language'] as $field) {
             if ($filters[$field] !== '' && ! $this->languageFieldMatches((string) ($metadata[$field] ?? ''), $filters[$field])) {
                 return false;
             }
+        }
+
+        $subtitleLanguages = ($metadata['subtitle_language'] ?? '').','.($metadata['subtitles'] ?? '');
+        if ($filters['subtitle_language'] !== '' && ! $this->languageFieldMatches($subtitleLanguages, $filters['subtitle_language'])) {
+            return false;
         }
 
         if ($filters['subtitles'] !== '' && ! $this->languageFieldMatches((string) ($metadata['subtitles'] ?? ''), $filters['subtitles'])) {

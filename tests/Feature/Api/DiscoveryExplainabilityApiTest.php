@@ -30,7 +30,7 @@ final class DiscoveryExplainabilityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_explainability_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_SYSOP]))
             ->getJson(route('api.discovery.explainability'))
             ->assertOk()
             ->assertExactJson([
@@ -47,7 +47,7 @@ final class DiscoveryExplainabilityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_populated_explainability_states(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $category = Category::factory()->create(['name' => 'Movies']);
 
         $ready = Torrent::factory()->create([
@@ -117,7 +117,7 @@ final class DiscoveryExplainabilityApiTest extends TestCase
 
     public function test_discovery_explainability_response_shape_remains_stable(): void
     {
-        $payload = $this->actingAs(User::factory()->create())
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_SYSOP]))
             ->getJson(route('api.discovery.explainability'))
             ->assertOk()
             ->json();
@@ -136,7 +136,7 @@ final class DiscoveryExplainabilityApiTest extends TestCase
 
     public function test_discovery_explainability_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

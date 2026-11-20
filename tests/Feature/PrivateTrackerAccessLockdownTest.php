@@ -67,7 +67,7 @@ class PrivateTrackerAccessLockdownTest extends TestCase
 
         $this->actingAs($user)->get(route('torrents.index'))->assertOk();
         $this->actingAs($user)->get(route('torrents.show', $torrent))->assertOk();
-        $this->actingAs($user)->get(route('my.discovery'))->assertOk();
+        $this->actingAs($user)->get(route('my.discovery'))->assertRedirect(route('my.follows'));
         $this->actingAs($user)->get(route('my.follows'))->assertOk();
     }
 

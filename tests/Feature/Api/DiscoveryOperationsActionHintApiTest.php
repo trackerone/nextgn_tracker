@@ -24,7 +24,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_catalog_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -49,7 +49,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_field_filter_returns_matching_action_hints(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints', ['field' => 'source']))
             ->assertOk()
             ->assertJsonPath('filters.field', 'source')
@@ -59,7 +59,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_status_filter_returns_matching_action_hints(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints', ['status' => 'discovery_ready']))
             ->assertOk()
             ->assertJsonPath('filters.status', 'discovery_ready')
@@ -68,7 +68,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_priority_filter_returns_matching_action_hints(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints', ['priority' => 'weak_audio_subtitle_source_coverage']))
             ->assertOk()
             ->assertJsonPath('filters.priority', 'weak_audio_subtitle_source_coverage')
@@ -77,7 +77,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_combined_field_and_status_filter_returns_matching_action_hints(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints', ['field' => 'category', 'status' => 'missing_core_metadata']))
             ->assertOk()
             ->assertJsonPath('summary.field', 'category')
@@ -87,7 +87,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_invalid_field_status_and_priority_return_validation_errors(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)
             ->getJson(route('api.discovery.operations-action-hints', ['field' => 'score']))
@@ -107,7 +107,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_discovery_operations_action_hints_response_shape_remains_stable(): void
     {
-        $payload = $this->actingAs(User::factory()->create())
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints'))
             ->assertOk()
             ->json();
@@ -152,7 +152,7 @@ final class DiscoveryOperationsActionHintApiTest extends TestCase
 
     public function test_action_hints_remain_readonly_and_do_not_mutate_metadata(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-action-hints'))
             ->assertOk()
             ->assertJsonPath('action_hints.0.mutation_allowed', false)
