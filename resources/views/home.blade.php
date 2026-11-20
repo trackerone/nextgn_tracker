@@ -20,7 +20,9 @@
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                         <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20">Browse torrents</a>
-                        <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
+                        @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                            <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
+                        @endif
                         <a href="#community" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Community activity</a>
                     </div>
                 </div>

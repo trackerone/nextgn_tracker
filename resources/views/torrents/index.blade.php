@@ -286,7 +286,9 @@
                             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, inspect the latest releases, or save this view and check back later.</p>
                             <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
                                 <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
-                                <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                                    <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                @endif
                             </div>
                         </div>
                     @endforelse
@@ -352,7 +354,9 @@
                                             <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-400">This can happen with a narrow search or before matching uploads are approved. Clear filters, broaden metadata terms, inspect the latest releases, or save this view and check back later.</p>
                                             <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
                                                 <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Clear filters</a>
-                                                <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                                @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                                    <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Upload a release</a>
+                                @endif
                                             </div>
                                         </td>
                                 </tr>
