@@ -45,9 +45,9 @@ it('exports the discovery operations action hints typed client contract', functi
         ->toContain('fetchJson<DiscoveryOperationsActionHintsResponse>');
 });
 
-it('mounts the discovery operations action hints panel on the account discovery surface', function (): void {
+it('mounts the discovery operations action hints panel on the staff discovery surface', function (): void {
     $appSource = discoveryOperationsActionHintFrontendSource('resources/js/app.tsx');
-    $bladeSource = discoveryOperationsActionHintFrontendSource('resources/views/account/discovery.blade.php');
+    $bladeSource = discoveryOperationsActionHintFrontendSource('resources/views/admin/discovery.blade.php');
 
     expect($appSource)
         ->toContain("import DiscoveryOperationsActionHintsPanel from './components/discovery/DiscoveryOperationsActionHintsPanel'")

@@ -73,7 +73,7 @@ it('keeps the discovery operations priorities endpoint centralized in the priori
 });
 
 it('mounts a readonly discovery operations priorities surface', function (): void {
-    $discoveryView = discoveryOperationsPriorityFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = discoveryOperationsPriorityFrontendSource('resources/views/admin/discovery.blade.php');
     $appSource = discoveryOperationsPriorityFrontendSource('resources/js/app.tsx');
     $panelSource = discoveryOperationsPriorityFrontendSource('resources/js/components/discovery/DiscoveryOperationsPrioritiesPanel.tsx');
 

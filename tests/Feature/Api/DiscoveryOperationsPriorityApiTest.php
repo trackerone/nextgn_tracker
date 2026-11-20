@@ -27,7 +27,7 @@ final class DiscoveryOperationsPriorityApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_priorities_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-priorities'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -71,7 +71,7 @@ final class DiscoveryOperationsPriorityApiTest extends TestCase
         $weak = Torrent::factory()->create(['category_id' => null, 'name' => 'Weak Movie']);
         TorrentMetadata::query()->create($this->metadata($weak, ['type' => 'movie']));
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-priorities'))
             ->assertOk()
             ->assertJsonPath('priorities.0.type', 'missing_core_metadata')
@@ -97,7 +97,7 @@ final class DiscoveryOperationsPriorityApiTest extends TestCase
             'year' => 2026,
         ]));
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-priorities'))
             ->assertOk()
             ->assertJsonPath('priorities.0.type', 'healthy_discovery_condition')
@@ -107,7 +107,7 @@ final class DiscoveryOperationsPriorityApiTest extends TestCase
 
     public function test_discovery_operations_priorities_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)->json($method, route('api.discovery.operations-priorities'))->assertStatus(405);

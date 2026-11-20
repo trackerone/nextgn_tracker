@@ -30,7 +30,7 @@ final class DiscoveryOperationsOverviewApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_operations_overview_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-overview'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -51,7 +51,7 @@ final class DiscoveryOperationsOverviewApiTest extends TestCase
 
     public function test_authenticated_user_can_read_populated_operations_overview_states(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $category = Category::factory()->create(['name' => 'Movies']);
 
         $ready = Torrent::factory()->create([
@@ -105,7 +105,7 @@ final class DiscoveryOperationsOverviewApiTest extends TestCase
 
     public function test_discovery_operations_overview_response_shape_remains_stable(): void
     {
-        $payload = $this->actingAs(User::factory()->create())
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-overview'))
             ->assertOk()
             ->json();
@@ -136,7 +136,7 @@ final class DiscoveryOperationsOverviewApiTest extends TestCase
 
     public function test_discovery_operations_overview_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)

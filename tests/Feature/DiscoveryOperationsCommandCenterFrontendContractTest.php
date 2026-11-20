@@ -35,9 +35,9 @@ it('exports the discovery operations command center typed client contract', func
         ->toContain('fetchJson<DiscoveryOperationsCommandCenterResponse>');
 });
 
-it('mounts the discovery operations command center panel on the account discovery surface', function (): void {
+it('mounts the discovery operations command center panel on the staff discovery surface', function (): void {
     $appSource = discoveryOperationsCommandCenterFrontendSource('resources/js/app.tsx');
-    $bladeSource = discoveryOperationsCommandCenterFrontendSource('resources/views/account/discovery.blade.php');
+    $bladeSource = discoveryOperationsCommandCenterFrontendSource('resources/views/admin/discovery.blade.php');
 
     expect($appSource)
         ->toContain("import DiscoveryOperationsCommandCenterPanel from './components/discovery/DiscoveryOperationsCommandCenterPanel'")

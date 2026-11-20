@@ -27,7 +27,7 @@ final class DiscoveryOperationsCommandCenterApiTest extends TestCase
 
     public function test_authenticated_user_can_read_empty_catalog_contract(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-command-center'))
             ->assertOk()
             ->assertJsonPath('version', 1)
@@ -51,7 +51,7 @@ final class DiscoveryOperationsCommandCenterApiTest extends TestCase
     public function test_filters_return_matching_command_center_items(): void
     {
         $this->seedCommandCenterCatalog();
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)->getJson(route('api.discovery.operations-command-center', ['field' => 'category']))->assertOk()->assertJsonPath('filters.field', 'category')->assertJsonPath('review_queue.0.metadata_field', 'category');
         $this->actingAs($user)->getJson(route('api.discovery.operations-command-center', ['status' => 'weakly_discoverable']))->assertOk()->assertJsonPath('filters.status', 'weakly_discoverable')->assertJsonPath('review_queue.0.torrent_name', 'Weak Source Movie');
@@ -63,7 +63,7 @@ final class DiscoveryOperationsCommandCenterApiTest extends TestCase
     {
         $this->seedCommandCenterCatalog();
 
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))
             ->getJson(route('api.discovery.operations-command-center', ['field' => 'source', 'status' => 'weakly_discoverable']))
             ->assertOk()
             ->assertJsonPath('summary.total_queue_items', 1)
@@ -72,7 +72,7 @@ final class DiscoveryOperationsCommandCenterApiTest extends TestCase
 
     public function test_invalid_field_status_priority_and_severity_return_validation_errors(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
 
         $this->actingAs($user)->getJson(route('api.discovery.operations-command-center', ['field' => 'score']))->assertUnprocessable()->assertJsonValidationErrors('field');
         $this->actingAs($user)->getJson(route('api.discovery.operations-command-center', ['status' => 'ranked']))->assertUnprocessable()->assertJsonValidationErrors('status');
@@ -84,7 +84,7 @@ final class DiscoveryOperationsCommandCenterApiTest extends TestCase
     {
         $this->seedCommandCenterCatalog();
 
-        $payload = $this->actingAs(User::factory()->create())->getJson(route('api.discovery.operations-command-center'))->assertOk()->json();
+        $payload = $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]))->getJson(route('api.discovery.operations-command-center'))->assertOk()->json();
 
         $this->assertSame(['version', 'readonly', 'metadata_first', 'personalized', 'uses_user_history', 'uses_download_history', 'uses_watch_history', 'filters', 'summary', 'health', 'overview', 'priorities', 'action_hints', 'review_queue', 'next_staff_focus'], array_keys($payload));
         $this->assertSame(['field', 'status', 'priority', 'severity', 'available_fields', 'available_statuses', 'available_priorities', 'available_severities'], array_keys($payload['filters']));

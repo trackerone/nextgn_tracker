@@ -28,7 +28,6 @@ use App\Http\Controllers\HnrController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MyUploadsController;
 use App\Http\Controllers\NotificationWatchPresetController;
-use App\Http\Controllers\PersonalizedDiscoveryController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\PrivateMessageController;
 use App\Http\Controllers\RssFeedController;
@@ -142,6 +141,7 @@ Route::middleware(['auth', 'role.level:mod'])
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role.level:admin', $adminThrottle])->group(function (): void {
+    Route::view('/admin/discovery', 'admin.discovery')->name('admin.discovery');
     Route::get('/admin/settings/ratio', [RatioSettingsController::class, 'edit'])
         ->name('admin.settings.ratio.edit');
     Route::patch('/admin/settings/ratio', [RatioSettingsController::class, 'update'])
@@ -175,6 +175,7 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::post('/hnr/accounts/{user:public_slug}/reset', [HnrSettingsController::class, 'reset'])->name('hnr.reset');
     Route::get('/settings', [SiteSettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
+    Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
 });
@@ -304,7 +305,7 @@ Route::middleware(['auth'])->group(function (): void {
         ->name('torrents.store');
     Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');
-    Route::get('/my/discovery', PersonalizedDiscoveryController::class)->name('my.discovery');
+    Route::redirect('/my/discovery', '/my/follows')->name('my.discovery');
     Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
     Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
     Route::get('/my/watch-center', WatchCenterController::class)->name('my.watch-center');

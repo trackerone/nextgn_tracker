@@ -86,7 +86,7 @@ it('keeps the discovery explainability endpoint centralized in the explainabilit
 });
 
 it('mounts a readonly discovery explainability surface', function (): void {
-    $discoveryView = discoveryExplainabilityFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = discoveryExplainabilityFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = discoveryExplainabilityFrontendSource('resources/js/app.tsx');
     $panelSource = discoveryExplainabilityFrontendSource('resources/js/components/discovery/DiscoveryExplainabilityPanel.tsx');
 

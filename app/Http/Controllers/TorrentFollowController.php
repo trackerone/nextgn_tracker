@@ -8,6 +8,7 @@ use App\Actions\Torrents\ResolveTorrentAccessAction;
 use App\Http\Requests\StoreTorrentFollowRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\TorrentFollow;
+use App\Services\Torrents\PersonalizedDiscoveryFeedBuilder;
 use App\Services\Torrents\TorrentFollowInbox;
 use App\Services\Torrents\TorrentFollowMatcher;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,7 @@ use Illuminate\View\View;
 
 final class TorrentFollowController extends Controller
 {
-    public function index(Request $request, TorrentFollowInbox $inbox): View
+    public function index(Request $request, TorrentFollowInbox $inbox, PersonalizedDiscoveryFeedBuilder $feed): View
     {
         /** @var \Illuminate\Support\Collection<int, TorrentFollow> $follows */
         $follows = $request->user()
@@ -26,6 +27,10 @@ final class TorrentFollowController extends Controller
 
         $checkedAt = now()->toImmutable();
         $inboxItems = $inbox->build($follows);
+
+        foreach ($inboxItems as $key => $item) {
+            $inboxItems[$key]['families'] = $feed->families($item['allMatches'], $item['newMatches']);
+        }
 
         $inbox->markAsSeen($follows, $checkedAt);
 

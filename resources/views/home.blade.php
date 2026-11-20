@@ -83,12 +83,7 @@
             </ol>
         </details>
 
-        <section class="grid gap-4 md:grid-cols-3">
-            <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                <h2 class="text-base font-semibold text-white">Discover</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-400">Use metadata-aware search, filters, follows, and the personalized feed to find releases without noise.</p>
-                <a href="{{ route('my.discovery') }}" class="mt-4 inline-flex text-sm font-semibold text-brand hover:text-brand/80">Open Discovery →</a>
-            </article>
+        <section class="grid gap-4 md:grid-cols-2">
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Contribute</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-400">Upload with clear metadata, then track moderation feedback and publication status from your uploads page.</p>

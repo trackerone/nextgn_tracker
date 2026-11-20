@@ -82,7 +82,7 @@ it('keeps the recommendation torrents endpoint centralized in the torrents clien
 });
 
 it('mounts a readonly concrete recommendation torrent discovery surface', function (): void {
-    $discoveryView = recommendationTorrentsFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationTorrentsFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationTorrentsFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationTorrentsFrontendSource('resources/js/components/discovery/RecommendationTorrentsPanel.tsx');
 

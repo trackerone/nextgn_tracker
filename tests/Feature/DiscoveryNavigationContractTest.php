@@ -24,16 +24,16 @@ final class DiscoveryNavigationContractTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
-    public function test_authenticated_user_can_reach_discovery_page(): void
+    public function test_authenticated_user_reaches_follows_from_old_discovery_link(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
             ->get(route('my.discovery'))
-            ->assertOk();
+            ->assertRedirect(route('my.follows'));
     }
 
-    public function test_browse_discovery_teaser_targets_the_discovery_route(): void
+    public function test_browse_shows_language_filters_without_discovery_teaser(): void
     {
         $user = User::factory()->create();
         $discoveryUrl = route('my.discovery');
@@ -41,7 +41,9 @@ final class DiscoveryNavigationContractTest extends TestCase
         $this->actingAs($user)
             ->get(route('torrents.index'))
             ->assertOk()
-            ->assertSee('data-discovery-browse-teaser', false)
-            ->assertSee('data-discovery-url="'.e($discoveryUrl).'"', false);
+            ->assertSee('name="language"', false)
+            ->assertSee('name="audio_language"', false)
+            ->assertDontSee('data-discovery-browse-teaser', false)
+            ->assertDontSee('data-discovery-url="'.e($discoveryUrl).'"', false);
     }
 }

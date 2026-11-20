@@ -43,7 +43,6 @@
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
                         <a href="{{ route('torrents.upload') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.upload') ? $activeNavLink : $inactiveNavLink }}">Upload</a>
-                        <a href="{{ route('my.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('my.discovery') ? $activeNavLink : $inactiveNavLink }}">Discovery</a>
                         <a href="{{ route('my.watch-center') }}" class="{{ $navLink }} {{ request()->routeIs('my.watch-center', 'account.notifications.*', 'account.rss.*', 'account.watch-presets.*') ? $activeNavLink : $inactiveNavLink }}">Watch Center</a>
                         <a href="{{ route('my.follows') }}" class="{{ $navLink }} {{ request()->routeIs('my.follows') ? $activeNavLink : $inactiveNavLink }} inline-flex items-center gap-2">
                             <span>Follows</span>
@@ -60,6 +59,9 @@
                             <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
                             <a href="{{ route('staff.alpha-feedback.index') }}" class="{{ $navLink }} {{ request()->routeIs('staff.alpha-feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha intake</a>
                         @endif
+                        @can('isAdmin')
+                            <a href="{{ route('admin.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('admin.discovery') ? $activeNavLink : $inactiveNavLink }}">Release review</a>
+                        @endcan
                         @if (auth()->user()?->isSysop())
                             <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Sysop operations</a>
                             <a href="{{ route('sysop.settings.edit') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.settings.*') ? $activeNavLink : $inactiveNavLink }}">Site settings</a>

@@ -47,8 +47,8 @@ final class TorrentBrowseTest extends TestCase
         $response = $this->actingAs($user)->get('/torrents');
 
         $response->assertOk();
-        $response->assertSee('data-discovery-browse-teaser', false);
-        $response->assertSee('data-discovery-url="'.route('my.discovery').'"', false);
+        $response->assertDontSee('data-discovery-browse-teaser', false);
+        $response->assertDontSee('data-discovery-url="'.route('my.discovery').'"', false);
     }
 
     public function test_authenticated_user_sees_filter_first_browse_shell(): void

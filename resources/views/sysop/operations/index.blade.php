@@ -56,6 +56,7 @@
     </section>
 
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
+        <a href="{{ route('sysop.operations.discovery') }}" class="text-brand">Discovery diagnostics</a>
         <h2 class="text-lg font-semibold text-white">Background job settings</h2>
         <p class="mt-2 text-sm text-slate-300">Enabled means configured to run, not a confirmed successful execution. Protected tasks are server managed; optional job settings can be changed below.</p>
         @if ($errors->has('runtime_jobs'))

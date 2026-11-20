@@ -88,7 +88,7 @@ it('keeps the recommendation health endpoint centralized in the health client', 
 });
 
 it('mounts a readonly recommendation health discovery surface', function (): void {
-    $discoveryView = recommendationHealthFrontendSource('resources/views/account/discovery.blade.php');
+    $discoveryView = recommendationHealthFrontendSource('resources/views/sysop/operations/discovery.blade.php');
     $appSource = recommendationHealthFrontendSource('resources/js/app.tsx');
     $panelSource = recommendationHealthFrontendSource('resources/js/components/discovery/RecommendationHealthPanel.tsx');
 

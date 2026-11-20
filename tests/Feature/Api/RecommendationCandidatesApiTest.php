@@ -27,7 +27,7 @@ final class RecommendationCandidatesApiTest extends TestCase
 
     public function test_authenticated_user_can_read_metadata_candidate_groups_contract(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $torrent = Torrent::factory()->create([
             'uploaded_at' => now()->subDay(),
         ]);
@@ -57,7 +57,7 @@ final class RecommendationCandidatesApiTest extends TestCase
 
     public function test_recommendation_candidates_endpoint_excludes_recommended_torrent_and_personalization_output(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         $response = $this->actingAs($user)
             ->getJson(route('api.recommendations.candidates'));
@@ -86,7 +86,7 @@ final class RecommendationCandidatesApiTest extends TestCase
 
     public function test_recommendation_candidates_endpoint_is_get_only(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
         foreach (['POST', 'PUT', 'PATCH', 'DELETE'] as $method) {
             $this->actingAs($user)
