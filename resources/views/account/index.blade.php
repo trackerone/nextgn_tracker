@@ -15,7 +15,7 @@
             <div><dt class="text-slate-400">Public profile</dt><dd><a href="{{ route('users.show', $accountUser->publicProfileRouteKey()) }}" class="text-brand">View my public profile</a></dd></div>
         </dl>
     </header>
-    @include('account.navigation')
+
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Account statistics">
         @foreach ([
             'Uploaded' => \Illuminate\Support\Number::fileSize($uploaded),
@@ -24,7 +24,7 @@
             'Completed torrents' => $completed,
             'Currently seeding' => $seeding,
             'Currently leeching' => $leeching,
-            'My uploads' => $uploads,
+            ...(\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload') ? ['My uploads' => $uploads] : []),
             'Followed releases' => $followedReleases,
         ] as $label => $value)
             <div class="min-w-0 rounded-xl border border-slate-800 bg-slate-900/70 p-4"><h2 class="text-xs uppercase tracking-wide text-slate-400">{{ $label }}</h2><p class="mt-2 text-2xl font-semibold">{{ $value }}</p></div>
