@@ -59,12 +59,12 @@ final class AccountController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 401);
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', Rule::in([(string) $user->name])],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'current_password' => ['required', 'current_password'],
             'password' => ['nullable', 'confirmed', Password::defaults()],
         ]);
-        $user->fill(['name' => $data['name'], 'email' => $data['email']]);
+        $user->fill(['email' => $data['email']]);
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;
         }

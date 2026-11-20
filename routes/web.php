@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\InviteAdminController;
 use App\Http\Controllers\Admin\RatioSettingsController;
 use App\Http\Controllers\Admin\SecurityEventController;
 use App\Http\Controllers\Admin\UserRoleController;
+use App\Http\Controllers\Admin\UserNameController;
 use App\Http\Controllers\AlphaFeedbackController;
 use App\Http\Controllers\AnnounceController;
 use App\Http\Controllers\Api\ApiKeyController;
@@ -203,6 +204,9 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
 });
 Route::middleware(['auth', 'staff', 'can:isAdmin', $adminThrottle])->group(function (): void {
+    Route::get('/admin/users', [UserNameController::class, 'index'])->name('admin.users.index');
+    Route::patch('/admin/users/{user}/name', [UserNameController::class, 'update'])
+        ->middleware('throttle:10,1')->name('admin.users.name.update');
     Route::patch('/admin/users/{user}/role', [UserRoleController::class, 'update'])
         ->name('admin.users.role.update');
 });

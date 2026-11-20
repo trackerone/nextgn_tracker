@@ -55,6 +55,7 @@
                                     <a href="{{ route('staff.alpha-feedback.index') }}" class="{{ $navLink }} {{ request()->routeIs('staff.alpha-feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha intake</a>
                                 @endif
                                 @can('isAdmin')
+                                    <a href="{{ route('admin.users.index') }}" class="{{ $navLink }} {{ request()->routeIs('admin.users.*') ? $activeNavLink : $inactiveNavLink }}">User administration</a>
                                     <a href="{{ route('admin.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('admin.discovery') ? $activeNavLink : $inactiveNavLink }}">Release review</a>
                                 @endcan
                                 @if (auth()->user()?->isSysop())
