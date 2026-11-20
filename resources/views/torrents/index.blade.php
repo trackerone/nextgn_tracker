@@ -185,6 +185,7 @@
                         <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
                     @endforeach
                 </nav>
+                <a href="{{ route('account.watch-presets.create', $rssQuery) }}" class="rounded-lg px-3 py-2 text-sm text-brand">Watch this search</a>
                 <details id="search-feed" class="text-sm" @if (request()->boolean('rss_ready')) open @endif>
                     <summary class="cursor-pointer rounded-lg px-3 py-2 text-brand">RSS for this search</summary>
                     @if ($rssUrl)
