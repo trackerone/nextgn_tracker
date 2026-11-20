@@ -58,7 +58,6 @@
                                     <a href="{{ route('admin.discovery') }}" class="{{ $navLink }} {{ request()->routeIs('admin.discovery') ? $activeNavLink : $inactiveNavLink }}">Release review</a>
                                 @endcan
                                 @if (auth()->user()?->isSysop())
-                                    <a href="{{ route('sysop.permissions.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.permissions.*') ? $activeNavLink : $inactiveNavLink }}">Roles &amp; permissions</a>
                                     <a href="{{ route('sysop.operations.index') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.operations.index') ? $activeNavLink : $inactiveNavLink }}">Sysop operations</a>
                                     <a href="{{ route('sysop.settings.edit') }}" class="{{ $navLink }} {{ request()->routeIs('sysop.settings.*') ? $activeNavLink : $inactiveNavLink }}">Site settings</a>
                                 @endif
