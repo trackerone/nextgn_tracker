@@ -90,13 +90,15 @@ final class PermissionService
 
     public static function roleForUser(User $user): string
     {
+        $level = $user->roleLevel();
+
         return match (true) {
-            $user->roleLevel() >= RoleLevel::SYSOP_LEVEL => 'sysop',
-            $user->roleLevel() >= RoleLevel::ADMIN_LEVEL => 'admin',
-            $user->roleLevel() >= RoleLevel::MODERATOR_LEVEL => 'moderator',
-            $user->roleLevel() >= RoleLevel::UPLOADER_LEVEL => 'uploader',
-            $user->roleLevel() >= 2 => 'power_user',
-            $user->roleLevel() >= RoleLevel::USER_LEVEL => 'user',
+            $level >= RoleLevel::SYSOP_LEVEL => 'sysop',
+            $level >= RoleLevel::ADMIN_LEVEL => 'admin',
+            $level >= RoleLevel::MODERATOR_LEVEL => 'moderator',
+            $level >= RoleLevel::UPLOADER_LEVEL => 'uploader',
+            $level >= 2 => 'power_user',
+            $level >= RoleLevel::USER_LEVEL => 'user',
             default => 'newbie',
         };
     }

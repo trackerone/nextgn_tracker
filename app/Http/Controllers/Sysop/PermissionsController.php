@@ -47,7 +47,7 @@ final class PermissionsController extends Controller
         $rules = [
             'role' => ['required', Rule::in(PermissionService::EDITABLE_ROLES)],
             'audit_reason' => ['required', 'string', 'max:1000'],
-            'permissions' => ['required', 'array'],
+            'permissions' => ['required', 'array:upload,forum,messages'],
         ];
         foreach (PermissionService::MANAGED_FEATURES as $feature => $permission) {
             $rules['permissions.'.$feature] = ['required', 'boolean'];
