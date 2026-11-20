@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\ActiveUserMiddleware;
 use App\Http\Middleware\ApiKeyHmacMiddleware;
 use App\Http\Middleware\EnsureAdminTwoFactorAuthentication;
+use App\Http\Middleware\EnsureFeaturePermission;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\LockdownModeMiddleware;
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'staff' => EnsureUserIsStaff::class,
             'api.hmac' => ApiKeyHmacMiddleware::class,
             'role.level' => RequireRoleLevel::class,
+            'permission' => EnsureFeaturePermission::class,
             'lockdown' => LockdownModeMiddleware::class,
             'tracker.validate-announce' => PassThroughAnnounceValidation::class,
         ]);

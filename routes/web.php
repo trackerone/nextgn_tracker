@@ -38,6 +38,7 @@ use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
+use App\Http\Controllers\Sysop\PermissionsController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
 use App\Http\Controllers\Sysop\TorrentMetadataSourceController;
@@ -194,6 +195,9 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::post('/hnr/accounts/{user:public_slug}/reset', [HnrSettingsController::class, 'reset'])->name('hnr.reset');
     Route::get('/settings', [SiteSettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
+    Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
+    Route::post('/permissions/users', [PermissionsController::class, 'updateUser'])->name('permissions.users.update');
     Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
@@ -236,7 +240,7 @@ Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name
 | FORUM
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role.min:1', 'throttle:60,1'])->group(function (): void {
+Route::middleware(['auth', 'permission:forum.access', 'throttle:60,1'])->group(function (): void {
     Route::get('/topics', [TopicController::class, 'index'])->name('topics.index');
     Route::get('/forum/new-topic', [TopicController::class, 'create'])->name('topics.create');
     Route::get('/topics/{topic:slug}', [TopicController::class, 'show'])->name('topics.show');
@@ -245,7 +249,7 @@ Route::middleware(['auth', 'role.min:1', 'throttle:60,1'])->group(function (): v
     Route::post('/topics/{topic}/posts', [PostController::class, 'store'])->name('topics.posts.store');
 });
 
-Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
+Route::middleware(['auth', 'permission:forum.access', 'throttle:60,1'])->group(function (): void {
     Route::patch('/topics/{topic}', [TopicController::class, 'update'])->name('topics.update');
 
     Route::post('/topics/{topic}/lock', [TopicController::class, 'toggleLock'])
@@ -271,7 +275,7 @@ Route::middleware(['auth', 'throttle:60,1'])->group(function (): void {
 | PRIVATE MESSAGES
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role.min:1'])->group(function (): void {
+Route::middleware(['auth', 'permission:messages.access'])->group(function (): void {
     Route::get('/pm', [PrivateMessageController::class, 'index'])->name('pm.index');
     Route::get('/pm/create', [PrivateMessageController::class, 'create'])->name('pm.create');
     Route::get('/pm/{conversation}', [PrivateMessageController::class, 'show'])->name('pm.show');
@@ -295,9 +299,9 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
         ->middleware([$searchThrottle, $torrentBrowseThrottle])
         ->name('torrents.index');
 
-    Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->name('torrents.upload');
+    Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->middleware('permission:torrent.upload')->name('torrents.upload');
     Route::post('/torrents/upload/analyse', [TorrentUploadController::class, 'analyse'])
-        ->middleware('throttle:30,1')
+        ->middleware(['permission:torrent.upload', 'throttle:30,1'])
         ->name('torrents.upload.analyse');
 
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
@@ -320,7 +324,7 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/alpha/feedback', [AlphaFeedbackController::class, 'store'])->name('alpha.feedback.store');
 
     Route::post('/torrents', [TorrentUploadController::class, 'store'])
-        ->middleware('throttle:torrent-upload')
+        ->middleware(['permission:torrent.upload', 'throttle:torrent-upload'])
         ->name('torrents.store');
     Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])->name('my.uploads');

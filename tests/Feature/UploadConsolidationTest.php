@@ -22,7 +22,7 @@ final class UploadConsolidationTest extends TestCase
     {
         $payload = $this->sampleTorrentPayload();
 
-        $webResponse = $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+        $webResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
             'name' => 'Invalid Extension',
             'type' => 'movie',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid.txt', $payload, 'text/plain'),
@@ -30,7 +30,7 @@ final class UploadConsolidationTest extends TestCase
 
         $webResponse->assertSessionHasErrors(['torrent_file']);
 
-        $apiResponse = $this->actingAs(User::factory()->create())->postJson(route('api.uploads.store'), [
+        $apiResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->postJson(route('api.uploads.store'), [
             'name' => 'Invalid Extension',
             'type' => 'movie',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid.txt', $payload, 'text/plain'),
@@ -44,7 +44,7 @@ final class UploadConsolidationTest extends TestCase
     {
         $payload = $this->sampleTorrentPayload();
 
-        $webResponse = $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+        $webResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
             'name' => 'Invalid NFO',
             'type' => 'movie',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid-nfo.torrent', $payload, 'application/x-bittorrent'),
@@ -54,7 +54,7 @@ final class UploadConsolidationTest extends TestCase
 
         $webResponse->assertSessionHasErrors(['nfo_text']);
 
-        $apiResponse = $this->actingAs(User::factory()->create())->postJson(route('api.uploads.store'), [
+        $apiResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->postJson(route('api.uploads.store'), [
             'name' => 'Invalid NFO',
             'type' => 'movie',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid-nfo.torrent', $payload, 'application/x-bittorrent'),
@@ -70,7 +70,7 @@ final class UploadConsolidationTest extends TestCase
     {
         $payload = $this->sampleTorrentPayload();
 
-        $webResponse = $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+        $webResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
             'name' => 'Invalid Type',
             'type' => 'documentary',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid-type.torrent', $payload, 'application/x-bittorrent'),
@@ -78,7 +78,7 @@ final class UploadConsolidationTest extends TestCase
 
         $webResponse->assertSessionHasErrors(['type']);
 
-        $apiResponse = $this->actingAs(User::factory()->create())->postJson(route('api.uploads.store'), [
+        $apiResponse = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->postJson(route('api.uploads.store'), [
             'name' => 'Invalid Type',
             'type' => 'documentary',
             'torrent_file' => UploadedFile::fake()->createWithContent('invalid-type.torrent', $payload, 'application/x-bittorrent'),
@@ -102,7 +102,7 @@ final class UploadConsolidationTest extends TestCase
         $this->expectExceptionMessage('metadata persistence failed');
 
         try {
-            $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+            $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
                 'name' => 'Persistence Failure',
                 'type' => 'movie',
                 'torrent_file' => UploadedFile::fake()->createWithContent(
@@ -126,7 +126,7 @@ final class UploadConsolidationTest extends TestCase
         Storage::fake('nfo');
 
         $payload = $this->sampleTorrentPayload('Duplicate Upload');
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $this->actingAs($user)->post(route('torrents.store'), [
             'name' => 'Duplicate Upload',

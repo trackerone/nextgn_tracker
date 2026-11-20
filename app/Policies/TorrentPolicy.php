@@ -7,6 +7,7 @@ namespace App\Policies;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Torrents\UploadEligibilityService;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
@@ -74,7 +75,8 @@ class TorrentPolicy
 
     public function create(User $user): bool
     {
-        return $this->uploadEligibility->decide($this->preflightContextBuilder->forUser($user))->allowed;
+        return PermissionService::allow($user, 'torrent.upload')
+            && $this->uploadEligibility->decide($this->preflightContextBuilder->forUser($user))->allowed;
     }
 
     public function update(User $user, Torrent $torrent): bool

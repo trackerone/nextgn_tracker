@@ -87,7 +87,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee('No torrents matched your filters.');
         $response->assertSee('Clear filters');
-        $response->assertSee('Upload a release');
+        $response->assertDontSee('Upload a release');
     }
 
     public function test_browse_rows_show_subtle_metadata_context(): void

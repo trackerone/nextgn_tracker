@@ -58,6 +58,7 @@
         <a href="{{ route('sysop.hnr.edit') }}" class="mt-3 inline-block text-brand">HnR rules, warnings and staff review</a>
         <div class="mt-3 flex flex-wrap gap-4 text-sm text-brand">
             <a href="{{ route('admin.settings.ratio.edit') }}">User class thresholds</a>
+            <a href="{{ route('sysop.permissions.index') }}">Roles &amp; permissions</a>
             <a href="{{ route('admin.settings.metadata.edit') }}">Metadata providers and credentials</a>
             <a href="{{ route('admin.invites.index') }}">Invitations</a>
             <a href="{{ route('moderation.uploads') }}">Upload moderation</a>

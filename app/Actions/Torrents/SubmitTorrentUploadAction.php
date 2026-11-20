@@ -9,6 +9,7 @@ use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Logging\AuditLogger;
+use App\Services\PermissionService;
 use App\Services\Security\SanitizationService;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\DuplicateTorrentResolver;
@@ -43,6 +44,8 @@ final class SubmitTorrentUploadAction
      */
     public function execute(User $user, UploadedFile $torrentFile, array $data, ?UploadedFile $nfoFile = null): SubmitTorrentUploadResult
     {
+        abort_unless(PermissionService::allow($user, 'torrent.upload'), 403);
+
         $nfoPayload = $this->resolveNfoText($nfoFile, $data);
         $context = $this->preflightContextBuilder->forPayload($user, strval($torrentFile->get()), [
             'type' => $data['type'] ?? null,

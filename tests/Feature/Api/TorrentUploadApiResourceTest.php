@@ -27,7 +27,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $response = $this->actingAs($user)->postJson('/api/uploads', [
             'name' => 'API Upload',
@@ -73,7 +73,7 @@ final class TorrentUploadApiResourceTest extends TestCase
 
         Storage::shouldReceive('disk')->with('torrents')->twice()->andReturn($disk);
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $response = $this->actingAs($user)->postJson('/api/uploads', [
             'name' => 'API Broken Storage',
@@ -93,7 +93,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $response = $this->actingAs($user)->postJson(route('api.uploads.store'), [
             'name' => 'API Unsafe Metadata Upload',
@@ -114,7 +114,7 @@ final class TorrentUploadApiResourceTest extends TestCase
 
     public function test_my_uploads_response_exposes_only_expected_fields(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $torrent = Torrent::factory()->create([
             'user_id' => $user->id,
@@ -142,7 +142,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload();
 
         $this->actingAs($user)->postJson('/api/uploads', [
@@ -178,7 +178,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload();
 
         $this->actingAs($user)->postJson('/api/uploads', [
@@ -231,7 +231,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload(
             infoName: 'Api.Upload.2024.1080p.WEB-DL-GRP',
             piecesSeed: 'a',
@@ -285,7 +285,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $existing = Torrent::factory()->create([
             'type' => 'movie',
@@ -338,7 +338,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $this->mock(UploadPreflightContextBuilderContract::class, function ($mock): void {
             $mock->shouldReceive('forPayload')->andReturn(new UploadPreflightContext(
@@ -384,7 +384,7 @@ final class TorrentUploadApiResourceTest extends TestCase
     {
         config()->set('security.rate_limits.torrent_upload', '1,1');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         RateLimiter::clear(sprintf('torrent-upload:user:%s', (string) $user->id));
 
         $this->actingAs($user)

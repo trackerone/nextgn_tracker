@@ -19,12 +19,21 @@ final class DiscoveryNavigationContractTest extends TestCase
         $document = new \DOMDocument;
         @$document->loadHTML((string) $response->getContent());
         $xpath = new \DOMXPath($document);
-        foreach (['my.follows', 'my.watch-center', 'my.uploads', 'account.snatches', 'pm.index', 'account.rss.index'] as $route) {
+        foreach (['my.follows', 'my.watch-center', 'account.snatches', 'pm.index', 'account.rss.index'] as $route) {
             $href = route($route);
             $this->assertEquals(1, $xpath->evaluate('count(//details/nav[@aria-label="User menu"]/a[@href="'.$href.'"])'));
             $this->assertEquals(0, $xpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a[@href="'.$href.'"])'));
         }
-        $this->assertEquals(4, $xpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a)'));
+        $this->assertEquals(0, $xpath->evaluate('count(//details/nav[@aria-label="User menu"]/a[@href="'.route('my.uploads').'"])'));
+        $this->assertEquals(3, $xpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a)'));
+
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]));
+        $uploaderResponse = $this->get(route('home'))->assertOk();
+        $uploaderDocument = new \DOMDocument;
+        @$uploaderDocument->loadHTML((string) $uploaderResponse->getContent());
+        $uploaderXpath = new \DOMXPath($uploaderDocument);
+        $this->assertEquals(1, $uploaderXpath->evaluate('count(//details/nav[@aria-label="User menu"]/a[@href="'.route('my.uploads').'"])'));
+        $this->assertEquals(4, $uploaderXpath->evaluate('count(//nav[@aria-label="Primary navigation"]/a)'));
     }
 
     public function test_my_discovery_named_route_generates_the_discovery_path(): void

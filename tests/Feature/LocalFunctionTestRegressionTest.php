@@ -20,13 +20,13 @@ final class LocalFunctionTestRegressionTest extends TestCase
     {
         $route = app('router')->getRoutes()->match(Request::create('/torrents/upload', 'GET'));
         $this->assertSame(TorrentUploadController::class.'@create', $route->getActionName());
-        $this->actingAs(User::factory()->create())->get('/torrents/upload')->assertOk();
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->get('/torrents/upload')->assertOk();
     }
 
     public function test_analysis_accepts_dos_nfo_and_does_not_create_a_torrent(): void
     {
         Storage::fake('torrents');
-        $response = $this->actingAs(User::factory()->create())->postJson(route('torrents.upload.analyse'), [
+        $response = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->postJson(route('torrents.upload.analyse'), [
             'torrent_file' => $this->torrentFile(),
             'nfo_file' => UploadedFile::fake()->createWithContent('test.nfo', $this->legacyNfo())->mimeType('text/plain'),
         ]);
@@ -47,7 +47,7 @@ final class LocalFunctionTestRegressionTest extends TestCase
     public function test_analysis_requires_authentication_and_valid_files(): void
     {
         $this->postJson(route('torrents.upload.analyse'))->assertUnauthorized();
-        $this->actingAs(User::factory()->create())
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))
             ->postJson(route('torrents.upload.analyse'), [])
             ->assertUnprocessable()->assertJsonValidationErrors('torrent_file');
         $this->postJson(route('torrents.upload.analyse'), [
@@ -61,7 +61,7 @@ final class LocalFunctionTestRegressionTest extends TestCase
     {
         Storage::fake('torrents');
         Storage::fake('nfo');
-        $response = $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+        $response = $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
             'name' => 'Example Collection',
             'type' => 'movie',
             'title' => null,
@@ -105,7 +105,7 @@ final class LocalFunctionTestRegressionTest extends TestCase
     {
         Storage::fake('torrents');
         Storage::fake('nfo');
-        $this->actingAs(User::factory()->create())->post(route('torrents.store'), [
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_UPLOADER]))->post(route('torrents.store'), [
             'name' => 'Corrected release',
             'type' => 'movie',
             'metadata_reviewed' => '1',

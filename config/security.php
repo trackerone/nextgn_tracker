@@ -42,10 +42,13 @@ return [
     ],
 
     'roles' => [
+        'sysop',
         'admin',
         'moderator',
         'uploader',
+        'power_user',
         'user',
+        'newbie',
         'guest',
     ],
 
@@ -61,31 +64,26 @@ return [
     ],
 
     'role_permissions' => [
+        'sysop' => [
+            'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
+            'torrent.delete', 'forum.access', 'messages.access', 'comment.post',
+            'comment.delete', 'api.access',
+        ],
         'admin' => [
-            'admin.access',
-            'admin.manage.users',
-            'torrent.upload',
-            'torrent.edit',
-            'torrent.delete',
-            'comment.post',
-            'comment.delete',
-            'api.access',
+            'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
+            'torrent.delete', 'forum.access', 'messages.access', 'comment.post',
+            'comment.delete', 'api.access',
         ],
         'moderator' => [
-            'torrent.edit',
-            'torrent.delete',
-            'comment.delete',
-            'api.access',
+            'torrent.upload', 'torrent.edit', 'torrent.delete', 'forum.access',
+            'messages.access', 'comment.delete', 'api.access',
         ],
         'uploader' => [
-            'torrent.upload',
-            'comment.post',
-            'api.access',
+            'torrent.upload', 'forum.access', 'messages.access', 'comment.post', 'api.access',
         ],
-        'user' => [
-            'comment.post',
-            'api.access',
-        ],
+        'power_user' => ['forum.access', 'messages.access', 'comment.post', 'api.access'],
+        'user' => ['forum.access', 'messages.access', 'comment.post', 'api.access'],
+        'newbie' => ['api.access'],
         'guest' => [],
     ],
 
