@@ -44,6 +44,7 @@
 @endsection
 
 @section('content')
+<div class="nextgn-browse-page">
     <header class="nextgn-browse-header mb-5 flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-semibold text-white">Browse</h1>
         <div class="nextgn-browse-search flex gap-2">
@@ -370,4 +371,5 @@
             </div>
         </section>
     </div>
+</div>
 @endsection
