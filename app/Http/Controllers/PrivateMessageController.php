@@ -9,8 +9,8 @@ use App\Contracts\MessageRepositoryInterface;
 use App\Http\Requests\PrivateMessages\StartConversationRequest;
 use App\Models\Conversation;
 use App\Models\User;
-use App\Notifications\NewPrivateMessageNotification;
 use App\Services\MarkdownService;
+use App\Services\Notifications\PrivateMessageNotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
@@ -133,7 +133,7 @@ class PrivateMessageController extends Controller
         $recipient = User::query()->find($recipientKey);
 
         if ($recipient !== null) {
-            $recipient->notify(new NewPrivateMessageNotification($message));
+            app(PrivateMessageNotificationDispatcher::class)->send($recipient, $message);
         }
 
         if (! $request->expectsJson()) {
