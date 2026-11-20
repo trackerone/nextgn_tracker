@@ -74,15 +74,17 @@
                     <h1 class="nextgn-release-title mt-2 font-bold text-white">{{ $torrent->name }}</h1>
                     <p class="mt-1 text-sm text-slate-400">Uploaded {{ optional($torrent->uploadedAtForDisplay())->toDayDateTimeString() ?? 'recently' }} by @if ($torrent->uploader)<a href="{{ route('users.show', ['user' => $torrent->uploader->publicProfileRouteKey()]) }}" class="font-semibold text-cyan-200 hover:text-cyan-100">{{ $torrent->uploader->name }}</a>@else Unknown @endif</p>
                 </div>
-                @can('download', $torrent)
+                @auth
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        @can('download', $torrent)
+                            <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex items-center justify-center rounded-2xl bg-brand px-5 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/30">Download .torrent</a>
+                        @endcan
                         <form method="POST" action="{{ route('torrents.follow.store', $torrent) }}">
                             @csrf
-                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">Follow with metadata</button>
+                            <button type="submit" class="inline-flex w-full items-center justify-center rounded-2xl border border-emerald-500/60 px-5 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 sm:w-auto">{{ in_array($metadata['type'] ?? null, ['tv', 'series', 'episode', 'tv_episode'], true) ? 'Follow series' : 'Follow title' }}</button>
                         </form>
                     </div>
-                @endcan
+                @endauth
             </div>
             <div @class(['nextgn-release-overview', 'nextgn-release-with-poster' => ($film['poster'] ?? null) !== null])>
                 @if (($film['poster'] ?? null) !== null)

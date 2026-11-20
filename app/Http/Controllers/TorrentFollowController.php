@@ -61,20 +61,27 @@ final class TorrentFollowController extends Controller
 
         $title = $this->nullableString($metadata['title'] ?? null) ?? $model->name;
 
-        TorrentFollow::query()->create([
-            'last_checked_at' => now(),
-            'user_id' => $request->user()->id,
-            'title' => $title,
+        $type = $this->nullableString($metadata['type'] ?? null);
+        $series = in_array($type, ['tv', 'series', 'episode', 'tv_episode'], true);
+        if ($series) {
+            $seriesTitle = preg_split('/[\s._-]+(?:s\d{1,2}(?:e\d{1,3})?|\d{1,2}x\d{1,3})(?![a-z0-9])/i', $title, 2);
+            $title = $seriesTitle[0] ?? $title;
+        }
+
+        $request->user()->torrentFollows()->firstOrCreate([
             'normalized_title' => $matcher->normalizedTitle($title),
-            'type' => $this->nullableString($metadata['type'] ?? null),
-            'resolution' => $this->nullableString($metadata['resolution'] ?? null),
-            'source' => $this->nullableString($metadata['source'] ?? null),
-            'year' => is_numeric($metadata['year'] ?? null) ? (int) $metadata['year'] : null,
+            'type' => $type,
+            'resolution' => null,
+            'source' => null,
+            'year' => ! $series && is_numeric($metadata['year'] ?? null) ? (int) $metadata['year'] : null,
+        ], [
+            'title' => $title,
+            'last_checked_at' => now(),
         ]);
 
         return redirect()
             ->route('my.follows')
-            ->with('status', 'Follow preference created from torrent.');
+            ->with('status', 'You are following this title.');
     }
 
     private function nullableString(mixed $value): ?string
