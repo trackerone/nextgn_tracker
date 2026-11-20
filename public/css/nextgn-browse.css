@@ -37,6 +37,34 @@
     }
 
     .nextgn-browse-page .nextgn-results-table th:first-child {
-        width: 49%;
+        width: auto;
     }
+
+    .nextgn-browse-page .nextgn-results-table :is(th, td):not(:first-child) {
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+    .nextgn-browse-page .nextgn-results-table th:nth-child(2),
+    .nextgn-browse-page .nextgn-results-table th:nth-child(5) {
+        width: 5.5rem;
+    }
+
+    .nextgn-browse-page .nextgn-results-table th:nth-child(3),
+    .nextgn-browse-page .nextgn-results-table th:nth-child(4) {
+        width: 4rem;
+    }
+
+    .nextgn-browse-page .nextgn-results-table th:nth-child(6) {
+        width: 6rem;
+    }
+
+    .nextgn-browse-page .nextgn-results-table th:nth-child(7) {
+        width: 6.25rem;
+    }
+}
+
+.nextgn-browse-page .nextgn-results-table td[data-label="Actions"] a {
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
