@@ -1,0 +1,102 @@
+.nextgn-release-page {
+    max-width: 54rem;
+    margin-inline: auto;
+}
+
+.nextgn-release-card { padding: clamp(.875rem, 2vw, 1.25rem); }
+.nextgn-release-title {
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+    overflow-wrap: anywhere;
+}
+
+.nextgn-release-overview, .nextgn-release-facts, .nextgn-film-grid {
+    display: grid;
+    gap: .75rem;
+    align-items: start;
+}
+
+.nextgn-release-overview { margin-top: 1rem; }
+.nextgn-release-info { min-width: 0; }
+
+.nextgn-release-poster {
+    width: min(100%, 9rem);
+    aspect-ratio: 2 / 3;
+    height: auto;
+    object-fit: cover;
+    border-radius: .5rem;
+}
+
+.nextgn-release-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .375rem .75rem;
+    margin-bottom: .625rem;
+}
+
+.nextgn-release-links a,
+.nextgn-release-links button {
+    color: #bae6fd;
+    font-size: .8125rem;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+    cursor: pointer;
+}
+
+.nextgn-release-links button[aria-expanded="true"] { color: #ddd6fe; }
+
+.nextgn-release-document, .nextgn-film-panel {
+    margin-top: .625rem;
+    border: 1px solid #293247;
+    border-radius: .625rem;
+    overflow: hidden;
+}
+
+.nextgn-release-summary {
+    padding: .5rem .75rem;
+    cursor: pointer;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.nextgn-file-list { padding: 0 .75rem; }
+
+.nextgn-nfo-text {
+    margin: 0;
+    max-height: 26rem;
+    overflow: auto;
+    padding: .75rem;
+    background: #09091a;
+    font-family: ui-monospace, monospace;
+    font-size: .8125rem;
+    line-height: 1;
+    white-space: pre;
+}
+
+.nextgn-film-body {
+    position: relative;
+    isolation: isolate;
+    background: #0c1121;
+    padding: .875rem;
+}
+
+.nextgn-film-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: .24;
+    pointer-events: none;
+}
+
+.nextgn-release-trailer { aspect-ratio: 16 / 9; }
+
+@media (min-width: 420px) {
+    .nextgn-release-with-poster { grid-template-columns: clamp(5rem, 16vw, 9rem) minmax(0, 1fr); }
+}
+
+@media (min-width: 700px) {
+    .nextgn-release-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nextgn-film-grid-with-trailer { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+}

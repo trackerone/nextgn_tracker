@@ -122,7 +122,7 @@ final class TorrentMetadataView
     }
 
     /**
-     * @return array{title: ?string, overview: ?string, poster: ?string, backdrop: ?string, year: ?int, cast: list<array{name: string, role: ?string, portrait: ?string}>, trailer: ?string}|null
+     * @return array{title: ?string, overview: ?string, poster: ?string, backdrop: ?string, url: ?string, year: ?int, cast: list<array{name: string, role: ?string, portrait: ?string}>, trailer: ?string}|null
      */
     public function filmDetails(): ?array
     {
@@ -163,6 +163,9 @@ final class TorrentMetadataView
             'overview' => $this->codecText($external->overview),
             'poster' => $this->tmdbImage($external->poster_path, 'w500'),
             'backdrop' => $this->tmdbImage($external->backdrop_path, 'w1280'),
+            'url' => is_string($external->tmdb_id) && ctype_digit($external->tmdb_id)
+                ? 'https://www.themoviedb.org/movie/'.$external->tmdb_id
+                : null,
             'year' => is_int($external->year) ? $external->year : null,
             'cast' => $cast,
             'trailer' => $trailer,

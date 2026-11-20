@@ -88,6 +88,7 @@ final class TorrentDetailsTest extends TestCase
             'overview' => 'Film synopsis.',
             'poster_path' => '/poster.jpg',
             'backdrop_path' => '/backdrop.jpg',
+            'tmdb_id' => '187017',
             'providers_payload' => [
                 'tmdb' => [
                     'credits' => ['cast' => [['name' => 'Actor Name', 'character' => 'Lead role', 'profile_path' => '/actor.jpg']]],
@@ -105,12 +106,16 @@ final class TorrentDetailsTest extends TestCase
         $response = $this->actingAs($user)->get(route('torrents.show', $torrent));
 
         $response->assertOk()
-            ->assertSeeInOrder(['<h1', 'id="film-heading"', 'aria-label="Torrent facts"'], false)
+            ->assertSeeInOrder(['<h1', 'class="nextgn-release-poster"', 'aria-label="Torrent facts"', 'id="release-files"', 'id="film-heading"'], false)
             ->assertSee('id="release-files"', false)
             ->assertSee('Film synopsis.')
             ->assertSee('https://image.tmdb.org/t/p/w500/poster.jpg', false)
             ->assertSee('https://image.tmdb.org/t/p/w1280/backdrop.jpg', false)
-            ->assertSee('lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]', false)
+            ->assertSee('nextgn-film-grid-with-trailer', false)
+            ->assertSee('css/nextgn-release.css', false)
+            ->assertSee('js/nextgn-release-documents.js', false)
+            ->assertSee('aria-controls="release-files" aria-expanded="false"', false)
+            ->assertSee('https://www.themoviedb.org/movie/187017', false)
             ->assertSee('Actor Name')
             ->assertSee('Lead role')
             ->assertSee('data-trailer-id="XqMKdHcs5kQ"', false)

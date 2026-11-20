@@ -13,13 +13,30 @@
 
 @media (min-width: 1024px) {
     .nextgn-browse-layout {
-        grid-template-columns: 14rem minmax(0, 1fr);
+        grid-template-columns: 12.5rem minmax(0, 1fr);
         align-items: start;
     }
 
     .nextgn-browse-header {
         display: grid;
-        grid-template-columns: 14rem minmax(0, 1fr);
+        grid-template-columns: 12.5rem minmax(0, 1fr);
         gap: 1rem;
+    }
+}
+
+.nextgn-browse-page {
+    max-width: 75rem;
+    margin-inline: auto;
+}
+
+@media (min-width: 1201px) {
+    .nextgn-browse-page .nextgn-results-table th,
+    .nextgn-browse-page .nextgn-results-table td {
+        padding: .375rem .5rem;
+        vertical-align: middle;
+    }
+
+    .nextgn-browse-page .nextgn-results-table th:first-child {
+        width: 49%;
     }
 }
