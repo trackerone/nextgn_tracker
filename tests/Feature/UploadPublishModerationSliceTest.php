@@ -30,7 +30,7 @@ final class UploadPublishModerationSliceTest extends TestCase
     public function test_signed_in_user_can_submit_upload_and_it_is_pending(): void
     {
         Storage::fake('torrents');
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $category = Category::factory()->create();
 
         $this->actingAs($user)->post(route('torrents.store'), [

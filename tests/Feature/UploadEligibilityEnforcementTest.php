@@ -63,7 +63,7 @@ final class UploadEligibilityEnforcementTest extends TestCase
 
     public function test_api_store_records_duplicate_reason_from_service_boundary(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $payload = $this->sampleTorrentPayload();
 

@@ -43,7 +43,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $category = Category::factory()->create();
         $payload = $this->sampleTorrentPayload('Feature.Upload.2024.1080p.WEB-DL.x264-GRP', 2048);
 
@@ -110,7 +110,7 @@ class TorrentUploadTest extends TestCase
         Storage::shouldReceive('disk')->with('nfo')->twice()->andReturn($nfoDisk);
         Storage::shouldReceive('disk')->with('torrents')->twice()->andReturn($torrentDisk);
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Failure Cleanup', 2048);
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
@@ -133,7 +133,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $category = Category::factory()->create();
         $payload = $this->sampleTorrentPayload('Feedback.Release.2024.1080p.WEB-DL.x264-GRP', 3072);
 
@@ -159,7 +159,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Feedback.Partial', 1024);
 
         $response = $this->actingAs($user)
@@ -182,7 +182,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $payload = $this->sampleTorrentPayload('Priority.Title.2024.1080p.WEB-DL.x264-GRP', 1536);
 
@@ -207,7 +207,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Uploaded.Metadata.2025.1080p.WEB-DL.x264-GRP', 2048);
 
         $this->actingAs($user)->post(route('torrents.store'), [
@@ -256,7 +256,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Blank.Metadata.Upload', 2048);
 
         $this->actingAs($user)->post(route('torrents.store'), [
@@ -291,7 +291,7 @@ class TorrentUploadTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Unsafe.Metadata.Upload', 2048);
 
         $this->actingAs($user)
@@ -313,7 +313,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Valid.Language.Metadata.Upload', 2048);
 
         $this->actingAs($user)->post(route('torrents.store'), [
@@ -342,7 +342,7 @@ class TorrentUploadTest extends TestCase
         Storage::fake('torrents');
         Storage::fake('nfo');
 
-        $uploader = User::factory()->create();
+        $uploader = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $moderator = User::factory()->staff()->create();
         $watcher = $this->rssUser();
         NotificationWatchPreset::factory()->create([
@@ -383,7 +383,7 @@ class TorrentUploadTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Duplicate Upload', 4096);
 
         $this->actingAs($user)->post(route('torrents.store'), [
@@ -408,7 +408,7 @@ class TorrentUploadTest extends TestCase
     {
         Storage::fake('torrents');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $payload = $this->sampleTorrentPayload('Duplicate Upload', 4096);
 
         $this->actingAs($user)->post(route('torrents.store'), [
@@ -449,7 +449,7 @@ class TorrentUploadTest extends TestCase
 
     public function test_validation_errors_are_reported(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $response = $this->actingAs($user)->post(route('torrents.store'), [
             'name' => '',
@@ -507,7 +507,7 @@ class TorrentUploadTest extends TestCase
     {
         config()->set('security.rate_limits.torrent_upload', '1,1');
 
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         RateLimiter::clear(sprintf('torrent-upload:user:%s', (string) $user->id));
 
         $this->actingAs($user)
@@ -523,7 +523,7 @@ class TorrentUploadTest extends TestCase
 
     private function rssUser(int $uploadedBytes = 1_000_000, int $downloadedBytes = 1): User
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $user->rotateRssToken();
 
         UserStat::query()->create([
