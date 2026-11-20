@@ -60,6 +60,8 @@ final class TorrentBrowseTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('form="browse-filters"', false);
+        $response->assertSee('js/nextgn-browse-search.js', false);
+        $response->assertSee('id="browse-results"', false);
         $response->assertSee('css/nextgn-browse.css', false);
         $response->assertSee('class="nextgn-browse-layout"', false);
         $response->assertSee('aria-label="Browse categories"', false);
@@ -327,6 +329,24 @@ final class TorrentBrowseTest extends TestCase
         $response->assertOk();
         $response->assertSee($match->name);
         $response->assertDontSee($miss->name);
+    }
+
+    public function test_browse_search_matches_release_names_with_spaces_or_dots(): void
+    {
+        $user = User::factory()->create();
+        $match = Torrent::factory()->create(['name' => '22.Jump.Street.2014.1080p']);
+        $other = Torrent::factory()->create(['name' => '22.Short.Films.2014.1080p']);
+
+        foreach (['22 jump', '22.jump', '22_jump', '22-jump'] as $query) {
+            $this->actingAs($user)->get(route('torrents.index', ['q' => $query, 'grouped' => '0']))
+                ->assertOk()
+                ->assertSee($match->name)
+                ->assertDontSee($other->name);
+        }
+
+        $this->get(route('torrents.index', ['q' => '22', 'grouped' => '0']))
+            ->assertOk()
+            ->assertSee($match->name);
     }
 
     public function test_search_supports_release_group_directive(): void
