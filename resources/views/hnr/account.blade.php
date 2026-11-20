@@ -3,7 +3,7 @@
 @section('content')
 <div class="min-w-0 space-y-6 break-words">
     <h1 class="text-3xl font-bold">HnR and seeding obligations</h1>
-    @include('account.navigation')
+    
     <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         <h2 class="text-xl font-semibold">{{ !$rules['enabled'] ? 'HnR enforcement is disabled' : ($exempt ? 'Your role is exempt' : ($restricted ? 'New downloads restricted' : 'HnR monitoring is enabled')) }}</h2>
         <p class="mt-3 text-sm">Warnings: {{ $state?->warnings ?? 0 }} · Overdue torrents: {{ $overdue }}</p>
