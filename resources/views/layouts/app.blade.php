@@ -103,6 +103,14 @@
                 </div>
             @endif
 
+            @auth
+                @if (request()->routeIs('account.*', 'my.uploads', 'my.follows', 'my.watch-center', 'pm.*'))
+                    <div class="mb-6">
+                        @include('account.navigation')
+                    </div>
+                @endif
+            @endauth
+
             @yield('content')
         </main>
         @stack('scripts')
