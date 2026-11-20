@@ -3,7 +3,7 @@
 @section('content')
 <div class="space-y-6">
     <h1 class="text-3xl font-bold">Account settings</h1>
-    @include('account.navigation')
+    
     <form method="POST" action="{{ route('account.settings.update') }}" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 sm:p-6">
         @csrf
         @method('PATCH')
