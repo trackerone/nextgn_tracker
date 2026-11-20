@@ -96,6 +96,15 @@
                                 @endforeach
                             </select>
                         </label>
+                        <label class="block min-w-0 text-sm font-semibold text-slate-300">
+                            <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">Subtitle language</span>
+                            <input name="subtitle_language" list="browse-subtitle-languages" maxlength="255" value="{{ $filters['subtitle_language'] ?? '' }}" placeholder="Danish, da, …" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">
+                        </label>
+                        <datalist id="browse-subtitle-languages">
+                            @foreach (\App\Support\Languages\LanguageMetadataOptions::labels() as $language)
+                                <option value="{{ $language }}"></option>
+                            @endforeach
+                        </datalist>
                         <label class="text-sm font-semibold text-slate-300">
                             <span class="mb-1 block text-xs uppercase tracking-wide text-slate-500">View</span>
                             <select name="grouped" class="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white">

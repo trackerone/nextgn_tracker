@@ -548,7 +548,7 @@ final class TorrentBrowseTest extends TestCase
             'year' => 1999,
             'resolution' => '1080p',
             'source' => 'WEB-DL',
-            'subtitle_language' => 'english',
+            'subtitles' => 'Spanish, English, Japanese',
         ]);
 
         TorrentMetadata::query()->create([
@@ -565,6 +565,7 @@ final class TorrentBrowseTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('value="matrix"', false);
+        $response->assertSee('name="subtitle_language"', false);
         $response->assertSee($danish->name);
         $response->assertSee($english->name);
         $response->assertDontSee($miss->name);

@@ -159,7 +159,13 @@ final class TorrentBrowseQuery
                 $method = $index === 0 ? 'whereHas' : 'orWhereHas';
 
                 $innerQuery->{$method}('metadata', function (Builder $metadataQuery) use ($value): void {
-                    $metadataQuery->whereRaw('LOWER(subtitle_language) = ?', [$value]);
+                    $token = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+                    $list = "LOWER(REPLACE(REPLACE(TRIM(subtitles), ', ', ','), ' ,', ','))";
+                    $metadataQuery->whereRaw('LOWER(subtitle_language) = ?', [$value])
+                        ->orWhereRaw("$list = ?", [$value])
+                        ->orWhereRaw("$list LIKE ? ESCAPE '!'", [$token.',%'])
+                        ->orWhereRaw("$list LIKE ? ESCAPE '!'", ['%,'.$token.',%'])
+                        ->orWhereRaw("$list LIKE ? ESCAPE '!'", ['%,'.$token]);
                 });
             }
         });

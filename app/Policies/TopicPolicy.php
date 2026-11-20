@@ -18,8 +18,7 @@ class TopicPolicy
     public function create(?User $user): bool
     {
         return $user !== null
-            && $user->hasVerifiedEmail()
-            && $user->hasLevelAtLeast(RoleLevel::USER_LEVEL);
+            && $user->hasLevelAtLeast(RoleLevel::ADMIN_LEVEL);
     }
 
     public function update(User $user, Topic $topic): bool
