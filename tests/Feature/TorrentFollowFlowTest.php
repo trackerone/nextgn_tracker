@@ -67,13 +67,35 @@ final class TorrentFollowFlowTest extends TestCase
             'title' => 'Planet Release',
             'normalized_title' => 'planet release',
             'type' => 'movie',
-            'resolution' => '2160p',
-            'source' => 'BLURAY',
+            'resolution' => null,
+            'source' => null,
             'year' => 2025,
         ]);
 
         $follow = TorrentFollow::query()->where('user_id', $user->id)->firstOrFail();
         $this->assertNotNull($follow->last_checked_at);
+    }
+
+    public function test_series_follow_shows_later_episodes_across_formats_without_a_manual_form(): void
+    {
+        $user = User::factory()->create();
+        $first = Torrent::factory()->create();
+        $next = Torrent::factory()->create();
+        foreach ([[$first, 'Signal S01E01', '720p', 2025], [$next, 'Signal S02E01', '1080p', 2026]] as [$torrent, $title, $resolution, $year]) {
+            TorrentMetadata::query()->create([
+                'torrent_id' => $torrent->id,
+                'title' => $title,
+                'type' => 'tv',
+                'resolution' => $resolution,
+                'year' => $year,
+            ]);
+        }
+
+        $this->actingAs($user)->get(route('torrents.show', $first))->assertOk()->assertSee('Follow series');
+        $this->post(route('torrents.follow.store', $first))->assertRedirect('/my/follows');
+        $this->post(route('torrents.follow.store', $next))->assertRedirect('/my/follows');
+        $this->assertDatabaseCount('torrent_follows', 1);
+        $this->get('/my/follows')->assertOk()->assertSee($next->name)->assertDontSee('name="resolution"', false);
     }
 
     public function test_my_follows_displays_only_matching_torrents(): void

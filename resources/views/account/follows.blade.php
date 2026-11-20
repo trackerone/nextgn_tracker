@@ -8,42 +8,12 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 class="text-2xl font-semibold text-white">My follows</h1>
-                    <p class="mt-2 text-sm text-slate-400">Create a follow manually or from a torrent detail page.</p>
+                    <p class="mt-2 text-sm text-slate-400">New releases for the titles and series you follow appear here.</p>
                 </div>
                 <span class="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
                     {{ $newMatchCount }} new matches
                 </span>
             </div>
-            <form method="POST" action="{{ route('my.follows.store') }}" class="mt-6 grid gap-4 md:grid-cols-2">
-                @csrf
-                <label class="text-sm text-slate-300">
-                    Title
-                    <input name="title" type="text" value="{{ old('title') }}" required class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100">
-                </label>
-                <label class="text-sm text-slate-300">
-                    Type
-                    <select name="type" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100">
-                        <option value="">Any</option>
-                        <option value="movie" @selected(old('type') === 'movie')>Movie</option>
-                        <option value="tv" @selected(old('type') === 'tv')>TV</option>
-                    </select>
-                </label>
-                <label class="text-sm text-slate-300">
-                    Resolution
-                    <input name="resolution" type="text" value="{{ old('resolution') }}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100">
-                </label>
-                <label class="text-sm text-slate-300">
-                    Source
-                    <input name="source" type="text" value="{{ old('source') }}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100">
-                </label>
-                <label class="text-sm text-slate-300 md:col-span-2">
-                    Year
-                    <input name="year" type="number" min="1900" max="2100" value="{{ old('year') }}" class="mt-1 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100">
-                </label>
-                <div class="md:col-span-2">
-                    <button type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Save follow</button>
-                </div>
-            </form>
         </section>
 
         @forelse ($inboxItems as $item)
@@ -82,8 +52,8 @@
             </section>
         @empty
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 text-center">
-                <h2 class="text-lg font-semibold text-white">No follow preferences yet</h2>
-                <p class="mx-auto mt-2 max-w-xl text-sm text-slate-400">Create a follow for a title, type, resolution, source, or year. Matching releases will show up here and in Discovery.</p>
+                <h2 class="text-lg font-semibold text-white">No followed titles yet</h2>
+                <p class="mx-auto mt-2 max-w-xl text-sm text-slate-400">Open a release from <a href="{{ route('torrents.index') }}" class="text-brand">Browse</a> and select Follow title or Follow series.</p>
             </section>
         @endforelse
     </div>
