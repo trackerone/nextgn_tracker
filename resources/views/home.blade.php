@@ -7,7 +7,7 @@
 @endsection
 
 @section('content')
-    <div class="space-y-8">
+    <div class="min-w-0 space-y-8 [overflow-wrap:anywhere]">
         <section class="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 shadow-2xl shadow-slate-950/40">
             <div class="grid gap-6 p-6 lg:grid-cols-[1.5fr_1fr] lg:p-8">
                 <div class="space-y-5">
@@ -101,7 +101,7 @@
             </article>
         </section>
 
-        <section id="activity" class="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
+        <section id="activity" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70">
                 <div class="flex items-center justify-between border-b border-slate-800 px-5 py-4">
                     <div>
@@ -112,12 +112,12 @@
                 </div>
                 <div class="divide-y divide-slate-800">
                     @forelse ($recentTorrents as $torrent)
-                        <a href="{{ route('torrents.show', $torrent) }}" class="grid gap-2 px-5 py-4 hover:bg-slate-800/40 sm:grid-cols-[1fr_auto] sm:items-center">
+                        <a href="{{ route('torrents.show', $torrent) }}" class="grid grid-cols-1 gap-2 px-5 py-4 hover:bg-slate-800/40 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
                             <div>
                                 <p class="font-semibold text-white">{{ $torrent->name }}</p>
                                 <p class="mt-1 text-xs text-slate-400">{{ $torrent->category?->name ?? 'Uncategorized' }} · {{ $torrent->uploader?->name ?? 'Unknown uploader' }} · {{ optional($torrent->uploadedAtForDisplay())->diffForHumans() ?? 'Recently' }}</p>
                             </div>
-                            <div class="flex gap-3 text-xs sm:justify-end">
+                            <div class="flex flex-wrap gap-3 text-xs sm:justify-end">
                                 <span class="text-emerald-300">{{ number_format($torrent->seeders) }} seed</span>
                                 <span class="text-amber-300">{{ number_format($torrent->leechers) }} leech</span>
                                 @if ((bool) ($torrent->is_freeleech ?? false))

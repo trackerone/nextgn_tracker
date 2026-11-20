@@ -51,8 +51,8 @@ it('allows forum interactions with proper permissions', function (): void {
         ->assertJsonFragment(['title' => 'Welcome']);
 
     $writer = User::factory()->create([
-        'role' => $authorRole->slug,
-        'role_id' => $authorRole->getKey(),
+        'role' => $adminRole->slug,
+        'role_id' => $adminRole->getKey(),
     ]);
 
     $createResponse = $this->actingAs($writer)
@@ -66,6 +66,11 @@ it('allows forum interactions with proper permissions', function (): void {
     $createdTopicSlug = $createResponse->json('slug');
 
     expect($createdTopicSlug)->not()->toBeNull();
+
+    $this->actingAs($existingAuthor)->postJson('/topics', [
+        'title' => 'Member topic',
+        'body_md' => 'Opening post',
+    ])->assertForbidden();
 
     $replyResponse = $this->postJson("/topics/{$createdTopicId}/posts", [
         'body_md' => 'Hello world',

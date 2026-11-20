@@ -50,6 +50,8 @@ use App\Http\Controllers\TorrentModerationController;
 use App\Http\Controllers\TorrentUploadController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\WatchCenterController;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 $adminThrottle = sprintf('throttle:%s', config('security.rate_limits.admin', '30,1'));
@@ -91,6 +93,23 @@ Route::middleware('auth')->prefix('security/two-factor')->group(function (): voi
 });
 
 Route::middleware('auth')->get('/home', HomeController::class)->name('home');
+
+Route::middleware(['auth', 'throttle:6,1'])->group(function (): void {
+    Route::post('/email/verification-notification', static function (Request $request) {
+        $user = $request->user();
+        if ($user !== null && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return back()->with('status', 'Check your inbox for the verification link.');
+    })->name('verification.send');
+
+    Route::get('/email/verify/{id}/{hash}', static function (EmailVerificationRequest $request) {
+        $request->fulfill();
+
+        return redirect()->route('topics.index')->with('status', 'Email verified.');
+    })->middleware('signed')->name('verification.verify');
+});
 
 /*
 |--------------------------------------------------------------------------

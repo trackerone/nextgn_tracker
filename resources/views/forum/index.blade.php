@@ -4,7 +4,7 @@
 <div class="min-w-0 space-y-6 break-words">
     <header class="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         <div><h1 class="text-3xl font-bold">Community forum</h1><p class="mt-2 text-sm text-slate-400">Discuss releases, requests and community life.</p></div>
-        @can('create', \App\Models\Topic::class)<a href="{{ route('topics.create') }}" class="rounded-xl bg-brand px-4 py-2 font-semibold text-slate-950">Start a topic</a>@else<p class="text-sm text-slate-400">A verified email is required to start topics and reply.</p>@endcan
+        @can('create', \App\Models\Topic::class)<a href="{{ route('topics.create') }}" class="rounded-xl bg-brand px-4 py-2 font-semibold text-slate-950">Start a topic</a>@else<p class="text-sm text-slate-400">Admins and sysops create topics. Members can reply inside an open topic.</p>@endcan
     </header>
     <section class="space-y-4" aria-label="Forum topics">
         @forelse ($topics as $topic)
@@ -15,7 +15,7 @@
                 @if ($topic->latestPost)<p class="mt-2 text-xs text-slate-400">Latest post by {{ $topic->latestPost->author?->name ?? 'Former member' }} · {{ $topic->latestPost->created_at?->toDayDateTimeString() }}</p>@endif
             </article>
         @empty
-            <div class="rounded-2xl border border-dashed border-slate-700 p-8 text-center"><h2 class="text-xl font-semibold">No topics yet</h2><p class="mt-2 text-sm text-slate-400">Start the first discussion when you have something to share.</p></div>
+            <div class="rounded-2xl border border-dashed border-slate-700 p-8 text-center"><h2 class="text-xl font-semibold">No topics yet</h2><p class="mt-2 text-sm text-slate-400">@can('create', \App\Models\Topic::class) Create the first topic to open the discussion. @else Topics will appear here when an admin or sysop opens a discussion. @endcan</p></div>
         @endforelse
     </section>
     {{ $topics->links() }}

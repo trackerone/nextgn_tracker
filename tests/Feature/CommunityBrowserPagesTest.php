@@ -24,7 +24,7 @@ final class CommunityBrowserPagesTest extends TestCase
     {
         $user = User::factory()->create();
         $this->actingAs($user)->get('/topics')->assertOk()->assertHeader('Content-Type', 'text/html; charset=utf-8')
-            ->assertSee('Community forum')->assertSee('No topics yet')->assertSee(route('topics.create'));
+            ->assertSee('Community forum')->assertSee('No topics yet')->assertDontSee(route('topics.create'));
         $this->get('/pm')->assertOk()->assertSee('Your inbox is empty')->assertSee(route('pm.create'))
             ->assertHeader('Cache-Control', 'no-store, private');
         $this->getJson('/topics')->assertOk()->assertJsonPath('meta.total', 0)->assertJsonCount(0, 'data');
@@ -36,14 +36,31 @@ final class CommunityBrowserPagesTest extends TestCase
         $this->get('/topics')->assertRedirect(route('login'));
         $this->get('/pm')->assertRedirect(route('login'));
         $user = User::factory()->create(['email_verified_at' => null]);
-        $this->actingAs($user)->get('/topics')->assertOk()->assertSee('A verified email is required');
+        $this->actingAs($user)->get('/topics')->assertOk()->assertSee('Admins and sysops create topics');
         $this->get(route('topics.create'))->assertForbidden();
         $this->post('/topics', ['title' => 'Not allowed', 'body_md' => 'Not verified'])->assertForbidden();
     }
 
+    public function test_member_can_verify_email_to_reply_to_a_staff_topic(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => null]);
+        $topic = Topic::factory()->create();
+        $this->actingAs($user)->get(route('topics.show', $topic->slug))->assertSee(route('verification.send'));
+        $this->post(route('verification.send'))->assertRedirect();
+        Notification::assertSentTo($user, \Illuminate\Auth\Notifications\VerifyEmail::class);
+        $url = \Illuminate\Support\Facades\URL::temporarySignedRoute('verification.verify', now()->addMinutes(5), [
+            'id' => $user->id,
+            'hash' => sha1($user->getEmailForVerification()),
+        ]);
+        $this->get($url)->assertRedirect(route('topics.index'));
+        $this->post(route('topics.posts.store', $topic->id), ['body_md' => 'Member reply'])->assertRedirect();
+        $this->assertDatabaseHas('posts', ['topic_id' => $topic->id, 'user_id' => $user->id, 'body_md' => 'Member reply']);
+        $this->get(route('topics.create'))->assertForbidden();
+    }
+
     public function test_browser_can_create_read_reply_and_edit_without_landing_on_json(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $this->actingAs($user)->get(route('topics.create'))->assertOk()->assertSee('Opening post');
         $this->post('/topics', ['title' => 'A browser topic', 'body_md' => 'Opening **words**'])->assertRedirect();
         $topic = Topic::query()->firstOrFail();
@@ -96,7 +113,7 @@ final class CommunityBrowserPagesTest extends TestCase
         $recipient = User::factory()->create();
         $outsider = User::factory()->create();
         $this->actingAs($sender)->get(route('pm.create', ['recipient' => $recipient->publicProfileRouteKey()]))->assertOk()->assertSee($recipient->name)->assertSee('recipient_slug')->assertDontSee('Recipient ID');
-        $this->post('/pm', ['recipient_slug' => $recipient->public_slug, 'body_md' => 'Private browser message'])->assertRedirect();
+        $this->post('/pm', ['recipient_slug' => strtoupper($recipient->public_slug), 'body_md' => 'Private browser message'])->assertRedirect();
         $conversation = Conversation::query()->firstOrFail();
         $this->get('/pm')->assertOk()->assertSee($recipient->name)->assertSee('Private browser message');
         $this->get(route('pm.show', $conversation->id))->assertOk()->assertSee('Private browser message')->assertHeader('Cache-Control', 'no-store, private');

@@ -38,7 +38,11 @@
         @can('create', \App\Models\Post::class)
             <form method="POST" action="{{ route('topics.posts.store', $topic->id) }}" class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/70 p-5">@csrf<label class="block text-sm">Reply (Markdown)<textarea name="body_md" required minlength="3" rows="6" class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2">{{ old('body_md') }}</textarea></label><button class="rounded-xl bg-brand px-5 py-2 font-semibold text-slate-950">Post reply</button></form>
         @else
-            <p class="text-sm text-slate-400">A verified email is required to reply.</p>
+            <form method="POST" action="{{ route('verification.send') }}" class="space-y-2">
+                @csrf
+                <p class="text-sm text-slate-400">A verified email is required to reply.</p>
+                <button class="text-sm font-semibold text-brand">Send verification email</button>
+            </form>
         @endcan
     @endif
 </div>
