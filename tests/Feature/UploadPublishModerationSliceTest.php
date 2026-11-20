@@ -64,7 +64,7 @@ final class UploadPublishModerationSliceTest extends TestCase
 
     public function test_uploader_can_see_own_pending_upload_in_my_uploads(): void
     {
-        $uploader = User::factory()->create();
+        $uploader = User::factory()->create(['role' => User::ROLE_UPLOADER]);
 
         $torrent = Torrent::factory()->create([
             'user_id' => $uploader->id,
@@ -209,7 +209,7 @@ final class UploadPublishModerationSliceTest extends TestCase
 
     public function test_uploader_sees_rejection_reason_in_my_uploads(): void
     {
-        $uploader = User::factory()->create();
+        $uploader = User::factory()->create(['role' => User::ROLE_UPLOADER]);
         $torrent = Torrent::factory()->create([
             'user_id' => $uploader->id,
             'name' => 'Rejected Upload',
