@@ -40,6 +40,7 @@ use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\PermissionsController;
+use App\Http\Controllers\Sysop\RatioCreditController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
 use App\Http\Controllers\Sysop\TorrentMetadataSourceController;
@@ -199,6 +200,10 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
     Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
     Route::post('/permissions/users', [PermissionsController::class, 'updateUser'])->name('permissions.users.update');
+    Route::get('/ratio-credits', [RatioCreditController::class, 'index'])->name('ratio-credits.index');
+    Route::patch('/ratio-credits/defaults', [RatioCreditController::class, 'updateDefaults'])->name('ratio-credits.defaults.update');
+    Route::post('/ratio-credits/users/{user}', [RatioCreditController::class, 'adjust'])
+        ->whereNumber('user')->name('ratio-credits.users.adjust');
     Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
