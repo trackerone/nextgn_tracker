@@ -8,7 +8,6 @@ use App\Models\AuditLog;
 use App\Models\Invite;
 use App\Models\Torrent;
 use App\Models\User;
-use App\Models\UserRatioCredit;
 use App\Models\UserStat;
 use App\Services\Tracker\DownloadEligibilityPolicy;
 use App\Services\Tracker\UserRatioBalance;
