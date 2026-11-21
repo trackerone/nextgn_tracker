@@ -40,6 +40,22 @@ final class PermissionsController extends Controller
         return view('sysop.permissions.index', [
             'roles' => PermissionService::EDITABLE_ROLES,
             'ratioValues' => [
+                'tenure_enabled' => [
+                    'value' => $ratioSettings->tenureEnabled(),
+                    'overridden' => Setting::hasOverride('ratio.tenure_enabled'),
+                ],
+                'user_min_months' => [
+                    'value' => $ratioSettings->userMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.user_min_months'),
+                ],
+                'power_user_min_months' => [
+                    'value' => $ratioSettings->powerUserMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.power_user_min_months'),
+                ],
+                'elite_min_months' => [
+                    'value' => $ratioSettings->eliteMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.elite_min_months'),
+                ],
                 'elite_min_ratio' => [
                     'value' => $ratioSettings->eliteMinRatio(),
                     'overridden' => Setting::hasOverride('ratio.elite_min_ratio'),
