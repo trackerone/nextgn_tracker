@@ -41,8 +41,10 @@ final class DownloadEligibilityPolicy
         $uploadedBytes = $balance['uploaded'];
         $downloadedBytes = $balance['downloaded'];
 
-        if ($uploadedBytes === 0 && $downloadedBytes === 0 && $this->ratioRulesConfig->noHistoryGraceEnabled()) {
-            return ['allowed' => true, 'reason' => 'no_history'];
+        if ($uploadedBytes === 0 && $downloadedBytes === 0) {
+            return $this->ratioRulesConfig->noHistoryGraceEnabled()
+                ? ['allowed' => true, 'reason' => 'no_history']
+                : ['allowed' => false, 'reason' => 'ratio_too_low'];
         }
 
         $ratio = $downloadedBytes > 0 ? $uploadedBytes / $downloadedBytes : INF;
