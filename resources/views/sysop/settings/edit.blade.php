@@ -59,6 +59,7 @@
         <div class="mt-3 flex flex-wrap gap-4 text-sm text-brand">
             <a href="{{ route('admin.settings.ratio.edit') }}">User class thresholds</a>
             <a href="{{ route('sysop.permissions.index') }}">Roles &amp; permissions</a>
+            <a href="{{ route('sysop.ratio-credits.index') }}">Ratio credits &amp; starting balances</a>
             <a href="{{ route('admin.users.index') }}">User administration</a>
             <a href="{{ route('admin.settings.metadata.edit') }}">Metadata providers and credentials</a>
             <a href="{{ route('admin.invites.index') }}">Invitations</a>
