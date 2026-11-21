@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Sysop;
 
 use App\Http\Controllers\Controller;
+use App\Models\Invite;
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserPermissionOverride;
 use App\Services\Logging\AuditLogger;
 use App\Services\PermissionService;
+use App\Services\Settings\RatioSettings;
 use App\Services\Settings\SiteSettingsRepository;
+use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,15 +23,46 @@ use Illuminate\Validation\ValidationException;
 
 final class PermissionsController extends Controller
 {
-    public function index(): View
+    public function index(Request $request, RatioSettings $ratioSettings, UserRatioBalance $balances): View
     {
         $matrix = [];
         foreach (PermissionService::EDITABLE_ROLES as $role) {
             $matrix[$role] = PermissionService::permissionsForRole($role);
         }
 
+        $identifier = trim((string) $request->query('user', ''));
+        $target = $identifier === ''
+            ? null
+            : (ctype_digit($identifier)
+                ? User::query()->find((int) $identifier)
+                : User::query()->where('email', $identifier)->first());
+
         return view('sysop.permissions.index', [
             'roles' => PermissionService::EDITABLE_ROLES,
+            'ratioValues' => [
+                'elite_min_ratio' => [
+                    'value' => $ratioSettings->eliteMinRatio(),
+                    'overridden' => Setting::hasOverride('ratio.elite_min_ratio'),
+                ],
+                'power_user_min_ratio' => [
+                    'value' => $ratioSettings->powerUserMinRatio(),
+                    'overridden' => Setting::hasOverride('ratio.power_user_min_ratio'),
+                ],
+                'power_user_min_downloaded' => [
+                    'value' => $ratioSettings->powerUserMinDownloaded(),
+                    'overridden' => Setting::hasOverride('ratio.power_user_min_downloaded'),
+                ],
+                'user_min_ratio' => [
+                    'value' => $ratioSettings->userMinRatio(),
+                    'overridden' => Setting::hasOverride('ratio.user_min_ratio'),
+                ],
+            ],
+            'creditDefaults' => $balances->registrationDefaults(),
+            'creditIdentifier' => $identifier,
+            'creditTarget' => $target,
+            'creditBalance' => $target instanceof User ? $balances->totals($target) : null,
+            'invites' => Invite::query()->with('inviter')->latest('created_at')
+                ->paginate(12, ['*'], 'invite_page')->withQueryString(),
             'features' => PermissionService::MANAGED_FEATURES,
             'labels' => PermissionService::FEATURE_LABELS,
             'matrix' => $matrix,
