@@ -45,10 +45,12 @@
                                 <span>New follow matches</span>
                                 <strong class="text-emerald-300">{{ $followNewCount }}</strong>
                             </a>
+                            @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
                             <a href="{{ route('my.uploads') }}" class="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 hover:text-white">
                                 <span>Your pending uploads</span>
                                 <strong class="text-amber-300">{{ $myOpenUploads }}</strong>
                             </a>
+                            @endif
                             @if ($pendingModerationCount !== null)
                                 <a href="{{ route('moderation.uploads') }}" class="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 hover:text-white">
                                     <span>Moderation queue</span>
@@ -88,11 +90,13 @@
         </details>
 
         <section class="grid gap-4 md:grid-cols-2">
+            @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Contribute</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-400">Upload with clear metadata, then track moderation feedback and publication status from your uploads page.</p>
                 <a href="{{ route('my.uploads') }}" class="mt-4 inline-flex text-sm font-semibold text-brand hover:text-brand/80">View my uploads →</a>
             </article>
+            @endif
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Connect</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-400">Forum topics and private messages keep requests, release notes, and community coordination close to the tracker.</p>
