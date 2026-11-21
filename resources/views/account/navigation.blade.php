@@ -12,7 +12,6 @@
         'pm.index' => 'Messages',
         'account.rss.index' => 'RSS feeds',
         'account.people' => 'People',
-        'account.snatches' => 'Completed torrents',
         'my.uploads' => 'My uploads',
         'my.follows' => 'Followed releases',
         'account.notifications.index' => 'Notifications',

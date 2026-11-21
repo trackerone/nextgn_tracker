@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\UserStat;
+use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,9 +23,10 @@ final class MyStatsController extends Controller
             'user_id' => $user->id,
         ]);
 
-        $uploadedBytes = (int) $stats->uploaded_bytes;
-        $downloadedBytes = (int) $stats->downloaded_bytes;
-        $ratio = $downloadedBytes > 0 ? $uploadedBytes / $downloadedBytes : null;
+        $balance = app(UserRatioBalance::class)->totals($user);
+        $uploadedBytes = $balance['uploaded'];
+        $downloadedBytes = $balance['downloaded'];
+        $ratio = $balance['ratio'];
 
         return response()->json([
             'uploaded_bytes' => $uploadedBytes,

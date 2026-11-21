@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Services\Tracker\PasskeyService;
+use App\Services\Tracker\UserRatioBalance;
 use App\Support\Roles\RoleLevel;
 use Illuminate\Auth\MustVerifyEmail as MustVerifyEmailTrait;
 use Illuminate\Auth\Notifications\VerifyEmail;
@@ -378,23 +379,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function totalUploaded(): int
     {
-        return (int) $this->userTorrents()->sum('uploaded');
+        return app(UserRatioBalance::class)->totals($this)['uploaded'];
     }
 
     public function totalDownloaded(): int
     {
-        return (int) $this->userTorrents()->sum('downloaded');
+        return app(UserRatioBalance::class)->totals($this)['downloaded'];
     }
 
     public function ratio(): ?float
     {
-        $downloaded = $this->totalDownloaded();
-
-        if ($downloaded === 0) {
-            return null;
-        }
-
-        return $this->totalUploaded() / $downloaded;
+        return app(UserRatioBalance::class)->totals($this)['ratio'];
     }
 
     public function userClass(): string

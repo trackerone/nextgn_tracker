@@ -34,7 +34,7 @@ final class NavigationAndModerationSmokeTest extends TestCase
         $response->assertOk();
         $response->assertSee('Browse');
         $response->assertSee('Messages');
-        $response->assertSeeText('Ratio & snatches');
+        $response->assertSee('aria-label="My uploaded, downloaded and ratio statistics"', false);
         $response->assertDontSeeText('Staff moderation');
     }
 

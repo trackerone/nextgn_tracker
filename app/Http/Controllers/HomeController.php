@@ -10,9 +10,9 @@ use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Settings\RatioSettings;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
+use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 final class HomeController extends Controller
 {
@@ -81,19 +81,7 @@ final class HomeController extends Controller
      */
     private function trackerStatsFor(User $user): array
     {
-        $stats = DB::table('user_torrents')
-            ->where('user_id', $user->getKey())
-            ->selectRaw('COALESCE(SUM(uploaded), 0) as uploaded, COALESCE(SUM(downloaded), 0) as downloaded')
-            ->first();
-
-        $uploaded = (int) ($stats->uploaded ?? 0);
-        $downloaded = (int) ($stats->downloaded ?? 0);
-
-        return [
-            'uploaded' => $uploaded,
-            'downloaded' => $downloaded,
-            'ratio' => $downloaded === 0 ? null : $uploaded / $downloaded,
-        ];
+        return app(UserRatioBalance::class)->totals($user);
     }
 
     private function userClassForStats(User $user, int $downloaded, ?float $ratio): string
