@@ -78,5 +78,4 @@ final class HomeController extends Controller
     {
         return app(UserRatioBalance::class)->totals($user);
     }
-
 }
