@@ -37,16 +37,16 @@ final class UserRatioBalance
             $traffic = $user->userTorrents()
                 ->selectRaw('COALESCE(SUM(uploaded), 0) AS total_uploaded, COALESCE(SUM(downloaded), 0) AS total_downloaded')
                 ->first();
-            $uploaded = (int) ($traffic?->total_uploaded ?? 0);
-            $downloaded = (int) ($traffic?->total_downloaded ?? 0);
+            $uploaded = (int) data_get($traffic, 'total_uploaded', 0);
+            $downloaded = (int) data_get($traffic, 'total_downloaded', 0);
         } else {
             $uploaded = (int) $actual->uploaded_bytes;
             $downloaded = (int) $actual->downloaded_bytes;
         }
 
         $credit = UserRatioCredit::query()->where('user_id', $user->getKey())->first();
-        $uploaded = max(0, $uploaded + (int) ($credit?->uploaded_credit_bytes ?? 0));
-        $downloaded = max(0, $downloaded + (int) ($credit?->downloaded_credit_bytes ?? 0));
+        $uploaded = max(0, $uploaded + (int) ($credit->uploaded_credit_bytes ?? 0));
+        $downloaded = max(0, $downloaded + (int) ($credit->downloaded_credit_bytes ?? 0));
 
         return [
             'uploaded' => $uploaded,
