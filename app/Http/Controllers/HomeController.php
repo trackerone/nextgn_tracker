@@ -8,7 +8,6 @@ use App\Models\Conversation;
 use App\Models\Topic;
 use App\Models\Torrent;
 use App\Models\User;
-use App\Services\Settings\RatioSettings;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
@@ -67,11 +66,7 @@ final class HomeController extends Controller
                 'uploaded' => $trackerStats['uploaded'],
                 'downloaded' => $trackerStats['downloaded'],
                 'ratio' => $trackerStats['ratio'],
-                'class' => $this->userClassForStats(
-                    $user,
-                    $trackerStats['downloaded'],
-                    $trackerStats['ratio']
-                ),
+                'class' => $user->userClass(),
             ],
         ]);
     }
@@ -84,33 +79,4 @@ final class HomeController extends Controller
         return app(UserRatioBalance::class)->totals($user);
     }
 
-    private function userClassForStats(User $user, int $downloaded, ?float $ratio): string
-    {
-        if ($user->isStaff()) {
-            return 'Staff';
-        }
-
-        if ($user->isDisabled()) {
-            return 'Disabled';
-        }
-
-        if ($ratio === null) {
-            return 'User';
-        }
-
-        /** @var RatioSettings $ratioSettings */
-        $ratioSettings = app(RatioSettings::class);
-        $userMinRatio = $ratioSettings->userMinRatio();
-
-        return match (true) {
-            $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
-
-            $ratio >= $ratioSettings->powerUserMinRatio()
-                && $downloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
-
-            $ratio >= $userMinRatio => 'User',
-
-            default => 'Leech',
-        };
-    }
 }
