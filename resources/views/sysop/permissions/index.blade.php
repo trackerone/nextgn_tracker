@@ -14,19 +14,30 @@
         </div>
         <p class="mt-3 text-xs leading-5 text-amber-200">Protected: Sysop access, administration, moderation, security controls, and account restrictions cannot be granted or removed here. These remain enforced by the existing role and security policies.</p>
     </header>
+    <nav aria-label="Sysop access settings" class="flex flex-wrap gap-2 text-sm">
+        <a href="#roles" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Role permissions</a>
+        <a href="#class-thresholds" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Class ratios</a>
+        <a href="{{ route('sysop.permissions.index', ['section' => 'balances']) }}#balances" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Balances &amp; credits</a>
+        <a href="#exceptions" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Individual permissions</a>
+        <a href="{{ route('sysop.permissions.index', ['section' => 'invitations']) }}#invitations" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Invitations</a>
+    </nav>
 
-    <section class="space-y-4">
+    <section id="roles" class="space-y-4 scroll-mt-28">
         <div>
-            <h2 class="text-lg font-semibold">Role defaults</h2>
+            <h2 class="text-lg font-semibold">Role permissions</h2>
             <p class="mt-1 text-sm text-slate-400">Changes affect every account in that class, except members with an individual override. Each save is recorded with an audit reason.</p>
         </div>
-        <div class="grid gap-4 lg:grid-cols-2">
+        <div class="grid gap-3">
             @foreach ($roles as $role)
-                <form method="POST" action="{{ route('sysop.permissions.roles.update') }}" class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-                    @csrf
-                    @method('PATCH')
-                    <input type="hidden" name="role" value="{{ $role }}">
-                    <h3 class="text-base font-semibold text-white">{{ ucwords(str_replace('_', ' ', $role)) }}</h3>
+                <details id="role-{{ $role }}" class="group rounded-2xl border border-slate-800 bg-slate-900/60">
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-4 font-semibold text-white sm:px-5">
+                        <span>{{ ucwords(str_replace('_', ' ', $role)) }}</span>
+                        <span class="text-xs font-normal text-slate-400">{{ count(array_filter($matrix[$role])) }} of {{ count($features) }} enabled <span aria-hidden="true" class="ml-2">▾</span></span>
+                    </summary>
+                    <form method="POST" action="{{ route('sysop.permissions.roles.update') }}" class="space-y-4 border-t border-slate-800 p-4 sm:p-5">
+                        @csrf
+                        @method('PATCH')
+                        <input type="hidden" name="role" value="{{ $role }}">
                     <div class="grid gap-3">
                         @foreach ($features as $feature => $permission)
                             <label class="flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/50 px-3 py-3 text-sm">
@@ -46,7 +57,8 @@
                             class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
                     </label>
                     <button type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Save {{ ucwords(str_replace('_', ' ', $role)) }}</button>
-                </form>
+                    </form>
+                </details>
             @endforeach
             <div class="space-y-2 rounded-2xl border border-amber-700/40 bg-slate-900/60 p-5">
                 <h3 class="text-base font-semibold">Sysop <span class="text-xs font-normal text-amber-200">(protected)</span></h3>
@@ -55,7 +67,34 @@
         </div>
     </section>
 
-    <section class="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+    <div id="class-thresholds" class="scroll-mt-28">
+        @include('admin.settings.partials.ratio-form')
+    </div>
+
+    <section id="balances" class="scroll-mt-28">
+        <details class="group rounded-2xl border border-slate-800 bg-slate-900/60" @if (request('section') === 'balances' || request()->filled('user')) open @endif>
+            <summary class="cursor-pointer list-none p-4 text-lg font-semibold text-white sm:p-5">Uploaded / downloaded credits &amp; starting balances <span aria-hidden="true" class="ml-2 text-slate-400">▾</span></summary>
+            <div class="space-y-5 border-t border-slate-800 p-4 sm:p-5">
+                @include('sysop.permissions.partials.credits', [
+                    'defaults' => $creditDefaults,
+                    'identifier' => $creditIdentifier,
+                    'target' => $creditTarget,
+                    'balance' => $creditBalance,
+                ])
+            </div>
+        </details>
+    </section>
+
+    <section id="invitations" class="scroll-mt-28">
+        <details class="group rounded-2xl border border-slate-800 bg-slate-900/60" @if (request('section') === 'invitations') open @endif>
+            <summary class="cursor-pointer list-none p-4 text-lg font-semibold text-white sm:p-5">Invitations <span aria-hidden="true" class="ml-2 text-slate-400">▾</span></summary>
+            <div class="border-t border-slate-800 p-4 sm:p-5">
+                @include('sysop.permissions.partials.invitations')
+            </div>
+        </details>
+    </section>
+
+    <section id="exceptions" class="space-y-4 scroll-mt-28 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
         <div>
             <h2 class="text-lg font-semibold">Individual exceptions</h2>
             <p class="mt-1 text-sm text-slate-400">Enter the account ID or email. Allow or deny a specific feature without changing the member's class. Inherit removes the exception.</p>

@@ -31,7 +31,7 @@ final class SysopPermissionsTest extends TestCase
         $this->actingAs($sysop)->get(route('sysop.permissions.index'))
             ->assertOk()
             ->assertSee('Individual exceptions')
-            ->assertSee('Role defaults');
+            ->assertSee('Role permissions');
     }
 
     public function test_new_member_cannot_see_or_access_upload_but_uploader_can(): void
