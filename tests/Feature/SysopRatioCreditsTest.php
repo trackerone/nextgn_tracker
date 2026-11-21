@@ -38,9 +38,11 @@ final class SysopRatioCreditsTest extends TestCase
 
         $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $this->actingAs($sysop)->get(route('sysop.ratio-credits.index'))
+            ->assertRedirect(route('sysop.permissions.index').'#balances');
+        $this->get(route('sysop.permissions.index', ['section' => 'balances']))
             ->assertOk()
-            ->assertSee('Starting balance for new members')
-            ->assertSee('Adjust an existing member');
+            ->assertSee('Starting balances for new registrations')
+            ->assertSee('Adjust individual member balances');
     }
 
     public function test_topbar_shows_live_effective_ratio_without_redundant_account_menu_item(): void
@@ -100,7 +102,7 @@ final class SysopRatioCreditsTest extends TestCase
                 'direction' => 'add',
                 'amount_gib' => '1',
                 'audit_reason' => 'Compensate verified historic account balance.',
-            ])->assertRedirect(route('sysop.ratio-credits.index', ['user' => $member->id]));
+            ])->assertRedirect(route('sysop.permissions.index', ['user' => $member->id, 'section' => 'balances']).'#balances');
 
         $this->assertDatabaseHas('user_ratio_credits', [
             'user_id' => $member->id,
@@ -179,7 +181,7 @@ final class SysopRatioCreditsTest extends TestCase
             'uploaded_gib' => '5',
             'downloaded_gib' => '1.25',
             'audit_reason' => 'Give new members a measured starting balance.',
-        ])->assertRedirect(route('sysop.ratio-credits.index'));
+        ])->assertRedirect(route('sysop.permissions.index', ['section' => 'balances']).'#balances');
 
         $defaults = app(UserRatioBalance::class)->registrationDefaults();
         $this->assertSame(5.0, $defaults['uploaded']);
