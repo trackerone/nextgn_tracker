@@ -21,10 +21,14 @@ class RatioSettingsController extends Controller
         private readonly AuditLogger $auditLogger,
     ) {}
 
-    public function edit(): View
+    public function edit(Request $request): View|RedirectResponse
     {
+        if ($request->user()?->isSysop()) {
+            return Redirect::to(route('sysop.permissions.index').'#class-thresholds');
+        }
+
         return view('admin.settings.ratio', [
-            'values' => [
+            'ratioValues' => [
                 'elite_min_ratio' => [
                     'value' => $this->ratioSettings->eliteMinRatio(),
                     'overridden' => Setting::hasOverride('ratio.elite_min_ratio'),
@@ -73,7 +77,10 @@ class RatioSettingsController extends Controller
             'values' => $validated,
         ]);
 
-        return Redirect::route('admin.settings.ratio.edit')
-            ->with('status', 'Ratio settings updated');
+        $destination = $request->user()?->isSysop()
+            ? route('sysop.permissions.index').'#class-thresholds'
+            : route('admin.settings.ratio.edit');
+
+        return Redirect::to($destination)->with('status', 'Ratio settings updated');
     }
 }
