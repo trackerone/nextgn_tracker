@@ -108,6 +108,8 @@ final class UnifiedSysopAdministrationTest extends TestCase
             ->assertSee('User class thresholds')
             ->assertSee('Power User');
 
+        Invite::factory()->create(['inviter_user_id' => $admin->id]);
+
         $this->actingAs($staff)->get(route('admin.invites.index'))
             ->assertOk()
             ->assertSee('aria-label="Primary navigation"', false)
