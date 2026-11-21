@@ -9,7 +9,6 @@ use App\Models\User;
 use App\Services\Logging\AuditLogger;
 use App\Services\Settings\SiteSettingsRepository;
 use App\Services\Tracker\UserRatioBalance;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,23 +17,12 @@ use Illuminate\Validation\ValidationException;
 
 final class RatioCreditController extends Controller
 {
-    public function index(Request $request, UserRatioBalance $balances): View
+    public function index(Request $request): RedirectResponse
     {
         $identifier = trim((string) $request->query('user', ''));
-        $target = null;
+        $query = $identifier !== '' ? ['user' => $identifier] : [];
 
-        if ($identifier !== '') {
-            $target = ctype_digit($identifier)
-                ? User::query()->find((int) $identifier)
-                : User::query()->where('email', $identifier)->first();
-        }
-
-        return view('sysop.ratio-credits.index', [
-            'identifier' => $identifier,
-            'target' => $target,
-            'balance' => $target instanceof User ? $balances->totals($target) : null,
-            'defaults' => $balances->registrationDefaults(),
-        ]);
+        return redirect()->to(route('sysop.permissions.index', $query).'#balances');
     }
 
     public function updateDefaults(
@@ -71,7 +59,7 @@ final class RatioCreditController extends Controller
             ]);
         });
 
-        return redirect()->route('sysop.ratio-credits.index')
+        return redirect()->to(route('sysop.permissions.index').'#balances')
             ->with('status', 'Starting credits updated for future registrations only.');
     }
 
@@ -105,7 +93,7 @@ final class RatioCreditController extends Controller
             $audit,
         );
 
-        return redirect()->route('sysop.ratio-credits.index', ['user' => $user->id])
+        return redirect()->to(route('sysop.permissions.index', ['user' => $user->id]).'#balances')
             ->with('status', 'Ratio credit adjustment saved and audited.');
     }
 }
