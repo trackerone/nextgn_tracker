@@ -29,6 +29,22 @@ class RatioSettingsController extends Controller
 
         return view('admin.settings.ratio', [
             'ratioValues' => [
+                'tenure_enabled' => [
+                    'value' => $this->ratioSettings->tenureEnabled(),
+                    'overridden' => Setting::hasOverride('ratio.tenure_enabled'),
+                ],
+                'user_min_months' => [
+                    'value' => $this->ratioSettings->userMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.user_min_months'),
+                ],
+                'power_user_min_months' => [
+                    'value' => $this->ratioSettings->powerUserMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.power_user_min_months'),
+                ],
+                'elite_min_months' => [
+                    'value' => $this->ratioSettings->eliteMinMonths(),
+                    'overridden' => Setting::hasOverride('ratio.elite_min_months'),
+                ],
                 'elite_min_ratio' => [
                     'value' => $this->ratioSettings->eliteMinRatio(),
                     'overridden' => Setting::hasOverride('ratio.elite_min_ratio'),
@@ -58,6 +74,23 @@ class RatioSettingsController extends Controller
             'user_min_ratio' => ['required', 'numeric', 'min:0', 'max:10'],
         ]);
 
+        // Optional tenure controls may only be updated by Sysop.
+        if ($request->user()?->isSysop() && $request->has('tenure_enabled')) {
+            $tenure = $request->validate([
+                'tenure_enabled' => ['required', 'boolean'],
+                'user_min_months' => ['required', 'integer', 'min:0', 'max:1200'],
+                'power_user_min_months' => ['required', 'integer', 'min:0', 'max:1200'],
+                'elite_min_months' => ['required', 'integer', 'min:0', 'max:1200'],
+            ]);
+
+            if (! ($tenure['user_min_months'] <= $tenure['power_user_min_months']
+                && $tenure['power_user_min_months'] <= $tenure['elite_min_months'])) {
+                throw ValidationException::withMessages([
+                    'user_min_months' => 'User months must be <= Power User months <= Elite months.',
+                ]);
+            }
+        }
+
         if (! ($validated['elite_min_ratio'] >= $validated['power_user_min_ratio']
             && $validated['power_user_min_ratio'] >= $validated['user_min_ratio'])) {
             throw ValidationException::withMessages([
@@ -70,11 +103,19 @@ class RatioSettingsController extends Controller
         Setting::setValue('ratio.power_user_min_downloaded', (string) $validated['power_user_min_downloaded'], $request->user()?->id);
         Setting::setValue('ratio.user_min_ratio', (string) $validated['user_min_ratio'], $request->user()?->id);
 
+        if (isset($tenure)) {
+            Setting::setValue('ratio.tenure_enabled', (string) $tenure['tenure_enabled'], $request->user()?->id);
+            Setting::setValue('ratio.user_min_months', (string) $tenure['user_min_months'], $request->user()?->id);
+            Setting::setValue('ratio.power_user_min_months', (string) $tenure['power_user_min_months'], $request->user()?->id);
+            Setting::setValue('ratio.elite_min_months', (string) $tenure['elite_min_months'], $request->user()?->id);
+        }
+
         $this->ratioSettings->flush();
 
         $this->auditLogger->log('settings.ratio.updated', null, [
             'user_id' => $request->user()?->id,
             'values' => $validated,
+            'tenure' => $tenure ?? null,
         ]);
 
         $destination = $request->user()?->isSysop()

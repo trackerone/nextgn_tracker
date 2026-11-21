@@ -17,6 +17,10 @@ class RatioSettings
      *     power_user_min_ratio: float,
      *     power_user_min_downloaded: int,
      *     user_min_ratio: float,
+     *     tenure_enabled: bool,
+     *     user_min_months: int,
+     *     power_user_min_months: int,
+     *     elite_min_months: int,
      * }
      */
     private function settings(): array
@@ -30,6 +34,10 @@ class RatioSettings
                     'ratio.power_user_min_ratio',
                     'ratio.power_user_min_downloaded',
                     'ratio.user_min_ratio',
+                    'ratio.tenure_enabled',
+                    'ratio.user_min_months',
+                    'ratio.power_user_min_months',
+                    'ratio.elite_min_months',
                 ])
                 ->pluck('value', 'key')
                 ->toArray();
@@ -39,6 +47,10 @@ class RatioSettings
                 'power_user_min_ratio' => (float) ($overrides['ratio.power_user_min_ratio'] ?? $default['power_user_min_ratio']),
                 'power_user_min_downloaded' => (int) ($overrides['ratio.power_user_min_downloaded'] ?? $default['power_user_min_downloaded']),
                 'user_min_ratio' => (float) ($overrides['ratio.user_min_ratio'] ?? $default['user_min_ratio']),
+                'tenure_enabled' => filter_var($overrides['ratio.tenure_enabled'] ?? $default['tenure_enabled'], FILTER_VALIDATE_BOOLEAN),
+                'user_min_months' => (int) ($overrides['ratio.user_min_months'] ?? $default['user_min_months']),
+                'power_user_min_months' => (int) ($overrides['ratio.power_user_min_months'] ?? $default['power_user_min_months']),
+                'elite_min_months' => (int) ($overrides['ratio.elite_min_months'] ?? $default['elite_min_months']),
             ];
         });
     }
@@ -61,6 +73,26 @@ class RatioSettings
     public function userMinRatio(): float
     {
         return $this->settings()['user_min_ratio'];
+    }
+
+    public function tenureEnabled(): bool
+    {
+        return $this->settings()['tenure_enabled'];
+    }
+
+    public function userMinMonths(): int
+    {
+        return $this->settings()['user_min_months'];
+    }
+
+    public function powerUserMinMonths(): int
+    {
+        return $this->settings()['power_user_min_months'];
+    }
+
+    public function eliteMinMonths(): int
+    {
+        return $this->settings()['elite_min_months'];
     }
 
     public function flush(): void
