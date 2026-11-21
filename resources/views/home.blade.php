@@ -13,9 +13,9 @@
                 <div class="space-y-5">
                     <span class="inline-flex rounded-full border border-brand/30 bg-brand/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-brand">Private community tracker</span>
                     <div>
-                        <h1 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">Welcome back, {{ auth()->user()->name }}</h1>
+                        <h1 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">Dashboard</h1>
                         <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                            Browse verified releases, follow titles you care about, share clean uploads, and stay close to tracker discussions from one focused dashboard.
+                            Browse verified releases, follow titles you care about, and stay close to community discussions from one focused dashboard.
                         </p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -36,7 +36,7 @@
                                 {{ number_format($userStats['ratio'], 2) }}
                             @endif
                         </p>
-                        <p class="mt-1 text-xs text-slate-400">Class: {{ $userStats['class'] }} · Up {{ number_format($userStats['uploaded']) }} B · Down {{ number_format($userStats['downloaded']) }} B</p>
+                        <p class="mt-1 text-xs text-slate-400">Class: {{ $userStats['class'] }} · Up {{ number_format($userStats['uploaded'] / (1024 ** 3), 2) }} GB · Down {{ number_format($userStats['downloaded'] / (1024 ** 3), 2) }} GB</p>
                     </div>
                     <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">What needs attention</p>
