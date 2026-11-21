@@ -47,7 +47,11 @@ class InviteAdminController extends Controller
             'notes' => $validated['notes'] ?? null,
         ]);
 
-        return Redirect::route('admin.invites.index')
+        $destination = $request->user()?->isSysop()
+            ? route('sysop.permissions.index').'#invitations'
+            : route('admin.invites.index');
+
+        return Redirect::to($destination)
             ->with('status', sprintf('Invite %s created', $invite->code));
     }
 
