@@ -59,7 +59,7 @@ final class RatioCreditController extends Controller
             ]);
         });
 
-        return redirect()->to(route('sysop.permissions.index').'#balances')
+        return redirect()->to(route('sysop.permissions.index', ['section' => 'balances']).'#balances')
             ->with('status', 'Starting credits updated for future registrations only.');
     }
 
@@ -93,7 +93,7 @@ final class RatioCreditController extends Controller
             $audit,
         );
 
-        return redirect()->to(route('sysop.permissions.index', ['user' => $user->id]).'#balances')
+        return redirect()->to(route('sysop.permissions.index', ['user' => $user->id, 'section' => 'balances']).'#balances')
             ->with('status', 'Ratio credit adjustment saved and audited.');
     }
 }
