@@ -15,11 +15,11 @@
             <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total uploaded</p>
-                    <p class="mt-2 text-lg font-semibold text-white">{{ number_format($userStats['uploaded']) }} B</p>
+                    <p class="mt-2 text-lg font-semibold text-white">{{ number_format($userStats['uploaded'] / (1024 ** 3), 2) }} GB</p>
                 </div>
                 <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Total downloaded</p>
-                    <p class="mt-2 text-lg font-semibold text-white">{{ number_format($userStats['downloaded']) }} B</p>
+                    <p class="mt-2 text-lg font-semibold text-white">{{ number_format($userStats['downloaded'] / (1024 ** 3), 2) }} GB</p>
                 </div>
                 <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Ratio</p>
@@ -56,8 +56,8 @@
                                 <tr class="hover:bg-slate-800/50">
                                     <td class="px-4 py-3 font-semibold">{{ $snatch->torrent?->name ?? 'Unknown torrent' }}</td>
                                     <td class="px-4 py-3 text-right text-slate-300">{{ number_format(($snatch->torrent?->size_bytes ?? 0) / (1024 * 1024), 2) }} MiB</td>
-                                    <td class="px-4 py-3 text-right text-emerald-300">{{ number_format($snatch->uploaded) }} B</td>
-                                    <td class="px-4 py-3 text-right text-amber-300">{{ number_format($snatch->downloaded) }} B</td>
+                                    <td class="px-4 py-3 text-right text-emerald-300">{{ number_format($snatch->uploaded / (1024 ** 3), 2) }} GB</td>
+                                    <td class="px-4 py-3 text-right text-amber-300">{{ number_format($snatch->downloaded / (1024 ** 3), 2) }} GB</td>
                                     <td class="px-4 py-3 text-right text-slate-400">{{ optional($snatch->completed_at)->toDayDateTimeString() }}</td>
                                 </tr>
                             @endforeach
