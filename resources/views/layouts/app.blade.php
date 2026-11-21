@@ -92,7 +92,7 @@
                             <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
                         @endif
                         <a href="{{ route('account.snatches') }}" aria-label="My uploaded, downloaded and ratio statistics"
-                            class="ml-auto inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs font-semibold tabular-nums hover:border-brand/50">
+                            class="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm font-medium tabular-nums transition hover:opacity-80">
                             <span class="whitespace-nowrap text-emerald-300" title="Credited upload"><span aria-hidden="true">↑</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['uploaded'], 1) }}</span>
                             <span class="whitespace-nowrap text-rose-300" title="Credited download"><span aria-hidden="true">↓</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['downloaded'], 1) }}</span>
                             <span class="whitespace-nowrap {{ $ratioTone }}" title="Effective ratio">R {{ $ratioLabel }}</span>

@@ -61,6 +61,15 @@ final class SysopRatioCreditsTest extends TestCase
             ->assertSee('text-rose-300', false)
             ->assertDontSee('Ratio & snatches');
 
+        $this->assertSame(1, preg_match(
+            '/<a[^>]*aria-label="My uploaded, downloaded and ratio statistics"[^>]*class="([^"]+)"/',
+            (string) $response->getContent(),
+            $ratioNavMatch,
+        ));
+        $this->assertStringNotContainsString('border', $ratioNavMatch[1]);
+        $this->assertStringNotContainsString('bg-', $ratioNavMatch[1]);
+        $this->assertStringNotContainsString('ml-auto', $ratioNavMatch[1]);
+
         $account = $this->get(route('account.index'))->assertOk();
         $html = (string) $account->getContent();
         $this->assertSame(1, substr_count($html, 'aria-label="My uploaded, downloaded and ratio statistics"'));
