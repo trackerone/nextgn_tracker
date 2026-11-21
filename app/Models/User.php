@@ -406,24 +406,41 @@ class User extends Authenticatable implements MustVerifyEmail
         $ratioSettings = app(\App\Services\Settings\RatioSettings::class);
 
         $ratio = $this->ratio();
+        $tenureEnabled = $ratioSettings->tenureEnabled();
+
+        // Preserve Leech classification for accounts below the minimum ratio.
+        if ($ratio !== null && $ratio < $ratioSettings->userMinRatio()) {
+            return 'Leech';
+        }
+
+        // When enabled, membership age is an additional condition for promotion.
+        if ($tenureEnabled && ! $this->hasMinimumMembershipMonths($ratioSettings->userMinMonths())) {
+            return 'Newbie';
+        }
 
         if ($ratio === null) {
             return 'User';
         }
 
         $totalDownloaded = $this->totalDownloaded();
-        $userMinRatio = $ratioSettings->userMinRatio();
 
         return match (true) {
-            $ratio >= $ratioSettings->eliteMinRatio() => 'Elite',
+            $ratio >= $ratioSettings->eliteMinRatio()
+                && (! $tenureEnabled || $this->hasMinimumMembershipMonths($ratioSettings->eliteMinMonths())) => 'Elite',
 
             $ratio >= $ratioSettings->powerUserMinRatio()
-                && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded() => 'Power User',
+                && $totalDownloaded >= $ratioSettings->powerUserMinDownloaded()
+                && (! $tenureEnabled || $this->hasMinimumMembershipMonths($ratioSettings->powerUserMinMonths())) => 'Power User',
 
-            $ratio >= $userMinRatio => 'User',
-
-            default => 'Leech',
+            default => 'User',
         };
+    }
+
+    private function hasMinimumMembershipMonths(int $months): bool
+    {
+        return $months <= 0
+            || ($this->created_at !== null
+                && $this->created_at->lessThanOrEqualTo(now()->subMonthsNoOverflow($months)));
     }
 
     public function getRoleLabelAttribute(): string
