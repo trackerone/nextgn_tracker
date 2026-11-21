@@ -48,7 +48,7 @@ class InviteAdminController extends Controller
         ]);
 
         $destination = $request->user()?->isSysop()
-            ? route('sysop.permissions.index').'#invitations'
+            ? route('sysop.permissions.index', ['section' => 'invitations']).'#invitations'
             : route('admin.invites.index');
 
         return Redirect::to($destination)
