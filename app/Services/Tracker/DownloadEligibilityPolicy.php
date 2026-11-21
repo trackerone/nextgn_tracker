@@ -6,12 +6,15 @@ namespace App\Services\Tracker;
 
 use App\Models\Torrent;
 use App\Models\User;
-use App\Models\UserStat;
 use App\Services\Hnr\HnrService;
 
 final class DownloadEligibilityPolicy
 {
-    public function __construct(private readonly RatioRulesConfig $ratioRulesConfig, private readonly HnrService $hnr) {}
+    public function __construct(
+        private readonly RatioRulesConfig $ratioRulesConfig,
+        private readonly HnrService $hnr,
+        private readonly UserRatioBalance $balance,
+    ) {}
 
     /**
      * @return array{allowed: bool, reason: string}
@@ -34,16 +37,9 @@ final class DownloadEligibilityPolicy
             return ['allowed' => true, 'reason' => 'freeleech'];
         }
 
-        $stats = UserStat::query()->firstWhere('user_id', $user->id);
-
-        if ($stats === null) {
-            return $this->ratioRulesConfig->noHistoryGraceEnabled()
-                ? ['allowed' => true, 'reason' => 'no_history']
-                : ['allowed' => false, 'reason' => 'ratio_too_low'];
-        }
-
-        $uploadedBytes = (int) $stats->uploaded_bytes;
-        $downloadedBytes = (int) $stats->downloaded_bytes;
+        $balance = $this->balance->totals($user);
+        $uploadedBytes = $balance['uploaded'];
+        $downloadedBytes = $balance['downloaded'];
 
         if ($uploadedBytes === 0 && $downloadedBytes === 0 && $this->ratioRulesConfig->noHistoryGraceEnabled()) {
             return ['allowed' => true, 'reason' => 'no_history'];
