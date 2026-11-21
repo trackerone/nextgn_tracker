@@ -49,7 +49,6 @@
                                 @if (\App\Services\PermissionService::allow(auth()->user(), 'messages.access'))
                                     <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">Messages</a>
                                 @endif
-                                <a href="{{ route('account.snatches') }}" class="{{ $navLink }} {{ request()->routeIs('account.snatches') ? $activeNavLink : $inactiveNavLink }}">Ratio & snatches</a>
                                 @if (auth()->user()?->isStaff())
                                     <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
                                     <a href="{{ route('staff.alpha-feedback.index') }}" class="{{ $navLink }} {{ request()->routeIs('staff.alpha-feedback.*') ? $activeNavLink : $inactiveNavLink }}">Alpha intake</a>
@@ -72,6 +71,17 @@
                 </div>
 
                 @auth
+                    @php
+                        $headerRatio = app(\App\Services\Tracker\UserRatioBalance::class)->totals(auth()->user());
+                        $ratioLabel = $headerRatio['downloaded'] === 0
+                            ? ($headerRatio['uploaded'] > 0 ? '∞' : '—')
+                            : number_format($headerRatio['ratio'], 2, '.', '');
+                        $ratioTone = $headerRatio['downloaded'] === 0 && $headerRatio['uploaded'] === 0
+                            ? 'text-slate-300'
+                            : ($headerRatio['ratio'] === null || $headerRatio['ratio'] >= 1
+                                ? 'text-emerald-300'
+                                : 'text-rose-300');
+                    @endphp
                     <nav class="flex flex-wrap items-center gap-1" aria-label="Primary navigation">
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
@@ -81,6 +91,12 @@
                         @if (\App\Services\PermissionService::allow(auth()->user(), 'forum.access'))
                             <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
                         @endif
+                        <a href="{{ route('account.snatches') }}" aria-label="My uploaded, downloaded and ratio statistics"
+                            class="ml-auto inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-slate-800 bg-slate-900/70 px-3 py-2 text-xs font-semibold tabular-nums hover:border-brand/50">
+                            <span class="whitespace-nowrap text-emerald-300" title="Credited upload"><span aria-hidden="true">↑</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['uploaded'], 1) }}</span>
+                            <span class="whitespace-nowrap text-rose-300" title="Credited download"><span aria-hidden="true">↓</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['downloaded'], 1) }}</span>
+                            <span class="whitespace-nowrap {{ $ratioTone }}" title="Effective ratio">R {{ $ratioLabel }}</span>
+                        </a>
                     </nav>
                 @endauth
             </div>
