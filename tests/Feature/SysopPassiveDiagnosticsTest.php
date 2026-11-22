@@ -69,4 +69,23 @@ final class SysopPassiveDiagnosticsTest extends TestCase
             ->assertOk()
             ->assertSee('Active diagnostics completed at');
     }
+
+    public function test_diagnostic_write_throttle_is_independent_of_ordinary_admin_page_views(): void
+    {
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+        $this->actingAs($sysop);
+
+        $this->get(route('sysop.operations.index'))->assertOk();
+        $this->get(route('sysop.operations.support-bundle'))->assertOk();
+        $this->get(route('sysop.operations.index'))->assertOk();
+
+        // The inherited admin limiter remains in place, but these requests
+        // must not consume the separately named three-run diagnostic budget.
+        for ($run = 0; $run < 3; $run++) {
+            $this->post(route('sysop.operations.diagnostics.run'))
+                ->assertRedirect(route('sysop.operations.index'));
+        }
+
+        $this->post(route('sysop.operations.diagnostics.run'))->assertStatus(429);
+    }
 }
