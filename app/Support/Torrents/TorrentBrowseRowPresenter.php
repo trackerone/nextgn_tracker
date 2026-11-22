@@ -49,7 +49,7 @@ final class TorrentBrowseRowPresenter
                 'release_group' => $this->upperText($metadata['release_group'] ?? null),
                 'file_count' => max(1, $fileCount),
                 'file_count_formatted' => number_format(max(1, $fileCount)),
-                'is_freeleech' => (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false),
+                'is_freeleech' => (bool) $torrent->is_freeleech,
                 'seeders' => $seeders,
                 'seeders_formatted' => number_format($seeders),
                 'leechers' => $leechers,
