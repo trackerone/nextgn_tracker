@@ -87,6 +87,9 @@
                 detected.set(name, input.value);
                 filled++;
             }
+            // Programmatic field assignment does not fire a "change" event.
+            // Keep media type aligned with the current category after analysis.
+            syncCategoryType();
             reviewed.value = '1';
             document.getElementById('upload-extra-metadata').open = true;
             status.textContent = `${result.files} content files detected. ${filled} fields filled. Review the details; unknown values remain blank. ${(result.warnings || []).join(' ')}`;
