@@ -43,7 +43,7 @@ final class OperationsTelemetry
     {
         $minutes = max(1, min(60, $minutes));
         $result = array_fill_keys(self::COUNTERS, 0);
-        $seen = false;
+        $seen = ['announce' => false, 'scrape' => false, 'http' => false];
 
         try {
             $cache = Cache::store();
@@ -53,16 +53,22 @@ final class OperationsTelemetry
                 foreach (self::COUNTERS as $counter) {
                     $value = $cache->get('nextgn:ops:minute:'.$bucket.':'.$counter);
                     if ($value !== null) {
-                        $seen = true;
+                        $seen[explode('_', $counter, 2)[0]] = true;
                         $result[$counter] += max(0, (int) $value);
                     }
                 }
             }
         } catch (Throwable) {
-            $seen = false;
+            $seen = ['announce' => false, 'scrape' => false, 'http' => false];
         }
 
-        return $seen ? $result : array_fill_keys(self::COUNTERS, null);
+        foreach (self::COUNTERS as $counter) {
+            if ($seen[explode('_', $counter, 2)[0]] === false) {
+                $result[$counter] = null;
+            }
+        }
+
+        return $result;
     }
 
     public function job(string $jobKey, string $state, ?int $durationMs = null, ?string $error = null): void
