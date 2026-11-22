@@ -16,7 +16,7 @@ use Throwable;
  */
 final class OperationsTelemetry
 {
-    private const COUNTERS = ['announce_ok', 'announce_rejected', 'scrape_ok', 'scrape_rejected', 'http_ok', 'http_5xx'];
+    private const COUNTERS = ['announce_ok', 'announce_rejected', 'scrape_ok', 'scrape_rejected', 'http_ok', 'http_5xx', 'rss_ok', 'rss_error', 'browse_ok', 'browse_error', 'metadata_ok', 'metadata_error'];
 
     public function __construct(private readonly SensitiveLogRedactor $redactor) {}
 
@@ -43,7 +43,7 @@ final class OperationsTelemetry
     {
         $minutes = max(1, min(60, $minutes));
         $result = array_fill_keys(self::COUNTERS, 0);
-        $seen = ['announce' => false, 'scrape' => false, 'http' => false];
+        $seen = ['announce' => false, 'scrape' => false, 'http' => false, 'rss' => false, 'browse' => false, 'metadata' => false];
 
         try {
             $cache = Cache::store();
@@ -59,7 +59,7 @@ final class OperationsTelemetry
                 }
             }
         } catch (Throwable) {
-            $seen = ['announce' => false, 'scrape' => false, 'http' => false];
+            $seen = ['announce' => false, 'scrape' => false, 'http' => false, 'rss' => false, 'browse' => false, 'metadata' => false];
         }
 
         foreach (self::COUNTERS as $counter) {
