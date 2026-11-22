@@ -19,7 +19,7 @@ final class OperationsProbe
     /**
      * @return array<string, mixed>
      */
-    public function collect(): array
+    public function collect(bool $activeWriteChecks = false): array
     {
         $checks = [];
         $dbMs = null;
@@ -35,35 +35,50 @@ final class OperationsProbe
 
         $driver = (string) config('cache.default', 'unknown');
         try {
-            $key = 'nextgn:ops:probe:'.bin2hex(random_bytes(6));
             $cache = Cache::store();
-            $cache->put($key, 'verified', 20);
-            if ($cache->get($key) !== 'verified') {
-                throw new \RuntimeException('Cache readback failed');
+            if ($activeWriteChecks) {
+                $key = 'nextgn:ops:probe:'.bin2hex(random_bytes(6));
+                try {
+                    $cache->put($key, 'verified', 20);
+                    if ($cache->get($key) !== 'verified') {
+                        throw new \RuntimeException('Cache readback failed');
+                    }
+                } finally {
+                    $cache->forget($key);
+                }
+
+                $checks[] = $this->check('cache', 'Cache', 'healthy', $driver.' driver: read/write verified by an active check.');
+            } else {
+                // Do not mutate cache merely because Sysop opens a status page.
+                $cache->get('nextgn:ops:passive-health-check');
+                $checks[] = $this->check('cache', 'Cache', 'unknown', $driver.' driver: read-only access succeeded; write access not verified.');
             }
-            $cache->forget($key);
-            $checks[] = $this->check('cache', 'Cache', 'healthy', $driver.' driver: read/write verified.');
         } catch (Throwable) {
-            $checks[] = $this->check('cache', 'Cache', 'degraded', $driver.' driver: read/write failed.');
+            $checks[] = $this->check('cache', 'Cache', 'degraded', $driver.' driver: '.($activeWriteChecks ? 'read/write' : 'read').' check failed.');
         }
 
         $diskFree = null;
         $diskTotal = null;
         try {
             $directory = storage_path('app');
-            if (is_dir($directory) === false && @mkdir($directory, 0775, true) === false && is_dir($directory) === false) {
-                throw new \RuntimeException('Storage directory unavailable');
-            }
-            $probeFile = tempnam($directory, 'ops-');
-            if ($probeFile === false || dirname($probeFile) !== realpath($directory)) {
-                throw new \RuntimeException('Storage write failed');
-            }
-            try {
-                if (file_put_contents($probeFile, 'ok') === false || file_get_contents($probeFile) !== 'ok') {
-                    throw new \RuntimeException('Storage readback failed');
+            if (! is_dir($directory)) {
+                if (! $activeWriteChecks || (@mkdir($directory, 0775, true) === false && ! is_dir($directory))) {
+                    throw new \RuntimeException('Storage directory unavailable');
                 }
-            } finally {
-                @unlink($probeFile);
+            }
+
+            if ($activeWriteChecks) {
+                $probeFile = tempnam($directory, 'ops-');
+                if ($probeFile === false || dirname($probeFile) !== realpath($directory)) {
+                    throw new \RuntimeException('Storage write failed');
+                }
+                try {
+                    if (file_put_contents($probeFile, 'ok') === false || file_get_contents($probeFile) !== 'ok') {
+                        throw new \RuntimeException('Storage readback failed');
+                    }
+                } finally {
+                    @unlink($probeFile);
+                }
             }
 
             $free = disk_free_space($directory);
@@ -74,15 +89,14 @@ final class OperationsProbe
             $percent = $diskFree !== null && $diskTotal !== null && $diskTotal > 0
                 ? (int) floor(100 * $diskFree / $diskTotal)
                 : null;
-            $status = $percent === null ? 'unknown' : ($percent < 10 ? 'critical' : ($percent < 20 ? 'degraded' : 'healthy'));
-            $checks[] = $this->check(
-                'storage',
-                'Storage',
-                $status,
-                $percent === null ? 'Read/write verified; free space unavailable.' : 'Read/write verified; '.$percent.'% disk free.'
-            );
+            $status = $percent === null ? 'unknown' : ($percent < 10 ? 'critical' : ($percent < 20 ? 'degraded' : ($activeWriteChecks ? 'healthy' : 'unknown')));
+            $details = $percent === null ? 'Disk free space unavailable.' : $percent.'% disk free.';
+            $details .= $activeWriteChecks ? ' Read/write verified.' : ' Passive read-only check; write access not verified.';
+            $checks[] = $this->check('storage', 'Storage', $status, $details);
         } catch (Throwable) {
-            $checks[] = $this->check('storage', 'Storage', 'critical', 'Storage read/write could not be verified.');
+            $checks[] = $this->check('storage', 'Storage', $activeWriteChecks ? 'critical' : 'unknown', $activeWriteChecks
+                ? 'Storage read/write could not be verified.'
+                : 'Storage directory unavailable for read-only capacity check.');
         }
 
         $scheduler = $this->telemetry->lastSuccess('scheduler.tick');

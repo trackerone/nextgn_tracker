@@ -40,6 +40,7 @@ use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\CategorySettingsController;
 use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\LogCenterController;
+use App\Http\Controllers\Sysop\OperationsActiveDiagnosticsController;
 use App\Http\Controllers\Sysop\OperationsAlertActionController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\OperationsSupportBundleController;
@@ -221,6 +222,8 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
         ->whereNumber('user')->name('ratio-credits.users.adjust');
     Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
+    Route::post('/operations/diagnostics/run', OperationsActiveDiagnosticsController::class)
+        ->middleware('throttle:sysop-operations-diagnostics')->name('operations.diagnostics.run');
     Route::post('/operations/alerts/action', OperationsAlertActionController::class)->name('operations.alerts.action');
     Route::get('/operations/support-bundle', OperationsSupportBundleController::class)->name('operations.support-bundle');
     Route::get('/logs', LogCenterController::class)->name('logs.index');

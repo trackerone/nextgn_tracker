@@ -148,3 +148,10 @@ Use `GET /health` for basic runtime probe.
 - **Root/server shell access**: deployments, package/composer/npm installs, migrations, backups/restores, OS maintenance, and service administration.
 
 The sysop dashboard is intentionally non-destructive and does not expose secrets, `.env` values, or command execution.
+
+### Passive operations vs. active write diagnostics
+
+- Opening **Sysop → Operations** or downloading the Sysop support bundle uses passive status reads. Cache/storage **writeability is reported as unverified**, not healthy, until explicitly tested. A readable cache alone does not prove that the cache can store values.
+- The **Run active cache and storage checks** button sends a Sysop-only, CSRF-protected, rate-limited POST. It briefly creates, reads and removes a random cache key and a temporary `ops-*` file under `storage/app`, then displays the outcome on the next dashboard visit.
+- The scheduled `php artisan ops:monitor` command still performs active checks so operational snapshots and incident alerts retain real cache/storage write evidence. Passive web views do not initiate these writes.
+- Laravel sessions, request telemetry, authentication and normal web request processing may still produce their usual application writes; **passive** here specifically means that no active diagnostic cache/filesystem write probes are triggered by reading the page or exporting its report.
