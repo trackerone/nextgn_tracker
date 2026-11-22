@@ -50,7 +50,7 @@ final class TorrentRssFilterMatcher
             return false;
         }
 
-        if ($filters['freeleech'] !== null && (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false) !== $filters['freeleech']) {
+        if ($filters['freeleech'] !== null && (bool) $torrent->is_freeleech !== $filters['freeleech']) {
             return false;
         }
 
