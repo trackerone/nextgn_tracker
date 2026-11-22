@@ -10,6 +10,11 @@
 @php
     $redactor = app(\App\Support\Operations\SensitiveLogRedactor::class);
     $actionKey = $redactor->text((string) $log->action);
+    $metadata = is_array($log->metadata) ? $log->metadata : [];
+    $isRuntimeJobChange = $log->action === 'sysop.runtime_job_state_changed';
+    $jobKey = $isRuntimeJobChange && is_string($metadata['job_key'] ?? null) ? $redactor->text($metadata['job_key']) : null;
+    $previousState = $metadata['previous_state'] ?? null;
+    $newState = $metadata['new_state'] ?? null;
     $heading = \Illuminate\Support\Str::headline(str_replace('.', ' ', $actionKey));
     $params = request()->only(['window', 'q', 'level', 'page']);
     $params['source'] = request('source') === 'overview' ? 'overview' : 'audit';
@@ -30,7 +35,21 @@
         <p class="mt-1 text-xs text-slate-400">Recorded {{ $log->created_at?->toDayDateTimeString() }} ({{ config('app.timezone') }})</p>
         <dl class="mt-5 grid min-w-0 gap-3 border-t border-slate-800 pt-4 text-sm sm:grid-cols-2">
             <div><dt class="text-xs text-slate-400">Actor</dt><dd class="mt-1 text-slate-200">{{ $redactor->text($log->user?->name ?? 'System') }} (ID {{ $log->user_id ?? '—' }})</dd></div>
-            <div><dt class="text-xs text-slate-400">Target</dt><dd class="mt-1 break-words text-slate-200 [overflow-wrap:anywhere]">{{ $redactor->text($log->target_type ?? 'N/A') }} #{{ $log->target_id ?? '—' }}</dd></div>
+            @if ($isRuntimeJobChange && $jobKey !== null)
+                <div class="sm:col-span-2">
+                    <dt class="text-xs text-slate-400">Runtime job</dt>
+                    <dd class="mt-1 break-all text-slate-100">{{ $jobKey }}</dd>
+                </div>
+            @endif
+            @if ($isRuntimeJobChange && is_bool($previousState) && is_bool($newState))
+                <div class="sm:col-span-2">
+                    <dt class="text-xs text-slate-400">State change</dt>
+                    <dd class="mt-1 font-semibold text-slate-100">{{ $previousState ? 'Enabled' : 'Disabled' }} &rarr; {{ $newState ? 'Enabled' : 'Disabled' }}</dd>
+                </div>
+            @endif
+            @if ($log->target_type !== null || $log->target_id !== null)
+                <div><dt class="text-xs text-slate-400">Target</dt><dd class="mt-1 break-words text-slate-200 [overflow-wrap:anywhere]">{{ $redactor->text($log->target_type ?? 'Unknown') }} #{{ $log->target_id ?? '—' }}</dd></div>
+            @endif
             @if ($target)
                 <div class="sm:col-span-2">
                     <dt class="text-xs text-slate-400">Target preview</dt>
