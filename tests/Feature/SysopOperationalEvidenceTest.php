@@ -101,6 +101,21 @@ it('verifies a real asynchronous queue worker rather than counting zero failed j
     expect($after['queue']['status'])->toBe('healthy');
 });
 
+
+it('restricts support bundle to Sysop and excludes sensitive raw data', function (): void {
+    $this->actingAs(\App\Models\User::factory()->create(['role' => \App\Models\User::ROLE_USER]))
+        ->get(route('sysop.operations.support-bundle'))
+        ->assertForbidden();
+
+    $this->actingAs(\App\Models\User::factory()->create(['role' => \App\Models\User::ROLE_SYSOP]))
+        ->get(route('sysop.operations.support-bundle'))
+        ->assertOk()
+        ->assertHeader('Content-Disposition', 'attachment; filename="nextgn-sysop-diagnostics.json"')
+        ->assertJsonPath('schema_version', 1)
+        ->assertDontSee('api_key')
+        ->assertDontSee('passkey');
+});
+
 it('collects host metrics without leaking filesystem contents or executing commands', function (): void {
     $host = app(\App\Services\Operations\OperationsHostMetrics::class)->collect();
 
