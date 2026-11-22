@@ -19,6 +19,7 @@
     $selectedSource = in_array($filters['source'], ['tracker', 'infrastructure'], true) ? 'alerts' : $filters['source'];
     $isOverview = $selectedSource === 'overview';
     $isIncidents = $selectedSource === 'alerts';
+    $effectiveComponent = in_array($filters['source'], ['tracker', 'infrastructure'], true) ? $filters['source'] : $filters['component'];
     $sharedFilters = ['window' => $filters['window'], 'q' => $filters['search'], 'level' => $filters['level']];
     $sourceDescriptions = [
         'overview' => 'Latest recorded high-priority security events, incidents and failed jobs. Local application files and external services are not part of this list.',
@@ -86,7 +87,7 @@
                 <span class="mb-1 block text-xs text-slate-300">Component</span>
                 <select name="component" class="w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-white">
                     @foreach (['all' => 'All incidents', 'tracker' => 'Tracker', 'infrastructure' => 'Infrastructure'] as $key => $label)
-                        <option value="{{ $key }}" @selected($filters['component'] === $key || ($filters['source'] === $key))>{{ $label }}</option>
+                        <option value="{{ $key }}" @selected($effectiveComponent === $key)>{{ $label }}</option>
                     @endforeach
                 </select>
             </label>
@@ -185,7 +186,7 @@
                             default => 'text-slate-300',
                         };
                     @endphp
-                    <article id="{{ $entry['anchor'] ?? '' }}" class="space-y-1.5 px-3 py-3">
+                    <article class="space-y-1.5 px-3 py-3">
                         <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
                             <time class="tabular-nums">{{ $entry['time'] }}</time>
                             <span class="font-semibold {{ $tone }}">{{ $entry['severity'] }}</span>
