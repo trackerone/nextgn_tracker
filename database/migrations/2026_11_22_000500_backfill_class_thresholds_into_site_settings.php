@@ -16,7 +16,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (! Schema::hasTable('settings') || ! Schema::hasTable('site_settings')) {
+        if (Schema::hasTable('settings') === false || Schema::hasTable('site_settings') === false) {
             return;
         }
 
@@ -53,7 +53,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (! Schema::hasTable('settings') || ! Schema::hasTable('site_settings')) {
+        if (Schema::hasTable('settings') === false || Schema::hasTable('site_settings') === false) {
             return;
         }
 
@@ -86,7 +86,7 @@ return new class extends Migration
     }
 
     /**
-     * @param array<string, mixed> $definition
+     * @param  array<string, mixed>  $definition
      */
     private function validValue(string $raw, array $definition): ?string
     {
@@ -102,7 +102,7 @@ return new class extends Migration
             $value = is_numeric($raw) ? (float) $raw : false;
         }
 
-        if ($value === false || (is_float($value) && ! is_finite($value))) {
+        if ($value === false || (is_float($value) && is_finite($value) === false)) {
             return null;
         }
 
