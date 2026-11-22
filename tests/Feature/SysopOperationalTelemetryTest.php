@@ -61,6 +61,34 @@ it('reports cache failures as degraded and can never report all green', function
         ->and($status['overall'])->not->toBe('healthy');
 });
 
+it('never marks tracker healthy when only rejected announces are observed', function (): void {
+    $telemetry = app(OperationsTelemetry::class);
+    $probe = app(OperationsProbe::class);
+
+    $telemetry->count('announce_rejected');
+    $checks = collect($probe->collect()['checks'])->keyBy('id');
+    expect($checks['tracker']['status'])->toBe('unknown')
+        ->and($checks['tracker']['details'])->toContain('No accepted announce observed');
+
+    for ($i = 0; $i < 9; $i++) {
+        $telemetry->count('announce_rejected');
+    }
+
+    $checks = collect($probe->collect()['checks'])->keyBy('id');
+    expect($checks['tracker']['status'])->toBe('degraded')
+        ->and($checks['tracker']['details'])->toContain('No accepted announce observed');
+});
+
+it('requires a successful announce before tracker is marked healthy', function (): void {
+    $telemetry = app(OperationsTelemetry::class);
+    $telemetry->count('announce_rejected');
+    $telemetry->count('announce_ok');
+
+    $checks = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
+    expect($checks['tracker']['status'])->toBe('healthy')
+        ->and($checks['tracker']['details'])->toContain('1 accepted, 1 rejected');
+});
+
 it('keeps traffic metrics anonymous and detects a high tracker rejection rate', function (): void {
     $telemetry = app(OperationsTelemetry::class);
     $telemetry->count('announce_ok');
