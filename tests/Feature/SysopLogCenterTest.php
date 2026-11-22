@@ -26,7 +26,7 @@ it('requires a sysop role for the log center', function (): void {
 
 it('filters audit records without showing unrelated records', function (): void {
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
-    AuditLog::query()->create([
+    $log = AuditLog::query()->create([
         'user_id' => $sysop->id,
         'action' => 'torrent.approved',
         'metadata' => ['api_key' => 'secret-never-visible'],
@@ -39,7 +39,7 @@ it('filters audit records without showing unrelated records', function (): void 
         ->assertSee('torrent.approved')
         ->assertDontSee('torrent.rejected');
 
-    $this->get('/admin/logs/audit/1')
+    $this->get(route('admin.logs.audit.show', $log))
         ->assertOk()
         ->assertSee('[REDACTED]')
         ->assertDontSee('secret-never-visible');
