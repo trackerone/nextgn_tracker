@@ -111,7 +111,7 @@ final class RecentApplicationLogs
                 fclose($handle);
             }
 
-            $entries = array_merge($entries, $fileEntries);
+            $entries = array_merge($entries, array_reverse($fileEntries));
         }
 
         usort($entries, static fn (array $a, array $b): int => strcmp($b['time'], $a['time']));
