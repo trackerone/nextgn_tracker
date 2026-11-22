@@ -147,8 +147,7 @@ class Torrent extends Model
 
     public function isVisible(): bool
     {
-        // "Visible" follows approval + not banned (status/flag determines isApproved/isBanned)
-        return $this->isApproved() && ! $this->isBanned();
+        return (bool) $this->is_visible && $this->isApproved() && ! $this->isBanned();
     }
 
     public function isPending(): bool
@@ -196,14 +195,15 @@ class Torrent extends Model
     /**
      * Base scope for "visible" torrents.
      *
-     * Conservative: only APPROVED torrents, and not banned/soft-deleted.
-     * If the is_approved column exists, it must also be true.
+     * Only published, approved, explicitly visible, non-banned torrents.
+     * This is the shared public listing scope for Home, Browse, API and RSS.
      */
     public function scopeVisible(Builder $query): Builder
     {
         $query = $query
             ->where('status', TorrentStatus::Published->value)
-            ->where('is_banned', false);
+            ->where('is_banned', false)
+            ->where('is_visible', true);
 
         if (Schema::hasColumn($this->getTable(), 'is_approved')) {
             $query->where('is_approved', true);
