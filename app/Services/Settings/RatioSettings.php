@@ -96,42 +96,42 @@ final class RatioSettings
 
     public function eliteMinRatio(): float
     {
-        return $this->settings()['elite_min_ratio'];
+        return (float) $this->settings()['elite_min_ratio'];
     }
 
     public function powerUserMinRatio(): float
     {
-        return $this->settings()['power_user_min_ratio'];
+        return (float) $this->settings()['power_user_min_ratio'];
     }
 
     public function powerUserMinDownloaded(): int
     {
-        return $this->settings()['power_user_min_downloaded'];
+        return (int) $this->settings()['power_user_min_downloaded'];
     }
 
     public function userMinRatio(): float
     {
-        return $this->settings()['user_min_ratio'];
+        return (float) $this->settings()['user_min_ratio'];
     }
 
     public function tenureEnabled(): bool
     {
-        return $this->settings()['tenure_enabled'];
+        return (bool) $this->settings()['tenure_enabled'];
     }
 
     public function userMinMonths(): int
     {
-        return $this->settings()['user_min_months'];
+        return (int) $this->settings()['user_min_months'];
     }
 
     public function powerUserMinMonths(): int
     {
-        return $this->settings()['power_user_min_months'];
+        return (int) $this->settings()['power_user_min_months'];
     }
 
     public function eliteMinMonths(): int
     {
-        return $this->settings()['elite_min_months'];
+        return (int) $this->settings()['elite_min_months'];
     }
 
     /** Refresh the same service instance after an update within this request. */
