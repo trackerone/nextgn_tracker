@@ -56,6 +56,7 @@ return [
         'admin.access',
         'admin.manage.users',
         'torrent.upload',
+        'invites.create',
         'torrent.edit',
         'torrent.delete',
         'comment.post',
@@ -66,17 +67,17 @@ return [
     'role_permissions' => [
         'sysop' => [
             'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
-            'torrent.delete', 'forum.access', 'messages.access', 'comment.post',
+            'torrent.delete', 'forum.access', 'messages.access', 'invites.create', 'comment.post',
             'comment.delete', 'api.access',
         ],
         'admin' => [
             'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
-            'torrent.delete', 'forum.access', 'messages.access', 'comment.post',
+            'torrent.delete', 'forum.access', 'messages.access', 'invites.create', 'comment.post',
             'comment.delete', 'api.access',
         ],
         'moderator' => [
             'torrent.upload', 'torrent.edit', 'torrent.delete', 'forum.access',
-            'messages.access', 'comment.delete', 'api.access',
+            'messages.access', 'invites.create', 'comment.delete', 'api.access',
         ],
         'uploader' => [
             'torrent.upload', 'forum.access', 'messages.access', 'comment.post', 'api.access',
