@@ -5,13 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Models\SavedIntent;
+use App\Support\Torrents\TorrentMediaTypes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class SavedIntentRequest extends FormRequest
 {
-    private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
-
     private const ORDER_OPTIONS = [
         'id',
         'name',
@@ -82,7 +81,7 @@ final class SavedIntentRequest extends FormRequest
             'q' => ['nullable', 'string', 'max:255'],
             'title' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'integer', 'min:1800', 'max:2100'],
-            'type' => ['nullable', Rule::in(self::TYPES)],
+            'type' => ['nullable', Rule::in(TorrentMediaTypes::VALUES)],
             'resolution' => ['nullable', 'string', 'max:32'],
             'source' => ['nullable', 'string', 'max:32'],
             'release_group' => ['nullable', 'string', 'max:80'],
