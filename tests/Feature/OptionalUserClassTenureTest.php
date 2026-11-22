@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Models\Setting;
+use App\Models\SiteSetting;
 use App\Models\User;
 use App\Models\UserStat;
 use App\Services\Settings\RatioSettings;
@@ -107,8 +107,8 @@ final class OptionalUserClassTenureTest extends TestCase
         ]))->assertRedirect();
 
         $this->assertSame('Elite', $member->userClass());
-        $this->assertSame('36', Setting::valueForKey('ratio.elite_min_months'));
-        $this->assertSame('0', Setting::valueForKey('ratio.tenure_enabled'));
+        $this->assertSame('36', SiteSetting::query()->where('key', 'ratio.elite_min_months')->value('value'));
+        $this->assertSame('false', SiteSetting::query()->where('key', 'ratio.tenure_enabled')->value('value'));
     }
 
     public function test_non_sysop_admin_can_change_ratio_but_cannot_change_tenure_policies(): void
@@ -122,7 +122,7 @@ final class OptionalUserClassTenureTest extends TestCase
         ]))->assertRedirect(route('admin.settings.ratio.edit'));
 
         $this->assertFalse(app(RatioSettings::class)->tenureEnabled());
-        $this->assertDatabaseMissing('settings', ['key' => 'ratio.tenure_enabled']);
+        $this->assertDatabaseMissing('site_settings', ['key' => 'ratio.tenure_enabled']);
         $this->get(route('admin.settings.ratio.edit'))->assertOk()
             ->assertDontSee('name="tenure_enabled"', false);
     }
@@ -144,7 +144,7 @@ final class OptionalUserClassTenureTest extends TestCase
             'elite_min_months' => 36,
         ]))->assertSessionHasErrors('user_min_months');
 
-        $this->assertDatabaseMissing('settings', ['key' => 'ratio.tenure_enabled']);
+        $this->assertDatabaseMissing('site_settings', ['key' => 'ratio.tenure_enabled']);
     }
 
     public function test_completed_torrents_stat_cards_and_table_display_gb_not_raw_bytes(): void

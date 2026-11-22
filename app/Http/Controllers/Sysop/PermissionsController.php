@@ -6,13 +6,13 @@ namespace App\Http\Controllers\Sysop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
-use App\Models\Setting;
 use App\Models\User;
 use App\Models\UserPermissionOverride;
 use App\Services\Logging\AuditLogger;
 use App\Services\PermissionService;
 use App\Services\Settings\RatioSettings;
 use App\Services\Settings\RegistrationPolicy;
+use App\Services\Settings\SettingsRegistry;
 use App\Services\Settings\SiteSettingsRepository;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
@@ -24,7 +24,7 @@ use Illuminate\Validation\ValidationException;
 
 final class PermissionsController extends Controller
 {
-    public function index(Request $request, RatioSettings $ratioSettings, UserRatioBalance $balances, RegistrationPolicy $registration): View
+    public function index(Request $request, RatioSettings $ratioSettings, UserRatioBalance $balances, RegistrationPolicy $registration, SiteSettingsRepository $settings): View
     {
         $matrix = [];
         foreach (PermissionService::EDITABLE_ROLES as $role) {
@@ -38,41 +38,43 @@ final class PermissionsController extends Controller
                 ? User::query()->find((int) $identifier)
                 : User::query()->where('email', $identifier)->first());
 
+        $classOverrides = $settings->getMany(array_keys(SettingsRegistry::classThresholds()));
+
         return view('sysop.permissions.index', [
             'roles' => PermissionService::EDITABLE_ROLES,
             'registrationMode' => $registration->mode(),
             'ratioValues' => [
                 'tenure_enabled' => [
                     'value' => $ratioSettings->tenureEnabled(),
-                    'overridden' => Setting::hasOverride('ratio.tenure_enabled'),
+                    'overridden' => array_key_exists('ratio.tenure_enabled', $classOverrides),
                 ],
                 'user_min_months' => [
                     'value' => $ratioSettings->userMinMonths(),
-                    'overridden' => Setting::hasOverride('ratio.user_min_months'),
+                    'overridden' => array_key_exists('ratio.user_min_months', $classOverrides),
                 ],
                 'power_user_min_months' => [
                     'value' => $ratioSettings->powerUserMinMonths(),
-                    'overridden' => Setting::hasOverride('ratio.power_user_min_months'),
+                    'overridden' => array_key_exists('ratio.power_user_min_months', $classOverrides),
                 ],
                 'elite_min_months' => [
                     'value' => $ratioSettings->eliteMinMonths(),
-                    'overridden' => Setting::hasOverride('ratio.elite_min_months'),
+                    'overridden' => array_key_exists('ratio.elite_min_months', $classOverrides),
                 ],
                 'elite_min_ratio' => [
                     'value' => $ratioSettings->eliteMinRatio(),
-                    'overridden' => Setting::hasOverride('ratio.elite_min_ratio'),
+                    'overridden' => array_key_exists('ratio.elite_min_ratio', $classOverrides),
                 ],
                 'power_user_min_ratio' => [
                     'value' => $ratioSettings->powerUserMinRatio(),
-                    'overridden' => Setting::hasOverride('ratio.power_user_min_ratio'),
+                    'overridden' => array_key_exists('ratio.power_user_min_ratio', $classOverrides),
                 ],
                 'power_user_min_downloaded' => [
                     'value' => $ratioSettings->powerUserMinDownloaded(),
-                    'overridden' => Setting::hasOverride('ratio.power_user_min_downloaded'),
+                    'overridden' => array_key_exists('ratio.power_user_min_downloaded', $classOverrides),
                 ],
                 'user_min_ratio' => [
                     'value' => $ratioSettings->userMinRatio(),
-                    'overridden' => Setting::hasOverride('ratio.user_min_ratio'),
+                    'overridden' => array_key_exists('ratio.user_min_ratio', $classOverrides),
                 ],
             ],
             'creditDefaults' => $balances->registrationDefaults(),
@@ -156,7 +158,7 @@ final class PermissionsController extends Controller
             ? User::query()->find((int) $identifier)
             : User::query()->where('email', $identifier)->first();
 
-        if (! $target instanceof User) {
+        if ($target === null) {
             throw ValidationException::withMessages(['user_identifier' => 'User not found. Enter an account ID or email address.']);
         }
 

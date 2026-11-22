@@ -61,6 +61,18 @@ final class SettingsRegistry
         ],
     ];
 
+    /** @var array<string, array<string, mixed>> */
+    private const CLASS_THRESHOLDS = [
+        'ratio.elite_min_ratio' => ['type' => 'float', 'min' => 0, 'max' => 10, 'owner' => 'admin'],
+        'ratio.power_user_min_ratio' => ['type' => 'float', 'min' => 0, 'max' => 10, 'owner' => 'admin'],
+        'ratio.power_user_min_downloaded' => ['type' => 'int', 'min' => 0, 'max' => 10000000000, 'owner' => 'admin'],
+        'ratio.user_min_ratio' => ['type' => 'float', 'min' => 0, 'max' => 10, 'owner' => 'admin'],
+        'ratio.tenure_enabled' => ['type' => 'bool', 'owner' => 'sysop'],
+        'ratio.user_min_months' => ['type' => 'int', 'min' => 0, 'max' => 1200, 'owner' => 'sysop'],
+        'ratio.power_user_min_months' => ['type' => 'int', 'min' => 0, 'max' => 1200, 'owner' => 'sysop'],
+        'ratio.elite_min_months' => ['type' => 'int', 'min' => 0, 'max' => 1200, 'owner' => 'sysop'],
+    ];
+
     /**
      * @return array<string, mixed>|null
      */
@@ -68,6 +80,15 @@ final class SettingsRegistry
     {
         if (isset(self::SITE[$key])) {
             return self::siteDefinition($key, self::SITE[$key]);
+        }
+
+        if (isset(self::CLASS_THRESHOLDS[$key])) {
+            return self::siteDefinition($key, [
+                ...self::CLASS_THRESHOLDS[$key],
+                'default' => config('ratio.'.substr($key, 6)),
+                'default_source' => 'config/ratio.php',
+                'cache' => 'request-local',
+            ]);
         }
 
         $tracker = [
@@ -134,25 +155,16 @@ final class SettingsRegistry
     }
 
     /**
-     * Records the separate legacy class-threshold store without silently
-     * changing precedence, caching, routes or persisted member settings.
-     *
      * @return array<string, array<string, mixed>>
      */
-    public static function legacyClassThresholds(): array
+    public static function classThresholds(): array
     {
         $definitions = [];
-        foreach (config('ratio', []) as $key => $default) {
-            $definitions['ratio.'.$key] = [
-                'key' => 'ratio.'.$key,
-                'type' => is_bool($default) ? 'bool' : (is_float($default) ? 'float' : 'int'),
-                'default' => $default,
-                'default_source' => 'config/ratio.php',
-                'store' => 'settings',
-                'owner' => 'admin',
-                'cache' => 'settings.ratio',
-                'precedence' => 'settings > config/ratio.php',
-            ];
+        foreach (array_keys(self::CLASS_THRESHOLDS) as $key) {
+            $definition = self::definition($key);
+            if ($definition !== null) {
+                $definitions[$key] = $definition;
+            }
         }
 
         return $definitions;

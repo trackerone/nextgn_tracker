@@ -4,99 +4,139 @@ declare(strict_types=1);
 
 namespace App\Services\Settings;
 
-use App\Models\Setting;
-use Illuminate\Support\Facades\Cache;
-
-class RatioSettings
+/**
+ * Member-class promotion thresholds only. Download eligibility is governed
+ * separately by tracker.ratio.* and must never be derived from these keys.
+ */
+final class RatioSettings
 {
-    private const CACHE_KEY = 'settings.ratio';
+    private const KEYS = [
+        'elite_min_ratio' => 'ratio.elite_min_ratio',
+        'power_user_min_ratio' => 'ratio.power_user_min_ratio',
+        'power_user_min_downloaded' => 'ratio.power_user_min_downloaded',
+        'user_min_ratio' => 'ratio.user_min_ratio',
+        'tenure_enabled' => 'ratio.tenure_enabled',
+        'user_min_months' => 'ratio.user_min_months',
+        'power_user_min_months' => 'ratio.power_user_min_months',
+        'elite_min_months' => 'ratio.elite_min_months',
+    ];
+
+    /** @var array<string, bool|int|float>|null */
+    private ?array $resolved = null;
+
+    public function __construct(private readonly SiteSettingsRepository $repository) {}
 
     /**
-     * @return array{
-     *     elite_min_ratio: float,
-     *     power_user_min_ratio: float,
-     *     power_user_min_downloaded: int,
-     *     user_min_ratio: float,
-     *     tenure_enabled: bool,
-     *     user_min_months: int,
-     *     power_user_min_months: int,
-     *     elite_min_months: int,
-     * }
+     * One batched read with request-instance caching; no long-lived cache to
+     * invalidate across workers after a Sysop/Admin change.
+     *
+     * @return array<string, bool|int|float>
      */
     private function settings(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, function (): array {
-            $default = config('ratio');
+        if ($this->resolved !== null) {
+            return $this->resolved;
+        }
 
-            $overrides = Setting::query()
-                ->whereIn('key', [
-                    'ratio.elite_min_ratio',
-                    'ratio.power_user_min_ratio',
-                    'ratio.power_user_min_downloaded',
-                    'ratio.user_min_ratio',
-                    'ratio.tenure_enabled',
-                    'ratio.user_min_months',
-                    'ratio.power_user_min_months',
-                    'ratio.elite_min_months',
-                ])
-                ->pluck('value', 'key')
-                ->toArray();
+        $overrides = $this->repository->getMany(array_values(self::KEYS));
+        $values = [];
 
-            return [
-                'elite_min_ratio' => (float) ($overrides['ratio.elite_min_ratio'] ?? $default['elite_min_ratio']),
-                'power_user_min_ratio' => (float) ($overrides['ratio.power_user_min_ratio'] ?? $default['power_user_min_ratio']),
-                'power_user_min_downloaded' => (int) ($overrides['ratio.power_user_min_downloaded'] ?? $default['power_user_min_downloaded']),
-                'user_min_ratio' => (float) ($overrides['ratio.user_min_ratio'] ?? $default['user_min_ratio']),
-                'tenure_enabled' => filter_var($overrides['ratio.tenure_enabled'] ?? $default['tenure_enabled'], FILTER_VALIDATE_BOOLEAN),
-                'user_min_months' => (int) ($overrides['ratio.user_min_months'] ?? $default['user_min_months']),
-                'power_user_min_months' => (int) ($overrides['ratio.power_user_min_months'] ?? $default['power_user_min_months']),
-                'elite_min_months' => (int) ($overrides['ratio.elite_min_months'] ?? $default['elite_min_months']),
-            ];
-        });
+        foreach (self::KEYS as $name => $key) {
+            $definition = SettingsRegistry::definition($key);
+            if ($definition === null) {
+                throw new \LogicException('Missing class threshold definition: '.$key);
+            }
+
+            $values[$name] = $this->parse($overrides[$key] ?? null, $definition);
+        }
+
+        return $this->resolved = $values;
+    }
+
+    /**
+     * @param  array<string, mixed>  $definition
+     */
+    private function parse(?string $raw, array $definition): bool|int|float
+    {
+        $default = match ($definition['type']) {
+            'bool' => (bool) $definition['default'],
+            'int' => (int) $definition['default'],
+            default => (float) $definition['default'],
+        };
+
+        if ($raw === null) {
+            return $default;
+        }
+
+        if ($definition['type'] === 'bool') {
+            return filter_var($raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $default;
+        }
+
+        if ($definition['type'] === 'int') {
+            $value = filter_var($raw, FILTER_VALIDATE_INT);
+
+            return $value !== false && $this->withinBounds($value, $definition) ? $value : $default;
+        }
+
+        if (is_numeric($raw) === false) {
+            return $default;
+        }
+
+        $value = (float) $raw;
+
+        return is_finite($value) && $this->withinBounds($value, $definition) ? $value : $default;
+    }
+
+    /** @param  array<string, mixed>  $definition */
+    private function withinBounds(float|int $value, array $definition): bool
+    {
+        return (isset($definition['min']) === false || $value >= $definition['min'])
+            && (isset($definition['max']) === false || $value <= $definition['max']);
     }
 
     public function eliteMinRatio(): float
     {
-        return $this->settings()['elite_min_ratio'];
+        return (float) $this->settings()['elite_min_ratio'];
     }
 
     public function powerUserMinRatio(): float
     {
-        return $this->settings()['power_user_min_ratio'];
+        return (float) $this->settings()['power_user_min_ratio'];
     }
 
     public function powerUserMinDownloaded(): int
     {
-        return $this->settings()['power_user_min_downloaded'];
+        return (int) $this->settings()['power_user_min_downloaded'];
     }
 
     public function userMinRatio(): float
     {
-        return $this->settings()['user_min_ratio'];
+        return (float) $this->settings()['user_min_ratio'];
     }
 
     public function tenureEnabled(): bool
     {
-        return $this->settings()['tenure_enabled'];
+        return (bool) $this->settings()['tenure_enabled'];
     }
 
     public function userMinMonths(): int
     {
-        return $this->settings()['user_min_months'];
+        return (int) $this->settings()['user_min_months'];
     }
 
     public function powerUserMinMonths(): int
     {
-        return $this->settings()['power_user_min_months'];
+        return (int) $this->settings()['power_user_min_months'];
     }
 
     public function eliteMinMonths(): int
     {
-        return $this->settings()['elite_min_months'];
+        return (int) $this->settings()['elite_min_months'];
     }
 
+    /** Refresh the same service instance after an update within this request. */
     public function flush(): void
     {
-        Cache::forget(self::CACHE_KEY);
+        $this->resolved = null;
     }
 }
