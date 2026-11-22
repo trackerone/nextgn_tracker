@@ -177,9 +177,14 @@ final class LogCenterController extends Controller
                 ])->all();
             } elseif (in_array($source, ['tracker', 'infrastructure', 'alerts'], true)) {
                 $query = DB::table('ops_alerts')->where('last_seen_at', '>=', $since);
-                if ($source === 'tracker' || ($source === 'alerts' && $component === 'tracker')) {
+                $incidentComponent = match ($source) {
+                    'tracker' => 'tracker',
+                    'infrastructure' => 'infrastructure',
+                    default => $component,
+                };
+                if ($incidentComponent === 'tracker') {
                     $query->where('component', 'tracker');
-                } elseif ($source === 'infrastructure' || ($source === 'alerts' && $component === 'infrastructure')) {
+                } elseif ($incidentComponent === 'infrastructure') {
                     $query->where('component', '!=', 'tracker');
                 }
                 if ($search !== '') {
