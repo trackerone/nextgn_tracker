@@ -30,18 +30,20 @@ final class OperationsNotifier
 
         try {
             $row = DB::table('ops_alerts')->where('fingerprint', $fingerprint)->first();
+
             if ($row === null || $row->severity !== 'critical' || $row->status !== 'active') {
                 return;
             }
+
             if ($row->notified_at !== null && \Illuminate\Support\Carbon::parse((string) $row->notified_at)->gt(now()->subHour())) {
                 return;
             }
 
             $body = "NEXTGN has recorded a critical operational incident.\n\n"
-                ."Component: ".(string) $row->component."\n"
-                ."Incident: ".(string) $row->title."\n"
-                ."First observed: ".(string) $row->first_seen_at."\n\n"
-                ."Sign in to the Sysop Control Center to investigate. No credentials or request details are included.";
+                .'Component: '.(string) $row->component."\n"
+                .'Incident: '.(string) $row->title."\n"
+                .'First observed: '.(string) $row->first_seen_at."\n\n"
+                .'Sign in to the Sysop Control Center to investigate. No credentials or request details are included.';
 
             Mail::raw($body, static function (Message $message) use ($email): void {
                 $message->to($email)->subject('NEXTGN · critical platform incident');
