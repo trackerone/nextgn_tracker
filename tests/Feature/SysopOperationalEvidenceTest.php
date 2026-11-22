@@ -47,7 +47,7 @@ it('requires real SHA256 artifact verification and separate restore attestation'
     try {
         foreach (['database', 'storage', 'secrets'] as $component) {
             $file = $root.'/'.$component.'.bak';
-            file_put_contents($file, 'sample-'. $component. '-artifact');
+            file_put_contents($file, 'sample-'.$component.'-artifact');
 
             $this->artisan('ops:backup-evidence', [
                 'component' => $component,
