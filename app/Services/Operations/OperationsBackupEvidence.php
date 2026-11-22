@@ -28,16 +28,21 @@ final class OperationsBackupEvidence
             $stale = [];
             $verified = [];
             $offsite = true;
+
             foreach (['database', 'storage', 'secrets'] as $component) {
                 $row = $records->get($component);
+
                 if ($row === null) {
                     $missing[] = $component;
+
                     continue;
                 }
                 if ((string) $row->verification !== 'sha256_matched') {
                     $missing[] = $component.' (checksum unverified)';
+
                     continue;
                 }
+
                 if (Carbon::parse((string) $row->observed_at)->lt(now()->subHours(36))) {
                     $stale[] = $component;
                 }
@@ -56,6 +61,7 @@ final class OperationsBackupEvidence
             }
 
             $restore = $records->get('restore');
+
             if ($restore === null || (string) $restore->verification !== 'operator_attested') {
                 $drill = $this->check('restore_drill', 'Restore drill', 'unknown', 'No independently executed restore drill attested.');
             } elseif (Carbon::parse((string) $restore->observed_at)->lt(now()->subDays(31))) {
