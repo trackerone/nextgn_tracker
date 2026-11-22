@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\PermissionService;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -126,6 +127,7 @@ it('preserves normal admin role management and logs the change', function (): vo
 });
 
 it('revokes inherited legacy staff powers when a member is downgraded to user', function (): void {
+    $this->seed(RoleSeeder::class);
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
     $legacyAdmin = Role::query()->where('slug', 'admin1')->firstOrFail();
     $legacyUser = Role::query()->where('slug', 'user1')->firstOrFail();
@@ -160,6 +162,7 @@ it('revokes inherited legacy staff powers when a member is downgraded to user', 
 });
 
 it('keeps staff flag and role relation aligned when changing staff access', function (): void {
+    $this->seed(RoleSeeder::class);
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
     $target = User::factory()->create(['role' => User::ROLE_USER]);
     $legacyModerator = Role::query()->where('slug', 'mod1')->firstOrFail();
@@ -190,6 +193,7 @@ it('keeps staff flag and role relation aligned when changing staff access', func
 });
 
 it('protects sysop accounts even when the older role relation disagrees with the role column', function (): void {
+    $this->seed(RoleSeeder::class);
     $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
     $legacySysop = Role::query()->where('slug', 'sysop')->firstOrFail();
     $target = User::factory()->create([
