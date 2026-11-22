@@ -29,7 +29,7 @@
                         <details class="relative ml-auto min-w-0 max-w-full">
                             <summary class="cursor-pointer rounded-lg px-3 py-2 font-semibold text-white [overflow-wrap:anywhere]">
                                 {{ auth()->user()->name }}
-                                <span class="text-xs uppercase text-slate-400">{{ auth()->user()->role_label }}</span>
+                                <span class="text-xs uppercase text-slate-400">{{ auth()->user()->headerClassLabel() }}</span>
                             </summary>
                             <nav aria-label="User menu" class="absolute right-0 z-50 mt-1 grid max-h-[65vh] w-60 max-w-[92vw] gap-1 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-xl">
                                 <a href="{{ route('account.index') }}" class="{{ $navLink }}">My account</a>
