@@ -63,7 +63,6 @@ final class TorrentRssFeedBuilder
             /** @var Collection<int, Torrent> $torrents */
             $torrents = Torrent::query()
                 ->visible()
-                ->where('is_visible', true)
                 ->with('metadata')
                 ->latest('uploaded_at')
                 ->latest('id')

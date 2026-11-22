@@ -16,7 +16,7 @@ final class DownloadEligibilityService
 
     public function decide(User $user, Torrent $torrent): DownloadEligibilityDecision
     {
-        if ($torrent->isApproved()) {
+        if ($torrent->isVisible()) {
             return DownloadEligibilityDecision::allow(DownloadEligibilityDecision::REASON_APPROVED_TORRENT);
         }
 

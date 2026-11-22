@@ -23,7 +23,7 @@ class TorrentPolicy
 
     public function view(User $user, Torrent $torrent): Response
     {
-        if ($torrent->isApproved()) {
+        if ($torrent->isVisible()) {
             return Response::allow();
         }
 
