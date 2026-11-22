@@ -22,7 +22,11 @@
 
                 <div class="nextgn-auth-register-heading">
                     <h1 id="nextgn-register-heading">Create your account</h1>
-                    <p>Join the community with your invitation.</p>
+                    @if ($registrationMode === 'invite')
+                        <p>Join the community with your invitation.</p>
+                    @else
+                        <p>Join the community. An invitation is optional.</p>
+                    @endif
                 </div>
 
                 @if ($errors->any())
@@ -55,10 +59,14 @@
                         <input type="password" name="password_confirmation" placeholder="Confirm password" required autocomplete="new-password">
                     </label>
                     <label class="nextgn-auth-field">
-                        <span class="sr-only">Invite code</span>
-                        <input type="text" name="invite_code" value="{{ old('invite_code') }}" placeholder="Invite code" autocomplete="off" @if (!app()->environment('local')) required @endif aria-invalid="{{ $errors->has('invite_code') ? 'true' : 'false' }}">
+                        <span class="sr-only">Invite code{{ $registrationMode === 'open' ? ' (optional)' : '' }}</span>
+                        <input type="text" name="invite_code" value="{{ old('invite_code') }}" placeholder="Invite code{{ $registrationMode === 'open' ? ' (optional)' : '' }}" autocomplete="off" @if ($registrationMode === 'invite') required @endif aria-invalid="{{ $errors->has('invite_code') ? 'true' : 'false' }}">
                     </label>
-                    <p class="nextgn-auth-field-note">Invites help keep NextGN private. Enter the code you received from staff.</p>
+                    @if ($registrationMode === 'invite')
+                        <p class="nextgn-auth-field-note">An invitation is required. Enter the code you received from staff.</p>
+                    @else
+                        <p class="nextgn-auth-field-note">You can sign up without an invite. If you received one, enter it to credit the inviter.</p>
+                    @endif
                     <button type="submit" class="nextgn-auth-submit">
                         <span>Create account</span>
                         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">

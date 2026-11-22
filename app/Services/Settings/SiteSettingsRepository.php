@@ -10,6 +10,7 @@ final class SiteSettingsRepository
 {
     /** @var array<string, array{value: string, type: string}> */
     private const FALLBACKS = [
+        'registration.mode' => ['value' => 'invite', 'type' => 'string'],
         'tracker.ratio.enforcement_enabled' => ['value' => 'true', 'type' => 'bool'],
         'tracker.ratio.minimum_download_ratio' => ['value' => '0.5', 'type' => 'float'],
         'tracker.ratio.freeleech_bypass_enabled' => ['value' => 'true', 'type' => 'bool'],
