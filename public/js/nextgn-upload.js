@@ -14,6 +14,20 @@
         if (event.target.name) dirty.add(event.target.name);
     });
 
+    // The category owns the media family. Don't make uploaders guess
+    // whether "Books" should be submitted as "other" or "book".
+    const categorySelect = form.elements.namedItem('category_id');
+    const typeSelect = form.elements.namedItem('type');
+    const syncCategoryType = () => {
+        const mediaType = categorySelect?.selectedOptions?.[0]?.dataset.mediaType;
+        if (mediaType && mediaType !== 'other' && typeSelect) {
+            typeSelect.value = mediaType;
+            dirty.add('type');
+        }
+    };
+    categorySelect?.addEventListener('change', syncCategoryType);
+    if (categorySelect?.value) syncCategoryType();
+
     for (const name of ['torrent_file', 'nfo_file', 'nfo_text']) {
         form.elements.namedItem(name)?.addEventListener('change', () => {
             generation++;
