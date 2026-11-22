@@ -108,7 +108,7 @@ final class OptionalUserClassTenureTest extends TestCase
 
         $this->assertSame('Elite', $member->userClass());
         $this->assertSame('36', SiteSetting::query()->where('key', 'ratio.elite_min_months')->value('value'));
-        $this->assertSame('0', SiteSetting::query()->where('key', 'ratio.tenure_enabled')->value('value'));
+        $this->assertSame('false', SiteSetting::query()->where('key', 'ratio.tenure_enabled')->value('value'));
     }
 
     public function test_non_sysop_admin_can_change_ratio_but_cannot_change_tenure_policies(): void
