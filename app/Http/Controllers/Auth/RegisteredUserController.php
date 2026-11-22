@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
 use App\Models\User;
+use App\Services\Settings\RegistrationPolicy;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -20,18 +21,22 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    public function create(Request $request): View|RedirectResponse
+    public function create(Request $request, RegistrationPolicy $registration): View|RedirectResponse
     {
         if ($request->user()) {
             return redirect()->route('torrents.index');
         }
 
-        return view('auth.register');
+        abort_unless($registration->allowsRegistration(), 404);
+
+        return view('auth.register', ['registrationMode' => $registration->mode()]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, RegistrationPolicy $registration): RedirectResponse
     {
-        $requiresInvite = ! app()->environment('local');
+        abort_unless($registration->allowsRegistration(), 403);
+
+        $requiresInvite = $registration->requiresInvite();
 
         $rules = [
             'name' => ['required', 'string', 'max:255'],
