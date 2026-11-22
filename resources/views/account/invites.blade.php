@@ -13,6 +13,21 @@
             <p class="mt-2 text-sm text-slate-400">Invites help bring trusted friends onboard while keeping the tracker private.</p>
         </section>
 
+        @if ($canIssueInvites)
+            <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-6">
+                <h2 class="text-lg font-semibold text-white">Create invitation</h2>
+                <p class="mt-2 text-sm text-slate-400">Create a single-use invitation, valid for 7 days. Only your own invitations appear below.</p>
+                <form method="POST" action="{{ route('account.invites.store') }}" class="mt-4 space-y-4">
+                    @csrf
+                    <label class="block text-sm text-slate-200">
+                        Note (optional)
+                        <input name="notes" value="{{ old('notes') }}" maxlength="2000" placeholder="Who is this invitation for?" class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+                    </label>
+                    <button type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Create invite</button>
+                </form>
+            </section>
+        @endif
+
         <section class="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
             @if ($invites === null || $invites->isEmpty())
                 <div class="px-6 py-10 text-center">
