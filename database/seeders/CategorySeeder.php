@@ -21,7 +21,8 @@ class CategorySeeder extends Seeder
             'books' => ['Books', 'book'],
         ];
 
-        foreach ($categories as $slug => [$name, $mediaType]) {
+        foreach (array_keys($categories) as $index => $slug) {
+            [$name, $mediaType] = $categories[$slug];
             // Seed defaults only once: never overwrite Sysop custom names,
             // ordering, media types or archived status on subsequent seeding.
             Category::query()->firstOrCreate(
@@ -29,7 +30,7 @@ class CategorySeeder extends Seeder
                 [
                     'name' => $name,
                     'media_type' => $mediaType,
-                    'position' => array_search($slug, array_keys($categories), true),
+                    'position' => $index,
                     'is_active' => true,
                 ]
             );
