@@ -89,7 +89,7 @@ final class HomeVisibilityAndPermissionsTest extends TestCase
 
         $this->actingAs($sysop)->patch(route('sysop.permissions.roles.update'), [
             'role' => 'user',
-            'permissions' => ['upload' => '0', 'forum' => '0', 'messages' => '0'],
+            'permissions' => ['upload' => '0', 'forum' => '0', 'messages' => '0', 'invitations' => '0'],
             'audit_reason' => 'Disable community features for regular members.',
         ])->assertRedirect(route('sysop.permissions.index'));
 

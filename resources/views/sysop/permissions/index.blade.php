@@ -8,7 +8,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-semibold text-white">Roles &amp; permissions</h1>
-                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Control what each user class can actually open and use. Navigation and server access follow the same permission policy, without changing code.</p>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-300">Control what each user class can open, use and delegate, including invitation issuance. Navigation and server access follow the same policy without changing code.</p>
             </div>
             <a class="text-sm text-brand hover:underline" href="{{ route('sysop.settings.edit') }}">Back to site settings</a>
         </div>
@@ -62,7 +62,7 @@
             @endforeach
             <div class="space-y-2 rounded-2xl border border-amber-700/40 bg-slate-900/60 p-5">
                 <h3 class="text-base font-semibold">Sysop <span class="text-xs font-normal text-amber-200">(protected)</span></h3>
-                <p class="text-sm leading-6 text-slate-300">Sysop retains all three managed features and exclusive access to this control plane. Sysop privileges cannot be disabled using this page.</p>
+                <p class="text-sm leading-6 text-slate-300">Sysop retains all managed features and exclusive access to this control plane. Sysop privileges cannot be disabled using this page.</p>
             </div>
         </div>
     </section>

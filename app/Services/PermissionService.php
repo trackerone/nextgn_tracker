@@ -21,6 +21,7 @@ final class PermissionService
         'upload' => 'torrent.upload',
         'forum' => 'forum.access',
         'messages' => 'messages.access',
+        'invitations' => 'invites.create',
     ];
 
     /** @var array<string, string> */
@@ -28,6 +29,7 @@ final class PermissionService
         'upload' => 'Upload releases',
         'forum' => 'Forum',
         'messages' => 'Private messages',
+        'invitations' => 'Issue invitations',
     ];
 
     /** @var list<string> */

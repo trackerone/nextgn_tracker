@@ -176,10 +176,11 @@ Route::middleware(['auth', 'role.level:admin', $adminThrottle])->group(function 
         ->name('admin.settings.metadata.edit');
 });
 
-// Invites are intended to be accessible to staff (tests assert staff access).
+// Staff may review all invitations; issuance is separately delegated by Sysop.
 Route::middleware(['auth', 'staff', $adminThrottle])->group(function (): void {
     Route::get('/admin/invites', [InviteAdminController::class, 'index'])->name('admin.invites.index');
-    Route::post('/admin/invites', [InviteAdminController::class, 'store'])->name('admin.invites.store');
+    Route::post('/admin/invites', [InviteAdminController::class, 'store'])
+        ->middleware('permission:invites.create')->name('admin.invites.store');
 });
 
 Route::middleware(['auth', 'staff', 'can:view-logs', $adminThrottle])
@@ -371,6 +372,8 @@ Route::middleware(['auth'])->group(function (): void {
 
     Route::get('/account/snatches', [AccountSnatchController::class, 'index'])->name('account.snatches');
     Route::get('/account/invites', [AccountInviteController::class, 'index'])->name('account.invites');
+    Route::post('/account/invites', [AccountInviteController::class, 'store'])
+        ->middleware(['permission:invites.create', 'throttle:5,1440'])->name('account.invites.store');
     Route::get('/account/notifications', [AccountNotificationController::class, 'index'])->name('account.notifications.index');
     Route::post('/account/notifications/read-all', [AccountNotificationController::class, 'markAllRead'])
         ->name('account.notifications.read_all');

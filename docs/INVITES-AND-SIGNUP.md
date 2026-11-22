@@ -12,7 +12,7 @@ At **Sysop → Roles & permissions → Invitations** (`/sysop/permissions?sectio
 | `invite` | Enabled only with a valid code | Required |
 | `open` | Enabled without a code | Optional; valid codes still credit the inviter |
 
-Mode changes require authenticated Sysop, CSRF protection, a validated selection, and a nonblank audit reason. The update and audit log are committed in one database transaction (`sysop.registration.mode_updated`). Staff/Admins may still generate invitations using their existing delegated invitation tools, but **only Sysop** may change the overall signup policy.
+Mode changes require authenticated Sysop, CSRF protection, a validated selection, and a nonblank audit reason. The update and audit log are committed in one database transaction (`sysop.registration.mode_updated`). Staff/Admins may still generate invitations if their class or individual `invites.create` permission allows it, but **only Sysop** may change the overall signup policy or delegate invitation issuance.
 
 An invalid or unknown stored mode falls back to `invite`, never `open`. No `APP_ENV=local` exception remains. Closed signup does **not** lock out existing accounts.
 
@@ -30,9 +30,10 @@ When a code is supplied, the register action locks the invitation for the databa
 
 ## Staff workflow
 
-- Staff members (moderator level or above) may create and list invitations under `/admin/invites`.
+- Staff members (moderator level or above) can view global invitation history under `/admin/invites`. Creating invitations on that page additionally requires the Sysop-managed `invites.create` permission (on by default for Moderator/Admin/Sysop; Sysop may revoke it).
 - Sysop can also create invitations under the Invitations section of the permissions control plane.
-- Existing members can review their sent invitations at `/account/invites`.
+- Every member can review only their own sent invitations at `/account/invites`. If the owner grants `invites.create` to their class or individual account, they can also generate a single-use invitation expiring in 7 days on that page, without staff or global-history access. The personal issuance route is rate-limited to 5 attempts per day.
+- All issuance goes through the same server-side permission check and a transactional, sanitized audit event (`invites.issued`); the actual invitation code is never written to the audit metadata.
 
 ## Tests
 
