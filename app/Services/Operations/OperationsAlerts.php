@@ -9,9 +9,7 @@ use Throwable;
 
 final class OperationsAlerts
 {
-    public function __construct(private readonly OperationsNotifier $notifier)
-    {
-    }
+    public function __construct(private readonly OperationsNotifier $notifier) {}
 
     /**
      * Dedupe incidents by stable component keys; resolve automatically on recovery.
