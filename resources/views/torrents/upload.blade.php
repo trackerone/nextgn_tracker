@@ -91,9 +91,9 @@
                     <div><label for="year">Year</label><input type="number" id="year" name="year" value="{{ old('year') }}" min="1900" max="{{ now()->year + 2 }}" placeholder="2026"></div>
                     <div>
                         <label for="category_id">Category</label>
-                        <select id="category_id" name="category_id"><option value="">Select a category</option>@foreach ($categories as $category)<option value="{{ $category->id }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select>
+                        <select id="category_id" name="category_id"><option value="">Select a category</option>@foreach ($categories as $category)<option value="{{ $category->id }}" data-media-type="{{ $category->media_type }}" @selected(old('category_id') == $category->id)>{{ $category->name }}</option>@endforeach</select>
                     </div>
-                    <div><label for="type">Type</label><select id="type" name="type" required><option value="">Choose type</option>@php($types = ['movie', 'tv', 'music', 'game', 'software', 'other'])@foreach ($types as $type)<option value="{{ $type }}" @selected(old('type', '') === $type)>{{ ucfirst($type) }}</option>@endforeach</select></div>
+                    <div><label for="type">Media type</label><select id="type" name="type" required><option value="">Choose type</option>@foreach (\App\Support\Torrents\TorrentMediaTypes::LABELS as $type => $label)<option value="{{ $type }}" @selected(old('type', '') === $type)>{{ $label }}</option>@endforeach</select><p class="mt-1 text-xs text-slate-500">Automatically follows the selected category. Other allows any media type.</p></div>
                 </div>
                 <p class="mt-3 text-xs text-slate-400">Torrent file, release name and type are required. Other fields are optional; detected values can be corrected.</p>
                 <details class="mt-4 rounded-xl border border-slate-700 p-4" id="upload-extra-metadata">
