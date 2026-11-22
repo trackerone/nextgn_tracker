@@ -128,6 +128,35 @@ it('reads recent Laravel entries without exposing tokenized tracker URLs or stac
     }
 });
 
+it('retains latest application events when a burst contains over 800 entries', function (): void {
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+    $path = storage_path('logs/laravel-'.now()->format('Y-m-d').'.log');
+    if (! is_dir(dirname($path))) {
+        mkdir(dirname($path), 0775, true);
+    }
+    $existing = file_exists($path) ? file_get_contents($path) : null;
+
+    try {
+        $lines = [];
+        for ($i = 0; $i < 900; $i++) {
+            $lines[] = '['.now()->format('Y-m-d H:i:s').'] local.ERROR: Sequence #'.$i;
+        }
+        file_put_contents($path, implode("\n", $lines)."\n");
+
+        $this->actingAs($sysop)
+            ->get('/sysop/logs?source=application&level=error')
+            ->assertOk()
+            ->assertSee('Sequence #899')
+            ->assertDontSee('Sequence #100');
+    } finally {
+        if ($existing === null) {
+            @unlink($path);
+        } else {
+            file_put_contents($path, $existing);
+        }
+    }
+});
+
 it('redacts nested structured fields and common bearer and tracker URL secrets', function (): void {
     $redactor = new SensitiveLogRedactor;
     $data = $redactor->value([
@@ -139,8 +168,9 @@ it('redacts nested structured fields and common bearer and tracker URL secrets',
         ->and($data['nested']['refresh_token'])->toBe('[REDACTED]')
         ->and($data['nested']['message'])->not->toContain('private-password');
 
-    $line = $redactor->text('Bearer bearer-token.123 /scrape/abcdefgh12345678 ?token=query-secret');
+    $line = $redactor->text('Bearer bearer-token.123 /scrape/abcdefgh12345678 ?token=query-secret {"path":"announce/anotherhiddenpasskey123"}');
     expect($line)->not->toContain('bearer-token')
         ->not->toContain('abcdefgh12345678')
-        ->not->toContain('query-secret');
+        ->not->toContain('query-secret')
+        ->not->toContain('anotherhiddenpasskey123');
 });
