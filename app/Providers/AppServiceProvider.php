@@ -200,7 +200,12 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(ScheduledTaskFinished::class, static function (ScheduledTaskFinished $event): void {
             $key = self::monitoredTaskKey((string) $event->task->command);
             if (is_string($key)) {
-                app(OperationsTelemetry::class)->job($key, 'succeeded', (int) round($event->runtime * 1000));
+                $exitCode = $event->task->exitCode ?? 0;
+                if ($exitCode === 0) {
+                    app(OperationsTelemetry::class)->job($key, 'succeeded', (int) round($event->runtime * 1000));
+                } else {
+                    app(OperationsTelemetry::class)->job($key, 'failed', null, 'Scheduled command exited with nonzero status');
+                }
             }
         });
 
