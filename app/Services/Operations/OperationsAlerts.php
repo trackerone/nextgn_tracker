@@ -9,7 +9,9 @@ use Throwable;
 
 final class OperationsAlerts
 {
-    public function __construct(private readonly OperationsNotifier $notifier) {}
+    public function __construct(private readonly OperationsNotifier $notifier)
+    {
+    }
 
     /**
      * Dedupe incidents by stable component keys; resolve automatically on recovery.
@@ -25,11 +27,13 @@ final class OperationsAlerts
 
             if ($severity === 'healthy') {
                 $this->resolve($fingerprint);
+
                 continue;
             }
 
             if (in_array($severity, ['degraded', 'critical'], true) === false) {
                 // Missing telemetry is not evidence that an incident recovered.
+
                 continue;
             }
 
@@ -88,6 +92,7 @@ final class OperationsAlerts
                 ->where('status', '<>', 'resolved')
                 ->update(['status' => 'resolved', 'resolved_at' => now(), 'updated_at' => now()]);
         } catch (Throwable) {
+            // Failed incident storage must never interrupt monitoring.
         }
     }
 
