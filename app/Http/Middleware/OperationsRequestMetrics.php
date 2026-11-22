@@ -22,7 +22,16 @@ final class OperationsRequestMetrics
 
         // No raw paths, passkeys, user identifiers or query strings.
         if (! $request->is('health', 'sysop/*', 'announce/*', 'scrape/*')) {
-            $this->telemetry->count($response->getStatusCode() >= 500 ? 'http_5xx' : 'http_ok');
+            $failed = $response->getStatusCode() >= 500;
+            $this->telemetry->count($failed ? 'http_5xx' : 'http_ok');
+
+            if ($request->routeIs('torrents.index')) {
+                $this->telemetry->count($failed ? 'browse_error' : 'browse_ok');
+            }
+
+            if ($request->routeIs('rss.*') || $request->is('rss/*')) {
+                $this->telemetry->count($failed ? 'rss_error' : 'rss_ok');
+            }
         }
 
         return $response;
