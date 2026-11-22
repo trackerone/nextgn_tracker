@@ -27,6 +27,7 @@
 
         @php($releaseAdvice = is_array($releaseAdvice ?? null) ? $releaseAdvice : [])
         @php($languageExamples = \App\Support\Languages\LanguageMetadataOptions::examples())
+        @php($uploadLimits = app(\App\Services\Settings\UploadLimits::class)->values())
         @if (($releaseAdvice['exact_duplicate_exists'] ?? false) === true)
             <div class="mt-5 rounded-xl border border-amber-500/50 bg-amber-500/10 p-4 text-sm text-amber-100">
                 <strong>Exact duplicate detected.</strong>
@@ -64,15 +65,15 @@
                 <legend class="px-1 text-base font-semibold text-white">1. Torrent file</legend>
                 <p class="mb-3 text-xs text-slate-400">Upload the private <code>.torrent</code> file first.</p>
                 <label for="torrent_file">Torrent file (.torrent)</label><input type="file" name="torrent_file" id="torrent_file" accept=".torrent,application/x-bittorrent" required aria-describedby="torrent_file_help">
-                <p class="mt-1 text-xs text-slate-500" id="torrent_file_help">Use an unmodified <code>.torrent</code> file with a valid bencoded payload.</p>
+                <p class="mt-1 text-xs text-slate-500" id="torrent_file_help">Use an unmodified <code>.torrent</code> file with a valid bencoded payload. Maximum {{ number_format($uploadLimits['torrent_max_kb']) }} KB.</p>
                 @if (isset($errors) && $errors->has('torrent_file'))<p class="mt-1 text-xs text-rose-300">{{ $errors->first('torrent_file') }}</p>@endif
             </fieldset>
 
             <fieldset class="rounded-2xl border border-slate-800 p-4">
                 <legend class="px-1 text-base font-semibold text-white">2. NFO details</legend>
                 <div class="grid gap-4 md:grid-cols-2">
-                    <div><label for="nfo_file">NFO file (optional)</label><input type="file" name="nfo_file" id="nfo_file" accept=".nfo,.txt,text/plain"></div>
-                    <div><label for="nfo_text">NFO text (optional)</label><textarea id="nfo_text" name="nfo_text" rows="5">{{ old('nfo_text') }}</textarea></div>
+                    <div><label for="nfo_file">NFO file (optional)</label><input type="file" name="nfo_file" id="nfo_file" accept=".nfo,.txt,text/plain"><p class="mt-1 text-xs text-slate-500">Maximum {{ number_format($uploadLimits['nfo_max_kb']) }} KB.</p></div>
+                    <div><label for="nfo_text">NFO text (optional)</label><textarea id="nfo_text" name="nfo_text" rows="5" maxlength="{{ $uploadLimits['nfo_max_characters'] }}">{{ old('nfo_text') }}</textarea><p class="mt-1 text-xs text-slate-500">Maximum {{ number_format($uploadLimits['nfo_max_characters']) }} characters.</p></div>
                 </div>
             </fieldset>
 
