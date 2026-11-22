@@ -79,6 +79,8 @@ class RatioSettingsController extends Controller
             'user_min_ratio' => ['required', 'numeric', 'min:0', 'max:10'],
         ]);
 
+        $tenure = null;
+
         // Optional tenure controls may only be updated by Sysop.
         if ($request->user()?->isSysop() && $request->has('tenure_enabled')) {
             $tenure = $request->validate([
