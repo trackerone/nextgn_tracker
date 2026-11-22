@@ -21,8 +21,9 @@ final class RecordOperationsBackupEvidenceCommand extends Command
     public function handle(): int
     {
         $component = (string) $this->argument('component');
-        if (! in_array($component, ['database', 'storage', 'secrets', 'restore'], true)) {
+        if (in_array($component, ['database', 'storage', 'secrets', 'restore'], true) === false) {
             $this->error('Invalid component.');
+
             return self::FAILURE;
         }
 
@@ -31,28 +32,32 @@ final class RecordOperationsBackupEvidenceCommand extends Command
         $artifact = realpath((string) $this->argument('artifact'));
 
         if ($root === '' || $rootReal === false || $artifact === false
-            || ! str_starts_with($artifact, rtrim($rootReal, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR)
-            || ! is_file($artifact) || ! is_readable($artifact) || filesize($artifact) < 1
+            || str_starts_with($artifact, rtrim($rootReal, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR) === false
+            || is_file($artifact) === false || is_readable($artifact) === false || filesize($artifact) < 1
         ) {
             $this->error('Artifact must be a readable nonempty file beneath configured OPS_BACKUP_ROOT.');
+
             return self::FAILURE;
         }
 
         $expected = strtolower(trim((string) $this->option('sha256')));
         if ($component !== 'restore' && preg_match('/\A[a-f0-9]{64}\z/', $expected) !== 1) {
             $this->error('A 64-character --sha256 checksum is required for artifact integrity verification.');
+
             return self::FAILURE;
         }
 
-        if ($component === 'restore' && ! (bool) $this->option('attest-restore')) {
+        if ($component === 'restore' && (bool) $this->option('attest-restore') === false) {
             $this->error('A restore record requires --attest-restore after an isolated restore drill.');
+
             return self::FAILURE;
         }
 
         if ($component !== 'restore') {
             $actual = hash_file('sha256', $artifact);
-            if ($actual === false || ! hash_equals($expected, $actual)) {
+            if ($actual === false || hash_equals($expected, $actual) === false) {
                 $this->error('Backup checksum validation failed.');
+
                 return self::FAILURE;
             }
         }
