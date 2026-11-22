@@ -58,7 +58,11 @@ final class RatioSettings
      */
     private function parse(?string $raw, array $definition): bool|int|float
     {
-        $default = $definition['default'];
+        $default = match ($definition['type']) {
+            'bool' => (bool) $definition['default'],
+            'int' => (int) $definition['default'],
+            default => (float) $definition['default'],
+        };
 
         if ($raw === null) {
             return $default;
