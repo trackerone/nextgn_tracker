@@ -47,7 +47,7 @@ final class TorrentWatchPresetMatcher
 
     public function notifyMatchesForTorrent(Torrent $torrent): int
     {
-        if (! $torrent->isVisible() || ! (bool) $torrent->is_visible) {
+        if (! $torrent->isVisible()) {
             return 0;
         }
 
@@ -103,7 +103,6 @@ final class TorrentWatchPresetMatcher
     private function torrentEligibleForUser(User $user, Torrent $torrent): bool
     {
         return $torrent->isVisible()
-            && (bool) $torrent->is_visible
             && $this->visibilityEligibility->canDownload($user, $torrent)
             && $this->ratioEligibility->check($user, $torrent)['allowed'];
     }
