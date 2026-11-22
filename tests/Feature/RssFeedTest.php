@@ -49,7 +49,7 @@ final class RssFeedTest extends TestCase
     public function test_feed_includes_only_visible_and_eligible_torrents(): void
     {
         $user = $this->rssUser(uploadedBytes: 1, downloadedBytes: 10);
-        $eligible = Torrent::factory()->create(['name' => 'Eligible Freeleech', 'is_freeleech' => true, 'freeleech' => true]);
+        $eligible = Torrent::factory()->create(['name' => 'Eligible Freeleech', 'is_freeleech' => true]);
         $ratioBlocked = Torrent::factory()->create(['name' => 'Ratio Blocked']);
         $hidden = Torrent::factory()->unapproved()->create(['name' => 'Hidden Pending']);
 
@@ -69,13 +69,11 @@ final class RssFeedTest extends TestCase
             'name' => 'Matrix Matched Release',
             'category_id' => $category->id,
             'is_freeleech' => true,
-            'freeleech' => true,
         ]);
         $miss = Torrent::factory()->create([
             'name' => 'Matrix Other Release',
             'category_id' => $category->id,
             'is_freeleech' => true,
-            'freeleech' => true,
         ]);
 
         TorrentMetadata::query()->create([
@@ -281,7 +279,6 @@ final class RssFeedTest extends TestCase
         $eligible = Torrent::factory()->create([
             'name' => 'Eligible Danish Freeleech',
             'is_freeleech' => true,
-            'freeleech' => true,
         ]);
         $blocked = Torrent::factory()->create(['name' => 'Blocked Danish Ratio']);
 
@@ -404,7 +401,7 @@ final class RssFeedTest extends TestCase
         ]);
 
         $user = $this->rssUser(uploadedBytes: 100, downloadedBytes: 1_000);
-        $torrent = Torrent::factory()->create(['is_freeleech' => true, 'freeleech' => true]);
+        $torrent = Torrent::factory()->create(['is_freeleech' => true]);
         $this->storeTorrentPayload($torrent);
 
         $this->get(route('rss.torrents.download', [
@@ -419,7 +416,6 @@ final class RssFeedTest extends TestCase
         $eligible = Torrent::factory()->create([
             'name' => 'Eligible RSS Freeleech',
             'is_freeleech' => true,
-            'freeleech' => true,
         ]);
         $blocked = Torrent::factory()->create(['name' => 'Blocked RSS Torrent']);
 
