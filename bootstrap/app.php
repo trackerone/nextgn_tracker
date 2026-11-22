@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureFeaturePermission;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\LockdownModeMiddleware;
+use App\Http\Middleware\OperationsRequestMetrics;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\RequireRoleLevel;
 use App\Http\Middleware\ResponseGuard;
@@ -48,6 +49,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('tracker:prune-ghost-peers')
             ->everyTenMinutes()
             ->withoutOverlapping(10);
+        // A scheduler heartbeat is distinct from task definitions or queue counts.
+        $schedule->call(static function (): void {
+            app(\App\Services\Operations\OperationsTelemetry::class)
+                ->job('scheduler.tick', 'succeeded');
+        })->name('ops:scheduler.tick')->everyMinute();
+        $schedule->command('ops:monitor')->everyFiveMinutes()->withoutOverlapping(10);
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
@@ -65,6 +72,7 @@ return Application::configure(basePath: dirname(__DIR__))
             RequestGuard::class,
             ResponseGuard::class,
             LockdownModeMiddleware::class,
+            OperationsRequestMetrics::class,
         ]);
 
         $middleware->web(append: [

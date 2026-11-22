@@ -21,7 +21,7 @@
     </header>
 
     <nav aria-label="Log sources" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-        @foreach (['application' => 'Application', 'security' => 'Security', 'audit' => 'Audit trail', 'jobs' => 'Failed jobs'] as $key => $label)
+        @foreach (['application' => 'Application', 'tracker' => 'Tracker', 'infrastructure' => 'Infrastructure', 'security' => 'Security', 'audit' => 'Audit trail', 'jobs' => 'Failed jobs', 'alerts' => 'Incidents'] as $key => $label)
             <a href="{{ route('sysop.logs.index', ['source' => $key, 'window' => $filters['window']]) }}"
                 @if ($filters['source'] === $key) aria-current="page" @endif
                 class="min-w-0 rounded-lg border px-2 py-2 text-center text-sm font-semibold sm:shrink-0 sm:px-3 {{ $filters['source'] === $key ? 'border-blue-500/70 bg-blue-500/15 text-white' : 'border-slate-700 text-slate-300 hover:bg-slate-800' }}">
@@ -39,7 +39,7 @@
         <label class="block">
             <span class="mb-1 block text-xs text-slate-400">Time range</span>
             <select name="window" class="w-full rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-white">
-                @foreach (['1h' => 'Last hour', '24h' => '24 hours', '7d' => '7 days', '30d' => '30 days'] as $range => $label)
+                @foreach (['15m' => '15 minutes', '1h' => 'Last hour', '24h' => '24 hours', '7d' => '7 days', '30d' => '30 days'] as $range => $label)
                     <option value="{{ $range }}" @selected($filters['window'] === $range)>{{ $label }}</option>
                 @endforeach
             </select>
@@ -104,7 +104,7 @@
 
     <p class="text-xs leading-relaxed text-slate-500">
         Application logs show a bounded read-only tail of recent Laravel log files (maximum 75 displayed); multiline stack traces are not exposed.
-        Audit and security records are existing structured data. Failed jobs are read without their serialized payloads.
+        Audit and security records are existing structured data. Tracker/infrastructure tabs show recorded incidents, not raw peer requests. Failed jobs are read without their serialized payloads.
         Values are redacted before display; do not put credentials into event names or messages.
         Logging driver: {{ $driver }}. Unsupported server logs and external observability are not claimed as monitored.
     </p>

@@ -6,6 +6,7 @@ namespace App\Jobs;
 
 use App\Models\Torrent;
 use App\Services\Metadata\ExternalMetadataEnricher;
+use App\Services\Operations\OperationsTelemetry;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -26,7 +27,7 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
     {
         $torrent = Torrent::query()->with(['metadata', 'externalMetadata'])->find($this->torrentId);
 
-        if (! $torrent instanceof Torrent) {
+        if ($torrent instanceof Torrent === false) {
             Log::info('External metadata enrichment skipped because torrent was not found.', [
                 'torrent_id' => $this->torrentId,
             ]);
@@ -35,10 +36,13 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
         }
 
         $enricher->enrich($torrent);
+        app(OperationsTelemetry::class)->count('metadata_ok');
     }
 
     public function failed(\Throwable $exception): void
     {
+        app(OperationsTelemetry::class)->count('metadata_error');
+
         Log::warning('External metadata enrichment failed.', [
             'torrent_id' => $this->torrentId,
             'attempts' => $this->attempts(),

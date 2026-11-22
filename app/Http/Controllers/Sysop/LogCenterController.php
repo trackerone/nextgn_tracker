@@ -22,8 +22,8 @@ final class LogCenterController extends Controller
         SensitiveLogRedactor $redactor
     ): View {
         $validated = $request->validate([
-            'source' => ['sometimes', 'in:application,audit,security,jobs'],
-            'window' => ['sometimes', 'in:1h,24h,7d,30d'],
+            'source' => ['sometimes', 'in:application,audit,security,jobs,tracker,infrastructure,alerts'],
+            'window' => ['sometimes', 'in:15m,1h,24h,7d,30d'],
             'level' => ['sometimes', 'nullable', 'in:debug,info,notice,warning,error,critical,alert,emergency'],
             'q' => ['sometimes', 'nullable', 'string', 'max:100'],
         ]);
@@ -32,7 +32,7 @@ final class LogCenterController extends Controller
         $window = $validated['window'] ?? '24h';
         $level = $validated['level'] ?? '';
         $search = trim($validated['q'] ?? '');
-        $minutes = ['1h' => 60, '24h' => 1440, '7d' => 10080, '30d' => 43200][$window];
+        $minutes = ['15m' => 15, '1h' => 60, '24h' => 1440, '7d' => 10080, '30d' => 43200][$window];
         $since = now()->subMinutes($minutes);
         $entries = [];
         $pagination = null;
@@ -89,6 +89,32 @@ final class LogCenterController extends Controller
                     'reference' => 'Security #'.$event->getKey(),
                     'actor' => $redactor->text((string) data_get($event->user, 'name', 'Unknown')),
                     'url' => route('admin.logs.security.show', $event),
+                ])->all();
+            } elseif (in_array($source, ['tracker', 'infrastructure', 'alerts'], true)) {
+                $query = DB::table('ops_alerts')->where('last_seen_at', '>=', $since);
+                if ($source === 'tracker') {
+                    $query->where('component', 'tracker');
+                } elseif ($source === 'infrastructure') {
+                    $query->where('component', '!=', 'tracker');
+                }
+                if ($search !== '') {
+                    $query->where('title', 'like', '%'.$search.'%');
+                }
+                if ($level !== '') {
+                    $query->where('severity', match ($level) {
+                        'critical', 'alert', 'emergency' => 'critical',
+                        'warning', 'error' => 'degraded',
+                        default => '__none__',
+                    });
+                }
+                $pagination = $query->orderByDesc('last_seen_at')->paginate(30)->withQueryString();
+                $entries = $pagination->getCollection()->map(static fn (object $alert): array => [
+                    'time' => (string) $alert->last_seen_at,
+                    'severity' => $alert->severity === 'critical' ? 'CRITICAL' : 'WARNING',
+                    'source' => ucfirst((string) $alert->component),
+                    'message' => $redactor->text((string) $alert->title).' ('.(string) $alert->status.', '.(int) $alert->occurrences.' observations)',
+                    'reference' => 'Incident #'.$alert->id,
+                    'url' => route('sysop.operations.index', ['section' => 'alerts']),
                 ])->all();
             } else {
                 $query = DB::table('failed_jobs')

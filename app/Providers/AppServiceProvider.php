@@ -15,13 +15,18 @@ use App\Services\Metadata\Providers\OpenLibraryMetadataProvider;
 use App\Services\Metadata\Providers\TmdbMetadataProvider;
 use App\Services\Metadata\Providers\TraktMetadataProvider;
 use App\Services\Metadata\Providers\TvmazeMetadataProvider;
+use App\Services\Operations\OperationsTelemetry;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
 use App\Support\Security\LoginThrottleKey;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Console\Events\ScheduledTaskFinished;
+use Illuminate\Console\Events\ScheduledTaskStarting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -74,6 +79,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSchedulerTelemetry();
+
         RateLimiter::for('torrent-download', static function (Request $request): Limit {
             [$maxAttempts, $decayMinutes] = array_pad(
                 array_map('intval', explode(',', (string) config('security.rate_limits.torrent_download', '45,1'), 2)),
@@ -103,7 +110,7 @@ class AppServiceProvider extends ServiceProvider
 
             $isAuthenticatedUser = $user instanceof User;
 
-            if (! $isAuthenticatedUser) {
+            if ($isAuthenticatedUser === false) {
                 $view->with('followNavNewCount', 0);
 
                 return;
@@ -179,6 +186,46 @@ class AppServiceProvider extends ServiceProvider
                     ->by(sprintf('admin-two-factor-ip:%s', $ip)),
             ];
         });
+    }
+
+    private function registerSchedulerTelemetry(): void
+    {
+        Event::listen(ScheduledTaskStarting::class, static function (ScheduledTaskStarting $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if (is_string($key)) {
+                app(OperationsTelemetry::class)->job($key, 'started');
+            }
+        });
+
+        Event::listen(ScheduledTaskFinished::class, static function (ScheduledTaskFinished $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if (is_string($key)) {
+                $exitCode = $event->task->exitCode ?? 0;
+                if ($exitCode === 0) {
+                    app(OperationsTelemetry::class)->job($key, 'succeeded', (int) round($event->runtime * 1000));
+                } else {
+                    app(OperationsTelemetry::class)->job($key, 'failed', null, 'Scheduled command exited with nonzero status');
+                }
+            }
+        });
+
+        Event::listen(ScheduledTaskFailed::class, static function (ScheduledTaskFailed $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if (is_string($key)) {
+                app(OperationsTelemetry::class)->job($key, 'failed', null, 'Scheduled command exited with error');
+            }
+        });
+    }
+
+    private static function monitoredTaskKey(string $command): ?string
+    {
+        foreach (['tracker:prune-ghost-peers', 'hnr:evaluate', 'ops:monitor'] as $key) {
+            if (str_contains($command, $key)) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     private function registerTorrentRateLimiters(): void

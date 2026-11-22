@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\BencodeService;
+use App\Services\Operations\OperationsTelemetry;
 use App\Services\Settings\TrackerRuntimeSettings;
 use App\Tracker\Announce\AnnounceResult;
 use App\Tracker\Announce\PasskeyUserResolver;
@@ -22,6 +23,7 @@ final class ScrapeController extends Controller
         private readonly TrackerRuntimeSettings $trackerSettings,
         private readonly PasskeyUserResolver $passkeyUserResolver,
         private readonly TorrentAccessResolver $torrentAccessResolver,
+        private readonly OperationsTelemetry $telemetry,
     ) {}
 
     public function __invoke(Request $request, string $passkey): Response
@@ -29,6 +31,8 @@ final class ScrapeController extends Controller
         $resolvedUser = $this->passkeyUserResolver->resolve($request, $passkey);
 
         if ($resolvedUser instanceof AnnounceResult) {
+            $this->telemetry->count('scrape_rejected');
+
             return response(
                 $this->bencode->encode($resolvedUser->payload),
                 200,
@@ -39,6 +43,8 @@ final class ScrapeController extends Controller
         $hashes = $this->allInfoHashParams($request);
 
         if (count($hashes) > $this->trackerSettings->scrapeLimit()) {
+            $this->telemetry->count('scrape_rejected');
+
             return response(
                 $this->bencode->encode(['failure reason' => 'Too many info_hash values requested.']),
                 200,
@@ -76,6 +82,8 @@ final class ScrapeController extends Controller
                 'incomplete' => (int) $torrent->leechers,
             ];
         }
+
+        $this->telemetry->count('scrape_ok');
 
         return response(
             $this->bencode->encode(['files' => $files]),
