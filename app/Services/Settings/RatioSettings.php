@@ -24,7 +24,9 @@ final class RatioSettings
     /** @var array<string, bool|int|float>|null */
     private ?array $resolved = null;
 
-    public function __construct(private readonly SiteSettingsRepository $repository) {}
+    public function __construct(private readonly SiteSettingsRepository $repository)
+    {
+    }
 
     /**
      * One batched read with request-instance caching; no long-lived cache to
@@ -54,7 +56,7 @@ final class RatioSettings
     }
 
     /**
-     * @param array<string, mixed> $definition
+     * @param  array<string, mixed>  $definition
      */
     private function parse(?string $raw, array $definition): bool|int|float
     {
@@ -78,7 +80,7 @@ final class RatioSettings
             return $value !== false && $this->withinBounds($value, $definition) ? $value : $default;
         }
 
-        if (! is_numeric($raw)) {
+        if (is_numeric($raw) === false) {
             return $default;
         }
 
@@ -87,11 +89,11 @@ final class RatioSettings
         return is_finite($value) && $this->withinBounds($value, $definition) ? $value : $default;
     }
 
-    /** @param array<string, mixed> $definition */
+    /** @param  array<string, mixed>  $definition */
     private function withinBounds(float|int $value, array $definition): bool
     {
-        return (! isset($definition['min']) || $value >= $definition['min'])
-            && (! isset($definition['max']) || $value <= $definition['max']);
+        return (isset($definition['min']) === false || $value >= $definition['min'])
+            && (isset($definition['max']) === false || $value <= $definition['max']);
     }
 
     public function eliteMinRatio(): float
