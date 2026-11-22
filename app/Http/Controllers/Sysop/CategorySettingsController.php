@@ -110,7 +110,7 @@ final class CategorySettingsController extends Controller
     }
 
     /**
-     * @param array<string, mixed> $validated
+     * @param  array<string, mixed>  $validated
      */
     private function reason(array $validated): string
     {
