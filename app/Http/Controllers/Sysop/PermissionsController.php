@@ -11,8 +11,8 @@ use App\Models\UserPermissionOverride;
 use App\Services\Logging\AuditLogger;
 use App\Services\PermissionService;
 use App\Services\Settings\RatioSettings;
-use App\Services\Settings\SettingsRegistry;
 use App\Services\Settings\RegistrationPolicy;
+use App\Services\Settings\SettingsRegistry;
 use App\Services\Settings\SiteSettingsRepository;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
@@ -158,7 +158,7 @@ final class PermissionsController extends Controller
             ? User::query()->find((int) $identifier)
             : User::query()->where('email', $identifier)->first();
 
-        if (! $target instanceof User) {
+        if ($target === null) {
             throw ValidationException::withMessages(['user_identifier' => 'User not found. Enter an account ID or email address.']);
         }
 
