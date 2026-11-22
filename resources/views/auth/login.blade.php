@@ -90,7 +90,7 @@
                     </button>
                 </form>
 
-                @if (Route::has('register'))
+                @if (Route::has('register') && app(\App\Services\Settings\RegistrationPolicy::class)->allowsRegistration())
                     <div class="nextgn-auth-register">
                         <span>New here?</span>
                         <a href="{{ route('register') }}">Create an account</a>
