@@ -14,7 +14,11 @@ it('keeps the global header scrollable on mobile and compacts navigation', funct
         ->assertOk()
         ->assertSee('relative z-40 border-b')
         ->assertSee('md:sticky md:top-0')
-        ->assertSee('grid grid-cols-2 gap-2 sm:flex sm:flex-wrap')
+        ->assertSee('flex snap-x snap-mandatory flex-nowrap')
+        ->assertSee('overflow-x-auto')
+        ->assertSee('Search &amp; filters', false)
+        ->assertSee('About these counts')
+        ->assertSee('sm:hidden')
         ->assertSee('sm:gap-4 sm:py-4');
 });
 
@@ -62,4 +66,62 @@ it('keeps admin audit navigation for non-sysop log viewers', function (): void {
         ->assertOk()
         ->assertSee('Back to audit logs')
         ->assertDontSee('Back to Log Center');
+});
+
+it('displays useful runtime-job audit metadata and omits unavailable target placeholders', function (): void {
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+    $audit = AuditLog::query()->create([
+        'user_id' => $sysop->id,
+        'action' => 'sysop.runtime_job_state_changed',
+        'metadata' => [
+            'job_key' => 'metadata.refresh',
+            'previous_state' => true,
+            'new_state' => false,
+        ],
+    ]);
+
+    $this->actingAs($sysop)
+        ->get(route('admin.logs.audit.show', $audit))
+        ->assertOk()
+        ->assertSee('Runtime job')
+        ->assertSee('metadata.refresh')
+        ->assertSee('Enabled &rarr; Disabled', false)
+        ->assertDontSee('N/A #')
+        ->assertDontSee('>Target</dt>', false);
+});
+
+it('does not invent state changes when the audit metadata is incomplete', function (): void {
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+    $audit = AuditLog::query()->create([
+        'user_id' => $sysop->id,
+        'action' => 'sysop.runtime_job_state_changed',
+        'metadata' => ['job_key' => 'metadata.refresh'],
+    ]);
+
+    $this->actingAs($sysop)
+        ->get(route('admin.logs.audit.show', $audit))
+        ->assertOk()
+        ->assertSee('metadata.refresh')
+        ->assertDontSee('State change')
+        ->assertDontSee('N/A #');
+});
+
+it('uses natural source headings and keeps explanatory coverage expandable on mobile', function (): void {
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+
+    $this->actingAs($sysop)
+        ->get('/sysop/logs?source=alerts')
+        ->assertOk()
+        ->assertSee('>Incidents</h2>', false)
+        ->assertDontSee('Incidents events');
+
+    $this->get('/sysop/logs?source=jobs')
+        ->assertOk()
+        ->assertSee('>Failed jobs</h2>', false)
+        ->assertDontSee('Failed jobs events');
+
+    $this->get('/sysop/logs?source=application')
+        ->assertOk()
+        ->assertSee('source coverage', false)
+        ->assertSee('local files may be empty (stderr)', false);
 });
