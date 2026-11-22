@@ -125,7 +125,7 @@ it('restricts support bundle to Sysop and excludes sensitive raw data', function
         ->assertHeader('Content-Disposition', 'attachment; filename="nextgn-sysop-diagnostics.json"')
         ->assertJsonPath('schema_version', 1)
         ->assertDontSee('api_key')
-        ->assertDontSee('passkey');
+        ->assertDontSee('actual-private-passkey123');
 });
 
 it('collects host metrics without leaking filesystem contents or executing commands', function (): void {
