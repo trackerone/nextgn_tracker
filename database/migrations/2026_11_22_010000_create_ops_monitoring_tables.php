@@ -37,6 +37,17 @@ return new class extends Migration
             $table->index(['status', 'last_seen_at']);
         });
 
+        Schema::create('ops_backup_evidence', function (Blueprint $table): void {
+            $table->id();
+            $table->string('component', 32);
+            $table->string('verification', 24);
+            $table->unsignedBigInteger('size_bytes')->nullable();
+            $table->boolean('offsite_attested')->default(false);
+            $table->timestamp('observed_at');
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['component', 'observed_at']);
+        });
+
         Schema::create('ops_snapshots', function (Blueprint $table): void {
             $table->id();
             $table->timestamp('captured_at')->index();
@@ -58,6 +69,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('ops_snapshots');
+        Schema::dropIfExists('ops_backup_evidence');
         Schema::dropIfExists('ops_alerts');
         Schema::dropIfExists('ops_job_status');
     }
