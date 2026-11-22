@@ -18,7 +18,7 @@ final class OperationsHealthService
         private readonly TrackerRuntimeSettings $trackerSettings,
     ) {}
 
-    public function collect(): array
+    public function collect(bool $activeWriteChecks = false): array
     {
         $securityReadiness = $this->productionReadinessService->evaluate();
 
@@ -27,7 +27,7 @@ final class OperationsHealthService
             $this->applicationCard(),
             $this->securityCard(),
             $this->databaseCard(),
-            $this->cacheCard(),
+            $this->cacheCard($activeWriteChecks),
             $this->schedulerCard(),
             $this->queueCard(),
             $this->storageCard(),
@@ -163,22 +163,32 @@ final class OperationsHealthService
         }
     }
 
-    private function cacheCard(): array
+    private function cacheCard(bool $activeWriteChecks): array
     {
         try {
-            Cache::store()->put('ops-health', 'ok', 5);
+            if ($activeWriteChecks) {
+                $key = 'nextgn:ops:health:'.bin2hex(random_bytes(6));
+                try {
+                    Cache::store()->put($key, 'ok', 5);
 
-            if (Cache::store()->get('ops-health') !== 'ok') {
-                throw new \RuntimeException('Cache readback did not match.');
+                    if (Cache::store()->get($key) !== 'ok') {
+                        throw new \RuntimeException('Cache readback did not match.');
+                    }
+                } finally {
+                    Cache::store()->forget($key);
+                }
+            } else {
+                Cache::store()->get('nextgn:ops:passive-health-check');
             }
 
             return $this->card(
                 'Cache/Redis',
-                'ok',
+                $activeWriteChecks ? 'ok' : 'info',
                 [
                     sprintf(
-                        'Cache store: %s',
-                        (string) config('cache.default')
+                        'Cache store: %s (%s)',
+                        (string) config('cache.default'),
+                        $activeWriteChecks ? 'read/write verified' : 'read-only checked; write unverified'
                     ),
                 ],
                 []
