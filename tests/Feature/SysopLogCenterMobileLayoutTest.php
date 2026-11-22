@@ -107,6 +107,7 @@ it('does not invent state changes when the audit metadata is incomplete', functi
 });
 
 it('uses natural source headings and keeps explanatory coverage expandable on mobile', function (): void {
+    config()->set('logging.default', 'stderr');
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
 
     $this->actingAs($sysop)
