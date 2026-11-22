@@ -16,7 +16,7 @@ final class SensitiveLogRedactor
         $text = preg_replace('~(/(?:announce|scrape|rss)/)[A-Za-z0-9]{8,}~i', '$1'.self::MASK, $text) ?? self::MASK;
 
         // Cover both HTTP header and common key=value / JSON-style diagnostics.
-        $text = preg_replace('~(Bearer\s+)[A-Za-z0-9._~+/-]+=*~i', '$1'.self::MASK, $text) ?? self::MASK;
+        $text = preg_replace('#(Bearer\s+)[A-Za-z0-9._~+/-]+=*#i', '$1'.self::MASK, $text) ?? self::MASK;
         $text = preg_replace(
             '~((?:password|passwd|passkey|api[_-]?key|access[_-]?token|refresh[_-]?token|secret|authorization|cookie|session[_-]?id|token)\s*["\x27]?\s*[:=]\s*["\x27]?)[^\s,"\x27;&}\]]+~i',
             '$1'.self::MASK,
