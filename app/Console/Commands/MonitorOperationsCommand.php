@@ -50,6 +50,9 @@ final class MonitorOperationsCommand extends Command
                 'database_latency_ms' => $status['database_latency_ms'],
                 'seeders' => $seeders,
                 'leechers' => $leechers,
+                'host_memory_total_bytes' => $status['host']['memory_total_bytes'],
+                'host_memory_available_bytes' => $status['host']['memory_available_bytes'],
+                'cpu_load_1m' => $status['host']['load_1m'],
             ]);
 
             // Indexed time-range cleanup; keep 30 days of compact snapshots.
