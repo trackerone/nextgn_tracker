@@ -165,6 +165,52 @@ final class SysopCategoryManagementTest extends TestCase
             ->assertDontSee('Unrelated Movie Release');
     }
 
+    public function test_upload_analyser_uses_current_active_media_mapping_not_legacy_slugs(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $legacyMusic = Category::query()->where('slug', 'music')->firstOrFail();
+        $legacyMusic->update(['media_type' => 'book']);
+
+        $activeMusic = Category::factory()->create([
+            'name' => 'Audio Tracks',
+            'media_type' => 'music',
+            'position' => 1,
+            'is_active' => true,
+        ]);
+
+        $payload = app(\App\Services\BencodeService::class)->encode([
+            'announce' => 'https://tracker.invalid/announce',
+            'info' => [
+                'name' => 'Artist.Track.mp3',
+                'length' => 2000,
+                'piece length' => 16384,
+                'pieces' => str_repeat('a', 20),
+            ],
+        ]);
+
+        $uploader = User::factory()->create(['role' => User::ROLE_UPLOADER]);
+        $this->actingAs($uploader)->postJson(route('torrents.upload.analyse'), [
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'track.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertOk()
+            ->assertJsonPath('fields.type', 'music')
+            ->assertJsonPath('fields.category_id', $activeMusic->id);
+
+        $activeMusic->update(['is_active' => false]);
+
+        $this->postJson(route('torrents.upload.analyse'), [
+            'torrent_file' => UploadedFile::fake()->createWithContent(
+                'track.torrent',
+                $payload,
+                'application/x-bittorrent'
+            ),
+        ])->assertOk()
+            ->assertJsonMissing(['category_id' => $legacyMusic->id]);
+    }
+
     public function test_media_type_cannot_change_for_category_with_existing_torrents(): void
     {
         $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
