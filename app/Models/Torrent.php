@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Storage;
  * @property int|null $seeders
  * @property int|null $leechers
  * @property int|null $times_completed
- * @property bool|null $freeleech
  * @property bool $is_freeleech
  * @property \App\Enums\TorrentStatus $status
  * @property bool $is_approved
@@ -76,7 +75,6 @@ class Torrent extends Model
         'is_approved',
         'is_banned',
         'ban_reason',
-        'freeleech',
         'is_freeleech',
         'status',
         'published_at',
@@ -101,7 +99,6 @@ class Torrent extends Model
         'is_visible' => 'boolean',
         'is_approved' => 'boolean',
         'is_banned' => 'boolean',
-        'freeleech' => 'boolean',
         'is_freeleech' => 'boolean',
         'category_id' => 'integer',
         'codecs' => 'array',
