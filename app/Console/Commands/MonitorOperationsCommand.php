@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Jobs\OperationsQueueHeartbeatJob;
 use App\Services\Operations\OperationsAlerts;
 use App\Services\Operations\OperationsProbe;
 use App\Services\Operations\OperationsTelemetry;
@@ -26,6 +27,15 @@ final class MonitorOperationsCommand extends Command
         $telemetry->job('ops:monitor', 'started');
         $status = $probe->collect();
         $alerts->reconcile($status['checks']);
+
+        if ((string) config('queue.default', 'sync') !== 'sync') {
+            try {
+                $telemetry->job('queue.heartbeat.requested', 'started');
+                OperationsQueueHeartbeatJob::dispatch();
+            } catch (Throwable) {
+                $telemetry->job('queue.heartbeat.requested', 'failed', null, 'Unable to dispatch worker heartbeat');
+            }
+        }
 
         $seeders = null;
         $leechers = null;
