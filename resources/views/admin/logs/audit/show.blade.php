@@ -10,7 +10,7 @@
     <div class="space-y-4">
         <a href="{{ route('admin.logs.audit.index') }}" class="text-sm text-slate-400 hover:text-white">&larr; Back to audit logs</a>
         <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-            <h1 class="text-2xl font-semibold text-white">{{ $log->action }}</h1>
+            <h1 class="text-2xl font-semibold text-white">{{ app(\App\Support\Operations\SensitiveLogRedactor::class)->text($log->action) }}</h1>
             <p class="text-sm text-slate-400">Recorded {{ $log->created_at?->toDayDateTimeString() }}</p>
             <dl class="mt-6 space-y-3 text-sm text-slate-200">
                 <div>
