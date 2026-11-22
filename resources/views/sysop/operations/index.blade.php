@@ -107,7 +107,8 @@
     <section id="infrastructure" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
         <h2 class="text-lg font-semibold text-white">Infrastructure & history</h2>
         <p class="mt-2 text-sm text-slate-300">Database latency: {{ $live['database_latency_ms'] === null ? 'Unknown' : $live['database_latency_ms'].' ms' }} · Disk free: {{ $live['disk_free_bytes'] === null ? 'Unknown' : \Illuminate\Support\Number::fileSize($live['disk_free_bytes']) }}</p>
-        <p class="mt-1 text-xs text-slate-400">Server load averages: {{ $live['host_load'] === false ? 'Unavailable' : implode(' / ', array_map(static fn ($load) => number_format((float) $load, 2), $live['host_load'])) }}. CPU%, host RAM, backup integrity and external uptime are not yet measured by this collector.</p>
+        <p class="mt-1 text-sm text-slate-300">Host RAM available: {{ $live['host']['memory_available_bytes'] === null ? 'Unavailable' : \Illuminate\Support\Number::fileSize($live['host']['memory_available_bytes']) }} / {{ $live['host']['memory_total_bytes'] === null ? '—' : \Illuminate\Support\Number::fileSize($live['host']['memory_total_bytes']) }} · Load (1m): {{ $live['host']['load_1m'] ?? 'Unavailable' }} · CPU cores: {{ $live['host']['cpu_cores'] ?? '—' }}</p>
+        <p class="mt-1 text-xs text-slate-400">Network since host boot: RX {{ $live['host']['rx_bytes'] === null ? '—' : \Illuminate\Support\Number::fileSize($live['host']['rx_bytes']) }} / TX {{ $live['host']['tx_bytes'] === null ? '—' : \Illuminate\Support\Number::fileSize($live['host']['tx_bytes']) }}. These are host counters, not per-user traffic. Backup integrity and external uptime require separate operator evidence.</p>
         <details class="mt-3 rounded-lg border border-slate-700 p-3">
             <summary class="cursor-pointer text-sm font-semibold text-slate-200">Historical snapshots (last 24h)</summary>
             <div class="mt-2 max-h-72 overflow-auto">
