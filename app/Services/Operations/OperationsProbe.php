@@ -152,7 +152,20 @@ final class OperationsProbe
         if ($queueDriver === 'sync') {
             $checks[] = $this->check('queue', 'Queue', 'not_applicable', 'sync driver: jobs run inline; no worker required.');
         } else {
-            $checks[] = $this->check('queue', 'Queue', 'unknown', $queueDriver.' driver: worker heartbeat not yet instrumented.');
+            $worker = $jobStates['queue.worker'] ?? null;
+            $requested = $jobStates['queue.heartbeat.requested'] ?? null;
+            $lastWorker = isset($worker['last_success_at']) ? strtotime((string) $worker['last_success_at']) : false;
+            $firstRequested = isset($requested['created_at']) ? strtotime((string) $requested['created_at']) : false;
+
+            if (($requested['state'] ?? '') === 'failed') {
+                $checks[] = $this->check('queue', 'Queue', 'critical', $queueDriver.' worker heartbeat dispatch failed.');
+            } elseif ($lastWorker !== false && $lastWorker >= now()->subMinutes(15)->timestamp) {
+                $checks[] = $this->check('queue', 'Queue', 'healthy', $queueDriver.' worker executed a heartbeat: '.(string) $worker['last_success_at']);
+            } elseif ($firstRequested !== false && $firstRequested < now()->subMinutes(15)->timestamp) {
+                $checks[] = $this->check('queue', 'Queue', 'critical', $queueDriver.' worker heartbeat has not been processed for over 15 minutes.');
+            } else {
+                $checks[] = $this->check('queue', 'Queue', 'unknown', $queueDriver.' driver: awaiting first worker heartbeat.');
+            }
         }
 
         $counters = $this->telemetry->counters(15);
