@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Hnr\HnrService;
 use App\Services\Tracker\AnnounceCreditPolicy;
 use App\Services\Tracker\AnnounceIntegrityEvaluation;
+use App\Services\Tracker\DownloadEligibilityPolicy;
 use App\Services\Tracker\UserRatioStatsRecorder;
 use App\Services\UserTorrentService;
 use Illuminate\Http\Request;
@@ -18,8 +19,6 @@ use Illuminate\Support\Facades\DB;
 
 final class PeerEventProcessor
 {
-    private const MIN_RATIO_FOR_NEW_DOWNLOAD = 0.2;
-
     public function __construct(
         private readonly UserTorrentService $userTorrents,
         private readonly TorrentRepositoryInterface $torrents,
@@ -29,6 +28,7 @@ final class PeerEventProcessor
         private readonly UserRatioStatsRecorder $ratioStatsRecorder,
         private readonly AnnounceCreditPolicy $creditPolicy,
         private readonly HnrService $hnr,
+        private readonly DownloadEligibilityPolicy $downloadEligibility,
     ) {}
 
     public function process(Request $request, User $user, Torrent $torrent, AnnounceRequestData $data): AnnounceResult
@@ -44,10 +44,12 @@ final class PeerEventProcessor
             return AnnounceResult::failure('New downloads are restricted by HnR. Resume outstanding torrents or contact staff.');
         }
 
-        if ($data->event === 'started' && $data->left > 0 && ! $this->isStaff($user) && ! $hnrRecovery) {
-            $ratio = $user->ratio();
+        // Existing torrents may continue to seed/stop even when their ratio falls.
+        // New leech starts obey the same Sysop-configured policy as .torrent downloads.
+        if ($data->event === 'started' && $data->left > 0 && ! $user->isStaff() && ! $hnrRecovery) {
+            $eligibility = $this->downloadEligibility->check($user, $torrent);
 
-            if ($ratio !== null && $ratio < self::MIN_RATIO_FOR_NEW_DOWNLOAD) {
+            if (! $eligibility['allowed']) {
                 return AnnounceResult::failure('Your ratio is too low to start new downloads.');
             }
         }
@@ -172,20 +174,6 @@ final class PeerEventProcessor
             && (int) $peer->downloaded === $data->downloaded
             && (int) $peer->left === $data->left
             && (string) $peer->ip === $ip;
-    }
-
-    private function isStaff(User $user): bool
-    {
-        return $user->isStaff()
-            || in_array((string) ($user->role ?? ''), [
-                'moderator',
-                'admin',
-                'sysop',
-                'mod1',
-                'mod2',
-                'admin1',
-                'admin2',
-            ], true);
     }
 
     private function logIntegrityEvents(
