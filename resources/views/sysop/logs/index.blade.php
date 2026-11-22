@@ -49,7 +49,7 @@
         </div>
     </header>
 
-    <nav aria-label="Log sources" class="flex flex-wrap gap-2">
+    <nav aria-label="Log sources" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         @foreach ($sourceNames as $key => $label)
             <a href="{{ route('sysop.logs.index', ['source' => $key, ...$sharedFilters]) }}"
                 @if ($selectedSource === $key) aria-current="page" @endif
