@@ -16,7 +16,10 @@
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <h1 class="text-2xl font-semibold text-white">Sysop Operations Dashboard</h1>
-            <a href="{{ route('sysop.settings.edit') }}" class="inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Site settings</a>
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('sysop.logs.index') }}" class="inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Open Log Center</a>
+                <a href="{{ route('sysop.settings.edit') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Site settings</a>
+            </div>
         </div>
         <p class="mt-3 text-sm text-slate-300">This page combines limited connection checks and configuration snapshots. It does not verify that workers, scheduled jobs or the tracker are running successfully.</p>
         <p class="mt-2 text-xs text-slate-400">Checked at: {{ $health['checked_at'] }}</p>
