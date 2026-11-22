@@ -58,7 +58,7 @@ final class SysopPermissionsTest extends TestCase
 
         $this->actingAs($sysop)->patch(route('sysop.permissions.roles.update'), [
             'role' => 'user',
-            'permissions' => ['upload' => '1', 'forum' => '0', 'messages' => '0'],
+            'permissions' => ['upload' => '1', 'forum' => '0', 'messages' => '0', 'invitations' => '0'],
             'audit_reason' => 'Enable trusted uploads while hiding community features.',
         ])->assertRedirect(route('sysop.permissions.index'));
 
@@ -111,13 +111,13 @@ final class SysopPermissionsTest extends TestCase
 
         $this->patch(route('sysop.permissions.roles.update'), [
             'role' => 'sysop',
-            'permissions' => ['upload' => '0', 'forum' => '0', 'messages' => '0'],
+            'permissions' => ['upload' => '0', 'forum' => '0', 'messages' => '0', 'invitations' => '0'],
             'audit_reason' => 'Invalid sysop edit',
         ])->assertSessionHasErrors('role');
 
         $this->patch(route('sysop.permissions.roles.update'), [
             'role' => 'user',
-            'permissions' => ['upload' => '0', 'forum' => '1', 'messages' => '1', 'admin' => '1'],
+            'permissions' => ['upload' => '0', 'forum' => '1', 'messages' => '1', 'invitations' => '1', 'admin' => '1'],
             'audit_reason' => 'Invalid privilege injection',
         ])->assertSessionHasErrors();
 
@@ -140,7 +140,7 @@ final class SysopPermissionsTest extends TestCase
     {
         return [
             'role' => 'user',
-            'permissions' => ['upload' => '0', 'forum' => '1', 'messages' => '1'],
+            'permissions' => ['upload' => '0', 'forum' => '1', 'messages' => '1', 'invitations' => '1'],
             'audit_reason' => 'Routine permissions review.',
         ];
     }
