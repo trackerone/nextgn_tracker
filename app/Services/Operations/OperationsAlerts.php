@@ -9,6 +9,8 @@ use Throwable;
 
 final class OperationsAlerts
 {
+    public function __construct(private readonly OperationsNotifier $notifier) {}
+
     /**
      * Dedupe incidents by stable component keys; resolve automatically on recovery.
      * Telemetry and alerts never execute remediation commands.
@@ -57,6 +59,7 @@ final class OperationsAlerts
                         'last_seen_at' => $now,
                         'acknowledged_at' => null,
                         'resolved_at' => null,
+                        'notified_at' => null,
                         'updated_at' => $now,
                     ]);
                 } elseif ($row->last_seen_at === null || \Illuminate\Support\Carbon::parse((string) $row->last_seen_at)->diffInMinutes(now()) >= 5) {
@@ -69,6 +72,10 @@ final class OperationsAlerts
                 }
             } catch (Throwable) {
                 // A DB failure may itself be the incident; do not crash the monitor.
+            }
+
+            if ($severity === 'critical') {
+                $this->notifier->sendCritical($fingerprint);
             }
         }
     }
