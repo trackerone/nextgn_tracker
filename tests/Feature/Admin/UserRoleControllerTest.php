@@ -125,7 +125,6 @@ it('preserves normal admin role management and logs the change', function (): vo
         ]);
 });
 
-
 it('revokes inherited legacy staff powers when a member is downgraded to user', function (): void {
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
     $legacyAdmin = Role::query()->where('slug', 'admin1')->firstOrFail();
