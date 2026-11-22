@@ -25,7 +25,7 @@ final class MonitorOperationsCommand extends Command
     ): int {
         $started = microtime(true);
         $telemetry->job('ops:monitor', 'started');
-        $status = $probe->collect();
+        $status = $probe->collect(activeWriteChecks: true);
         $alerts->reconcile($status['checks']);
 
         if ((string) config('queue.default', 'sync') !== 'sync') {
