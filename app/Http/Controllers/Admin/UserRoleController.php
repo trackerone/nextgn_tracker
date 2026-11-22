@@ -67,6 +67,7 @@ class UserRoleController extends Controller
             User::ROLE_MODERATOR => 'mod1',
             User::ROLE_ADMIN => 'admin1',
             User::ROLE_SYSOP => 'sysop',
+            default => throw new \InvalidArgumentException('Unsupported role transition.'),
         };
 
         DB::transaction(function () use ($user, $actor, $newRole, $oldRole, $roleSlug, $auditReason): void {
