@@ -13,6 +13,7 @@ final class OperationsProbe
     public function __construct(
         private readonly OperationsTelemetry $telemetry,
         private readonly OperationsHostMetrics $hostMetrics,
+        private readonly OperationsBackupEvidence $backupEvidence,
     ) {}
 
     /**
@@ -178,7 +179,9 @@ final class OperationsProbe
             $checks[] = $this->check('http', 'Web requests', $total === 0 ? 'unknown' : ($bad ? 'degraded' : 'healthy'), $http5xx.' HTTP 5xx failures / '.$total.' requests (15m).');
         }
 
-        $checks[] = $this->check('backups', 'Backups', 'unknown', 'Backup and restore verification is not configured on this host.');
+        foreach ($this->backupEvidence->checks() as $backupCheck) {
+            $checks[] = $backupCheck;
+        }
 
         return [
             'checks' => $checks,
