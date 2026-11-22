@@ -29,6 +29,7 @@ final class OperationsAlerts
             try {
                 $row = DB::table('ops_alerts')->where('fingerprint', $fingerprint)->first();
                 $now = now();
+
                 if ($row === null) {
                     DB::table('ops_alerts')->insert([
                         'fingerprint' => $fingerprint,
