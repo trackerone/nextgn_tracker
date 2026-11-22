@@ -79,7 +79,7 @@
         @unless ($isOverview)
             <label class="block min-w-0 sm:col-span-2 lg:min-w-64 lg:flex-1">
                 <span class="mb-1 block text-xs text-slate-300">Search this source</span>
-                <input type="search" name="q" maxlength="100" value="{{ $filters['search'] }}" placeholder="Event, message or reference..." class="w-full min-w-0 rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-white placeholder:text-slate-500">
+                <input type="search" name="q" maxlength="100" value="{{ $filters['search'] }}" placeholder="Event, message or queue..." class="w-full min-w-0 rounded-lg border border-slate-700 bg-slate-950 p-2 text-sm text-white placeholder:text-slate-500">
             </label>
         @endunless
         @if ($isIncidents)
@@ -161,7 +161,15 @@
                             <tr id="{{ $entry['anchor'] ?? '' }}" class="align-top hover:bg-slate-800/40">
                                 <td class="px-3 py-2 text-xs tabular-nums text-slate-300">{{ $entry['time'] }}</td>
                                 <td class="px-3 py-2"><span class="rounded border px-2 py-0.5 text-xs font-semibold {{ $tone }}">{{ $entry['severity'] }}</span></td>
-                                <td class="break-words px-3 py-2 font-medium leading-snug text-slate-100 [overflow-wrap:anywhere]">{{ $entry['message'] }}</td>
+                                <td class="break-words px-3 py-2 leading-snug text-slate-100 [overflow-wrap:anywhere]">
+                                    @if (isset($entry['title']))
+                                        <p class="font-semibold">{{ $entry['title'] }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-300">{{ $entry['message'] }}</p>
+                                        <p class="mt-0.5 text-xs text-slate-500">{{ $entry['event_key'] }}</p>
+                                    @else
+                                        <p>{{ $entry['message'] }}</p>
+                                    @endif
+                                </td>
                                 <td class="break-words px-3 py-2 text-xs text-slate-300">
                                     {{ $entry['actor'] ?? '—' }}
                                     <span class="mt-1 block text-slate-500">{{ $entry['reference'] }}</span>
@@ -192,7 +200,15 @@
                             <span class="font-semibold {{ $tone }}">{{ $entry['severity'] }}</span>
                             <span>{{ $entry['source'] }}</span>
                         </div>
-                        <p class="break-words text-sm text-slate-100 [overflow-wrap:anywhere]">{{ $entry['message'] }}</p>
+                        <div class="break-words text-sm text-slate-100 [overflow-wrap:anywhere]">
+                            @if (isset($entry['title']))
+                                <p class="font-semibold">{{ $entry['title'] }}</p>
+                                <p class="text-xs text-slate-300">{{ $entry['message'] }}</p>
+                                <p class="text-xs text-slate-500">{{ $entry['event_key'] }}</p>
+                            @else
+                                <p>{{ $entry['message'] }}</p>
+                            @endif
+                        </div>
                         <div class="flex items-center justify-between gap-2 text-xs text-slate-400">
                             <span class="truncate">{{ $entry['actor'] ?? $entry['reference'] }}</span>
                             @if (isset($entry['url']))
