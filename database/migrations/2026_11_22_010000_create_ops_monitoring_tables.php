@@ -57,6 +57,9 @@ return new class extends Migration
             $table->unsignedInteger('tracker_rejected')->nullable();
             $table->unsignedInteger('tracker_scrapes')->nullable();
             $table->unsignedInteger('http_5xx')->nullable();
+            $table->unsignedInteger('rss_errors')->nullable();
+            $table->unsignedInteger('browse_errors')->nullable();
+            $table->unsignedInteger('metadata_errors')->nullable();
             $table->unsignedBigInteger('disk_free_bytes')->nullable();
             $table->unsignedInteger('database_latency_ms')->nullable();
             $table->unsignedInteger('seeders')->nullable();
