@@ -203,7 +203,7 @@ final class RssPresetTest extends TestCase
         ]);
 
         $user = $this->rssUser(uploadedBytes: 100, downloadedBytes: 1_000);
-        $eligible = Torrent::factory()->create(['name' => 'Preset Eligible Freeleech', 'is_freeleech' => true, 'freeleech' => true]);
+        $eligible = Torrent::factory()->create(['name' => 'Preset Eligible Freeleech', 'is_freeleech' => true]);
         $blocked = Torrent::factory()->create(['name' => 'Preset Ratio Blocked']);
         $hidden = Torrent::factory()->unapproved()->create(['name' => 'Preset Hidden Pending']);
         $preset = RssFeedPreset::factory()->create(['user_id' => $user->id, 'filters' => []]);
