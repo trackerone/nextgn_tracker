@@ -443,6 +443,36 @@ class User extends Authenticatable implements MustVerifyEmail
                 && $this->created_at->lessThanOrEqualTo(now()->subMonthsNoOverflow($months)));
     }
 
+    /**
+     * The public header badge shows the member's earned class, unless they
+     * hold a named operational role. This never grants or changes permissions.
+     */
+    public function headerClassLabel(): string
+    {
+        if ($this->isSysop()) {
+            return 'Sysop';
+        }
+
+        if ($this->isAdmin()) {
+            return 'Admin';
+        }
+
+        if ($this->isModerator()) {
+            return 'Moderator';
+        }
+
+        if (in_array($this->resolveRoleIdentifier(), [
+            self::ROLE_UPLOADER,
+            'uploader1',
+            'uploader2',
+            'uploader3',
+        ], true)) {
+            return 'Uploader';
+        }
+
+        return $this->userClass();
+    }
+
     public function getRoleLabelAttribute(): string
     {
         return Str::of($this->resolveRoleIdentifier() ?? self::ROLE_USER)
