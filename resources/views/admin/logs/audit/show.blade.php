@@ -33,7 +33,7 @@
                 </div>
                 <div>
                     <dt class="text-slate-400">Metadata</dt>
-                    <dd><pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950/70 p-3 text-xs text-slate-300">{{ json_encode($log->metadata ?? new \stdClass(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre></dd>
+                    <dd><pre class="mt-2 overflow-x-auto rounded-xl bg-slate-950/70 p-3 text-xs text-slate-300">{{ json_encode(app(\App\Support\Operations\SensitiveLogRedactor::class)->value($log->metadata ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre></dd>
                 </div>
             </dl>
         </div>
