@@ -43,6 +43,7 @@
             <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.logs.index') }}">Logs</a>
             <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.settings.edit') }}">Settings</a>
             <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.operations.index') }}">Refresh</a>
+            <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.operations.support-bundle') }}">Download diagnostics</a>
         </nav>
         <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Measured service health">
             @foreach ($live['checks'] as $check)
