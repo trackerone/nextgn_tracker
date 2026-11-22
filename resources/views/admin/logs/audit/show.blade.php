@@ -44,7 +44,7 @@
                 <div><dt class="text-slate-400">Action key</dt><dd class="mt-1 break-all">{{ $actionKey }}</dd></div>
                 <div><dt class="text-slate-400">IP / Agent</dt><dd class="mt-1 break-all">{{ $redactor->text(($log->ip_address ?? '—').' — '.($log->user_agent ?? 'Unknown agent')) }}</dd></div>
                 <div>
-                    <dt class="text-slate-400">Redacted metadata</dt>
+                    <dt class="text-slate-400">Metadata (redacted)</dt>
                     <dd><pre class="mt-1 max-w-full whitespace-pre-wrap break-all rounded-lg bg-slate-950 p-3 leading-relaxed">{{ json_encode($redactor->value($log->metadata ?? []), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) }}</pre></dd>
                 </div>
             </dl>
