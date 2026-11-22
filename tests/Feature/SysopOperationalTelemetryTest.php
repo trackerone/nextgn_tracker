@@ -45,7 +45,7 @@ it('treats file cache and sync queue correctly without pretending a queue worker
     config()->set('cache.default', 'array');
     config()->set('queue.default', 'sync');
 
-    $checks = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
+    $checks = collect(app(OperationsProbe::class)->collect(activeWriteChecks: true)['checks'])->keyBy('id');
 
     expect($checks['cache']['status'])->toBe('healthy')
         ->and($checks['queue']['status'])->toBe('not_applicable')
