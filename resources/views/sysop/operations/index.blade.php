@@ -23,6 +23,7 @@
             'not_applicable' => 'border-slate-700 text-slate-400',
         ];
         $traffic = $live['counters'];
+        $activeDiagnostics = session('operations_active_diagnostics');
     @endphp
 
     <section id="overview" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 sm:p-5">
@@ -30,7 +31,7 @@
             <div class="min-w-0">
                 <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">NEXTGN / SYSOP</p>
                 <h1 class="text-xl font-bold text-white sm:text-2xl">Control Center</h1>
-                <p class="mt-1 text-xs text-slate-400">Measured {{ $live['checked_at'] }} · PHP {{ $live['php_version'] }} · Release {{ $live['version'] }}</p>
+                <p class="mt-1 text-xs text-slate-400">Passive status {{ $live['checked_at'] }} · PHP {{ $live['php_version'] }} · Release {{ $live['version'] }}</p>
             </div>
             <span class="rounded-full border px-3 py-1 text-sm font-bold {{ $liveTone[$live['overall']] ?? $liveTone['unknown'] }}">
                 {{ $liveLabels[$live['overall']] ?? 'Unknown' }}
@@ -45,7 +46,22 @@
             <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.operations.index') }}">Refresh</a>
             <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.operations.support-bundle') }}">Download diagnostics</a>
         </nav>
-        <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Measured service health">
+        <div class="mt-4 flex flex-wrap items-center gap-3">
+            <form method="POST" action="{{ route('sysop.operations.diagnostics.run') }}">
+                @csrf
+                <button type="submit" class="rounded-lg border border-amber-500/50 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-slate-800">Run active cache and storage checks</button>
+            </form>
+            <p class="text-xs text-slate-400">Viewing status or downloading diagnostics does not write test keys or temporary files. This action briefly creates and deletes both.</p>
+        </div>
+        @if (is_array($activeDiagnostics))
+            <div class="mt-3 rounded-xl border border-slate-700 p-3" role="status">
+                <p class="text-xs font-semibold text-slate-200">Active diagnostics completed at {{ $activeDiagnostics['checked_at'] ?? 'unknown' }}</p>
+                @foreach (($activeDiagnostics['checks'] ?? []) as $check)
+                    <p class="mt-1 text-xs text-slate-300">{{ $check['label'] }}: {{ $liveLabels[$check['status']] ?? 'Unknown' }} — {{ $check['details'] }}</p>
+                @endforeach
+            </div>
+        @endif
+        <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Passive service health">
             @foreach ($live['checks'] as $check)
                 <div class="min-w-0 rounded-xl border border-slate-700 bg-slate-950/50 p-3">
                     <div class="flex items-center justify-between gap-2">
