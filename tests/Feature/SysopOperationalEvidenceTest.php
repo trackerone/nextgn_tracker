@@ -86,8 +86,6 @@ it('requires real SHA256 artifact verification and separate restore attestation'
     }
 });
 
-
-
 it('shows pipeline failures without treating unobserved pipelines as healthy', function (): void {
     for ($i = 0; $i < 6; $i++) {
         app(OperationsTelemetry::class)->count('rss_error');
@@ -112,7 +110,6 @@ it('verifies a real asynchronous queue worker rather than counting zero failed j
     $after = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
     expect($after['queue']['status'])->toBe('healthy');
 });
-
 
 it('restricts support bundle to Sysop and excludes sensitive raw data', function (): void {
     $this->actingAs(\App\Models\User::factory()->create(['role' => \App\Models\User::ROLE_USER]))
