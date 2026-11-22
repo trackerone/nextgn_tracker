@@ -23,7 +23,7 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
 
     public function __construct(public readonly int $torrentId) {}
 
-    public function handle(ExternalMetadataEnricher $enricher, OperationsTelemetry $telemetry): void
+    public function handle(ExternalMetadataEnricher $enricher): void
     {
         $torrent = Torrent::query()->with(['metadata', 'externalMetadata'])->find($this->torrentId);
 
@@ -36,7 +36,7 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
         }
 
         $enricher->enrich($torrent);
-        $telemetry->count('metadata_ok');
+        app(OperationsTelemetry::class)->count('metadata_ok');
     }
 
     public function failed(\Throwable $exception): void
