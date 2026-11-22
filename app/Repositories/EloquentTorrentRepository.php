@@ -16,9 +16,7 @@ class EloquentTorrentRepository implements TorrentRepositoryInterface
     public function paginateVisible(int $perPage = 50): LengthAwarePaginator
     {
         return Torrent::query()
-            ->where('is_visible', true)
-            ->where('is_banned', false)
-            ->where('is_approved', true)
+            ->visible()
             ->latest()
             ->paginate($perPage);
     }
