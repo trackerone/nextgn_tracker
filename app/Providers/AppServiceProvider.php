@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\SecurityAuditLog;
+use App\Services\Operations\OperationsTelemetry;
+use Illuminate\Console\Events\ScheduledTaskFailed;
+use Illuminate\Console\Events\ScheduledTaskFinished;
+use Illuminate\Console\Events\ScheduledTaskStarting;
+use Illuminate\Support\Facades\Event;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
 use App\Services\Metadata\ExternalMetadataEnricher;
@@ -74,6 +79,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->registerSchedulerTelemetry();
+
         RateLimiter::for('torrent-download', static function (Request $request): Limit {
             [$maxAttempts, $decayMinutes] = array_pad(
                 array_map('intval', explode(',', (string) config('security.rate_limits.torrent_download', '45,1'), 2)),
@@ -179,6 +186,41 @@ class AppServiceProvider extends ServiceProvider
                     ->by(sprintf('admin-two-factor-ip:%s', $ip)),
             ];
         });
+    }
+
+    private function registerSchedulerTelemetry(): void
+    {
+        Event::listen(ScheduledTaskStarting::class, static function (ScheduledTaskStarting $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if ($key !== null) {
+                app(OperationsTelemetry::class)->job($key, 'started');
+            }
+        });
+
+        Event::listen(ScheduledTaskFinished::class, static function (ScheduledTaskFinished $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if ($key !== null) {
+                app(OperationsTelemetry::class)->job($key, 'succeeded', (int) round($event->runtime * 1000));
+            }
+        });
+
+        Event::listen(ScheduledTaskFailed::class, static function (ScheduledTaskFailed $event): void {
+            $key = self::monitoredTaskKey((string) $event->task->command);
+            if ($key !== null) {
+                app(OperationsTelemetry::class)->job($key, 'failed', null, 'Scheduled command exited with error');
+            }
+        });
+    }
+
+    private static function monitoredTaskKey(string $command): ?string
+    {
+        foreach (['tracker:prune-ghost-peers', 'hnr:evaluate', 'ops:monitor'] as $key) {
+            if (str_contains($command, $key)) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     private function registerTorrentRateLimiters(): void
