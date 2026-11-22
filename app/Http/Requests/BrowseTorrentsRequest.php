@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Support\Torrents\TorrentBrowseFilters;
-use App\Support\Torrents\TorrentSearchExpression;
 use App\Support\Torrents\TorrentMediaTypes;
+use App\Support\Torrents\TorrentSearchExpression;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
