@@ -177,10 +177,18 @@ final class OperationsProbe
         } else {
             $total = $announceOk + $announceRejected;
             $bad = $total >= 10 && $announceRejected / $total >= 0.3;
-            $checks[] = $this->check(
-                'tracker', 'Tracker', $total === 0 ? 'unknown' : ($bad ? 'degraded' : 'healthy'),
-                sprintf('Announces in 15m: %d accepted, %d rejected.', $announceOk, $announceRejected)
-            );
+            // Rejected requests prove the endpoint was reached, not that tracker announces work.
+            $status = match (true) {
+                $total === 0 => 'unknown',
+                $bad => 'degraded',
+                $announceOk === 0 => 'unknown',
+                default => 'healthy',
+            };
+            $details = sprintf('Announces in 15m: %d accepted, %d rejected.', $announceOk, $announceRejected);
+            if ($total > 0 && $announceOk === 0) {
+                $details .= ' No accepted announce observed; tracker functionality unverified.';
+            }
+            $checks[] = $this->check('tracker', 'Tracker', $status, $details);
         }
 
         foreach (['rss' => 'RSS feeds', 'browse' => 'Browse', 'metadata' => 'Metadata jobs'] as $pipeline => $label) {
