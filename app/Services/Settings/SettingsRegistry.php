@@ -161,7 +161,10 @@ final class SettingsRegistry
     {
         $definitions = [];
         foreach (array_keys(self::CLASS_THRESHOLDS) as $key) {
-            $definitions[$key] = self::definition($key);
+            $definition = self::definition($key);
+            if ($definition !== null) {
+                $definitions[$key] = $definition;
+            }
         }
 
         return $definitions;
