@@ -134,6 +134,37 @@ final class SysopCategoryManagementTest extends TestCase
         ])->assertSessionHasErrors('category_id');
     }
 
+    public function test_book_media_type_filters_api_browse_and_rss_consistently(): void
+    {
+        $this->seed(CategorySeeder::class);
+        $books = Category::query()->where('slug', 'books')->firstOrFail();
+        $member = User::factory()->create();
+
+        $book = Torrent::factory()->create([
+            'category_id' => $books->id,
+            'type' => 'book',
+            'name' => 'Canonical Book Release',
+        ]);
+        Torrent::factory()->create([
+            'type' => 'movie',
+            'name' => 'Unrelated Movie Release',
+        ]);
+
+        $member->rotateRssToken();
+        $this->actingAs($member)->getJson(route('api.torrents.index', [
+            'type' => 'book',
+        ]))->assertOk()
+            ->assertSee($book->name)
+            ->assertDontSee('Unrelated Movie Release');
+
+        $this->get(route('rss.feed', [
+            'token' => $member->rss_token,
+            'type' => 'book',
+        ]))->assertOk()
+            ->assertSee($book->name)
+            ->assertDontSee('Unrelated Movie Release');
+    }
+
     public function test_media_type_cannot_change_for_category_with_existing_torrents(): void
     {
         $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
