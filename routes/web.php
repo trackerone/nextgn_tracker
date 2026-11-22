@@ -39,6 +39,7 @@ use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\StaffAlphaFeedbackController;
 use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\LogCenterController;
+use App\Http\Controllers\Sysop\OperationsAlertActionController;
 use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\PermissionsController;
 use App\Http\Controllers\Sysop\RatioCreditController;
@@ -207,6 +208,7 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
         ->whereNumber('user')->name('ratio-credits.users.adjust');
     Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
+    Route::post('/operations/alerts/action', OperationsAlertActionController::class)->name('operations.alerts.action');
     Route::get('/logs', LogCenterController::class)->name('logs.index');
     Route::post('/operations/runtime-jobs/toggle', RuntimeJobToggleController::class)->name('operations.runtime-jobs.toggle');
 });
