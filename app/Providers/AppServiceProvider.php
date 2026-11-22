@@ -110,7 +110,7 @@ class AppServiceProvider extends ServiceProvider
 
             $isAuthenticatedUser = $user instanceof User;
 
-            if (! $isAuthenticatedUser) {
+            if ($isAuthenticatedUser === false) {
                 $view->with('followNavNewCount', 0);
 
                 return;
