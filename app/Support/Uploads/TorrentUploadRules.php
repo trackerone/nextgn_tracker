@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Support\Uploads;
 
 use App\Services\Settings\UploadLimits;
+use App\Support\Torrents\TorrentMediaTypes;
+use Illuminate\Validation\Rule;
 
 final class TorrentUploadRules
 {
@@ -48,8 +50,8 @@ final class TorrentUploadRules
         return [
             'metadata_reviewed' => ['sometimes', 'boolean'],
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
-            'type' => ['required', 'string', 'in:movie,tv,music,game,software,other'],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->where('is_active', true)],
+            'type' => ['required', 'string', Rule::in(TorrentMediaTypes::VALUES)],
             'title' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'integer', 'between:1900,'.(((int) date('Y')) + 2)],
             'release_group' => ['nullable', 'string', 'max:120'],
