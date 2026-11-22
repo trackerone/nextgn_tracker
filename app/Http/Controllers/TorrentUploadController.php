@@ -102,8 +102,14 @@ class TorrentUploadController extends Controller
             $detectedType = 'music';
         }
         $fields['type'] = $detectedType;
-        $categorySlug = ['movie' => 'movies', 'tv' => 'tv', 'music' => 'music'][$detectedType ?? ''] ?? null;
-        $fields['category_id'] = $categorySlug !== null ? Category::query()->where('slug', $categorySlug)->value('id') : null;
+        $fields['category_id'] = $detectedType !== null
+            ? Category::query()
+                ->where('media_type', $detectedType)
+                ->where('is_active', true)
+                ->orderBy('position')
+                ->orderBy('name')
+                ->value('id')
+            : null;
         $fields['codecs[video]'] = $extracted->videoCodec;
         $fields['codecs[audio]'] = $extracted->audioCodec;
         $warnings = [];
