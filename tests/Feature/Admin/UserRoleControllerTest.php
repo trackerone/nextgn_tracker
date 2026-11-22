@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Models\Role;
 use App\Models\User;
+use App\Services\PermissionService;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -121,4 +124,90 @@ it('preserves normal admin role management and logs the change', function (): vo
             'new_role' => User::ROLE_MODERATOR,
             'audit_reason' => 'Promoted to help with moderation.',
         ]);
+});
+
+it('revokes inherited legacy staff powers when a member is downgraded to user', function (): void {
+    $this->seed(RoleSeeder::class);
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+    $legacyAdmin = Role::query()->where('slug', 'admin1')->firstOrFail();
+    $legacyUser = Role::query()->where('slug', 'user1')->firstOrFail();
+    $target = User::factory()->create([
+        'role' => User::ROLE_ADMIN,
+        'role_id' => $legacyAdmin->getKey(),
+        'is_staff' => true,
+    ]);
+
+    expect($target->isStaff())->toBeTrue()
+        ->and($target->roleLevel())->toBeGreaterThanOrEqual(10);
+
+    $this->actingAs($sysop)
+        ->patch(route('admin.users.role.update', $target), [
+            'role' => User::ROLE_USER,
+            'audit_reason' => 'Demote after staff review.',
+        ])
+        ->assertRedirect();
+
+    $demoted = $target->fresh();
+    expect($demoted->role)->toBe(User::ROLE_USER)
+        ->and($demoted->role_id)->toBe($legacyUser->getKey())
+        ->and($demoted->is_staff)->toBeFalse()
+        ->and($demoted->roleLevel())->toBe(1)
+        ->and($demoted->isStaff())->toBeFalse()
+        ->and($demoted->isAdmin())->toBeFalse()
+        ->and($demoted->isSysop())->toBeFalse()
+        ->and(PermissionService::allow($demoted, 'torrent.edit'))->toBeFalse();
+
+    $this->actingAs($demoted)->get('/mod')->assertForbidden();
+    $this->get('/admin')->assertForbidden();
+});
+
+it('keeps staff flag and role relation aligned when changing staff access', function (): void {
+    $this->seed(RoleSeeder::class);
+    $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
+    $target = User::factory()->create(['role' => User::ROLE_USER]);
+    $legacyModerator = Role::query()->where('slug', 'mod1')->firstOrFail();
+    $legacyUploader = Role::query()->where('slug', 'uploader1')->firstOrFail();
+
+    $this->actingAs($sysop)
+        ->patch(route('admin.users.role.update', $target), [
+            'role' => User::ROLE_MODERATOR,
+            'audit_reason' => 'Grant moderation access.',
+        ])
+        ->assertRedirect();
+
+    $moderator = $target->fresh();
+    expect($moderator->role_id)->toBe($legacyModerator->getKey())
+        ->and($moderator->is_staff)->toBeTrue()
+        ->and($moderator->isStaff())->toBeTrue();
+
+    $this->patch(route('admin.users.role.update', $moderator), [
+        'role' => User::ROLE_UPLOADER,
+        'audit_reason' => 'Return to uploader responsibilities.',
+    ])->assertRedirect();
+
+    $uploader = $target->fresh();
+    expect($uploader->role_id)->toBe($legacyUploader->getKey())
+        ->and($uploader->is_staff)->toBeFalse()
+        ->and($uploader->isStaff())->toBeFalse()
+        ->and($uploader->roleLevel())->toBe(5);
+});
+
+it('protects sysop accounts even when the older role relation disagrees with the role column', function (): void {
+    $this->seed(RoleSeeder::class);
+    $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
+    $legacySysop = Role::query()->where('slug', 'sysop')->firstOrFail();
+    $target = User::factory()->create([
+        'role' => User::ROLE_USER,
+        'role_id' => $legacySysop->getKey(),
+        'is_staff' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.role.update', $target), [
+            'role' => User::ROLE_USER,
+            'audit_reason' => 'Attempt to remove protected access.',
+        ])
+        ->assertForbidden();
+
+    expect($target->fresh()->role_id)->toBe($legacySysop->getKey());
 });

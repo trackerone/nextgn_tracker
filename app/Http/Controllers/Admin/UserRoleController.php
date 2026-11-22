@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Logging\AuditLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -55,15 +57,40 @@ class UserRoleController extends Controller
             'Only sysops may assign or remove the sysop role.'
         );
 
-        $user->forceFill(['role' => $newRole])->save();
+        // Keep all persisted role representations in sync. Otherwise downgrading
+        // to the default "user" can still inherit staff authority from role_id,
+        // and an old is_staff flag can bypass staff middleware.
+        $roleSlug = match ($newRole) {
+            User::ROLE_USER => 'user1',
+            User::ROLE_POWER_USER => 'user2',
+            User::ROLE_UPLOADER => 'uploader1',
+            User::ROLE_MODERATOR => 'mod1',
+            User::ROLE_ADMIN => 'admin1',
+            User::ROLE_SYSOP => 'sysop',
+            default => throw new \InvalidArgumentException('Unsupported role transition.'),
+        };
 
-        $this->auditLogger->log('user.role_changed', $user, [
-            'actor_user_id' => $actor->id,
-            'target_user_id' => $user->id,
-            'old_role' => $oldRole,
-            'new_role' => $newRole,
-            'audit_reason' => $auditReason,
-        ]);
+        DB::transaction(function () use ($user, $actor, $newRole, $oldRole, $roleSlug, $auditReason): void {
+            $user->forceFill([
+                'role' => $newRole,
+                'role_id' => Role::query()->where('slug', $roleSlug)->value('id'),
+                'is_staff' => in_array($newRole, [
+                    User::ROLE_MODERATOR,
+                    User::ROLE_ADMIN,
+                    User::ROLE_SYSOP,
+                ], true),
+            ])->save();
+
+            $user->unsetRelation('role');
+
+            $this->auditLogger->log('user.role_changed', $user, [
+                'actor_user_id' => $actor->id,
+                'target_user_id' => $user->id,
+                'old_role' => $oldRole,
+                'new_role' => $newRole,
+                'audit_reason' => $auditReason,
+            ]);
+        });
 
         return redirect()->back()->with('status', 'Role updated.');
     }
