@@ -81,6 +81,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerSchedulerTelemetry();
 
+        // Separate bucket from the ordinary admin throttle. Viewing operations
+        // must not consume the allowance for explicitly requested write probes.
+        RateLimiter::for('sysop-operations-diagnostics', static function (Request $request): Limit {
+            return Limit::perMinute(3)->by('sysop-operations-diagnostics:'.(string) ($request->user()?->getAuthIdentifier() ?? $request->ip()));
+        });
+
         RateLimiter::for('torrent-download', static function (Request $request): Limit {
             [$maxAttempts, $decayMinutes] = array_pad(
                 array_map('intval', explode(',', (string) config('security.rate_limits.torrent_download', '45,1'), 2)),
