@@ -115,10 +115,11 @@ final class RatioDownloadEnforcementTest extends TestCase
         $this->assertSame('ratio_too_low', $noHistoryDenied['reason']);
     }
 
-    public function test_admin_ratio_settings_api_updates_values_and_applies_immediately(): void
+    public function test_sysop_ratio_settings_are_the_only_writer_and_take_effect_on_downloads(): void
     {
         Storage::fake('torrents');
 
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $member = User::factory()->create();
         $torrent = Torrent::factory()->create();
@@ -135,6 +136,7 @@ final class RatioDownloadEnforcementTest extends TestCase
         ]);
         Storage::disk('torrents')->put($torrent->torrentStoragePath(), $payload);
 
+        // The old admin API is read-only. Even admins cannot bypass Sysop's audit trail.
         $this->actingAs($admin)
             ->postJson('/api/admin/settings/tracker/ratio', [
                 'enforcement_enabled' => true,
@@ -142,8 +144,35 @@ final class RatioDownloadEnforcementTest extends TestCase
                 'freeleech_bypass_enabled' => false,
                 'no_history_grace_enabled' => false,
             ])
+            ->assertStatus(405);
+
+        $this->actingAs($admin)->patch(route('sysop.settings.update'), [
+            'announce_interval_seconds' => 1800,
+            'ghost_peer_timeout_minutes' => 45,
+            'scrape_max_info_hashes' => 50,
+            'enforcement_enabled' => true,
+            'minimum_download_ratio' => 0.8,
+            'freeleech_bypass_enabled' => false,
+            'no_history_grace_enabled' => false,
+            'audit_reason' => 'Admin should not change tracker rules.',
+        ])->assertForbidden();
+
+        $this->actingAs($sysop)->patch(route('sysop.settings.update'), [
+            'announce_interval_seconds' => 1800,
+            'ghost_peer_timeout_minutes' => 45,
+            'scrape_max_info_hashes' => 50,
+            'enforcement_enabled' => true,
+            'minimum_download_ratio' => 0.8,
+            'freeleech_bypass_enabled' => false,
+            'no_history_grace_enabled' => false,
+            'audit_reason' => 'Align the announced ratio threshold with download policy.',
+        ])->assertRedirect(route('sysop.settings.edit'));
+
+        $this->getJson(route('api.admin.settings.tracker.ratio.show'))
             ->assertOk()
             ->assertJsonPath('minimum_download_ratio', 0.8);
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'sysop.site_settings.updated']);
 
         $this->actingAs($member)
             ->getJson('/api/torrents/'.$torrent->id.'/download')
