@@ -12,6 +12,7 @@ use App\Models\UserPermissionOverride;
 use App\Services\Logging\AuditLogger;
 use App\Services\PermissionService;
 use App\Services\Settings\RatioSettings;
+use App\Services\Settings\RegistrationPolicy;
 use App\Services\Settings\SiteSettingsRepository;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
@@ -23,7 +24,7 @@ use Illuminate\Validation\ValidationException;
 
 final class PermissionsController extends Controller
 {
-    public function index(Request $request, RatioSettings $ratioSettings, UserRatioBalance $balances): View
+    public function index(Request $request, RatioSettings $ratioSettings, UserRatioBalance $balances, RegistrationPolicy $registration): View
     {
         $matrix = [];
         foreach (PermissionService::EDITABLE_ROLES as $role) {
@@ -39,6 +40,7 @@ final class PermissionsController extends Controller
 
         return view('sysop.permissions.index', [
             'roles' => PermissionService::EDITABLE_ROLES,
+            'registrationMode' => $registration->mode(),
             'ratioValues' => [
                 'tenure_enabled' => [
                     'value' => $ratioSettings->tenureEnabled(),
