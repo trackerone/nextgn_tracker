@@ -33,6 +33,7 @@ return new class extends Migration
             $table->timestamp('last_seen_at');
             $table->timestamp('acknowledged_at')->nullable();
             $table->timestamp('resolved_at')->nullable();
+            $table->timestamp('notified_at')->nullable();
             $table->timestamps();
             $table->index(['status', 'last_seen_at']);
         });
