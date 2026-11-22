@@ -16,16 +16,16 @@ final class TrackerRuntimeSettings
 
     public function announceInterval(): int
     {
-        return $this->settings->getInt(self::ANNOUNCE_INTERVAL, (int) config('tracker.announce_interval_seconds', 1800));
+        return $this->settings->getInt(self::ANNOUNCE_INTERVAL);
     }
 
     public function ghostTimeout(): int
     {
-        return $this->settings->getInt(self::GHOST_TIMEOUT, (int) config('tracker.ghost_peer_timeout_minutes', 45));
+        return $this->settings->getInt(self::GHOST_TIMEOUT);
     }
 
     public function scrapeLimit(): int
     {
-        return $this->settings->getInt(self::SCRAPE_LIMIT, (int) config('tracker.scrape_max_info_hashes', 50));
+        return $this->settings->getInt(self::SCRAPE_LIMIT);
     }
 }

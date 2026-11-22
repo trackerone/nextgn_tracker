@@ -8,30 +8,10 @@ use App\Models\SiteSetting;
 
 final class SiteSettingsRepository
 {
-    /** @var array<string, array{value: string, type: string}> */
-    private const FALLBACKS = [
-        'registration.mode' => ['value' => 'invite', 'type' => 'string'],
-        'tracker.ratio.enforcement_enabled' => ['value' => 'true', 'type' => 'bool'],
-        'tracker.ratio.minimum_download_ratio' => ['value' => '0.5', 'type' => 'float'],
-        'tracker.ratio.freeleech_bypass_enabled' => ['value' => 'true', 'type' => 'bool'],
-        'tracker.ratio.no_history_grace_enabled' => ['value' => 'true', 'type' => 'bool'],
-        'metadata.providers.tmdb.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'metadata.providers.trakt.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'metadata.providers.imdb.enabled' => ['value' => 'false', 'type' => 'bool'],
-        'metadata.providers.priority' => ['value' => '["tmdb","trakt","imdb"]', 'type' => 'json'],
-        'metadata.enrichment.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'metadata.enrichment.auto_on_publish' => ['value' => 'true', 'type' => 'bool'],
-        'metadata.enrichment.refresh_after_days' => ['value' => '30', 'type' => 'int'],
-        'runtime.jobs.metadata.refresh.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.cache.warm.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.notification.digest.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.health.snapshot.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.tracker.announce.integrity.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.tracker.ratio.accounting.enabled' => ['value' => 'true', 'type' => 'bool'],
-        'runtime.jobs.tracker.peer.cleanup.enabled' => ['value' => 'true', 'type' => 'bool'],
-    ];
-
     /**
+     * Raw persisted overrides only; callers such as HnR and upload validation
+     * retain their existing batch-read and fallback behavior.
+     *
      * @param  list<string>  $keys
      * @return array<string, string>
      */
@@ -42,24 +22,66 @@ final class SiteSettingsRepository
 
     public function getBool(string $key): bool
     {
-        return filter_var($this->value($key), FILTER_VALIDATE_BOOLEAN);
+        $default = (bool) (SettingsRegistry::definition($key)['default'] ?? false);
+        $raw = $this->storedValue($key);
+        if ($raw === null) {
+            return $default;
+        }
+
+        $parsed = filter_var($raw, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $parsed ?? $default;
     }
 
     public function getFloat(string $key): float
     {
-        return (float) $this->value($key);
+        $definition = SettingsRegistry::definition($key);
+        $default = (float) ($definition['default'] ?? 0.0);
+        $raw = $this->storedValue($key);
+
+        if ($raw === null || ! is_numeric($raw)) {
+            return $default;
+        }
+
+        $value = (float) $raw;
+        if (! is_finite($value) || ! $this->withinBounds($value, $definition)) {
+            return $default;
+        }
+
+        return $value;
     }
 
     public function getInt(string $key, int $default = 0): int
     {
-        $value = $this->value($key);
+        $definition = SettingsRegistry::definition($key);
+        $fallback = (int) ($definition['default'] ?? $default);
+        $raw = $this->storedValue($key);
+        if ($raw === null) {
+            return $fallback;
+        }
 
-        return $value === '' ? $default : (int) $value;
+        $value = filter_var($raw, FILTER_VALIDATE_INT);
+        if ($value === false || ! $this->withinBounds($value, $definition)) {
+            return $fallback;
+        }
+
+        return $value;
     }
 
     public function getString(string $key): string
     {
-        return $this->value($key);
+        $definition = SettingsRegistry::definition($key);
+        $fallback = (string) ($definition['default'] ?? '');
+        $raw = $this->storedValue($key);
+        if ($raw === null) {
+            return $fallback;
+        }
+
+        if (isset($definition['allowed']) && ! in_array($raw, $definition['allowed'], true)) {
+            return $fallback;
+        }
+
+        return $raw;
     }
 
     /**
@@ -67,9 +89,16 @@ final class SiteSettingsRepository
      */
     public function getJson(string $key): array
     {
-        $decoded = json_decode($this->value($key), true);
+        $definition = SettingsRegistry::definition($key);
+        $default = $definition['default'] ?? [];
+        $raw = $this->storedValue($key);
+        if ($raw === null) {
+            return is_array($default) ? $default : [];
+        }
 
-        return is_array($decoded) ? $decoded : [];
+        $decoded = json_decode($raw, true);
+
+        return is_array($decoded) ? $decoded : (is_array($default) ? $default : []);
     }
 
     public function set(string $key, mixed $value, string $type): void
@@ -83,15 +112,20 @@ final class SiteSettingsRepository
         );
     }
 
-    private function value(string $key): string
+    private function storedValue(string $key): ?string
     {
-        $setting = SiteSetting::query()->where('key', $key)->first();
+        $value = SiteSetting::query()->where('key', $key)->value('value');
 
-        if ($setting instanceof SiteSetting) {
-            return (string) $setting->value;
-        }
+        return $value === null ? null : (string) $value;
+    }
 
-        return self::FALLBACKS[$key]['value'] ?? '';
+    /**
+     * @param  array<string, mixed>|null  $definition
+     */
+    private function withinBounds(float|int $value, ?array $definition): bool
+    {
+        return ($definition === null || ! isset($definition['min']) || $value >= $definition['min'])
+            && ($definition === null || ! isset($definition['max']) || $value <= $definition['max']);
     }
 
     private function normalizeValue(mixed $value, string $type): string
