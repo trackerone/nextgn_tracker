@@ -20,10 +20,12 @@
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                         <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20">Browse torrents</a>
-                        @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                        @if ($canUpload)
                             <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
                         @endif
-                        <a href="#community" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Community activity</a>
+                        @if ($canForum || $canMessages)
+                            <a href="#community" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Community activity</a>
+                        @endif
                     </div>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -45,7 +47,7 @@
                                 <span>New follow matches</span>
                                 <strong class="text-emerald-300">{{ $followNewCount }}</strong>
                             </a>
-                            @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                            @if ($canUpload)
                             <a href="{{ route('my.uploads') }}" class="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 hover:text-white">
                                 <span>Your pending uploads</span>
                                 <strong class="text-amber-300">{{ $myOpenUploads }}</strong>
@@ -74,7 +76,7 @@
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <a href="{{ route('torrents.index') }}" class="inline-flex rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Browse torrents</a>
-                    @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+                    @if ($canUpload)
                         <a href="{{ route('torrents.upload') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
                         <a href="{{ route('my.uploads') }}" class="inline-flex rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">My uploads</a>
                     @endif
@@ -90,21 +92,29 @@
         </details>
 
         <section class="grid gap-4 md:grid-cols-2">
-            @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
+            @if ($canUpload)
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Contribute</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-400">Upload with clear metadata, then track moderation feedback and publication status from your uploads page.</p>
                 <a href="{{ route('my.uploads') }}" class="mt-4 inline-flex text-sm font-semibold text-brand hover:text-brand/80">View my uploads →</a>
             </article>
             @endif
+            @if ($canForum || $canMessages)
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <h2 class="text-base font-semibold text-white">Connect</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-400">Forum topics and private messages keep requests, release notes, and community coordination close to the tracker.</p>
+                @if ($canForum && $canMessages)
+                    <p class="mt-2 text-sm leading-6 text-slate-400">Forum topics and private messages keep requests, release notes, and community coordination close to the tracker.</p>
+                @elseif ($canForum)
+                    <p class="mt-2 text-sm leading-6 text-slate-400">Follow community topics and discussions in the forum.</p>
+                @else
+                    <p class="mt-2 text-sm leading-6 text-slate-400">Keep in touch with other members through private messages.</p>
+                @endif
                 <a href="#community" class="mt-4 inline-flex text-sm font-semibold text-brand hover:text-brand/80">See activity →</a>
             </article>
+            @endif
         </section>
 
-        <section id="activity" class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <section id="activity" class="grid grid-cols-1 gap-6 {{ $canForum || $canMessages ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]' : '' }}">
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70">
                 <div class="flex items-center justify-between border-b border-slate-800 px-5 py-4">
                     <div>
@@ -136,7 +146,9 @@
                 </div>
             </div>
 
+            @if ($canForum || $canMessages)
             <div id="community" class="space-y-6">
+                @if ($canForum)
                 <div class="rounded-2xl border border-slate-800 bg-slate-900/70">
                     <div class="border-b border-slate-800 px-5 py-4">
                         <h2 class="text-lg font-semibold text-white">Forum pulse</h2>
@@ -154,6 +166,8 @@
                     </div>
                 </div>
 
+                @endif
+                @if ($canMessages)
                 <div id="messages" class="rounded-2xl border border-slate-800 bg-slate-900/70">
                     <div class="border-b border-slate-800 px-5 py-4">
                         <h2 class="text-lg font-semibold text-white">Private messages</h2>
@@ -174,7 +188,9 @@
                         @endforelse
                     </div>
                 </div>
+                @endif
             </div>
+            @endif
         </section>
     </div>
 @endsection
