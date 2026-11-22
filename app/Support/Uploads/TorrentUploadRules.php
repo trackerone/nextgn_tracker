@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\Uploads;
 
+use App\Services\Settings\UploadLimits;
+
 final class TorrentUploadRules
 {
     /**
@@ -11,6 +13,8 @@ final class TorrentUploadRules
      */
     public static function rules(): array
     {
+        $limits = app(UploadLimits::class)->values();
+
         $torrentMimeRule = 'mimetypes:'.implode(',', self::configList('upload.torrents.allowed_mimes'));
         $torrentExtensionRule = 'extensions:'.implode(',', self::configList('upload.torrents.allowed_extensions'));
         $nfoMimeRule = 'mimetypes:'.implode(',', self::configList('upload.nfo.allowed_mimes'));
@@ -68,16 +72,16 @@ final class TorrentUploadRules
                 'file',
                 $torrentMimeRule,
                 $torrentExtensionRule,
-                'max:'.((int) config('upload.torrents.max_kilobytes', 1024)),
+                'max:'.$limits['torrent_max_kb'],
             ],
             'nfo_file' => [
                 'nullable',
                 'file',
                 $nfoMimeRule,
                 $nfoExtensionRule,
-                'max:'.((int) config('upload.nfo.max_kilobytes', 256)),
+                'max:'.$limits['nfo_max_kb'],
             ],
-            'nfo_text' => ['nullable', 'string', 'max:'.((int) config('upload.nfo.max_characters', 262144))],
+            'nfo_text' => ['nullable', 'string', 'max:'.$limits['nfo_max_characters']],
         ];
     }
 
