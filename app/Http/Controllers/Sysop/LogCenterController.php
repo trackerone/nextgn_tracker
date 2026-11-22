@@ -11,7 +11,6 @@ use App\Support\Operations\RecentApplicationLogs;
 use App\Support\Operations\SensitiveLogRedactor;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -60,7 +59,7 @@ final class LogCenterController extends Controller
                     'source' => 'Audit',
                     'message' => $redactor->text($log->action).' — '.$redactor->text($log->target_type ?? 'system'),
                     'reference' => 'Audit #'.$log->getKey(),
-                    'actor' => $redactor->text($log->user?->name ?? 'System'),
+                    'actor' => $redactor->text((string) data_get($log->user, 'name', 'System')),
                     'url' => route('admin.logs.audit.show', $log),
                 ])->all();
             } elseif ($source === 'security') {
@@ -88,7 +87,7 @@ final class LogCenterController extends Controller
                     'source' => 'Security',
                     'message' => $redactor->text($event->event_type).' — '.$redactor->text($event->message),
                     'reference' => 'Security #'.$event->getKey(),
-                    'actor' => $redactor->text($event->user?->name ?? 'Unknown'),
+                    'actor' => $redactor->text((string) data_get($event->user, 'name', 'Unknown')),
                     'url' => route('admin.logs.security.show', $event),
                 ])->all();
             } else {
