@@ -192,21 +192,21 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::listen(ScheduledTaskStarting::class, static function (ScheduledTaskStarting $event): void {
             $key = self::monitoredTaskKey((string) $event->task->command);
-            if ($key !== null) {
+            if (is_string($key)) {
                 app(OperationsTelemetry::class)->job($key, 'started');
             }
         });
 
         Event::listen(ScheduledTaskFinished::class, static function (ScheduledTaskFinished $event): void {
             $key = self::monitoredTaskKey((string) $event->task->command);
-            if ($key !== null) {
+            if (is_string($key)) {
                 app(OperationsTelemetry::class)->job($key, 'succeeded', (int) round($event->runtime * 1000));
             }
         });
 
         Event::listen(ScheduledTaskFailed::class, static function (ScheduledTaskFailed $event): void {
             $key = self::monitoredTaskKey((string) $event->task->command);
-            if ($key !== null) {
+            if (is_string($key)) {
                 app(OperationsTelemetry::class)->job($key, 'failed', null, 'Scheduled command exited with error');
             }
         });
