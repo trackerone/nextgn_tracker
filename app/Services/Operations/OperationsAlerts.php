@@ -21,8 +21,13 @@ final class OperationsAlerts
             $fingerprint = 'health:'.$check['id'];
             $severity = $check['status'];
 
-            if (in_array($severity, ['degraded', 'critical'], true) === false) {
+            if ($severity === 'healthy') {
                 $this->resolve($fingerprint);
+                continue;
+            }
+
+            if (in_array($severity, ['degraded', 'critical'], true) === false) {
+                // Missing telemetry is not evidence that an incident recovered.
                 continue;
             }
 
@@ -54,7 +59,7 @@ final class OperationsAlerts
                         'resolved_at' => null,
                         'updated_at' => $now,
                     ]);
-                } elseif ($row->last_seen_at === null || now()->diffInMinutes((string) $row->last_seen_at) >= 5) {
+                } elseif ($row->last_seen_at === null || \Illuminate\Support\Carbon::parse((string) $row->last_seen_at)->diffInMinutes(now()) >= 5) {
                     DB::table('ops_alerts')->where('id', $row->id)->update([
                         'severity' => $severity,
                         'occurrences' => min(2147483647, (int) $row->occurrences + 1),
