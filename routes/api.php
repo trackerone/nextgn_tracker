@@ -53,8 +53,6 @@ Route::middleware(['api', 'auth', 'role.level:admin'])->prefix('admin/settings/t
     Route::get('/ratio', [TrackerRatioSettingsController::class, 'show'])
         ->name('api.admin.settings.tracker.ratio.show');
 
-    Route::post('/ratio', [TrackerRatioSettingsController::class, 'update'])
-        ->name('api.admin.settings.tracker.ratio.update');
 });
 
 Route::put('/admin/settings/metadata/rotten-tomatoes/{imdbId}', RottenTomatoesRatingsController::class)
