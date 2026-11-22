@@ -9,6 +9,7 @@ use App\Http\Middleware\EnsureFeaturePermission;
 use App\Http\Middleware\EnsureMinimumRole;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\LockdownModeMiddleware;
+use App\Http\Middleware\OperationsRequestMetrics;
 use App\Http\Middleware\RequestGuard;
 use App\Http\Middleware\RequireRoleLevel;
 use App\Http\Middleware\ResponseGuard;
@@ -71,6 +72,7 @@ return Application::configure(basePath: dirname(__DIR__))
             RequestGuard::class,
             ResponseGuard::class,
             LockdownModeMiddleware::class,
+            OperationsRequestMetrics::class,
         ]);
 
         $middleware->web(append: [
