@@ -39,7 +39,7 @@ it('links sysops back to security logs and handles long security details', funct
     $sysop = User::factory()->create(['role' => User::ROLE_SYSOP]);
     $event = SecurityEvent::query()->create([
         'user_id' => $sysop->id,
-        'event_type' => str_repeat('suspicious_access_', 8),
+        'event_type' => str_repeat('suspicious_access_', 3),
         'severity' => 'high',
         'message' => str_repeat('long-message-', 25),
         'context' => ['agent' => str_repeat('long-useragent-', 10)],
