@@ -48,6 +48,7 @@ use App\Http\Controllers\Sysop\RegistrationSettingsController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
 use App\Http\Controllers\Sysop\TorrentMetadataSourceController;
+use App\Http\Controllers\Sysop\UploadLimitsController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\TorrentController;
 use App\Http\Controllers\TorrentDownloadController;
@@ -202,6 +203,8 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::post('/hnr/accounts/{user:public_slug}/reset', [HnrSettingsController::class, 'reset'])->name('hnr.reset');
     Route::get('/settings', [SiteSettingsController::class, 'edit'])->name('settings.edit');
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings/uploads', [UploadLimitsController::class, 'edit'])->name('upload-settings.edit');
+    Route::patch('/settings/uploads', [UploadLimitsController::class, 'update'])->name('upload-settings.update');
     Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
     Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
     Route::patch('/registration', [RegistrationSettingsController::class, 'update'])->name('registration.update');
