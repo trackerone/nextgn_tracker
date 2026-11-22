@@ -47,7 +47,7 @@ final class PeerEventProcessor
         // Existing torrents may continue to seed/stop even when their ratio falls.
         // New leech starts obey the same Sysop-configured policy as .torrent downloads.
         if ($data->event === 'started' && $data->left > 0 && ! $user->isStaff() && ! $hnrRecovery) {
-            $eligibility = $this->downloadEligibility->check($user, $torrent);
+            $eligibility = $this->downloadEligibility->checkRatio($user, $torrent);
 
             if (! $eligibility['allowed']) {
                 return AnnounceResult::failure('Your ratio is too low to start new downloads.');
