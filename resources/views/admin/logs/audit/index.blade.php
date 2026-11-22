@@ -40,7 +40,7 @@
                             <td class="px-4 py-3">{{ $log->created_at?->toDayDateTimeString() }}</td>
                             <td class="px-4 py-3">{{ $log->user?->name ?? 'System' }}</td>
                             <td class="px-4 py-3">
-                                <a href="{{ route('admin.logs.audit.show', $log) }}" class="font-semibold text-white hover:text-brand">{{ $log->action }}</a>
+                                <a href="{{ route('admin.logs.audit.show', $log) }}" class="font-semibold text-white hover:text-brand">{{ app(\App\Support\Operations\SensitiveLogRedactor::class)->text($log->action) }}</a>
                             </td>
                             <td class="px-4 py-3 text-xs text-slate-400">{{ $log->target_type ?? 'N/A' }} #{{ $log->target_id ?? '—' }}</td>
                             <td class="px-4 py-3 text-xs text-slate-400">{{ $log->ip_address ?? '—' }}</td>
