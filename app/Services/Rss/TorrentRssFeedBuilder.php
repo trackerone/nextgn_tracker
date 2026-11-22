@@ -11,10 +11,15 @@ use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
 use DOMDocument;
 use DOMElement;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 final class TorrentRssFeedBuilder
 {
+    private const BATCH_SIZE = 100;
+
+    // Technical safety ceiling, not a configurable Sysop content policy.
+    private const MAX_SCAN_BUDGET = 2000;
     public function __construct(
         private readonly DownloadEligibilityService $visibilityEligibility,
         private readonly DownloadEligibilityPolicy $ratioEligibility,
@@ -57,17 +62,23 @@ final class TorrentRssFeedBuilder
         /** @var Collection<int, Torrent> $matches */
         $matches = collect();
         $page = 1;
-        $perPage = 100;
+        $scanned = 0;
+        $scanBudget = min(self::MAX_SCAN_BUDGET, max(100, (int) config('rss.scan_budget', self::MAX_SCAN_BUDGET)));
+        $candidates = $this->candidateQuery($filters);
 
         do {
+            $take = min(self::BATCH_SIZE, $scanBudget - $scanned);
+
             /** @var Collection<int, Torrent> $torrents */
-            $torrents = Torrent::query()
-                ->visible()
+            $torrents = (clone $candidates)
                 ->with('metadata')
                 ->latest('uploaded_at')
                 ->latest('id')
-                ->forPage($page, $perPage)
+                ->forPage($page, self::BATCH_SIZE)
+                ->limit($take)
                 ->get();
+
+            $scanned += $torrents->count();
 
             foreach ($torrents as $torrent) {
                 if (! $this->matchesFilters($torrent, $filters) || ! $this->canDownload($user, $torrent)) {
@@ -82,9 +93,52 @@ final class TorrentRssFeedBuilder
             }
 
             $page++;
-        } while ($torrents->isNotEmpty());
+        } while ($torrents->count() === $take && $scanned < $scanBudget);
 
         return $matches->values();
+    }
+
+    /**
+     * Apply only predicates that agree exactly with TorrentMetadataView.
+     * Keep language/subtitle alias matching and title search in the shared
+     * PHP matcher until they have a verified SQL-equivalent implementation.
+     *
+     * @param  array{q: string, type: string, resolution: string, source: string, release_group: string, language: string, audio_language: string, subtitle_language: string, subtitles: string, freeleech: bool|null, category: int|null, year?: int|null, limit: int}  $filters
+     * @return Builder<Torrent>
+     */
+    private function candidateQuery(array $filters): Builder
+    {
+        $query = Torrent::query()->visible();
+
+        if ($filters['category'] !== null) {
+            $query->where('category_id', $filters['category']);
+        }
+
+        if ($filters['freeleech'] !== null) {
+            $query->where('is_freeleech', $filters['freeleech']);
+        }
+
+        if (($filters['year'] ?? null) !== null) {
+            $query->whereHas('metadata', static function (Builder $metadata) use ($filters): void {
+                $metadata->where('year', $filters['year']);
+            });
+        }
+
+        if ($filters['type'] !== '') {
+            // TorrentMetadataView uses metadata.type whenever a metadata row
+            // exists; it only falls back to torrents.type without that row.
+            $type = mb_strtolower($filters['type']);
+            $query->where(static function (Builder $query) use ($type): void {
+                $query->whereHas('metadata', static function (Builder $metadata) use ($type): void {
+                    $metadata->whereRaw('LOWER(torrent_metadata.type) = ?', [$type]);
+                })->orWhere(static function (Builder $withoutMetadata) use ($type): void {
+                    $withoutMetadata->whereDoesntHave('metadata')
+                        ->whereRaw('LOWER(torrents.type) = ?', [$type]);
+                });
+            });
+        }
+
+        return $query;
     }
 
     /**
