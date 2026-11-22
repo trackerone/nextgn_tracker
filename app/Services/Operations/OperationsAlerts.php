@@ -21,7 +21,7 @@ final class OperationsAlerts
             $fingerprint = 'health:'.$check['id'];
             $severity = $check['status'];
 
-            if (! in_array($severity, ['degraded', 'critical'], true)) {
+            if (in_array($severity, ['degraded', 'critical'], true) === false) {
                 $this->resolve($fingerprint);
                 continue;
             }
@@ -72,7 +72,7 @@ final class OperationsAlerts
         try {
             DB::table('ops_alerts')
                 ->where('fingerprint', $fingerprint)
-                ->where('status', '!=', 'resolved')
+                ->where('status', '<>', 'resolved')
                 ->update(['status' => 'resolved', 'resolved_at' => now(), 'updated_at' => now()]);
         } catch (Throwable) {
         }
@@ -97,7 +97,7 @@ final class OperationsAlerts
 
     public function updateStatus(int $id, string $action): bool
     {
-        if (! in_array($action, ['acknowledge', 'resolve'], true)) {
+        if (in_array($action, ['acknowledge', 'resolve'], true) === false) {
             return false;
         }
 
