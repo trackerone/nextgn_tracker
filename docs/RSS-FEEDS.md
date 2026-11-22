@@ -25,6 +25,16 @@ The token identifies the subscribing user. Invalid tokens return a not-found res
 
 Default feed size is 50 items. The `limit` query parameter is capped at 100 items.
 
+### Resource budget and newest-match behavior
+
+- Both raw feeds and saved-preset feeds are rate-limited to 30 requests per minute per client (in addition to normal token ownership checks).
+- The builder selects only visible torrents and pushes exact category, freeleech, year and media-type constraints into SQL. The media-type query preserves `TorrentMetadataView` semantics: a present metadata row is authoritative, and only torrents without that row use the legacy type.
+- RSS then evaluates the remaining title, resolution, source, release-group and language/subtitle filters with the existing canonical `TorrentRssFilterMatcher`, followed by the same per-user download and ratio authorization.
+- To prevent a no-match filter from reading the entire catalog, at most **2,000 newest SQL-prefiltered candidate torrents** are examined per request (batches of 100). The default is `config/rss.php:scan_budget = 2000`; servers may lower it to a minimum of 100, but cannot raise it over 2,000.
+- This is a **recent-results feed**, not exhaustive historical search: a rare match outside the newest candidate window may be absent. Users looking for old releases should use Browse/search. Do not silently advertise the returned item count as a full-catalog result count.
+- All feed items still require server-side visibility, eligibility and token-scoped download checks. There is no new Sysop setting or fallback authorization path.
+
+
 ## RSS torrent download links
 
 Eligible RSS items include a token-scoped torrent enclosure for autodl and torrent clients:
