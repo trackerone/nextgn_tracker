@@ -46,6 +46,7 @@ final class RecentApplicationLogs
         $entries = [];
 
         foreach (array_slice($files, 0, self::MAX_FILES) as $path) {
+            $fileEntries = [];
             $handle = @fopen($path, 'rb');
             if ($handle === false) {
                 continue;
@@ -93,7 +94,7 @@ final class RecentApplicationLogs
                         continue;
                     }
 
-                    $entries[] = [
+                    $fileEntries[] = [
                         'time' => $time->toDateTimeString(),
                         'severity' => $severity,
                         'source' => 'Application',
@@ -101,13 +102,16 @@ final class RecentApplicationLogs
                         'reference' => basename($path),
                     ];
 
-                    if (count($entries) >= self::MAX_ENTRIES) {
-                        break 2;
+                    // A burst must not push the newest events off screen.
+                    if (count($fileEntries) > self::MAX_ENTRIES) {
+                        array_shift($fileEntries);
                     }
                 }
             } finally {
                 fclose($handle);
             }
+
+            $entries = array_merge($entries, $fileEntries);
         }
 
         usort($entries, static fn (array $a, array $b): int => strcmp($b['time'], $a['time']));
