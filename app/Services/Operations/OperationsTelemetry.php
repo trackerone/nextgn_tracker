@@ -96,10 +96,12 @@ final class OperationsTelemetry
         }
 
         try {
-            DB::table('ops_job_status')->updateOrInsert(
-                ['job_key' => $jobKey],
-                ['created_at' => $when, ...$values]
-            );
+            DB::table('ops_job_status')->insertOrIgnore([
+                'job_key' => $jobKey,
+                'created_at' => $when,
+                ...$values,
+            ]);
+            DB::table('ops_job_status')->where('job_key', $jobKey)->update($values);
         } catch (Throwable) {
             // Failed telemetry storage must not cause a scheduled job to fail.
         }
@@ -112,7 +114,7 @@ final class OperationsTelemetry
     {
         try {
             return DB::table('ops_job_status')
-                ->get(['job_key', 'state', 'last_started_at', 'last_success_at', 'last_failed_at', 'last_duration_ms', 'last_error'])
+                ->get(['job_key', 'state', 'last_started_at', 'last_success_at', 'last_failed_at', 'last_duration_ms', 'last_error', 'created_at'])
                 ->mapWithKeys(static fn (object $row): array => [(string) $row->job_key => (array) $row])
                 ->all();
         } catch (Throwable) {
