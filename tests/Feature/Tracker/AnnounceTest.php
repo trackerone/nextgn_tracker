@@ -6,9 +6,9 @@ namespace Tests\Feature\Tracker;
 
 use App\Models\Peer;
 use App\Models\SecurityEvent;
-use App\Models\UserStat;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\UserStat;
 use App\Models\UserTorrent;
 use App\Services\BencodeService;
 use App\Services\Settings\SiteSettingsRepository;
