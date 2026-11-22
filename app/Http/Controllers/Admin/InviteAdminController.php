@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Invites\IssueInviteAction;
 use App\Http\Controllers\Controller;
 use App\Models\Invite;
+use App\Services\PermissionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class InviteAdminController extends Controller
@@ -28,24 +29,24 @@ class InviteAdminController extends Controller
         return view('admin.invites.index', [
             'invites' => $invites,
             'status' => $status,
+            'canIssueInvites' => PermissionService::allow($request->user(), 'invites.create'),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, IssueInviteAction $issue): RedirectResponse
     {
         $validated = $request->validate([
-            'max_uses' => ['required', 'integer', 'min:1'],
+            'max_uses' => ['required', 'integer', 'min:1', 'max:10000'],
             'expires_at' => ['nullable', 'date'],
-            'notes' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $invite = Invite::create([
-            'code' => Str::upper(Str::random(24)),
-            'inviter_user_id' => $request->user()?->id,
-            'max_uses' => $validated['max_uses'],
-            'expires_at' => $validated['expires_at'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        $invite = $issue->execute(
+            $request->user(),
+            (int) $validated['max_uses'],
+            $validated['expires_at'] ?? null,
+            $validated['notes'] ?? null,
+        );
 
         $destination = $request->user()?->isSysop()
             ? route('sysop.permissions.index', ['section' => 'invitations']).'#invitations'
