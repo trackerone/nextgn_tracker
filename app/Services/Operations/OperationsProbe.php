@@ -51,7 +51,7 @@ final class OperationsProbe
         $diskTotal = null;
         try {
             $directory = storage_path('app');
-            if (! is_dir($directory) && ! @mkdir($directory, 0775, true) && ! is_dir($directory)) {
+            if (is_dir($directory) === false && @mkdir($directory, 0775, true) === false && is_dir($directory) === false) {
                 throw new \RuntimeException('Storage directory unavailable');
             }
             $probeFile = tempnam($directory, 'ops-');
@@ -103,6 +103,7 @@ final class OperationsProbe
             $job = $jobStates[$jobKey] ?? null;
             if ($job === null) {
                 $checks[] = $this->check('job:'.$jobKey, $label, 'unknown', 'No completed execution observed.');
+
                 continue;
             }
 
@@ -187,11 +188,14 @@ final class OperationsProbe
             $errors = $counters[$pipeline.'_error'];
             if ($successful === null || $errors === null) {
                 $checks[] = $this->check($pipeline, $label, 'unknown', 'No recent '.$pipeline.' execution observed.');
+
                 continue;
             }
             $total = $successful + $errors;
+
             if ($total === 0) {
                 $checks[] = $this->check($pipeline, $label, 'unknown', 'No recent '.$pipeline.' execution observed.');
+
                 continue;
             }
 
@@ -263,7 +267,7 @@ final class OperationsProbe
         }
 
         $headFile = base_path('.git/HEAD');
-        if (! is_readable($headFile)) {
+        if (is_readable($headFile) === false) {
             return 'unknown (set APP_GIT_SHA at deployment)';
         }
 
@@ -271,6 +275,7 @@ final class OperationsProbe
         if (str_starts_with($head, 'ref: ')) {
             $ref = substr($head, 5);
             if (preg_match('~\Arefs/(?:heads|tags)/[A-Za-z0-9._/-]+\z~', $ref) !== 1 || str_contains($ref, '..')) {
+
                 return 'unknown';
             }
             $head = trim((string) @file_get_contents(base_path('.git/'.$ref)));
