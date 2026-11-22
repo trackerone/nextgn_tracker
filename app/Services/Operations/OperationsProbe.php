@@ -51,7 +51,7 @@ final class OperationsProbe
                 throw new \RuntimeException('Storage directory unavailable');
             }
             $probeFile = tempnam($directory, 'ops-');
-            if ($probeFile === false) {
+            if ($probeFile === false || dirname($probeFile) !== realpath($directory)) {
                 throw new \RuntimeException('Storage write failed');
             }
             try {
@@ -70,7 +70,7 @@ final class OperationsProbe
             $percent = $diskFree !== null && $diskTotal !== null && $diskTotal > 0
                 ? (int) floor(100 * $diskFree / $diskTotal)
                 : null;
-            $status = $percent === null ? 'unknown' : ($percent < 3 ? 'critical' : ($percent < 10 ? 'degraded' : 'healthy'));
+            $status = $percent === null ? 'unknown' : ($percent < 10 ? 'critical' : ($percent < 20 ? 'degraded' : 'healthy'));
             $checks[] = $this->check(
                 'storage',
                 'Storage',
@@ -106,7 +106,7 @@ final class OperationsProbe
             $total = $announceOk + $announceRejected;
             $bad = $total >= 10 && $announceRejected / $total >= 0.3;
             $checks[] = $this->check(
-                'tracker', 'Tracker', $bad ? 'degraded' : 'healthy',
+                'tracker', 'Tracker', $total === 0 ? 'unknown' : ($bad ? 'degraded' : 'healthy'),
                 sprintf('Announces in 15m: %d accepted, %d rejected.', $announceOk, $announceRejected)
             );
         }
@@ -118,7 +118,7 @@ final class OperationsProbe
         } else {
             $total = $http5xx + $httpOk;
             $bad = $total >= 20 && $http5xx / $total >= 0.05;
-            $checks[] = $this->check('http', 'Web requests', $bad ? 'degraded' : 'healthy', $http5xx.' HTTP 5xx failures / '.$total.' requests (15m).');
+            $checks[] = $this->check('http', 'Web requests', $total === 0 ? 'unknown' : ($bad ? 'degraded' : 'healthy'), $http5xx.' HTTP 5xx failures / '.$total.' requests (15m).');
         }
 
         $checks[] = $this->check('backups', 'Backups', 'unknown', 'Backup and restore verification is not configured on this host.');
@@ -171,7 +171,7 @@ final class OperationsProbe
 
         $headFile = base_path('.git/HEAD');
         if (! is_readable($headFile)) {
-            return 'unknown (set APP_VERSION at deployment)';
+            return 'unknown (set APP_GIT_SHA at deployment)';
         }
 
         $head = trim((string) @file_get_contents($headFile));
