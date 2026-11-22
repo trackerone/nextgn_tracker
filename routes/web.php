@@ -102,7 +102,7 @@ Route::middleware('auth')->get('/home', HomeController::class)->name('home');
 Route::middleware(['auth', 'throttle:6,1'])->group(function (): void {
     Route::post('/email/verification-notification', static function (Request $request) {
         $user = $request->user();
-        if ($user !== null && ! $user->hasVerifiedEmail()) {
+        if ($user !== null && $user->hasVerifiedEmail() === false) {
             $user->sendEmailVerificationNotification();
         }
 
