@@ -44,6 +44,7 @@ class TorrentUploadController extends Controller
         abort_unless($decision->allowed, 403);
 
         $categories = Category::query()
+            ->where('is_active', true)
             ->orderBy('position')
             ->orderBy('name')
             ->get();
