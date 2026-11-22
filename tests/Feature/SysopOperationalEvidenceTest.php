@@ -86,6 +86,21 @@ it('requires real SHA256 artifact verification and separate restore attestation'
     }
 });
 
+
+it('verifies a real asynchronous queue worker rather than counting zero failed jobs', function (): void {
+    config()->set('queue.default', 'database');
+    \Illuminate\Support\Facades\Queue::fake();
+    $this->artisan('ops:monitor')->assertExitCode(0);
+    \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\OperationsQueueHeartbeatJob::class);
+
+    $before = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
+    expect($before['queue']['status'])->toBe('unknown');
+
+    (new \App\Jobs\OperationsQueueHeartbeatJob)->handle(app(OperationsTelemetry::class));
+    $after = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
+    expect($after['queue']['status'])->toBe('healthy');
+});
+
 it('collects host metrics without leaking filesystem contents or executing commands', function (): void {
     $host = app(\App\Services\Operations\OperationsHostMetrics::class)->collect();
 
