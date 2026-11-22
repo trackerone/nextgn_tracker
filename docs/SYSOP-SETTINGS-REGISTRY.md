@@ -1,33 +1,46 @@
-# Sysop settings register and source-of-truth rules
+# Sysop settings registry and source-of-truth rules
 
-This is the settings-infrastructure slice recommended by the Hermes Sysop audit. It **does not** migrate all stored values or add a second Sysop screen.
+This document describes the staged Hermes settings convergence. PR #614 registered the source, type, bounds and fallback for settings without moving values. The following class-threshold migration moves the final legacy **active** class-settings reads and writes to the same canonical \`site_settings\` store.
 
-## Source and precedence
+## Effective sources
 
-| Area | Persisted source | Default source | Cache | Owner |
+| Area | Persisted override | Default source | Cache | Owner |
 | --- | --- | --- | --- | --- |
-| Registration mode, tracker ratio/download rules, metadata provider switches and enrichment | `site_settings` | `SettingsRegistry` | No cache | Sysop |
-| Announce interval, ghost-peer timeout and scrape limit | `site_settings` | Existing `config/tracker.php` via `SettingsRegistry` | No cache | Sysop |
-| Upload file and NFO limits | `site_settings` | Existing `config/upload.php` via `UploadLimits::DEFINITIONS` | No cache | Sysop |
-| HnR controls | `site_settings` | Existing `HnrSettings::DEFAULTS` | No cache | Sysop |
-| Job toggles | `site_settings` | Existing `config/runtime_jobs.php` | No cache | Sysop (noncritical); server (critical) |
-| Earned member-class ratio and tenure thresholds | **Legacy `settings`** | `config/ratio.php` | `settings.ratio`, cleared on edit | Staff/admin for ratios; Sysop for tenure |
+| Registration, download eligibility, metadata provider switches and enrichment | \`site_settings\` | \`SettingsRegistry\` | No cache | Sysop |
+| Tracker announce, ghost-peer timeout and scrape caps | \`site_settings\` | \`config/tracker.php\` | No cache | Sysop |
+| Upload torrent/NFO limits | \`site_settings\` | \`UploadLimits::DEFINITIONS\` | No cache | Sysop |
+| HnR controls | \`site_settings\` | \`HnrSettings::DEFAULTS\` | No cache | Sysop |
+| Runtime jobs | \`site_settings\` | \`config/runtime_jobs.php\` | No cache | Sysop for noncritical, server for critical |
+| **Earned member-class ratio and tenure thresholds** | **\`site_settings\`** | \`config/ratio.php\` via \`SettingsRegistry\` | Per \`RatioSettings\` instance only | Admin for ratios; Sysop for tenure |
 
-`SettingsRegistry::definition(key)` describes the current owner, datatype, effective default, bounds or allowed values, default source, store and cache. `SettingsRegistry::legacyClassThresholds()` explicitly records the separate legacy thresholds without claiming that they have moved. There are no schema changes and **no new database rows** solely for defaults.
+The \`SettingsRegistry::definition(key)\` defines type, default, owner, limits and source. \`SettingsRegistry::classThresholds()\` lists the eight member-class keys. A valid \`site_settings\` override wins over the registered default. Malformed or out-of-range values fall back to defaults instead of silently becoming false or zero.
 
-**For registered site keys, a valid persisted override always takes precedence.** When no override exists, the registry's default applies. For tracker and upload limits, the registry resolves the existing Laravel configuration fallback. Wrongly typed, malformed or out-of-range values fall back to a declared default rather than becoming false, zero, or an unexpected registration mode. In particular, invalid `tracker.ratio.enforcement_enabled` must never disable enforcement accidentally.
+\`RatioSettings\` reads the eight class threshold overrides with one query and caches the resolved values only within its service instance. On the next HTTP request, a fresh service reads the current values. After updating thresholds within the same request, its \`flush()\` resets only that in-memory instance. No \`settings.ratio\` global cache is used by current class promotion reads.
 
-`SiteSettingsRepository::getMany()` remains a **raw batched override reader** for HnR and upload-limit clients. It does not materialize defaults. Typed getters read directly from `site_settings` on every call, so Sysop changes take effect on subsequent requests without worker restarts or application cache flushing. Class thresholds continue using their existing separate cache strategy, documented above.
+**Critical separation:** \`ratio.*\` class thresholds affect earned display classes (Newbie, User, Power User and Elite). They do not confer staff permissions and do **not** change \`tracker.ratio.*\` torrent download restrictions.
 
-## What this PR deliberately does not change
+## Safe migration and rollback
 
-- The `settings` table, `RatioSettings` class, its staff/admin screens or existing class thresholds. Those need an isolated data migration plus cache-invalidation, rollback and authorization tests before the table can be retired.
-- The HnR and upload-limit batch parsers or their existing limits.
-- Credential storage: sensitive metadata secrets remain encrypted in `site_settings` through `MetadataCredentialsRepository`, not the ordinary settings reader.
-- Actual worker/scheduler processes and server-owned settings, which cannot be enabled merely by a website toggle.
+The migration \`2026_11_22_000500_backfill_class_thresholds_into_site_settings\` backfills only the eight known member-class keys from the legacy \`settings\` table. It:
 
-## Upgrade acceptance
+- Copies only valid, in-range, typed legacy values.
+- Never overwrites an already-present \`site_settings\` value.
+- Leaves old \`settings\` rows intact as a rollback source, but stops using them for active class-threshold reads and writes.
+- On rollback, copies current canonical values **back to legacy** so owner changes made after migration are not lost. It does not delete canonical values.
+- Clears the old \`settings.ratio\` cache key on migration and rollback.
 
-The feature tests check registered definitions, source precedence, invalid-value fallbacks, immediate invalidation, runtime config fallback, raw batch behavior, and unchanged legacy ratio-threshold storage. Existing tests still cover Sysop-only mutations and their audit trails. No data migration is needed; do not reset the database or override owner-defined settings during deployment.
+The legacy table is deliberately **not dropped** in this PR because dropping it could destroy unrelated historical data and complicate application rollback. Removing the table requires a separate usage inventory and explicit data-retention decision.
 
-**Next isolated step:** consolidate the legacy member-class threshold writer/cache and its authorization through a dedicated audited service and backfilled migration, not by silently changing the reading order.
+Admin/Sysop class-threshold edits keep existing role authorization, the tenure-only Sysop restriction and the existing audit event. Threshold writes plus their audit record are transactional. The unified Sysop page and staff administration surface remain unchanged.
+
+## Upgrade
+
+On the HP test server, once CI and review are green:
+
+\`\`\`bash
+git pull --ff-only origin main
+php artisan migrate --force
+php artisan optimize:clear
+\`\`\`
+
+No frontend rebuild is necessary. Do not reset the database. Validate a member's effective class thresholds and the separately configured global download ratio afterward. Do not merge or deploy while tests or review are unresolved.
