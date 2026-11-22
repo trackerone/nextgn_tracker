@@ -10,7 +10,10 @@ use Throwable;
 
 final class OperationsProbe
 {
-    public function __construct(private readonly OperationsTelemetry $telemetry) {}
+    public function __construct(
+        private readonly OperationsTelemetry $telemetry,
+        private readonly OperationsHostMetrics $hostMetrics,
+    ) {}
 
     /**
      * @return array<string, mixed>
@@ -90,6 +93,60 @@ final class OperationsProbe
             $scheduler === null ? 'No scheduler heartbeat observed yet.' : 'Last heartbeat: '.$scheduler->toDateTimeString()
         );
 
+        $jobStates = $this->telemetry->jobs();
+        foreach ([
+            'tracker:prune-ghost-peers' => ['Ghost peer cleanup', 25],
+            'hnr:evaluate' => ['HnR review', 130],
+            'ops:monitor' => ['Health snapshot', 15],
+        ] as $jobKey => [$label, $staleMinutes]) {
+            $job = $jobStates[$jobKey] ?? null;
+            if ($job === null) {
+                $checks[] = $this->check('job:'.$jobKey, $label, 'unknown', 'No completed execution observed.');
+                continue;
+            }
+
+            $lastSuccess = $job['last_success_at'] ?? null;
+            $lastFailure = $job['last_failed_at'] ?? null;
+            $lastSuccessTime = $lastSuccess ? strtotime((string) $lastSuccess) : false;
+            $lastFailureTime = $lastFailure ? strtotime((string) $lastFailure) : false;
+            if (($job['state'] ?? '') === 'failed' && ($lastSuccessTime === false || ($lastFailureTime !== false && $lastFailureTime >= $lastSuccessTime))) {
+                $checks[] = $this->check('job:'.$jobKey, $label, 'critical', 'Last observed scheduled execution failed.');
+            } elseif ($lastSuccessTime === false) {
+                $checks[] = $this->check('job:'.$jobKey, $label, 'unknown', 'Execution started but no successful completion observed.');
+            } elseif ($lastSuccessTime < now()->subMinutes($staleMinutes)->timestamp) {
+                $checks[] = $this->check('job:'.$jobKey, $label, 'degraded', 'Last successful run is stale: '.$lastSuccess);
+            } else {
+                $checks[] = $this->check('job:'.$jobKey, $label, 'healthy', 'Last successful run: '.$lastSuccess);
+            }
+        }
+
+        $host = $this->hostMetrics->collect();
+        $hostMemoryTotal = $host['memory_total_bytes'];
+        $hostMemoryFree = $host['memory_available_bytes'];
+        if ($hostMemoryTotal === null || $hostMemoryFree === null || $hostMemoryTotal < 1) {
+            $checks[] = $this->check('host_memory', 'Host memory', 'unknown', 'RAM telemetry unavailable on this host.');
+        } else {
+            $memoryFreePercent = (int) floor(100 * $hostMemoryFree / $hostMemoryTotal);
+            $checks[] = $this->check(
+                'host_memory', 'Host memory',
+                $memoryFreePercent < 3 ? 'critical' : ($memoryFreePercent < 10 ? 'degraded' : 'healthy'),
+                $memoryFreePercent.'% RAM available.'
+            );
+        }
+
+        $cpuCores = $host['cpu_cores'];
+        $load = $host['load_1m'];
+        if ($cpuCores === null || $load === null) {
+            $checks[] = $this->check('host_load', 'Host CPU load', 'unknown', 'Linux CPU/load telemetry unavailable.');
+        } else {
+            $ratio = $load / max(1, $cpuCores);
+            $checks[] = $this->check(
+                'host_load', 'Host CPU load',
+                $ratio >= 4 ? 'critical' : ($ratio >= 2 ? 'degraded' : 'healthy'),
+                sprintf('1m load %.2f across %d CPUs (load, not CPU%%).', $load, $cpuCores)
+            );
+        }
+
         $queueDriver = (string) config('queue.default', 'sync');
         if ($queueDriver === 'sync') {
             $checks[] = $this->check('queue', 'Queue', 'not_applicable', 'sync driver: jobs run inline; no worker required.');
@@ -135,6 +192,7 @@ final class OperationsProbe
             'version' => $this->version(),
             'php_version' => PHP_VERSION,
             'host_load' => function_exists('sys_getloadavg') ? sys_getloadavg() : false,
+            'host' => $host,
         ];
     }
 
