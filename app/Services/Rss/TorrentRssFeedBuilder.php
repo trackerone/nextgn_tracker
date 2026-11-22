@@ -20,6 +20,7 @@ final class TorrentRssFeedBuilder
 
     // Technical safety ceiling, not a configurable Sysop content policy.
     private const MAX_SCAN_BUDGET = 2000;
+
     public function __construct(
         private readonly DownloadEligibilityService $visibilityEligibility,
         private readonly DownloadEligibilityPolicy $ratioEligibility,
@@ -81,7 +82,7 @@ final class TorrentRssFeedBuilder
             $scanned += $torrents->count();
 
             foreach ($torrents as $torrent) {
-                if (! $this->matchesFilters($torrent, $filters) || ! $this->canDownload($user, $torrent)) {
+                if ($this->matchesFilters($torrent, $filters) === false || $this->canDownload($user, $torrent) === false) {
                     continue;
                 }
 
