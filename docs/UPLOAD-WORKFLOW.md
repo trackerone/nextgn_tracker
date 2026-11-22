@@ -39,3 +39,19 @@ Uploads require `name`, `type`, and `torrent_file`. Optional fields include `cat
 - Torrent payloads use the `upload.torrents.disk` disk and `upload.torrents.directory` directory.
 - The persisted `storage_path` is authoritative for current rows; `Torrent::torrentStoragePath()` retains a hash-based fallback for old rows.
 - NFO payloads use the configured NFO disk/directory and are subject to size/character limits.
+
+## Owner-controlled upload limits (pre-release)
+
+The three **size** limits for the upload path are managed under **Sysop → Site settings → Upload limits** at `/sysop/settings/uploads`:
+
+| Upload input | Default | Allowed range | Persisted key |
+| --- | --- | --- | --- |
+| .torrent metadata file | 1,024 KB | 64–8,192 KB | `uploads.torrents.max_kilobytes` |
+| NFO file | 256 KB | 16–2,048 KB | `uploads.nfo.max_kilobytes` |
+| Inline NFO text | 262,144 characters | 1,024–1,048,576 characters | `uploads.nfo.max_characters` |
+
+`UploadLimits` resolves these values from `site_settings` with the existing `config/upload.php` defaults, in a single database query per rules evaluation. A malformed stored value falls back to the default; excessively high or low values are clamped to hard safety bounds. No migration is needed and values survive code updates.
+
+`TorrentUploadRules` is the existing shared validator for **web submissions, the upload analysis endpoint, and API submissions**; all three now use the effective limits immediately. The web form displays the current limits to uploaders. Changes require authenticated Sysop, bounded numeric validation, a nonempty reason, and a transactional audit entry (`sysop.upload_limits.updated`).
+
+**Not configurable from the website:** accepted MIME types/extensions, file storage disks/paths, and the actual PHP/web-server request limits. Increasing a website limit cannot raise PHP's `upload_max_filesize`, `post_max_size`, or reverse-proxy/body size ceilings. Those remain deployment controls to avoid unsafe uploads. The separate image configuration is not part of the torrent/NFO submission flow and is intentionally unchanged in this PR.
