@@ -24,9 +24,7 @@ final class RatioSettings
     /** @var array<string, bool|int|float>|null */
     private ?array $resolved = null;
 
-    public function __construct(private readonly SiteSettingsRepository $repository)
-    {
-    }
+    public function __construct(private readonly SiteSettingsRepository $repository) {}
 
     /**
      * One batched read with request-instance caching; no long-lived cache to
