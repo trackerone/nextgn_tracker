@@ -182,6 +182,25 @@ final class OperationsProbe
             );
         }
 
+        foreach (['rss' => 'RSS feeds', 'browse' => 'Browse', 'metadata' => 'Metadata jobs'] as $pipeline => $label) {
+            $successful = $counters[$pipeline.'_ok'];
+            $errors = $counters[$pipeline.'_error'];
+            if ($successful === null || $errors === null) {
+                $checks[] = $this->check($pipeline, $label, 'unknown', 'No recent '.$pipeline.' execution observed.');
+                continue;
+            }
+            $total = $successful + $errors;
+            if ($total === 0) {
+                $checks[] = $this->check($pipeline, $label, 'unknown', 'No recent '.$pipeline.' execution observed.');
+                continue;
+            }
+
+            $degraded = $total >= 5 && $errors / $total >= 0.2;
+            $checks[] = $this->check($pipeline, $label, $degraded ? 'degraded' : 'healthy', sprintf(
+                '%d completed, %d failed in the last 15 minutes.', $successful, $errors
+            ));
+        }
+
         $http5xx = $counters['http_5xx'];
         $httpOk = $counters['http_ok'];
         if ($http5xx === null || $httpOk === null) {
