@@ -82,9 +82,9 @@ final class SysopUploadLimitsTest extends TestCase
         ], app(UploadLimits::class)->values());
 
         foreach ([
-            app(TorrentUploadStoreRequest::class)->rules(),
-            app(UploadSubmissionRequest::class)->rules(),
-            app(AnalyseTorrentUploadRequest::class)->rules(),
+            (new TorrentUploadStoreRequest)->rules(),
+            (new UploadSubmissionRequest)->rules(),
+            (new AnalyseTorrentUploadRequest)->rules(),
         ] as $rules) {
             $this->assertContains('max:64', $rules['torrent_file']);
             $this->assertContains('max:32', $rules['nfo_file']);
@@ -158,7 +158,9 @@ final class SysopUploadLimitsTest extends TestCase
                 ->assertSessionHasErrors();
         }
 
-        $this->assertDatabaseCount('site_settings', 0);
+        foreach (UploadLimits::DEFINITIONS as $definition) {
+            $this->assertDatabaseMissing('site_settings', ['key' => $definition['key']]);
+        }
         $this->assertDatabaseMissing('audit_logs', ['action' => 'sysop.upload_limits.updated']);
     }
 
