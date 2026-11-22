@@ -45,7 +45,7 @@
                             <td class="px-4 py-3">{{ $event->created_at?->toDayDateTimeString() }}</td>
                             <td class="px-4 py-3"><span class="rounded-full bg-slate-800 px-2 py-1 text-xs uppercase tracking-wide">{{ strtoupper($event->severity) }}</span></td>
                             <td class="px-4 py-3">
-                                <a href="{{ route('admin.logs.security.show', $event) }}" class="font-semibold text-white hover:text-brand">{{ $event->event_type }}</a>
+                                <a href="{{ route('admin.logs.security.show', $event) }}" class="font-semibold text-white hover:text-brand">{{ app(\App\Support\Operations\SensitiveLogRedactor::class)->text($event->event_type) }}</a>
                                 <p class="text-xs text-slate-400">{{ \Illuminate\Support\Str::limit(app(\App\Support\Operations\SensitiveLogRedactor::class)->text($event->message), 80) }}</p>
                             </td>
                             <td class="px-4 py-3">{{ $event->user?->name ?? 'Unknown' }}</td>
