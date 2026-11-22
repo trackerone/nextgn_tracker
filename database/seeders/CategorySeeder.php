@@ -6,28 +6,31 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class CategorySeeder extends Seeder
 {
     public function run(): void
     {
         $categories = [
-            'Movies',
-            'TV',
-            'Music',
-            'Games',
-            'Software',
-            'Other',
-            'Books',
+            'movies' => ['Movies', 'movie'],
+            'tv' => ['TV', 'tv'],
+            'music' => ['Music', 'music'],
+            'games' => ['Games', 'game'],
+            'software' => ['Software', 'software'],
+            'other' => ['Other', 'other'],
+            'books' => ['Books', 'book'],
         ];
 
-        foreach ($categories as $index => $name) {
-            Category::query()->updateOrCreate(
-                ['slug' => Str::slug($name)],
+        foreach ($categories as $slug => [$name, $mediaType]) {
+            // Seed defaults only once: never overwrite Sysop custom names,
+            // ordering, media types or archived status on subsequent seeding.
+            Category::query()->firstOrCreate(
+                ['slug' => $slug],
                 [
                     'name' => $name,
-                    'position' => $index,
+                    'media_type' => $mediaType,
+                    'position' => array_search($slug, array_keys($categories), true),
+                    'is_active' => true,
                 ]
             );
         }
