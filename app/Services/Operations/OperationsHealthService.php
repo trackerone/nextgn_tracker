@@ -64,7 +64,7 @@ final class OperationsHealthService
         $debug = (bool) config('app.debug');
         $hardening = (bool) config('security.production_hardening_enabled', false);
 
-        $status = 'ok';
+        $status = 'info';
         $actions = [];
 
         if ($env === 'production' && $debug) {
@@ -108,7 +108,7 @@ final class OperationsHealthService
         );
 
         $actions = [];
-        $status = 'ok';
+        $status = 'info';
 
         if (! $requireNonce) {
             $status = 'critical';
@@ -286,11 +286,11 @@ final class OperationsHealthService
 
         return $this->card(
             'Storage',
-            $writable ? 'ok' : 'critical',
+            $writable ? 'info' : 'critical',
             [
                 sprintf(
                     'Storage writable: %s',
-                    $writable ? 'yes' : 'no'
+                    $writable ? 'yes (configuration check only)' : 'no'
                 ),
             ],
             $writable
