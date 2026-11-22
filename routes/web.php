@@ -44,6 +44,7 @@ use App\Http\Controllers\Sysop\OperationsDashboardController;
 use App\Http\Controllers\Sysop\OperationsSupportBundleController;
 use App\Http\Controllers\Sysop\PermissionsController;
 use App\Http\Controllers\Sysop\RatioCreditController;
+use App\Http\Controllers\Sysop\RegistrationSettingsController;
 use App\Http\Controllers\Sysop\RuntimeJobToggleController;
 use App\Http\Controllers\Sysop\SiteSettingsController;
 use App\Http\Controllers\Sysop\TorrentMetadataSourceController;
@@ -202,6 +203,7 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
     Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
     Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
+    Route::patch('/registration', [RegistrationSettingsController::class, 'update'])->name('registration.update');
     Route::post('/permissions/users', [PermissionsController::class, 'updateUser'])->name('permissions.users.update');
     Route::get('/ratio-credits', [RatioCreditController::class, 'index'])->name('ratio-credits.index');
     Route::patch('/ratio-credits/defaults', [RatioCreditController::class, 'updateDefaults'])->name('ratio-credits.defaults.update');
