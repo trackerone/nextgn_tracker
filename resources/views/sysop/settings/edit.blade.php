@@ -64,6 +64,7 @@
         <div class="mt-3 flex flex-wrap gap-4 text-sm text-brand">
             <a href="{{ route('sysop.permissions.index') }}">Roles, permissions, ratio &amp; balances</a>
             <a href="{{ route('admin.users.index') }}">User administration</a>
+            <a href="{{ route('sysop.upload-settings.edit') }}">Upload limits</a>
             <a href="{{ route('admin.settings.metadata.edit') }}">Metadata providers and credentials</a>
             <a href="{{ route('moderation.uploads') }}">Upload moderation</a>
             <a href="{{ route('admin.logs.security.index') }}">Security events</a>
