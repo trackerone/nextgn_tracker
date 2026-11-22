@@ -13,6 +13,157 @@
     ];
 @endphp
 <div class="min-w-0 space-y-6 break-words">
+    @php
+        $liveLabels = ['healthy' => 'Healthy', 'degraded' => 'Degraded', 'critical' => 'Critical', 'unknown' => 'Unknown', 'not_applicable' => 'N/A'];
+        $liveTone = [
+            'healthy' => 'border-emerald-500/40 text-emerald-300',
+            'degraded' => 'border-amber-500/50 text-amber-300',
+            'critical' => 'border-rose-500/50 text-rose-300',
+            'unknown' => 'border-slate-600 text-slate-300',
+            'not_applicable' => 'border-slate-700 text-slate-400',
+        ];
+        $traffic = $live['counters'];
+    @endphp
+
+    <section id="overview" class="rounded-2xl border border-slate-800 bg-slate-900/70 p-3 sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">NEXTGN / SYSOP</p>
+                <h1 class="text-xl font-bold text-white sm:text-2xl">Control Center</h1>
+                <p class="mt-1 text-xs text-slate-400">Measured {{ $live['checked_at'] }} · PHP {{ $live['php_version'] }} · Release {{ $live['version'] }}</p>
+            </div>
+            <span class="rounded-full border px-3 py-1 text-sm font-bold {{ $liveTone[$live['overall']] ?? $liveTone['unknown'] }}">
+                {{ $liveLabels[$live['overall']] ?? 'Unknown' }}
+            </span>
+        </div>
+        <nav aria-label="Operations sections" class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+            @foreach (['overview' => 'Overview', 'tracker' => 'Tracker', 'jobs' => 'Jobs', 'infrastructure' => 'Infrastructure', 'alerts' => 'Alerts'] as $anchor => $title)
+                <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="#{{ $anchor }}">{{ $title }}</a>
+            @endforeach
+            <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.logs.index') }}">Logs</a>
+            <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.settings.edit') }}">Settings</a>
+            <a class="rounded-lg border border-slate-700 px-3 py-2 text-slate-200 hover:bg-slate-800" href="{{ route('sysop.operations.index') }}">Refresh</a>
+        </nav>
+        <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label="Measured service health">
+            @foreach ($live['checks'] as $check)
+                <div class="min-w-0 rounded-xl border border-slate-700 bg-slate-950/50 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <h2 class="text-sm font-semibold text-white">{{ $check['label'] }}</h2>
+                        <span class="rounded border px-1.5 py-0.5 text-[10px] {{ $liveTone[$check['status']] ?? $liveTone['unknown'] }}">{{ $liveLabels[$check['status']] ?? 'Unknown' }}</span>
+                    </div>
+                    <p class="mt-1 break-words text-xs leading-relaxed text-slate-400">{{ $check['details'] }}</p>
+                </div>
+            @endforeach
+        </div>
+        <p class="mt-3 text-xs text-slate-400">Unknown does not mean healthy. System-wide outages need external uptime monitoring because a down server cannot notify itself.</p>
+    </section>
+
+    <section id="tracker" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-lg font-semibold text-white">Tracker activity</h2>
+            <span class="text-xs text-slate-400">Last 15 minutes · anonymous totals</span>
+        </div>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            @foreach ([
+                'announce_ok' => 'Accepted announces',
+                'announce_rejected' => 'Rejected announces',
+                'scrape_ok' => 'Successful scrapes',
+                'scrape_rejected' => 'Rejected scrapes',
+            ] as $key => $label)
+                <div class="rounded-xl border border-slate-700 p-3">
+                    <p class="text-xs text-slate-400">{{ $label }}</p>
+                    <p class="mt-1 text-xl font-semibold tabular-nums text-white">{{ $traffic[$key] === null ? '—' : number_format($traffic[$key]) }}</p>
+                </div>
+            @endforeach
+        </div>
+        @if ($snapshots->isNotEmpty())
+            @php $latest = $snapshots->last(); @endphp
+            <p class="mt-3 text-sm text-slate-300">Last sampled swarm: {{ $latest->seeders === null ? 'unknown' : number_format($latest->seeders) }} seeders · {{ $latest->leechers === null ? 'unknown' : number_format($latest->leechers) }} leechers ({{ $latest->captured_at }})</p>
+        @else
+            <p class="mt-3 text-xs text-slate-400">No historical tracker snapshot yet. The ops:monitor scheduled task captures snapshots every five minutes.</p>
+        @endif
+    </section>
+
+    <section id="jobs" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+        <h2 class="text-lg font-semibold text-white">Jobs and scheduler heartbeat</h2>
+        <p class="mt-1 text-sm text-slate-400">A scheduled definition is not proof of successful execution. Only observed events are shown below.</p>
+        <div class="mt-3 space-y-2">
+            @foreach (['scheduler.tick' => 'Scheduler tick', 'tracker:prune-ghost-peers' => 'Ghost peer cleanup', 'hnr:evaluate' => 'HnR evaluation', 'ops:monitor' => 'Health snapshot'] as $key => $label)
+                @php $job = $live['jobs'][$key] ?? null; @endphp
+                <div class="min-w-0 rounded-xl border border-slate-700 p-3 text-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="font-medium text-white">{{ $label }}</span>
+                        <span class="text-xs {{ ($job['state'] ?? 'unknown') === 'failed' ? 'text-rose-300' : 'text-slate-400' }}">{{ $job['state'] ?? 'Not observed' }}</span>
+                    </div>
+                    <p class="mt-1 break-words text-xs text-slate-400">Last success: {{ $job['last_success_at'] ?? 'Never observed' }} · Last failure: {{ $job['last_failed_at'] ?? '—' }} · Duration: {{ isset($job['last_duration_ms']) ? $job['last_duration_ms'].' ms' : '—' }}</p>
+                    @if (!empty($job['last_error']))
+                        <p class="mt-1 break-words text-xs text-rose-300">{{ $job['last_error'] }}</p>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </section>
+
+    <section id="infrastructure" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+        <h2 class="text-lg font-semibold text-white">Infrastructure & history</h2>
+        <p class="mt-2 text-sm text-slate-300">Database latency: {{ $live['database_latency_ms'] === null ? 'Unknown' : $live['database_latency_ms'].' ms' }} · Disk free: {{ $live['disk_free_bytes'] === null ? 'Unknown' : \Illuminate\Support\Number::fileSize($live['disk_free_bytes']) }}</p>
+        <p class="mt-1 text-xs text-slate-400">Server load averages: {{ $live['host_load'] === false ? 'Unavailable' : implode(' / ', array_map(static fn ($load) => number_format((float) $load, 2), $live['host_load'])) }}. CPU%, host RAM, backup integrity and external uptime are not yet measured by this collector.</p>
+        <details class="mt-3 rounded-lg border border-slate-700 p-3">
+            <summary class="cursor-pointer text-sm font-semibold text-slate-200">Historical snapshots (last 24h)</summary>
+            <div class="mt-2 max-h-72 overflow-auto">
+                <table class="w-full min-w-0 text-left text-xs">
+                    <thead class="text-slate-400"><tr><th class="py-2">Captured</th><th>Status</th><th>5xx</th><th>DB ms</th></tr></thead>
+                    <tbody>
+                        @forelse ($snapshots as $snapshot)
+                            <tr class="border-t border-slate-800"><td class="py-2">{{ $snapshot->captured_at }}</td><td>{{ $snapshot->overall_status }}</td><td>{{ $snapshot->http_5xx ?? '—' }}</td><td>{{ $snapshot->database_latency_ms ?? '—' }}</td></tr>
+                        @empty
+                            <tr><td colspan="4" class="py-4 text-slate-400">No snapshots recorded yet.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </section>
+
+    <section id="alerts" class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-5">
+        <div class="flex items-center justify-between gap-2">
+            <h2 class="text-lg font-semibold text-white">Incident inbox</h2>
+            <span class="text-xs text-slate-400">Latest 20</span>
+        </div>
+        <p class="mt-1 text-xs text-slate-400">Incidents are deduplicated; acknowledged incidents remain visible until resolved. No automatic server actions.</p>
+        <div class="mt-3 space-y-3">
+            @forelse ($alerts as $alert)
+                <article class="min-w-0 rounded-xl border border-slate-700 p-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h3 class="break-words text-sm font-semibold text-white">{{ $alert->title }}</h3>
+                        <span class="text-xs {{ $alert->severity === 'critical' ? 'text-rose-300' : 'text-amber-300' }}">{{ ucfirst($alert->severity) }} · {{ ucfirst($alert->status) }}</span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-400">First: {{ $alert->first_seen_at }} · Last: {{ $alert->last_seen_at }} · Observations: {{ $alert->occurrences }}</p>
+                    @if ($alert->status !== 'resolved')
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach (['acknowledge' => 'Acknowledge', 'resolve' => 'Resolve'] as $action => $label)
+                                @if ($action !== 'acknowledge' || $alert->status === 'active')
+                                    <form method="POST" action="{{ route('sysop.operations.alerts.action') }}">
+                                        @csrf
+                                        <input type="hidden" name="alert_id" value="{{ $alert->id }}">
+                                        <input type="hidden" name="action" value="{{ $action }}">
+                                        <button type="submit" class="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800">{{ $label }}</button>
+                                    </form>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </article>
+            @empty
+                <p class="rounded-xl border border-slate-700 p-3 text-sm text-slate-400">No recorded incidents. This does not prove a healthy system; check probe timestamps above.</p>
+            @endforelse
+        </div>
+    </section>
+
+    <details class="rounded-2xl border border-slate-800 bg-slate-950/30 p-3">
+        <summary class="cursor-pointer text-sm font-semibold text-slate-300">Configuration snapshots and optional job settings</summary>
+        <div class="mt-4 space-y-5">
+
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <h1 class="text-2xl font-semibold text-white">Sysop Operations Dashboard</h1>
@@ -110,6 +261,8 @@
     <details class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <summary class="cursor-pointer text-sm font-semibold text-slate-300">Alpha launch readiness</summary>
         <p class="mt-2 text-sm text-slate-400">Use this page with staff moderation, recent uploads, browse/detail/upload smoke checks, and RSS/watch/notification smoke paths before declaring the alpha healthy enough for launch.</p>
+    </details>
+        </div>
     </details>
 </div>
 @endsection
