@@ -18,7 +18,7 @@ final class SensitiveLogRedactor
         // Also hide path-segment secrets in encoded tracker URLs and passkey/token routes.
         // A captured request path must not expose a reusable credential in technical context.
         $text = preg_replace(
-            '~((?:/|%2f)(?:announce|scrape|rss|passkey|token|api[_-]?key)(?:/|%2f))[A-Za-z0-9._~-]{8,}~i',
+            '#((?:/|%2f)(?:announce|scrape|rss|passkey|token|api[_-]?key)(?:/|%2f))[A-Za-z0-9._~-]{8,}#i',
             '$1'.self::MASK,
             $text
         ) ?? self::MASK;
