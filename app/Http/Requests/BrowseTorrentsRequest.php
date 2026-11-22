@@ -6,6 +6,7 @@ namespace App\Http\Requests;
 
 use App\Support\Torrents\TorrentBrowseFilters;
 use App\Support\Torrents\TorrentSearchExpression;
+use App\Support\Torrents\TorrentMediaTypes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,8 +24,6 @@ final class BrowseTorrentsRequest extends FormRequest
         'leechers',
         'completed',
     ];
-
-    private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
 
     public function authorize(): bool
     {
@@ -67,7 +66,7 @@ final class BrowseTorrentsRequest extends FormRequest
 
         return [
             'q' => ['nullable', 'string', 'max:255'],
-            'type' => ['nullable', Rule::in(self::TYPES)],
+            'type' => ['nullable', Rule::in(TorrentMediaTypes::VALUES)],
             'release_group' => ['nullable', 'string', 'max:80'],
             'language' => ['nullable', 'string', 'max:80'],
             'audio_language' => ['nullable', 'string', 'max:80'],
