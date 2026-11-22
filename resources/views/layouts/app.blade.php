@@ -11,23 +11,23 @@
     </head>
     <body class="min-h-screen bg-slate-950 font-sans text-slate-100">
         @php
-            $navLink = 'shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition hover:bg-slate-800/80 hover:text-white';
+            $navLink = 'shrink-0 whitespace-nowrap rounded-full px-2 py-1.5 sm:px-3 sm:py-2 text-sm font-medium transition hover:bg-slate-800/80 hover:text-white';
             $activeNavLink = 'bg-brand/15 text-brand ring-1 ring-brand/30';
             $inactiveNavLink = 'text-slate-300';
         @endphp
-        <header class="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-            <div class="nextgn-site-width flex flex-col gap-4 py-4">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <a href="{{ route('home') }}" class="group inline-flex items-center gap-3" aria-label="{{ config('app.name', 'NEXTGN') }} dashboard">
-                        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
+        <header class="relative z-40 border-b border-slate-800 bg-slate-950/90 backdrop-blur md:sticky md:top-0">
+            <div class="nextgn-site-width flex flex-col gap-2 py-2 sm:gap-4 sm:py-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+                    <a href="{{ route('home') }}" class="group inline-flex items-center gap-2 sm:gap-3" aria-label="{{ config('app.name', 'NEXTGN') }} dashboard">
+                        <span class="grid h-8 w-8 place-items-center rounded-lg sm:h-10 sm:w-10 sm:rounded-2xl bg-brand text-sm font-black text-slate-950 shadow-lg shadow-brand/20">NG</span>
                         <span>
                             <span class="block text-base font-semibold leading-tight text-white">{{ config('app.name', 'NEXTGN') }}</span>
-                            <span class="block text-xs font-medium text-slate-500 group-hover:text-slate-400">Community tracker</span>
+                            <span class="hidden text-xs font-medium text-slate-500 group-hover:text-slate-400 sm:block">Community tracker</span>
                         </span>
                     </a>
                     @auth
                         <details class="relative ml-auto min-w-0 max-w-full">
-                            <summary class="cursor-pointer rounded-lg px-3 py-2 font-semibold text-white [overflow-wrap:anywhere]">
+                            <summary class="cursor-pointer rounded-lg px-2 py-1.5 text-sm font-semibold text-white sm:px-3 sm:py-2 sm:text-base [overflow-wrap:anywhere]">
                                 {{ auth()->user()->name }}
                                 <span class="text-xs uppercase text-slate-400">{{ auth()->user()->headerClassLabel() }}</span>
                             </summary>
@@ -83,7 +83,7 @@
                                 ? 'text-emerald-300'
                                 : 'text-rose-300');
                     @endphp
-                    <nav class="flex flex-wrap items-center gap-1" aria-label="Primary navigation">
+                    <nav class="flex flex-wrap items-center gap-0.5 sm:gap-1" aria-label="Primary navigation">
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
                         @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
@@ -93,7 +93,7 @@
                             <a href="{{ route('topics.index') }}" class="{{ $navLink }} {{ request()->routeIs('topics.*') ? $activeNavLink : $inactiveNavLink }}">Forum</a>
                         @endif
                         <a href="{{ route('account.snatches') }}" aria-label="My uploaded, downloaded and ratio statistics"
-                            class="inline-flex max-w-full flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm font-medium tabular-nums transition hover:opacity-80">
+                            class="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1 px-2 py-1 text-xs font-medium tabular-nums transition hover:opacity-80 sm:gap-x-3 sm:px-3 sm:py-2 sm:text-sm">
                             <span class="whitespace-nowrap text-emerald-300" title="Credited upload"><span aria-hidden="true">↑</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['uploaded'], 1) }}</span>
                             <span class="whitespace-nowrap text-rose-300" title="Credited download"><span aria-hidden="true">↓</span> {{ \Illuminate\Support\Number::fileSize($headerRatio['downloaded'], 1) }}</span>
                             <span class="whitespace-nowrap {{ $ratioTone }}" title="Effective ratio">R {{ $ratioLabel }}</span>
@@ -102,7 +102,7 @@
                 @endauth
             </div>
         </header>
-        <main class="nextgn-site-width min-w-0 py-8">
+        <main class="nextgn-site-width min-w-0 py-4 sm:py-8">
             @if (session('status'))
                 <div class="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
                     {{ session('status') }}
