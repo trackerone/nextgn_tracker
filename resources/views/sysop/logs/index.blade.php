@@ -7,9 +7,9 @@
 @endsection
 
 @section('content')
-<div class="min-w-0 space-y-4">
-    <header class="flex flex-wrap items-start justify-between gap-3">
-        <div>
+<div class="min-w-0 space-y-4 overflow-x-hidden">
+    <header class="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
             <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Sysop / Operations</p>
             <h1 class="text-2xl font-bold tracking-tight text-white">Log Center</h1>
             <p class="mt-1 max-w-2xl text-sm text-slate-400">Investigate application errors, security events, staff actions and failed jobs in one place.</p>
@@ -20,11 +20,11 @@
         </div>
     </header>
 
-    <nav aria-label="Log sources" class="flex gap-2 overflow-x-auto pb-1">
+    <nav aria-label="Log sources" class="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         @foreach (['application' => 'Application', 'security' => 'Security', 'audit' => 'Audit trail', 'jobs' => 'Failed jobs'] as $key => $label)
             <a href="{{ route('sysop.logs.index', ['source' => $key, 'window' => $filters['window']]) }}"
                 @if ($filters['source'] === $key) aria-current="page" @endif
-                class="shrink-0 rounded-lg border px-3 py-2 text-sm font-semibold {{ $filters['source'] === $key ? 'border-blue-500/70 bg-blue-500/15 text-white' : 'border-slate-700 text-slate-300 hover:bg-slate-800' }}">
+                class="min-w-0 rounded-lg border px-2 py-2 text-center text-sm font-semibold sm:shrink-0 sm:px-3 {{ $filters['source'] === $key ? 'border-blue-500/70 bg-blue-500/15 text-white' : 'border-slate-700 text-slate-300 hover:bg-slate-800' }}">
                 {{ $label }}
             </a>
         @endforeach
@@ -53,7 +53,7 @@
                 @endforeach
             </select>
         </label>
-        <div class="flex items-end gap-2">
+        <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
             <button class="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500" type="submit">Apply</button>
             <a href="{{ route('sysop.logs.index', ['source' => $filters['source']]) }}" class="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800">Clear</a>
         </div>
@@ -81,9 +81,9 @@
                     <span class="rounded border px-2 py-0.5 font-bold {{ $tone }}">{{ $entry['severity'] }}</span>
                     <time class="tabular-nums text-slate-400">{{ $entry['time'] }}</time>
                     <span class="font-medium text-slate-300">{{ $entry['source'] }}</span>
-                    <span class="text-slate-500">{{ $entry['reference'] }}</span>
+                    <span class="max-w-full break-all text-slate-500">{{ $entry['reference'] }}</span>
                 </div>
-                <p class="mt-2 break-words text-sm leading-relaxed text-slate-100">{{ $entry['message'] }}</p>
+                <p class="mt-2 break-words text-sm leading-relaxed text-slate-100 [overflow-wrap:anywhere]">{{ $entry['message'] }}</p>
                 <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
                     <span class="text-xs text-slate-500">{{ $entry['actor'] ?? '' }}</span>
                     @if (isset($entry['url']))

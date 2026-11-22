@@ -64,7 +64,7 @@ final class TorrentBrowseTest extends TestCase
         $response->assertSee('id="browse-results"', false);
         $response->assertSee('css/nextgn-browse.css', false);
         $response->assertSee('class="nextgn-browse-layout"', false);
-        $response->assertSee('class="nextgn-site-width min-w-0 py-8"', false);
+        $response->assertSee('class="nextgn-site-width min-w-0 py-4 sm:py-8"', false);
         $response->assertSeeInOrder(['nextgn-browse-header', 'id="browse-query"', 'id="browse-results"'], false);
         $response->assertSee('aria-label="Browse categories"', false);
         $response->assertSee('Metadata filters');
