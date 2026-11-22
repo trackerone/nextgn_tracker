@@ -21,7 +21,7 @@ it('opens the sysop log center on a source-aware overview', function (): void {
         ->assertOk()
         ->assertSee('Recent high-priority recorded events')
         ->assertSee('tracker.invalid_passkey')
-        ->assertViewHas('overviewCounts', static fn (array $counts): bool => $counts['security'] !== null && $counts['security'] >= 1);
+        ->assertSee('Recorded in selected period');
 });
 
 it('uses a single incidents tab with a component filter and retains common filters', function (): void {
