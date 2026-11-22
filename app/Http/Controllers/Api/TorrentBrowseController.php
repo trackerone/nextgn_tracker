@@ -39,7 +39,6 @@ final class TorrentBrowseController extends Controller
                 'seeders',
                 'leechers',
                 'completed',
-                'freeleech',
                 'is_freeleech',
                 'created_at',
                 'published_at',
