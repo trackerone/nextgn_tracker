@@ -49,6 +49,9 @@ return new class extends Migration
             $table->unsignedInteger('database_latency_ms')->nullable();
             $table->unsignedInteger('seeders')->nullable();
             $table->unsignedInteger('leechers')->nullable();
+            $table->unsignedBigInteger('host_memory_total_bytes')->nullable();
+            $table->unsignedBigInteger('host_memory_available_bytes')->nullable();
+            $table->decimal('cpu_load_1m', 8, 2)->nullable();
         });
     }
 
