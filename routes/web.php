@@ -137,9 +137,11 @@ Route::middleware('guest')->group(function (): void {
 */
 Route::get('/health', HealthCheckController::class)->name('health.index');
 Route::get('/rss/{token}', RssFeedController::class)
+    ->middleware('throttle:30,1')
     ->where('token', '[A-Za-z0-9]+')
     ->name('rss.feed');
 Route::get('/rss/{token}/presets/{preset}', RssPresetFeedController::class)
+    ->middleware('throttle:30,1')
     ->where(['token' => '[A-Za-z0-9]+', 'preset' => '[0-9a-fA-F-]{36}'])
     ->name('rss.presets.feed');
 Route::get('/rss/{token}/download/{torrent}', RssTorrentDownloadController::class)
