@@ -55,14 +55,16 @@ final class SettingsRegistryTest extends TestCase
         );
         $this->assertNull(SettingsRegistry::definition('arbitrary.unregistered.key'));
 
-        $legacy = SettingsRegistry::legacyClassThresholds();
-        $this->assertSame('settings', $legacy['ratio.elite_min_ratio']['store']);
-        $this->assertSame('settings.ratio', $legacy['ratio.elite_min_ratio']['cache']);
-        $this->assertSame('settings > config/ratio.php', $legacy['ratio.elite_min_ratio']['precedence']);
+        $class = SettingsRegistry::classThresholds();
+        $this->assertSame('site_settings', $class['ratio.elite_min_ratio']['store']);
+        $this->assertSame('request-local', $class['ratio.elite_min_ratio']['cache']);
+        $this->assertSame('site_settings > registered default', $class['ratio.elite_min_ratio']['precedence']);
+        $this->assertSame('config/ratio.php', $class['ratio.elite_min_ratio']['default_source']);
+        $this->assertSame('sysop', $class['ratio.tenure_enabled']['owner']);
 
         $this->assertDatabaseMissing('site_settings', ['key' => 'hnr.seed_hours']);
         $this->assertDatabaseMissing('site_settings', ['key' => 'uploads.torrents.max_kilobytes']);
-        $this->assertDatabaseMissing('settings', ['key' => 'ratio.elite_min_ratio']);
+        $this->assertDatabaseMissing('site_settings', ['key' => 'ratio.elite_min_ratio']);
     }
 
     public function test_persisted_ratio_override_wins_and_invalid_values_fall_back_safely(): void
