@@ -37,6 +37,7 @@ use App\Http\Controllers\RssTorrentDownloadController;
 use App\Http\Controllers\SavedIntentController;
 use App\Http\Controllers\ScrapeController;
 use App\Http\Controllers\StaffAlphaFeedbackController;
+use App\Http\Controllers\Sysop\CategorySettingsController;
 use App\Http\Controllers\Sysop\HnrSettingsController;
 use App\Http\Controllers\Sysop\LogCenterController;
 use App\Http\Controllers\Sysop\OperationsAlertActionController;
@@ -205,6 +206,9 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::patch('/settings', [SiteSettingsController::class, 'update'])->name('settings.update');
     Route::get('/settings/uploads', [UploadLimitsController::class, 'edit'])->name('upload-settings.edit');
     Route::patch('/settings/uploads', [UploadLimitsController::class, 'update'])->name('upload-settings.update');
+    Route::get('/categories', [CategorySettingsController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategorySettingsController::class, 'store'])->name('categories.store');
+    Route::patch('/categories/{category}', [CategorySettingsController::class, 'update'])->name('categories.update');
     Route::get('/permissions', [PermissionsController::class, 'index'])->name('permissions.index');
     Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
     Route::patch('/registration', [RegistrationSettingsController::class, 'update'])->name('registration.update');
