@@ -13,7 +13,7 @@ final class SensitiveLogRedactor
         $text = (string) $value;
 
         // Passkeys are embedded in tracker URLs; never echo them back to the browser.
-        $text = preg_replace('~(/(?:announce|scrape|rss)/)[A-Za-z0-9]{8,}~i', '$1'.self::MASK, $text) ?? self::MASK;
+        $text = preg_replace('~(?<![A-Za-z0-9])(/?(?:announce|scrape|rss)/)[A-Za-z0-9]{8,}~i', '$1'.self::MASK, $text) ?? self::MASK;
 
         // Cover both HTTP header and common key=value / JSON-style diagnostics.
         $text = preg_replace('#(Bearer\s+)[A-Za-z0-9._~+/-]+=*#i', '$1'.self::MASK, $text) ?? self::MASK;
