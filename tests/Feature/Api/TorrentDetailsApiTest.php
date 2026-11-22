@@ -38,7 +38,7 @@ final class TorrentDetailsApiTest extends TestCase
             'seeders' => 10,
             'leechers' => 2,
             'completed' => 44,
-            'freeleech' => false,
+            'is_freeleech' => false,
             'info_hash' => 'ABCDEF1234567890ABCDEF1234567890ABCDEF12',
             'uploaded_at' => now()->subHour(),
         ]);
