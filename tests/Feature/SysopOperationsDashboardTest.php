@@ -142,7 +142,7 @@ final class SysopOperationsDashboardTest extends TestCase
         $store->shouldReceive('get')->once()->andReturn(null);
         Cache::shouldReceive('store')->andReturn($store);
 
-        $health = app(\App\Services\Operations\OperationsHealthService::class)->collect();
+        $health = app(\App\Services\Operations\OperationsHealthService::class)->collect(activeWriteChecks: true);
         $cards = collect($health['cards'])->keyBy('group');
 
         $this->assertSame('warning', $cards['Cache/Redis']['status']);
