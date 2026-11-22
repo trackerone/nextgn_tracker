@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Models\Torrent;
+use App\Services\Operations\OperationsTelemetry;
 use App\Services\Metadata\ExternalMetadataEnricher;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -22,7 +23,7 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
 
     public function __construct(public readonly int $torrentId) {}
 
-    public function handle(ExternalMetadataEnricher $enricher): void
+    public function handle(ExternalMetadataEnricher $enricher, OperationsTelemetry $telemetry): void
     {
         $torrent = Torrent::query()->with(['metadata', 'externalMetadata'])->find($this->torrentId);
 
@@ -35,10 +36,13 @@ final class EnrichTorrentExternalMetadata implements ShouldQueue
         }
 
         $enricher->enrich($torrent);
+        $telemetry->count('metadata_ok');
     }
 
     public function failed(\Throwable $exception): void
     {
+        app(OperationsTelemetry::class)->count('metadata_error');
+
         Log::warning('External metadata enrichment failed.', [
             'torrent_id' => $this->torrentId,
             'attempts' => $this->attempts(),
