@@ -50,6 +50,11 @@
                 @endforeach
             </div>
         </fieldset>
+        <label class="block rounded-2xl border border-slate-800 bg-slate-900/60 p-5 text-sm font-medium text-slate-200">
+            Reason for changes (audit log)
+            <textarea name="audit_reason" rows="2" maxlength="1000" required class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white" placeholder="Describe why the tracker rules were changed.">{{ old('audit_reason') }}</textarea>
+            <span class="mt-2 block text-xs font-normal text-slate-400">Required. Saved with the previous and new settings for the Sysop audit trail.</span>
+        </label>
         <button type="submit" class="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-slate-950">Save site settings</button>
     </form>
     <section class="rounded-2xl border border-slate-800 p-5">

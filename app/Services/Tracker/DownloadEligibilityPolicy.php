@@ -27,6 +27,17 @@ final class DownloadEligibilityPolicy
                 : ['allowed' => false, 'reason' => 'hnr_restricted'];
         }
 
+        return $this->checkRatio($user, $torrent);
+    }
+
+    /**
+     * Ratio-only portion shared by download and announce. Announce checks HnR
+     * before invoking this, so it must not re-query HnR on every start.
+     *
+     * @return array{allowed: bool, reason: string}
+     */
+    public function checkRatio(User $user, Torrent $torrent): array
+    {
         if (! $this->ratioRulesConfig->enforcementEnabled()) {
             return ['allowed' => true, 'reason' => 'enforcement_disabled'];
         }

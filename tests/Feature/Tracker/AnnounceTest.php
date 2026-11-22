@@ -8,8 +8,12 @@ use App\Models\Peer;
 use App\Models\SecurityEvent;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Models\UserStat;
 use App\Models\UserTorrent;
 use App\Services\BencodeService;
+use App\Services\Settings\SiteSettingsRepository;
+use App\Services\Tracker\DownloadEligibilityPolicy;
+use App\Services\Tracker\RatioRulesConfig;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -199,6 +203,161 @@ class AnnounceTest extends TestCase
             'ratio is too low',
             (string) $response->getContent()
         );
+    }
+
+    public function test_sysop_ratio_threshold_is_identical_for_torrent_download_and_new_announce(): void
+    {
+        $member = User::factory()->create();
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('sysop-ratio-single-policy');
+
+        UserStat::query()->create([
+            'user_id' => $member->id,
+            'uploaded_bytes' => 600,
+            'downloaded_bytes' => 1_000,
+        ]);
+
+        $this->setAnnounceRatioPolicy(0.8, true, false, false);
+
+        $this->assertSame(
+            'ratio_too_low',
+            app(DownloadEligibilityPolicy::class)->check($member, $torrent)['reason']
+        );
+
+        $denied = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringContainsString(
+            'Your ratio is too low to start new downloads.',
+            (string) $denied->getContent()
+        );
+        $this->assertDatabaseCount('peers', 0);
+
+        $this->setAnnounceRatioPolicy(0.5, true, false, false);
+        $this->assertTrue(app(DownloadEligibilityPolicy::class)->check($member, $torrent)['allowed']);
+
+        $allowed = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $allowed->getContent());
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $member->id,
+        ]);
+    }
+
+    public function test_sysop_can_disable_ratio_enforcement_for_new_announces(): void
+    {
+        $member = User::factory()->create();
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('sysop-ratio-disabled');
+
+        UserStat::query()->create([
+            'user_id' => $member->id,
+            'uploaded_bytes' => 10,
+            'downloaded_bytes' => 1_000,
+        ]);
+
+        $this->setAnnounceRatioPolicy(1.5, false, false, false);
+
+        $this->assertSame(
+            'enforcement_disabled',
+            app(DownloadEligibilityPolicy::class)->check($member, $torrent)['reason']
+        );
+
+        $allowed = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $allowed->getContent());
+    }
+
+    public function test_sysop_freeleech_bypass_applies_to_new_announces(): void
+    {
+        $member = User::factory()->create();
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('sysop-freeleech-bypass', [
+            'is_freeleech' => true,
+        ]);
+
+        UserStat::query()->create([
+            'user_id' => $member->id,
+            'uploaded_bytes' => 10,
+            'downloaded_bytes' => 1_000,
+        ]);
+
+        $this->setAnnounceRatioPolicy(0.5, true, true, false);
+        $this->assertSame(
+            'freeleech',
+            app(DownloadEligibilityPolicy::class)->check($member, $torrent)['reason']
+        );
+
+        $allowed = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $allowed->getContent());
+
+        $this->setAnnounceRatioPolicy(0.5, true, false, false);
+        $denied = $this->announce($member, $hash, [
+            'peer_id' => $this->makePeerIdHex('sysop-freeleech-disabled'),
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringContainsString('ratio is too low', (string) $denied->getContent());
+    }
+
+    public function test_sysop_no_history_grace_applies_to_new_announces(): void
+    {
+        $member = User::factory()->create();
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('sysop-no-history');
+
+        $this->setAnnounceRatioPolicy(0.5, true, false, false);
+        $denied = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringContainsString('ratio is too low', (string) $denied->getContent());
+
+        $this->setAnnounceRatioPolicy(0.5, true, false, true);
+        $this->assertSame(
+            'no_history',
+            app(DownloadEligibilityPolicy::class)->check($member, $torrent)['reason']
+        );
+
+        $allowed = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $allowed->getContent());
+    }
+
+    public function test_ratio_policy_does_not_block_seeding_or_staff_started_events(): void
+    {
+        $member = User::factory()->create();
+        $moderator = User::factory()->create(['role' => User::ROLE_MODERATOR]);
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('sysop-ratio-exemptions');
+
+        foreach ([$member, $moderator] as $user) {
+            UserStat::query()->create([
+                'user_id' => $user->id,
+                'uploaded_bytes' => 10,
+                'downloaded_bytes' => 1_000,
+            ]);
+        }
+
+        $this->setAnnounceRatioPolicy(0.5, true, false, false);
+
+        $seeding = $this->announce($member, $hash, [
+            'event' => 'started',
+            'left' => 0,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $seeding->getContent());
+
+        $staff = $this->announce($moderator, $hash, [
+            'event' => 'started',
+            'left' => 100,
+        ])->assertOk();
+        $this->assertStringNotContainsString('failure reason', (string) $staff->getContent());
     }
 
     public function test_completed_event_sets_completed_at_once(): void
@@ -1502,6 +1661,19 @@ class AnnounceTest extends TestCase
         $payload = app(BencodeService::class)->decode((string) $response->getContent());
 
         return $payload;
+    }
+
+    private function setAnnounceRatioPolicy(
+        float $minimum,
+        bool $enabled,
+        bool $freeleechBypass,
+        bool $noHistoryGrace
+    ): void {
+        $settings = app(SiteSettingsRepository::class);
+        $settings->set(RatioRulesConfig::MINIMUM_DOWNLOAD_RATIO, $minimum, 'float');
+        $settings->set(RatioRulesConfig::ENFORCEMENT_ENABLED, $enabled, 'bool');
+        $settings->set(RatioRulesConfig::FREELEECH_BYPASS_ENABLED, $freeleechBypass, 'bool');
+        $settings->set(RatioRulesConfig::NO_HISTORY_GRACE_ENABLED, $noHistoryGrace, 'bool');
     }
 
     private function announce(User $user, string $infoHashHex, array $overrides = []): TestResponse

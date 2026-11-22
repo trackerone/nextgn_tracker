@@ -39,6 +39,7 @@ final class SysopSiteSettingsTest extends TestCase
         $this->assertSame($sysop->id, $audit->user_id);
         $this->assertArrayHasKey('previous', $audit->metadata);
         $this->assertEquals(300, $audit->metadata['values']['announce_interval_seconds']);
+        $this->assertSame('Update download and tracker rules for testing.', $audit->metadata['audit_reason']);
 
         $torrent = Torrent::factory()->create();
         Peer::factory()->for($torrent)->create(['is_seeder' => true, 'last_announce_at' => now()->subMinutes(20)]);
@@ -74,6 +75,27 @@ final class SysopSiteSettingsTest extends TestCase
         $this->assertDatabaseMissing('audit_logs', ['action' => 'sysop.site_settings.updated']);
     }
 
+    public function test_site_settings_require_a_nonblank_audit_reason(): void
+    {
+        $sysop = User::factory()->create(['role' => User::ROLE_SYSOP, 'is_staff' => true]);
+        $this->actingAs($sysop);
+
+        $this->patch(route('sysop.settings.update'), array_replace($this->values(), [
+            'audit_reason' => '   ',
+        ]))->assertSessionHasErrors('audit_reason');
+
+        $this->patch(route('sysop.settings.update'), array_replace($this->values(), [
+            'audit_reason' => '',
+        ]))->assertSessionHasErrors('audit_reason');
+
+        $this->assertDatabaseMissing('site_settings', [
+            'key' => TrackerRuntimeSettings::ANNOUNCE_INTERVAL,
+        ]);
+        $this->assertDatabaseMissing('audit_logs', [
+            'action' => 'sysop.site_settings.updated',
+        ]);
+    }
+
     public function test_metadata_settings_script_survives_response_guard(): void
     {
         $sysop = User::factory()->create(['role' => User::ROLE_SYSOP, 'is_staff' => true]);
@@ -93,6 +115,7 @@ final class SysopSiteSettingsTest extends TestCase
             'minimum_download_ratio' => 0.75,
             'freeleech_bypass_enabled' => false,
             'no_history_grace_enabled' => false,
+            'audit_reason' => 'Update download and tracker rules for testing.',
         ];
     }
 }

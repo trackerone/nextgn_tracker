@@ -37,7 +37,13 @@ final class SiteSettingsController extends Controller
             'minimum_download_ratio' => ['required', 'numeric', 'min:0', 'max:10'],
             'freeleech_bypass_enabled' => ['required', 'boolean'],
             'no_history_grace_enabled' => ['required', 'boolean'],
+            'audit_reason' => ['required', 'string', 'max:1000'],
         ]);
+
+        $reason = trim((string) $values['audit_reason']);
+        if ($reason === '') {
+            throw ValidationException::withMessages(['audit_reason' => 'A reason for the change is required.']);
+        }
 
         if ((int) $values['ghost_peer_timeout_minutes'] * 60 <= (int) $values['announce_interval_seconds']) {
             throw ValidationException::withMessages([
@@ -46,7 +52,7 @@ final class SiteSettingsController extends Controller
         }
 
         $previous = $this->values($tracker, $ratio);
-        DB::transaction(function () use ($values, $previous, $settings, $audit, $request): void {
+        DB::transaction(function () use ($values, $previous, $settings, $audit, $request, $reason): void {
             $settings->set(TrackerRuntimeSettings::ANNOUNCE_INTERVAL, $values['announce_interval_seconds'], 'int');
             $settings->set(TrackerRuntimeSettings::GHOST_TIMEOUT, $values['ghost_peer_timeout_minutes'], 'int');
             $settings->set(TrackerRuntimeSettings::SCRAPE_LIMIT, $values['scrape_max_info_hashes'], 'int');
@@ -58,6 +64,7 @@ final class SiteSettingsController extends Controller
                 'user_id' => $request->user()?->id,
                 'previous' => $previous,
                 'values' => $values,
+                'audit_reason' => $reason,
             ]);
         });
 
