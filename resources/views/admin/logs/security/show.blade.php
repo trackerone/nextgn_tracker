@@ -10,7 +10,7 @@
     <div class="space-y-4">
         <a href="{{ route('admin.logs.security.index') }}" class="text-sm text-slate-400 hover:text-white">&larr; Back to security events</a>
         <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
-            <h1 class="text-2xl font-semibold text-white">{{ $event->event_type }}</h1>
+            <h1 class="text-2xl font-semibold text-white">{{ app(\App\Support\Operations\SensitiveLogRedactor::class)->text($event->event_type) }}</h1>
             <p class="text-sm text-slate-400">{{ ucfirst($event->severity) }} severity &middot; {{ $event->created_at?->toDayDateTimeString() }}</p>
             <p class="mt-4 text-slate-200">{{ app(\App\Support\Operations\SensitiveLogRedactor::class)->text($event->message) }}</p>
             <dl class="mt-6 space-y-3 text-sm text-slate-200">
