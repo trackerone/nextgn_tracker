@@ -7,10 +7,10 @@ namespace App\Actions\Torrents;
 use App\Enums\TorrentStatus;
 use App\Exceptions\InvalidTorrentStatusTransitionException;
 use App\Jobs\EnrichTorrentExternalMetadata;
+use App\Jobs\MatchTorrentWatchPresets;
 use App\Models\Torrent;
 use App\Models\User;
 use App\Services\Metadata\ExternalMetadataConfig;
-use App\Services\Notifications\TorrentWatchPresetMatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -18,7 +18,6 @@ final class PublishTorrentAction
 {
     public function __construct(
         private readonly ExternalMetadataConfig $metadataConfig,
-        private readonly TorrentWatchPresetMatcher $watchPresetMatcher,
     ) {}
 
     public function execute(Torrent $torrent, User $moderator): Torrent
@@ -45,7 +44,16 @@ final class PublishTorrentAction
 
         $torrent->forceFill($attributes)->save();
 
-        $this->watchPresetMatcher->notifyMatchesForTorrent($torrent->refresh());
+        try {
+            // Matching runs after the publish transaction commits, using
+            // current visibility, metadata and member eligibility.
+            MatchTorrentWatchPresets::dispatch((int) $torrent->id)->afterCommit();
+        } catch (\Throwable $exception) {
+            Log::warning('Publish succeeded but watch matching dispatch failed.', [
+                'torrent_id' => $torrent->id,
+                'exception' => $exception::class,
+            ]);
+        }
 
         if ($this->metadataConfig->enrichmentEnabled() && $this->metadataConfig->autoOnPublishEnabled()) {
             try {
