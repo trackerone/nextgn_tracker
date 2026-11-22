@@ -197,6 +197,9 @@ class ApiKeyHmacMiddlewareTest extends TestCase
 
     public function test_future_timestamp_is_rejected(): void
     {
+        // Freeze the clock so crossing a second boundary cannot make 301 seconds appear as 300.
+        $this->freezeTime();
+
         config(['security.api.allowed_time_skew_seconds' => 300]);
 
         $plainKey = ApiKey::generateKey();
