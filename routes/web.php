@@ -223,7 +223,7 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::view('/operations/discovery', 'sysop.operations.discovery')->name('operations.discovery');
     Route::get('/operations', OperationsDashboardController::class)->name('operations.index');
     Route::post('/operations/diagnostics/run', OperationsActiveDiagnosticsController::class)
-        ->middleware('throttle:3,1')->name('operations.diagnostics.run');
+        ->middleware('throttle:sysop-operations-diagnostics')->name('operations.diagnostics.run');
     Route::post('/operations/alerts/action', OperationsAlertActionController::class)->name('operations.alerts.action');
     Route::get('/operations/support-bundle', OperationsSupportBundleController::class)->name('operations.support-bundle');
     Route::get('/logs', LogCenterController::class)->name('logs.index');
