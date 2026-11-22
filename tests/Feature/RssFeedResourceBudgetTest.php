@@ -35,7 +35,7 @@ final class RssFeedResourceBudgetTest extends TestCase
 
         $queries = [];
         DB::listen(static function (QueryExecuted $query) use (&$queries): void {
-            if (str_contains($query->sql, 'torrents') && str_contains($query->sql, 'select')) {
+            if (str_contains($query->sql, 'from "torrents"') || str_contains($query->sql, 'from '.chr(96).'torrents'.chr(96))) {
                 $queries[] = $query->sql;
             }
         });
