@@ -6,13 +6,12 @@ namespace App\Http\Requests;
 
 use App\Models\RssFeedPreset;
 use App\Services\Rss\RssFeedFilterNormalizer;
+use App\Support\Torrents\TorrentMediaTypes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class AccountRssPresetRequest extends FormRequest
 {
-    private const TYPES = ['movie', 'tv', 'music', 'game', 'software', 'other'];
-
     private const LANGUAGE_PATTERN = '/^[A-Za-z][A-Za-z\s,-]*$/';
 
     public function authorize(): bool
@@ -52,7 +51,7 @@ final class AccountRssPresetRequest extends FormRequest
                 Rule::unique('rss_feed_presets', 'name')->where('user_id', $userId)->ignore($presetId),
             ],
             'q' => ['nullable', 'string', 'max:255'],
-            'type' => ['nullable', Rule::in(self::TYPES)],
+            'type' => ['nullable', Rule::in(TorrentMediaTypes::VALUES)],
             'resolution' => ['nullable', 'string', 'max:32'],
             'source' => ['nullable', 'string', 'max:32'],
             'release_group' => ['nullable', 'string', 'max:80'],

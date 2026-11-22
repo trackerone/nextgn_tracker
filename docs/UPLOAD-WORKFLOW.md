@@ -55,3 +55,15 @@ The three **size** limits for the upload path are managed under **Sysop → Site
 `TorrentUploadRules` is the existing shared validator for **web submissions, the upload analysis endpoint, and API submissions**; all three now use the effective limits immediately. The web form displays the current limits to uploaders. Changes require authenticated Sysop, bounded numeric validation, a nonempty reason, and a transactional audit entry (`sysop.upload_limits.updated`).
 
 **Not configurable from the website:** accepted MIME types/extensions, file storage disks/paths, and the actual PHP/web-server request limits. Increasing a website limit cannot raise PHP's `upload_max_filesize`, `post_max_size`, or reverse-proxy/body size ceilings. Those remain deployment controls to avoid unsafe uploads. The separate image configuration is not part of the torrent/NFO submission flow and is intentionally unchanged in this PR.
+
+## Sysop-managed categories and media families (pre-release)
+
+**Sysop → Site settings → Categories & media types** (`/sysop/categories`) manages the category taxonomy. Sysop can create categories, rename them, order them, and archive/reactivate them with a required audit reason. Slugs and IDs stay stable on rename; archived categories remain visible as filters for historic releases and their torrents are never deleted. Only active categories are selectable in the upload form and valid for new submissions.
+
+Every category has a canonical `media_type` chosen from **Movie, TV, Music, Game, Software, Book, Other**. The `book` value fixes the mismatch where Books was seeded but the upload form could not submit a Book media type. The `TorrentMediaTypes` class supplies one allowed-type list to web uploads, Browse, RSS, saved views and watch presets. A concrete category's media type must match the submitted `torrent.type`; the generic `other` category is intentionally flexible.
+
+The category dropdown includes its mapped media type so the upload script can populate the media type automatically, including when a category is set by file analysis. The analyser selects the first active category matching the detected media type, not a hardcoded slug; if none exists, it leaves the category empty. Existing API submissions with a type but no category remain permitted; when a category is supplied, server validation checks it. Sysop cannot change the media family on a category that already has torrents, but can rename, reorder or archive it.
+
+The default category seeder uses `firstOrCreate`: running it again cannot overwrite Sysop-chosen names, types, order or archived flags. The migration adds `media_type` and `is_active` and maps existing default category slugs to their known media types. **Deployment requires `php artisan migrate --force`** after pulling. The upload JavaScript is served from `public/js/nextgn-upload.js`; no Vite rebuild is required for that change.
+
+This is **category management**, not a license for arbitrary unvalidated media types. Adding a brand-new media family beyond these seven requires a deliberate extension of the metadata parsers and external provider support.

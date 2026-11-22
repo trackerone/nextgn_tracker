@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Concerns;
 
+use App\Models\Category;
 use App\Models\SecurityAuditLog;
 use App\Support\Uploads\TorrentUploadRules;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
@@ -91,6 +92,22 @@ trait ValidatesTorrentUpload
     public function withValidator(LaravelValidator $validator): void
     {
         $validator->after(function (LaravelValidator $validator): void {
+            // A category determines the media family for uploads. The generic
+            // "other" category is intentionally allowed for any media family.
+            $categoryId = $this->input('category_id');
+            if (
+                is_numeric($categoryId)
+                && $validator->errors()->has('category_id') === false
+                && $validator->errors()->has('type') === false
+            ) {
+                $category = Category::query()->find((int) $categoryId);
+                $type = $this->input('type');
+
+                if ($category instanceof Category && $category->media_type !== 'other' && $category->media_type !== $type) {
+                    $validator->errors()->add('type', 'The media type must match the selected category.');
+                }
+            }
+
             foreach (self::languageMetadataFields() as $field) {
                 $value = $this->input($field);
 

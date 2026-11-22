@@ -16,7 +16,14 @@ class Category extends Model
         'name',
         'slug',
         'position',
+        'media_type',
+        'is_active',
     ];
+
+    protected function casts(): array
+    {
+        return ['is_active' => 'boolean', 'position' => 'integer'];
+    }
 
     public function torrents(): HasMany
     {

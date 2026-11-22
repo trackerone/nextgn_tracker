@@ -98,6 +98,7 @@ final class TorrentController extends Controller
         $metadataFilterValues = $metadataFilterOptions->forVisibleBrowse();
 
         $categories = Category::query()
+            ->orderBy('position')
             ->orderBy('name')
             ->get();
 
