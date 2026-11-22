@@ -36,7 +36,7 @@ final class TorrentDetailsResource extends JsonResource
             'seeders' => (int) ($this->seeders ?? 0),
             'leechers' => (int) ($this->leechers ?? 0),
             'completed' => (int) ($this->completed ?? 0),
-            'freeleech' => (bool) ($this->freeleech ?? false),
+            'freeleech' => (bool) $this->is_freeleech,
             'status' => $this->status->value,
             'uploaded_at' => $this->uploadedAtForDisplay()?->toISOString(),
             'uploaded_at_human' => $this->uploadedAtForDisplay()?->diffForHumans(),
