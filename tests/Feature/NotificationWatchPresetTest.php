@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Actions\Torrents\PublishTorrentAction;
 use App\Enums\TorrentStatus;
+use App\Jobs\MatchTorrentWatchPresets;
 use App\Models\NotificationWatchPreset;
 use App\Models\SiteSetting;
 use App\Models\Torrent;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Models\UserStat;
 use App\Services\Notifications\TorrentWatchPresetMatcher;
 use App\Services\Tracker\RatioRulesConfig;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 final class NotificationWatchPresetTest extends TestCase
@@ -172,8 +174,9 @@ final class NotificationWatchPresetTest extends TestCase
         self::assertSame(0, TorrentWatchNotification::query()->count());
     }
 
-    public function test_approval_trigger_creates_notification_once(): void
+    public function test_approval_trigger_queues_notification_matching_once(): void
     {
+        Queue::fake();
         $user = User::factory()->create();
         $moderator = User::factory()->create();
         NotificationWatchPreset::factory()->create(['user_id' => $user->id, 'filters' => ['q' => 'Publish']]);
@@ -184,6 +187,10 @@ final class NotificationWatchPresetTest extends TestCase
         ]);
 
         app(PublishTorrentAction::class)->execute($torrent, $moderator);
+
+        Queue::assertPushed(MatchTorrentWatchPresets::class, 1);
+        $this->assertDatabaseCount('torrent_watch_notifications', 0);
+        (new MatchTorrentWatchPresets((int) $torrent->id))->handle(app(TorrentWatchPresetMatcher::class));
 
         $this->assertDatabaseHas('torrent_watch_notifications', [
             'user_id' => $user->id,
