@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Topic;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Tracker\UserRatioBalance;
 use Illuminate\Contracts\View\View;
@@ -22,6 +23,10 @@ final class HomeController extends Controller
 
         $user->loadMissing('role');
 
+        $canUpload = PermissionService::allow($user, 'torrent.upload');
+        $canForum = PermissionService::allow($user, 'forum.access');
+        $canMessages = PermissionService::allow($user, 'messages.access');
+
         $recentTorrents = Torrent::query()
             ->visible()
             ->with(['category', 'uploader'])
@@ -30,24 +35,30 @@ final class HomeController extends Controller
             ->limit(5)
             ->get();
 
-        $recentTopics = Topic::query()
-            ->with('author')
-            ->withCount('posts')
-            ->orderByDesc('updated_at')
-            ->limit(4)
-            ->get();
+        $recentTopics = $canForum
+            ? Topic::query()
+                ->with('author')
+                ->withCount('posts')
+                ->orderByDesc('updated_at')
+                ->limit(4)
+                ->get()
+            : collect();
 
-        $recentConversations = Conversation::query()
-            ->forUser((int) $user->getKey())
-            ->with(['userA:id,name', 'userB:id,name', 'lastMessage.sender:id,name'])
-            ->orderByDesc('last_message_at')
-            ->limit(3)
-            ->get();
+        $recentConversations = $canMessages
+            ? Conversation::query()
+                ->forUser((int) $user->getKey())
+                ->with(['userA:id,name', 'userB:id,name', 'lastMessage.sender:id,name'])
+                ->orderByDesc('last_message_at')
+                ->limit(3)
+                ->get()
+            : collect();
 
-        $myOpenUploads = Torrent::query()
-            ->where('user_id', $user->getKey())
-            ->pending()
-            ->count();
+        $myOpenUploads = $canUpload
+            ? Torrent::query()
+                ->where('user_id', $user->getKey())
+                ->pending()
+                ->count()
+            : 0;
 
         $pendingModerationCount = $user->isStaff()
             ? Torrent::query()->pending()->count()
@@ -56,6 +67,9 @@ final class HomeController extends Controller
         $trackerStats = $this->trackerStatsFor($user);
 
         return view('home', [
+            'canUpload' => $canUpload,
+            'canForum' => $canForum,
+            'canMessages' => $canMessages,
             'recentTorrents' => $recentTorrents,
             'recentTopics' => $recentTopics,
             'recentConversations' => $recentConversations,
