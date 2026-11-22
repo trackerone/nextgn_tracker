@@ -48,6 +48,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('tracker:prune-ghost-peers')
             ->everyTenMinutes()
             ->withoutOverlapping(10);
+        // A scheduler heartbeat is distinct from task definitions or queue counts.
+        $schedule->call(static function (): void {
+            app(\App\Services\Operations\OperationsTelemetry::class)
+                ->job('scheduler.tick', 'succeeded');
+        })->name('ops:scheduler.tick')->everyMinute();
+        $schedule->command('ops:monitor')->everyFiveMinutes()->withoutOverlapping(10);
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
