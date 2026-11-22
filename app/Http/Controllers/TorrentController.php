@@ -74,7 +74,6 @@ final class TorrentController extends Controller
                 'seeders',
                 'leechers',
                 'completed',
-                'freeleech',
                 'is_freeleech',
                 'created_at',
                 'uploaded_at',
@@ -159,7 +158,7 @@ final class TorrentController extends Controller
             'ratio_too_low' => 'Download denied: your ratio is below the required threshold.',
             default => 'Download allowed: you can download this torrent.',
         };
-        $isFreeleech = (bool) ($model->is_freeleech ?? $model->freeleech ?? false);
+        $isFreeleech = (bool) $model->is_freeleech;
         $eligibilityTone = $eligibility['allowed'] ? 'success' : 'danger';
         $eligibilityTitle = $eligibility['allowed']
             ? 'You can download this torrent'

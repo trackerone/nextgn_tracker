@@ -157,7 +157,6 @@ class StagingDemoSeeder extends Seeder
                 'is_approved' => $published,
                 'is_banned' => $row['status'] === Torrent::STATUS_REJECTED,
                 'ban_reason' => $row['status'] === Torrent::STATUS_REJECTED ? 'Rejected in staging demo: poor source quality.' : null,
-                'freeleech' => $row['freeleech'],
                 'is_freeleech' => $row['freeleech'],
                 'status' => $row['status'],
                 'published_at' => $published ? $uploadedAt : null,

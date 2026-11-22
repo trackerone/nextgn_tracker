@@ -761,6 +761,58 @@ class AnnounceTest extends TestCase
         ]);
     }
 
+    public function test_turning_on_freeleech_during_an_active_peer_session_changes_only_future_ratio_credit(): void
+    {
+        $user = User::factory()->create();
+        [$torrent, $hash] = $this->createTorrentWithInfoHashHex('freeleech-toggle-active-peer', [
+            'is_freeleech' => false,
+        ]);
+        $peer = $this->makePeerIdHex('freeleech-toggle-active-peer');
+
+        $this->announce($user, $hash, [
+            'peer_id' => $peer,
+            'event' => 'started',
+            'uploaded' => 100,
+            'downloaded' => 50,
+            'left' => 500,
+        ])->assertOk();
+
+        $this->announce($user, $hash, [
+            'peer_id' => $peer,
+            'uploaded' => 160,
+            'downloaded' => 95,
+            'left' => 450,
+        ])->assertOk();
+
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 60,
+            'downloaded_bytes' => 45,
+        ]);
+
+        $torrent->forceFill(['is_freeleech' => true])->save();
+
+        $this->announce($user, $hash, [
+            'peer_id' => $peer,
+            'uploaded' => 210,
+            'downloaded' => 145,
+            'left' => 400,
+        ])->assertOk();
+
+        // Physical peer downloaded totals keep increasing, but ratio credit no
+        // longer counts new downloaded bytes once freeleech is enabled.
+        $this->assertDatabaseHas('user_stats', [
+            'user_id' => $user->id,
+            'uploaded_bytes' => 110,
+            'downloaded_bytes' => 45,
+        ]);
+        $this->assertDatabaseHas('peers', [
+            'torrent_id' => $torrent->id,
+            'user_id' => $user->id,
+            'downloaded' => 145,
+        ]);
+    }
+
     public function test_ratio_stats_first_announce_on_freeleech_does_not_credit_fake_delta(): void
     {
         $user = User::factory()->create();

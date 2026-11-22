@@ -39,7 +39,7 @@ final class TorrentBrowseApiTest extends TestCase
             'seeders' => 10,
             'leechers' => 2,
             'completed' => 44,
-            'freeleech' => false,
+            'is_freeleech' => false,
             'uploaded_at' => now()->subHour(),
         ]);
 

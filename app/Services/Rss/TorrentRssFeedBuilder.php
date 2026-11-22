@@ -144,7 +144,7 @@ final class TorrentRssFeedBuilder
             'Subtitles: '.(string) ($metadata['subtitles'] ?? ''),
             'Year: '.(string) ($metadata['year'] ?? ''),
             'Size: '.$torrent->formatted_size,
-            ((bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false)) ? 'Freeleech: yes' : null,
+            ((bool) $torrent->is_freeleech) ? 'Freeleech: yes' : null,
         ], static fn (mixed $value): bool => is_string($value) && ! str_ends_with($value, ': '));
 
         return implode(' | ', $parts);

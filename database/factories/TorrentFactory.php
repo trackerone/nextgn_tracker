@@ -55,7 +55,6 @@ class TorrentFactory extends Factory
             'is_approved' => true,
             'is_banned' => false,
             'ban_reason' => null,
-            'freeleech' => false,
             'is_freeleech' => false,
             'status' => Torrent::STATUS_PUBLISHED,
 

@@ -42,7 +42,7 @@ final class DownloadEligibilityPolicy
             return ['allowed' => true, 'reason' => 'enforcement_disabled'];
         }
 
-        $isFreeleech = (bool) ($torrent->is_freeleech ?? $torrent->freeleech ?? false);
+        $isFreeleech = (bool) $torrent->is_freeleech;
 
         if ($isFreeleech && $this->ratioRulesConfig->freeleechBypassEnabled()) {
             return ['allowed' => true, 'reason' => 'freeleech'];
