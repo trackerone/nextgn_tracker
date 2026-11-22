@@ -16,13 +16,13 @@ final class OperationsHostMetrics
     public function collect(): array
     {
         $memory = $this->boundedFile('/proc/meminfo', 8192);
-        $cpu = $this->boundedFile('/proc/cpuinfo', 262144);
+        $cpu = $this->boundedFile('/proc/stat', 65536);
         $network = $this->boundedFile('/proc/net/dev', 32768);
         $load = function_exists('sys_getloadavg') ? sys_getloadavg() : false;
 
         $total = $this->memValue($memory, 'MemTotal');
         $available = $this->memValue($memory, 'MemAvailable');
-        $cores = $cpu === null ? null : preg_match_all('/^processor\s*:/m', $cpu);
+        $cores = $cpu === null ? null : preg_match_all('/^cpu[0-9]+\s/m', $cpu);
         $cores = $cores === false || $cores === 0 ? null : $cores;
 
         $rx = null;
