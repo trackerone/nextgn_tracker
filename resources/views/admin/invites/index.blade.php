@@ -19,6 +19,7 @@
             </a>
         @endforeach
     </nav>
+    @if ($canIssueInvites)
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
         <h2 class="text-lg font-semibold text-white">Generate invite</h2>
         <form method="POST" action="{{ route('admin.invites.store') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
@@ -43,6 +44,7 @@
             </div>
         </form>
     </section>
+    @endif
     <section class="space-y-3">
         <h2 class="text-lg font-semibold text-white">Invitation history</h2>
         @if ($invites->isEmpty())
