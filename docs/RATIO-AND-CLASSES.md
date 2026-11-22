@@ -1,26 +1,26 @@
 # Torrent visibility, ratios & announce enforcement
 
 ## Torrent flags
-- `is_approved`: uploaders/mods must approve a torrent before it becomes visible. Regular users cannot announce if the torrent is unapproved. Staff can bypass this check.
-- `is_banned` + `ban_reason`: banned torrents are never listable or announceable. Staff use the reason to document takedowns.
-- `freeleech`: informational flag that can later be used to waive download accounting.
+- Public torrent listings require published, approved, visible and non-banned status. Moderation access is separately authorized.
+- `is_freeleech` / legacy `freeleech`: the existing download policy recognizes these flags; the Sysop-configured freeleech bypass can exempt the minimum ratio.
 
-## Ratio calculation
-User ratio helpers aggregate all rows in `user_torrents`:
-- `totalUploaded()` / `totalDownloaded()` read the summed columns.
-- `ratio()` returns `null` when nothing has been downloaded yet, otherwise `uploaded / downloaded` as a float.
+## Effective ratio
+The `UserRatioBalance` service is the shared source for the effective uploaded/downloaded totals and ratio. It uses integrity-credited traffic (falling back to historical `user_torrents` data where needed) plus separately audited Sysop ratio credits. The user's `ratio()`, dashboard, account pages, download eligibility and now new-leech-start announce checks use the same effective balance.
 
-## User classes
-Classes are derived from the ratio (staff overrides everything, disabled users fall back to `Disabled`). Thresholds:
+## Separate owner-configurable policies
+**Download eligibility** is controlled by Sysop at **Site settings → Download ratio rules**:
+- `tracker.ratio.enforcement_enabled` (default on)
+- `tracker.ratio.minimum_download_ratio` (default 0.50)
+- `tracker.ratio.freeleech_bypass_enabled` (default on)
+- `tracker.ratio.no_history_grace_enabled` (default on)
 
-| Ratio | Class |
-| --- | --- |
-| < 0.40 | Leech |
-| 0.40 – 0.79 | User |
-| 0.80 – 1.49 | Power User |
-| ≥ 1.50 | Elite |
+The same `DownloadEligibilityPolicy::checkRatio()` decision applies to a personalized .torrent download and the tracker when a **non-staff leecher** announces `event=started` with bytes left to download. The separate HnR check runs before announce ratio enforcement; HnR recovery is unaffected. Seeders, staff, and continuing/stopping announces are not blocked by the start-only ratio guard.
 
-## Announce guardrails
-- Banned torrents always return `failure reason = "Torrent is banned"`.
-- Unapproved torrents behave the same for non-staff. Staff can still test them.
-- When `event=started` and `left > 0`, users with a ratio below **0.20** are blocked with `"Your ratio is too low to start new downloads"`. Seeders (`left = 0`) and staff are never blocked by this rule.
+**Earned member classes** are separate from download eligibility. Their ratio, traffic and tenure thresholds are configured at **Roles, permissions, ratio & balances**; defaults live in `config/ratio.php`. Class thresholds must never be treated as download thresholds, and changing them must not silently change announce restrictions.
+
+## Sysop control and audit
+Only the authenticated Sysop web settings form can write the tracker ratio policy. Saving requires a reason, validates safe bounds and the relationship between announce interval and peer timeout, and commits all changed settings with an audit record in one transaction.
+
+`GET /api/admin/settings/tracker/ratio` remains a **read-only** authorized inspection endpoint. Its legacy POST mutation was removed before the first public release so it cannot bypass the Sysop audit trail.
+
+Saved values take effect on subsequent requests without redeploying code. The code contains no separate hardcoded announce ratio threshold.
