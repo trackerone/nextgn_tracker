@@ -87,6 +87,18 @@ it('requires real SHA256 artifact verification and separate restore attestation'
 });
 
 
+
+it('shows pipeline failures without treating unobserved pipelines as healthy', function (): void {
+    for ($i = 0; $i < 6; $i++) {
+        app(OperationsTelemetry::class)->count('rss_error');
+    }
+
+    $checks = collect(app(OperationsProbe::class)->collect()['checks'])->keyBy('id');
+    expect($checks['rss']['status'])->toBe('degraded')
+        ->and($checks['metadata']['status'])->toBe('unknown')
+        ->and($checks['browse']['status'])->toBe('unknown');
+});
+
 it('verifies a real asynchronous queue worker rather than counting zero failed jobs', function (): void {
     config()->set('queue.default', 'database');
     \Illuminate\Support\Facades\Queue::fake();
