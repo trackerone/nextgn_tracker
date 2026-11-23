@@ -171,4 +171,37 @@ final class MemberClassAuthoritySeparationTest extends TestCase
         self::assertSame('admin', PermissionService::roleForUser($admin));
         self::assertTrue($admin->isStaff());
     }
+
+    public function test_explicit_custom_staff_role_keeps_invites_but_not_admin_authority(): void
+    {
+        $role = Role::query()->create([
+            'slug' => 'staff',
+            'name' => 'Staff',
+            'level' => 10,
+            'is_staff' => false,
+        ]);
+        $user = User::factory()->create([
+            'role' => User::ROLE_USER,
+            'role_id' => $role->id,
+            'is_staff' => false,
+        ]);
+
+        // A numeric 10 alone never acts as a staff designation.
+        self::assertFalse($user->isStaff());
+        self::assertFalse(PermissionService::allow($user, 'invites.create'));
+
+        // The explicit legacy staff flag remains valid for delegated member
+        // feature use, but cannot grant Admin/Sysop actions.
+        $role->forceFill(['is_staff' => true])->save();
+        $user = $user->fresh();
+
+        self::assertTrue($user->isStaff());
+        self::assertSame('moderator', PermissionService::roleForUser($user));
+        self::assertTrue(PermissionService::allow($user, 'invites.create'));
+        self::assertFalse($user->isAdmin());
+        self::assertFalse($user->isSysop());
+        self::assertLessThan(RoleLevel::ADMIN_LEVEL, $user->roleLevel());
+        $this->actingAs($user)->get('/admin')->assertForbidden();
+    }
+
 }
