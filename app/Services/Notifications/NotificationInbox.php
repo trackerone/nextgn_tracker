@@ -53,6 +53,12 @@ final class NotificationInbox
             ->selectRaw("'watch' as channel")
             ->where('user_id', $user->getKey());
 
+        // Old watch alerts are retained but not disclosed while the member
+        // cannot access Watch Center or Browse.
+        if (! PermissionService::allow($user, 'watch.access')) {
+            $watch->whereRaw('1 = 0');
+        }
+
         $messages = DB::table('notifications')
             ->select(['id', 'created_at', 'read_at'])
             ->selectRaw("'message' as channel")
