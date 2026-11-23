@@ -16,6 +16,7 @@ use App\Services\Metadata\Providers\TmdbMetadataProvider;
 use App\Services\Metadata\Providers\TraktMetadataProvider;
 use App\Services\Metadata\Providers\TvmazeMetadataProvider;
 use App\Services\Operations\OperationsTelemetry;
+use App\Services\PermissionService;
 use App\Services\Torrents\TorrentFollowNavigationBadge;
 use App\Services\Torrents\UploadPreflightContextBuilder;
 use App\Services\Torrents\UploadPreflightContextBuilderContract;
@@ -116,7 +117,7 @@ class AppServiceProvider extends ServiceProvider
 
             $isAuthenticatedUser = $user instanceof User;
 
-            if ($isAuthenticatedUser === false) {
+            if ($isAuthenticatedUser === false || ! PermissionService::allow($user, 'torrent.browse')) {
                 $view->with('followNavNewCount', 0);
 
                 return;

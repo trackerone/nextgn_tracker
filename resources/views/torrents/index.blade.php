@@ -11,6 +11,9 @@
     $groupedBrowse = $groupedBrowse ?? true;
     $releaseFamilies = $releaseFamilies ?? [];
     $browseUser = auth()->user();
+    $canDownload = $canDownload ?? \App\Services\PermissionService::allow($browseUser, 'torrent.download');
+    $canRss = $canRss ?? \App\Services\PermissionService::allow($browseUser, 'rss.access');
+    $canWatch = $canWatch ?? \App\Services\PermissionService::allow($browseUser, 'watch.access');
     $rssQuery = collect($filters)->only(['q', 'type', 'resolution', 'source', 'release_group', 'language', 'audio_language', 'subtitle_language', 'year'])
         ->merge(request()->only(['subtitles', 'freeleech']))
         ->filter(static fn ($value): bool => filled($value))->all();
@@ -178,7 +181,9 @@
                 <div class="mt-4 flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
                     <a href="{{ route('account.saved-intents.index') }}" class="inline-flex justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200">Saved views</a>
                 </div>
+                @if ($canRss)
                 <p class="mt-3 text-xs leading-5 text-slate-500">RSS uses your current filters. Tip: @include('partials.search-alias-guidance', ['variant' => 'examples'])</p>
+                @endif
             </div>
         </aside>
 
@@ -194,7 +199,10 @@
                         <a href="{{ route('torrents.index', [...$categoryQuery, 'category_id' => $category->id]) }}" @if ($activeCategory === (string) $category->id) aria-current="page" @endif class="shrink-0 rounded-lg px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 aria-[current=page]:bg-brand/20 aria-[current=page]:text-white">{{ $category->name }}</a>
                     @endforeach
                 </nav>
+                @if ($canWatch)
                 <a href="{{ route('account.watch-presets.create', $rssQuery) }}" class="rounded-lg px-3 py-2 text-sm text-brand">Watch this search</a>
+                @endif
+                @if ($canRss)
                 <details id="search-feed" class="text-sm" @if (request()->boolean('rss_ready')) open @endif>
                     <summary class="cursor-pointer rounded-lg px-3 py-2 text-brand">RSS for this search</summary>
                     @if ($rssUrl)
@@ -209,6 +217,7 @@
                         </form>
                     @endif
                 </details>
+                @endif
                 <p data-browse-result-count class="shrink-0 text-xs tabular-nums text-slate-400">{{ $torrents->total() }} results</p>
             </div>
 
@@ -272,7 +281,11 @@
                                                 <td data-label="Snatches" class="px-3 py-1.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                                 <td data-label="Added" class="whitespace-nowrap px-3 py-1.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                                 <td data-label="Actions" class="px-3 py-1.5 text-right align-top">
+                                                    @if ($canDownload)
                                                     <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-md border border-slate-700 px-2 py-0.5 text-xs font-semibold text-cyan-100 hover:border-brand" aria-label="Download {{ $torrent->name }}">Download</a>
+                                                    @else
+                                                        <span class="text-xs text-slate-500">Restricted</span>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @endforeach
@@ -344,7 +357,11 @@
                                     <td data-label="Snatches" class="px-3 py-1.5 text-right align-top font-mono text-sm text-slate-300" aria-label="{{ $completedFormatted }} snatches">{{ $completedFormatted }}</td>
                                     <td data-label="Added" class="whitespace-nowrap px-3 py-1.5 text-right align-top font-mono text-[11px] text-slate-400">{{ $uploadedDate }}</td>
                                     <td data-label="Actions" class="px-3 py-1.5 text-right align-top">
-                                        <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-md border border-slate-700 px-2 py-0.5 text-xs font-semibold text-cyan-100 hover:border-brand" aria-label="Download {{ $torrent->name }}">Download</a>
+                                        @if ($canDownload)
+                                                    <a href="{{ route('torrents.download', $torrent) }}" class="inline-flex rounded-md border border-slate-700 px-2 py-0.5 text-xs font-semibold text-cyan-100 hover:border-brand" aria-label="Download {{ $torrent->name }}">Download</a>
+                                                    @else
+                                                        <span class="text-xs text-slate-500">Restricted</span>
+                                                    @endif
                                     </td>
                                 </tr>
                             @empty

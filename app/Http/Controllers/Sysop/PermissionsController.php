@@ -102,10 +102,15 @@ final class PermissionsController extends Controller
         $rules = [
             'role' => ['required', Rule::in(PermissionService::EDITABLE_ROLES)],
             'audit_reason' => ['required', 'string', 'max:1000'],
-            'permissions' => ['required', 'array:upload,forum,messages,invitations'],
+            'permissions' => ['required', 'array:'.implode(',', array_keys(PermissionService::MANAGED_FEATURES))],
         ];
         foreach (PermissionService::MANAGED_FEATURES as $feature => $permission) {
-            $rules['permissions.'.$feature] = ['required', 'boolean'];
+            // Preserve older clients' existing role decisions when they submit
+            // only the four original checkboxes.
+            $rules['permissions.'.$feature] = [
+                in_array($feature, ['upload', 'forum', 'messages', 'invitations'], true) ? 'required' : 'sometimes',
+                'boolean',
+            ];
         }
 
         $validated = $request->validate($rules);
@@ -123,7 +128,9 @@ final class PermissionsController extends Controller
         $before = PermissionService::permissionsForRole($role);
         $after = [];
         foreach (PermissionService::MANAGED_FEATURES as $feature => $permission) {
-            $after[$permission] = (bool) $submitted[$feature];
+            $after[$permission] = array_key_exists($feature, $submitted)
+                ? (bool) $submitted[$feature]
+                : ($before[$permission] ?? false);
         }
 
         DB::transaction(function () use ($settings, $audit, $request, $role, $reason, $before, $after): void {

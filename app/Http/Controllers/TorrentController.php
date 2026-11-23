@@ -9,8 +9,10 @@ use App\Http\Requests\BrowseTorrentsRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Models\User;
 use App\Services\BencodeService;
 use App\Services\Metadata\ExternalMetadataConfig;
+use App\Services\PermissionService;
 use App\Services\Torrents\CanonicalTorrentMetadata;
 use App\Services\Torrents\UploadReleaseAdvisor;
 use App\Services\Tracker\DownloadEligibilityPolicy;
@@ -112,6 +114,9 @@ final class TorrentController extends Controller
             'sources' => $metadataFilterValues['sources'],
             'categories' => $categories,
             'groupedBrowse' => $groupedBrowse,
+            'canDownload' => PermissionService::allow($request->user(), 'torrent.download'),
+            'canRss' => PermissionService::allow($request->user(), 'rss.access'),
+            'canWatch' => PermissionService::allow($request->user(), 'watch.access'),
             'releaseFamilies' => $releaseFamilies,
 
             // View-friendly (and test-neutral)
@@ -149,14 +154,16 @@ final class TorrentController extends Controller
         $metadataSource = $metadataConfig->sourceFor($mediaType, (int) $model->id);
         $externalDetailsEnabled = $metadataSource !== 'none';
 
-        $eligibility = $request->user() !== null
-            ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
-            : ['allowed' => false, 'reason' => 'ratio_too_low'];
+        $user = $request->user();
+        $eligibility = $user instanceof User && PermissionService::allow($user, 'torrent.download')
+            ? app(DownloadEligibilityPolicy::class)->check($user, $model)
+            : ['allowed' => false, 'reason' => 'permission_denied'];
 
         $eligibilityMessage = match ($eligibility['reason']) {
             'freeleech' => 'Download allowed: freeleech bypass is active for this torrent.',
             'no_history' => 'Download allowed: no-history grace applies to your account.',
             'ratio_too_low' => 'Download denied: your ratio is below the required threshold.',
+            'permission_denied' => 'Download is unavailable for your account.',
             default => 'Download allowed: you can download this torrent.',
         };
         $isFreeleech = (bool) $model->is_freeleech;
@@ -169,9 +176,11 @@ final class TorrentController extends Controller
                 ? 'Freeleech is active and currently bypasses ratio requirements.'
                 : 'Freeleech is active for this torrent.')
             : 'Freeleech is not active for this torrent.';
-        $ratioMessage = ($eligibility['reason'] ?? '') === 'ratio_too_low'
-            ? 'Your current ratio does not meet the required threshold.'
-            : 'Your ratio is not blocking this download.';
+        $ratioMessage = match ($eligibility['reason'] ?? '') {
+            'permission_denied' => 'This download is restricted by account permissions, not your ratio.',
+            'ratio_too_low' => 'Your current ratio does not meet the required threshold.',
+            default => 'Your ratio is not blocking this download.',
+        };
 
         $releaseAdvice = app(UploadReleaseAdvisor::class)->advise(
             CanonicalTorrentMetadata::fromArray($metadata)

@@ -33,15 +33,21 @@
                             </summary>
                             <nav aria-label="User menu" class="absolute right-0 z-50 mt-1 grid max-h-[65vh] w-60 max-w-[92vw] gap-1 overflow-y-auto rounded-xl border border-slate-700 bg-slate-950 p-2 shadow-xl">
                                 <a href="{{ route('account.index') }}" class="{{ $navLink }}">My account</a>
+                                @if (\App\Services\PermissionService::allow(auth()->user(), 'rss.access'))
                                 <a href="{{ route('account.rss.index') }}" class="{{ $navLink }}">RSS feeds</a>
+                                @endif
                                 <a href="{{ route('account.notifications.index') }}" class="{{ $navLink }}">Notifications</a>
+                                @if (\App\Services\PermissionService::allow(auth()->user(), 'watch.access'))
                                 <a href="{{ route('my.watch-center') }}" class="{{ $navLink }} {{ request()->routeIs('my.watch-center', 'account.notifications.*', 'account.rss.*', 'account.watch-presets.*') ? $activeNavLink : $inactiveNavLink }}">Search alerts</a>
+                                @endif
+                                @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.browse'))
                                 <a href="{{ route('my.follows') }}" class="{{ $navLink }} {{ request()->routeIs('my.follows') ? $activeNavLink : $inactiveNavLink }} inline-flex items-center gap-2">
                                     <span>Follows</span>
                                     @if (($followNavNewCount ?? 0) > 0)
                                         <span class="rounded-full border border-emerald-500/60 bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">{{ $followNavNewCount }}</span>
                                     @endif
                                 </a>
+                                @endif
                                 @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
                                     <a href="{{ route('my.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('my.uploads') ? $activeNavLink : $inactiveNavLink }}">My Uploads</a>
                                 @endif
@@ -85,7 +91,9 @@
                     @endphp
                     <nav class="flex flex-wrap items-center gap-0.5 sm:gap-1" aria-label="Primary navigation">
                         <a href="{{ route('home') }}" class="{{ $navLink }} {{ request()->routeIs('home') ? $activeNavLink : $inactiveNavLink }}">Dashboard</a>
+                        @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.browse'))
                         <a href="{{ route('torrents.index') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.index', 'torrents.show') ? $activeNavLink : $inactiveNavLink }}">Browse</a>
+                        @endif
                         @if (\App\Services\PermissionService::allow(auth()->user(), 'torrent.upload'))
                             <a href="{{ route('torrents.upload') }}" class="{{ $navLink }} {{ request()->routeIs('torrents.upload') ? $activeNavLink : $inactiveNavLink }}">Upload</a>
                         @endif

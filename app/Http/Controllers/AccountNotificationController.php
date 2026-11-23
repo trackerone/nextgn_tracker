@@ -8,6 +8,7 @@ use App\Models\TorrentWatchNotification;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
 use App\Services\Notifications\NotificationInbox;
+use App\Services\PermissionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -21,7 +22,9 @@ final class AccountNotificationController extends Controller
 
         return response()->view('account.notifications', [
             'notifications' => $inbox->paginate($user),
-            'unreadWatchCount' => $user->torrentWatchNotifications()->whereNull('read_at')->count(),
+            'unreadWatchCount' => PermissionService::allow($user, 'watch.access')
+                ? $user->torrentWatchNotifications()->whereNull('read_at')->count()
+                : 0,
             'unreadMessageCount' => $user->unreadNotifications()
                 ->where('type', NewPrivateMessageNotification::class)->count(),
         ])->withHeaders([
@@ -33,7 +36,8 @@ final class AccountNotificationController extends Controller
     public function markRead(Request $request, TorrentWatchNotification $notification): RedirectResponse
     {
         $user = $this->authenticatedUser($request);
-        abort_unless((int) $notification->user_id === (int) $user->id, 404);
+        abort_unless(PermissionService::allow($user, 'watch.access')
+            && (int) $notification->user_id === (int) $user->id, 404);
 
         $notification->forceFill(['read_at' => now()])->save();
 
@@ -64,9 +68,11 @@ final class AccountNotificationController extends Controller
 
         DB::transaction(static function () use ($user): void {
             $readAt = now();
-            $user->torrentWatchNotifications()
-                ->whereNull('read_at')
-                ->update(['read_at' => $readAt]);
+            if (PermissionService::allow($user, 'watch.access')) {
+                $user->torrentWatchNotifications()
+                    ->whereNull('read_at')
+                    ->update(['read_at' => $readAt]);
+            }
 
             $user->unreadNotifications()
                 ->where('type', NewPrivateMessageNotification::class)

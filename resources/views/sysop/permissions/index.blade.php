@@ -25,7 +25,7 @@
     <section id="roles" class="space-y-4 scroll-mt-28">
         <div>
             <h2 class="text-lg font-semibold">Role permissions</h2>
-            <p class="mt-1 text-sm text-slate-400">Changes affect every account in that class, except members with an individual override. Each save is recorded with an audit reason.</p>
+            <p class="mt-1 text-sm text-slate-400">Changes affect every account in that class, except members with an individual override. Each save is recorded with an audit reason. Downloads require Browse; RSS and Search alerts require both Browse and Downloads. An individual allow cannot bypass a denied prerequisite.</p>
         </div>
         <div class="grid gap-3">
             @foreach ($roles as $role)

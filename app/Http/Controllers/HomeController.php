@@ -23,17 +23,15 @@ final class HomeController extends Controller
 
         $user->loadMissing('role');
 
+        $canBrowse = PermissionService::allow($user, 'torrent.browse');
         $canUpload = PermissionService::allow($user, 'torrent.upload');
         $canForum = PermissionService::allow($user, 'forum.access');
         $canMessages = PermissionService::allow($user, 'messages.access');
 
-        $recentTorrents = Torrent::query()
-            ->visible()
-            ->with(['category', 'uploader'])
-            ->orderByDesc('published_at')
-            ->orderByDesc('created_at')
-            ->limit(5)
-            ->get();
+        $recentTorrents = $canBrowse
+            ? Torrent::query()->visible()->with(['category', 'uploader'])
+                ->orderByDesc('published_at')->orderByDesc('created_at')->limit(5)->get()
+            : collect();
 
         $recentTopics = $canForum
             ? Topic::query()
@@ -67,6 +65,7 @@ final class HomeController extends Controller
         $trackerStats = $this->trackerStatsFor($user);
 
         return view('home', [
+            'canBrowse' => $canBrowse,
             'canUpload' => $canUpload,
             'canForum' => $canForum,
             'canMessages' => $canMessages,
@@ -75,7 +74,7 @@ final class HomeController extends Controller
             'recentConversations' => $recentConversations,
             'myOpenUploads' => $myOpenUploads,
             'pendingModerationCount' => $pendingModerationCount,
-            'followNewCount' => $followBadge->unseenCountFor($user),
+            'followNewCount' => $canBrowse ? $followBadge->unseenCountFor($user) : 0,
             'userStats' => [
                 'uploaded' => $trackerStats['uploaded'],
                 'downloaded' => $trackerStats['downloaded'],

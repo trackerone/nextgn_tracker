@@ -78,7 +78,7 @@ Route::middleware(['web', 'auth', 'role.level:admin'])->prefix('admin/settings/m
 
 Route::middleware(['api', 'auth'])->group(function (): void {
     Route::get('/discovery/home', DiscoveryHomeController::class)
-        ->name('api.discovery.home');
+        ->middleware('permission:torrent.browse')->name('api.discovery.home');
 
     Route::get('/discovery/health', DiscoveryHealthController::class)
         ->middleware(['web', 'role.level:sysop'])
@@ -113,22 +113,22 @@ Route::middleware(['api', 'auth'])->group(function (): void {
         ->name('api.discovery.operations-review-queue');
 
     Route::get('/discovery/metadata', DiscoveryMetadataController::class)
-        ->name('api.discovery.metadata');
+        ->middleware('permission:torrent.browse')->name('api.discovery.metadata');
 
     Route::get('/discovery/popular', DiscoveryPopularMetadataController::class)
-        ->name('api.discovery.popular');
+        ->middleware('permission:torrent.browse')->name('api.discovery.popular');
 
     Route::get('/discovery/rss-suggestions', DiscoveryRssSuggestionsController::class)
-        ->name('api.discovery.rss-suggestions');
+        ->middleware('permission:rss.access')->name('api.discovery.rss-suggestions');
 
     Route::get('/discovery/watch-preset-suggestions', DiscoveryWatchPresetSuggestionsController::class)
-        ->name('api.discovery.watch-preset-suggestions');
+        ->middleware('permission:watch.access')->name('api.discovery.watch-preset-suggestions');
 
     Route::get('/discovery/summary', DiscoverySummaryController::class)
-        ->name('api.discovery.summary');
+        ->middleware('permission:torrent.browse')->name('api.discovery.summary');
 
     Route::get('/discovery/trending', DiscoveryTrendingController::class)
-        ->name('api.discovery.trending');
+        ->middleware('permission:torrent.browse')->name('api.discovery.trending');
 
     Route::get('/recommendations/signals', RecommendationSignalsController::class)
         ->middleware(['web', 'role.level:sysop'])
@@ -164,15 +164,15 @@ Route::middleware(['api', 'auth'])->group(function (): void {
 
     Route::get('/torrents', [TorrentBrowseController::class, 'index'])
         ->middleware('throttle:torrent-browse')
-        ->name('api.torrents.index');
+        ->middleware('permission:torrent.browse')->name('api.torrents.index');
 
     Route::get('/torrents/{torrent}', [TorrentDetailsController::class, 'show'])
         ->middleware('throttle:torrent-details')
-        ->name('api.torrents.show');
+        ->middleware('permission:torrent.browse')->name('api.torrents.show');
 
     Route::get('/torrents/{torrent}/download', TorrentDownloadController::class)
         ->middleware('throttle:torrent-download')
-        ->name('api.torrents.download');
+        ->middleware('permission:torrent.download')->name('api.torrents.download');
 
     Route::post('/uploads', [UploadSubmissionController::class, 'store'])
         ->middleware(['permission:torrent.upload', 'throttle:torrent-upload'])

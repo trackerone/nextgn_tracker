@@ -28,7 +28,9 @@
             </div>
             <div class="flex flex-wrap gap-2">
                 <a href="{{ route('account.watch-presets.create') }}" class="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-slate-950 hover:bg-brand/90">Create watch preset</a>
+                @if ($canRss)
                 <a href="{{ route('account.rss.presets.create') }}" class="rounded-full border border-slate-700 px-5 py-2 text-sm font-semibold text-slate-100 hover:border-brand">Create RSS preset</a>
+                @endif
             </div>
         </div>
 
@@ -38,11 +40,13 @@
                 <p class="mt-2 text-2xl font-bold text-white">{{ $watchPresetCount }}</p>
                 <p class="mt-1 text-xs text-slate-500">{{ $enabledWatchPresetCount }} enabled</p>
             </div>
+            @if ($canRss)
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <p class="text-sm text-slate-400">RSS presets</p>
                 <p class="mt-2 text-2xl font-bold text-white">{{ $rssPresetCount }}</p>
                 <p class="mt-1 text-xs text-slate-500">Saved feed filters</p>
             </div>
+            @endif
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
                 <p class="text-sm text-slate-400">Recent matches</p>
                 <p class="mt-2 text-2xl font-bold text-white">{{ $recentMatches->count() }}</p>
@@ -107,6 +111,7 @@
                 @endif
             </section>
 
+            @if ($canRss)
             <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-slate-950/20">
                 <div class="flex items-center justify-between gap-4">
                     <div>
@@ -157,6 +162,7 @@
                     </div>
                 @endif
             </section>
+            @endif
         </div>
 
         <div class="grid gap-6 lg:grid-cols-2">

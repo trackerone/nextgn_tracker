@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\RssFeedPreset;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\Rss\RssFeedFilterNormalizer;
 use App\Services\Rss\TorrentRssFeedBuilder;
 use Illuminate\Http\Response;
@@ -21,6 +22,8 @@ final class RssPresetFeedController extends Controller
         $user = User::query()
             ->where('rss_token', $token)
             ->firstOrFail();
+
+        abort_unless(PermissionService::allow($user, 'rss.access'), 404);
 
         $feedPreset = RssFeedPreset::query()
             ->where('user_id', $user->id)
