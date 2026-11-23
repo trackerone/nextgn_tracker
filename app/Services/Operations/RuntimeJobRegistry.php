@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Operations;
 
 use App\Services\Settings\SiteSettingsRepository;
-use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Artisan;
 use Throwable;
 
 final class RuntimeJobRegistry
@@ -21,15 +21,15 @@ final class RuntimeJobRegistry
     public function all(): array
     {
         $jobStates = $this->telemetry->jobs();
-        $scheduleCommands = $this->declaredScheduleCommands();
+        $scheduleListing = $this->declaredScheduleListing();
 
-        return array_map(function (array $job) use ($jobStates, $scheduleCommands): array {
+        return array_map(function (array $job) use ($jobStates, $scheduleListing): array {
             $key = (string) $job['key'];
             $implementation = (string) ($job['implementation'] ?? 'manual');
             $command = (string) ($job['command'] ?? '');
             $isScheduled = $implementation === 'scheduled';
-            $scheduleRegistered = $isScheduled && $scheduleCommands !== null
-                ? $this->scheduleContains($scheduleCommands, $command)
+            $scheduleRegistered = $isScheduled && $scheduleListing !== null
+                ? $command !== '' && str_contains($scheduleListing, $command)
                 : null;
             $state = $command !== '' ? ($jobStates[$command] ?? null) : null;
 
@@ -102,43 +102,21 @@ final class RuntimeJobRegistry
     }
 
     /**
-     * Reading the scheduler event registry does not run a task and does not
-     * demonstrate that cron/systemd has executed schedule:run.
-     *
-     * @return list<string>|null
+     * The console bootstrap attaches the app's withSchedule definitions;
+     * directly resolving Schedule in a web request can return an incomplete
+     * event list. Laravel's schedule:list invokes that bootstrap and only
+     * reads definitions. It never executes a scheduled task.
      */
-    private function declaredScheduleCommands(): ?array
+    private function declaredScheduleListing(): ?string
     {
         try {
-            $commands = [];
-            foreach (app(Schedule::class)->events() as $event) {
-                if (is_string($event->command ?? null)) {
-                    $commands[] = $event->command;
-                }
-            }
+            $exitCode = Artisan::call('schedule:list', ['--no-ansi' => true]);
+            $listing = trim(Artisan::output());
 
-            return $commands;
+            return $exitCode === 0 && $listing !== '' ? $listing : null;
         } catch (Throwable) {
             return null;
         }
-    }
-
-    /**
-     * @param  list<string>  $scheduleCommands
-     */
-    private function scheduleContains(array $scheduleCommands, string $command): bool
-    {
-        if ($command === '') {
-            return false;
-        }
-
-        foreach ($scheduleCommands as $scheduled) {
-            if (str_contains($scheduled, $command)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function settingKey(string $jobKey): string
