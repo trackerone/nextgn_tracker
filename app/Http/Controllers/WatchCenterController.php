@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -20,9 +21,10 @@ final class WatchCenterController extends Controller
             ->latest()
             ->get();
 
-        $rssPresets = $user->rssFeedPresets()
-            ->latest()
-            ->get();
+        $canRss = PermissionService::allow($user, 'rss.access');
+        $rssPresets = $canRss
+            ? $user->rssFeedPresets()->latest()->get()
+            : collect();
 
         $recentMatches = $user->torrentWatchNotifications()
             ->with(['torrent', 'preset'])
@@ -48,6 +50,7 @@ final class WatchCenterController extends Controller
             'watchPresetCount' => $watchPresets->count(),
             'enabledWatchPresetCount' => $watchPresets->where('is_enabled', true)->count(),
             'rssPresetCount' => $rssPresets->count(),
+            'canRss' => $canRss,
             'unreadNotificationCount' => $unreadNotificationCount,
         ]);
     }
