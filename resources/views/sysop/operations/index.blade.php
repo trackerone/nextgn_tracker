@@ -244,7 +244,7 @@
     <section class="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:p-6">
         <a href="{{ route('sysop.operations.discovery') }}" class="text-brand">Discovery diagnostics</a>
         <h2 class="text-lg font-semibold text-white">Background job settings</h2>
-        <p class="mt-2 text-sm text-slate-300">Enabled means configured to run, not a confirmed successful execution. Protected tasks are server managed; optional job settings can be changed below.</p>
+        <p class="mt-2 text-sm text-slate-300">Configuration, implementation, scheduler registration and actual execution are different checks. Saved enabled flags do not start a task or prove that the server scheduler is running.</p>
         @if ($errors->has('runtime_jobs'))
             <div class="mt-3 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100">{{ $errors->first('runtime_jobs') }}</div>
         @endif
@@ -255,12 +255,27 @@
                     <p class="mt-2 text-sm text-slate-400">{{ $job['description'] }}</p>
                     <div class="mt-3 flex flex-wrap gap-2 text-xs">
                         <span class="rounded border border-slate-600 px-2 py-1">{{ $job['enabled'] ? 'Configured enabled' : 'Configured disabled' }}</span>
-                        <span class="rounded border border-slate-600 px-2 py-1">Execution not verified</span>
+                        @if ($job['implementation'] === 'placeholder')
+                            <span class="rounded border border-amber-500/50 px-2 py-1 text-amber-200">Not implemented</span>
+                        @elseif ($job['implementation'] === 'manual')
+                            <span class="rounded border border-slate-600 px-2 py-1">Manual only · no automatic schedule</span>
+                        @elseif ($job['implementation'] === 'request')
+                            <span class="rounded border border-slate-600 px-2 py-1">Runs in tracker request path</span>
+                        @elseif ($job['implementation'] === 'scheduled')
+                            <span class="rounded border border-slate-600 px-2 py-1">{{ $job['schedule_registered'] === true ? 'Scheduler definition present' : ($job['schedule_registered'] === false ? 'Scheduler definition missing' : 'Scheduler definition unverified') }}</span>
+                        @endif
                         @if ($job['critical'])
                             <span class="rounded border border-slate-600 px-2 py-1">Protected core task</span>
                         @endif
                     </div>
-                    @if ($job['sysop_controllable'] && !$job['critical'])
+                    @if ($job['implementation'] === 'placeholder')
+                        <p class="mt-3 text-xs text-amber-200">This is a reserved setting only. Its command does not perform the advertised task. Existing saved values are preserved, but cannot enable nonexistent work.</p>
+                    @elseif ($job['implementation'] === 'scheduled')
+                        <p class="mt-3 text-xs text-slate-400">Last confirmed successful run: {{ $job['last_success_at'] ?? 'None observed' }}. Last recorded failure: {{ $job['last_failed_at'] ?? 'None observed' }}. A scheduler definition alone does not confirm cron execution.</p>
+                    @elseif ($job['implementation'] === 'manual')
+                        <p class="mt-3 text-xs text-slate-400">Available by CLI only; no scheduled executions are configured or verified.</p>
+                    @endif
+                    @if ($job['can_toggle'])
                         <form method="POST" action="{{ route('sysop.operations.runtime-jobs.toggle') }}" class="mt-4">
                             @csrf
                             <input type="hidden" name="job_key" value="{{ $job['key'] }}">
@@ -268,7 +283,7 @@
                             <button type="submit" class="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:bg-slate-800">{{ $job['enabled'] ? 'Disable optional job' : 'Enable optional job' }}</button>
                         </form>
                     @else
-                        <p class="mt-4 text-xs text-slate-400">Server managed. Its parameters, where supported, are available in Site settings.</p>
+                        <p class="mt-4 text-xs text-slate-400">{{ $job['implementation'] === 'placeholder' ? 'Not configurable until implemented.' : 'Server managed. Its parameters, where supported, are available in Site settings.' }}</p>
                     @endif
                 </article>
             @endforeach
