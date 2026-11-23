@@ -171,4 +171,61 @@ final class UnifiedNotificationInboxTest extends TestCase
         $this->post(route('account.notifications.read_all'))->assertRedirect();
         $this->assertDatabaseHas('notifications', ['id' => $unrelatedId, 'read_at' => null]);
     }
+
+    public function test_viewing_conversation_marks_matching_pm_alerts_read_without_touching_watch_alerts(): void
+    {
+        config()->set('queue.default', 'sync');
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+        $conversation = Conversation::factory()->create([
+            'user_a_id' => $sender->id,
+            'user_b_id' => $recipient->id,
+        ]);
+        $message = $conversation->messages()->create([
+            'sender_id' => $sender->id,
+            'body_md' => 'Please read me',
+            'body_html' => '<p>Please read me</p>',
+        ]);
+        $recipient->notify(new NewPrivateMessageNotification($message));
+        $watch = TorrentWatchNotification::factory()->create(['user_id' => $recipient->id]);
+
+        $this->actingAs($recipient)->get(route('pm.show', ['conversation' => $conversation->id]))->assertOk();
+
+        self::assertSame(0, $recipient->unreadNotifications()
+            ->where('type', NewPrivateMessageNotification::class)->count());
+        self::assertNotNull($message->fresh()->read_at);
+        self::assertNull($watch->fresh()->read_at);
+    }
+
+    public function test_paginated_pm_view_marks_only_the_alerts_for_messages_on_that_page(): void
+    {
+        config()->set('queue.default', 'sync');
+        $sender = User::factory()->create();
+        $recipient = User::factory()->create();
+        $conversation = Conversation::factory()->create([
+            'user_a_id' => $sender->id,
+            'user_b_id' => $recipient->id,
+        ]);
+
+        for ($i = 0; $i < 22; $i++) {
+            $message = $conversation->messages()->create([
+                'sender_id' => $sender->id,
+                'body_md' => 'Message '.$i,
+                'body_html' => '<p>Message '.$i.'</p>',
+            ]);
+            $recipient->notify(new NewPrivateMessageNotification($message));
+        }
+
+        $this->actingAs($recipient)
+            ->get(route('pm.show', ['conversation' => $conversation->id, 'page' => 1]))
+            ->assertOk();
+
+        self::assertSame(2, $recipient->unreadNotifications()
+            ->where('type', NewPrivateMessageNotification::class)->count());
+
+        $this->get(route('pm.show', ['conversation' => $conversation->id, 'page' => 2]))->assertOk();
+        self::assertSame(0, $recipient->unreadNotifications()
+            ->where('type', NewPrivateMessageNotification::class)->count());
+    }
+
 }
