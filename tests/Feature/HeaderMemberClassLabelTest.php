@@ -48,7 +48,10 @@ final class HeaderMemberClassLabelTest extends TestCase
 
         $this->get(route('account.index'))->assertOk()
             ->assertSee('>Newbie</span>', false)
-            ->assertSee('User / Newbie');
+            ->assertSee('Assigned permission role')
+            ->assertSee('Earned member class')
+            ->assertSee('>User</dd>', false)
+            ->assertSee('>Newbie</dd>', false);
 
         $this->get(route('torrents.upload'))->assertForbidden();
 
