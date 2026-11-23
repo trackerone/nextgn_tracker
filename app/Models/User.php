@@ -305,8 +305,6 @@ class User extends Authenticatable implements MustVerifyEmail
             if ((bool) $roleRelation->is_staff) {
                 return true;
             }
-
-
         }
 
         // 3) Last resort: slug/name match (covers edge cases where level mapping isn't available)
