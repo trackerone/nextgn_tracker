@@ -326,7 +326,7 @@ Route::middleware(['auth', 'permission:messages.access'])->group(function (): vo
 */
 Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrowseThrottle, $torrentDetailsThrottle, $torrentDownloadThrottle): void {
     Route::get('/torrents', [TorrentController::class, 'index'])
-        ->middleware([$searchThrottle, $torrentBrowseThrottle])
+        ->middleware(['permission:torrent.browse', $searchThrottle, $torrentBrowseThrottle])
         ->name('torrents.index');
 
     Route::get('/torrents/upload', [TorrentUploadController::class, 'create'])->middleware('permission:torrent.upload')->name('torrents.upload');
@@ -335,11 +335,11 @@ Route::middleware('auth')->group(function () use ($searchThrottle, $torrentBrows
         ->name('torrents.upload.analyse');
 
     Route::get('/torrents/{torrent}', [TorrentController::class, 'show'])
-        ->middleware($torrentDetailsThrottle)
+        ->middleware(['permission:torrent.browse', $torrentDetailsThrottle])
         ->name('torrents.show');
 
     Route::get('/torrents/{torrent}/download', [TorrentDownloadController::class, 'download'])
-        ->middleware($torrentDownloadThrottle)
+        ->middleware(['permission:torrent.download', $torrentDownloadThrottle])
         ->name('torrents.download');
 
 });
@@ -356,21 +356,27 @@ Route::middleware(['auth'])->group(function (): void {
     Route::post('/torrents', [TorrentUploadController::class, 'store'])
         ->middleware(['permission:torrent.upload', 'throttle:torrent-upload'])
         ->name('torrents.store');
-    Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])->name('torrents.follow.store');
+    Route::post('/torrents/{torrent}/follow', [TorrentFollowController::class, 'storeFromTorrent'])
+        ->middleware('permission:torrent.browse')->name('torrents.follow.store');
     Route::get('/my/uploads', [MyUploadsController::class, 'index'])
         ->middleware('permission:torrent.upload')->name('my.uploads');
     Route::redirect('/my/discovery', '/my/follows')->name('my.discovery');
-    Route::get('/my/follows', [TorrentFollowController::class, 'index'])->name('my.follows');
-    Route::post('/my/follows', [TorrentFollowController::class, 'store'])->name('my.follows.store');
-    Route::get('/my/watch-center', WatchCenterController::class)->name('my.watch-center');
-    Route::get('/my/saved-views', [SavedIntentController::class, 'index'])->name('account.saved-intents.index');
-    Route::post('/my/saved-views', [SavedIntentController::class, 'store'])->name('account.saved-intents.store');
+    Route::get('/my/follows', [TorrentFollowController::class, 'index'])
+        ->middleware('permission:torrent.browse')->name('my.follows');
+    Route::post('/my/follows', [TorrentFollowController::class, 'store'])
+        ->middleware('permission:torrent.browse')->name('my.follows.store');
+    Route::get('/my/watch-center', WatchCenterController::class)
+        ->middleware('permission:watch.access')->name('my.watch-center');
+    Route::get('/my/saved-views', [SavedIntentController::class, 'index'])
+        ->middleware('permission:torrent.browse')->name('account.saved-intents.index');
+    Route::post('/my/saved-views', [SavedIntentController::class, 'store'])
+        ->middleware('permission:torrent.browse')->name('account.saved-intents.store');
     Route::get('/my/saved-views/{savedIntent}/apply', [SavedIntentController::class, 'apply'])
         ->whereNumber('savedIntent')
-        ->name('account.saved-intents.apply');
+        ->middleware('permission:torrent.browse')->name('account.saved-intents.apply');
     Route::delete('/my/saved-views/{savedIntent}', [SavedIntentController::class, 'destroy'])
         ->whereNumber('savedIntent')
-        ->name('account.saved-intents.destroy');
+        ->middleware('permission:torrent.browse')->name('account.saved-intents.destroy');
 
     Route::get('/account/hnr', [HnrController::class, 'index'])->name('account.hnr');
     Route::get('/account', [AccountController::class, 'index'])->name('account.index');
@@ -396,27 +402,27 @@ Route::middleware(['auth'])->group(function (): void {
         ->whereNumber('notification')
         ->name('account.notifications.read');
 
-    Route::get('/account/watch-presets', [NotificationWatchPresetController::class, 'index'])->name('account.watch-presets.index');
-    Route::get('/account/watch-presets/create', [NotificationWatchPresetController::class, 'create'])->name('account.watch-presets.create');
-    Route::post('/account/watch-presets', [NotificationWatchPresetController::class, 'store'])->name('account.watch-presets.store');
+    Route::get('/account/watch-presets', [NotificationWatchPresetController::class, 'index'])->middleware('permission:watch.access')->name('account.watch-presets.index');
+    Route::get('/account/watch-presets/create', [NotificationWatchPresetController::class, 'create'])->middleware('permission:watch.access')->name('account.watch-presets.create');
+    Route::post('/account/watch-presets', [NotificationWatchPresetController::class, 'store'])->middleware('permission:watch.access')->name('account.watch-presets.store');
     Route::get('/account/watch-presets/{preset}/edit', [NotificationWatchPresetController::class, 'edit'])
         ->whereNumber('preset')
-        ->name('account.watch-presets.edit');
+        ->middleware('permission:watch.access')->name('account.watch-presets.edit');
     Route::patch('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'update'])
         ->whereNumber('preset')
-        ->name('account.watch-presets.update');
+        ->middleware('permission:watch.access')->name('account.watch-presets.update');
     Route::delete('/account/watch-presets/{preset}', [NotificationWatchPresetController::class, 'destroy'])
         ->whereNumber('preset')
-        ->name('account.watch-presets.destroy');
+        ->middleware('permission:watch.access')->name('account.watch-presets.destroy');
 
-    Route::get('/account/rss', [AccountRssController::class, 'index'])->name('account.rss.index');
-    Route::post('/account/rss/enable', [AccountRssController::class, 'enable'])->name('account.rss.enable');
-    Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->name('account.rss.rotate');
-    Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->name('account.rss.presets.create');
-    Route::post('/account/rss/presets', [AccountRssPresetController::class, 'store'])->name('account.rss.presets.store');
-    Route::get('/account/rss/presets/{preset}/edit', [AccountRssPresetController::class, 'edit'])->whereNumber('preset')->name('account.rss.presets.edit');
-    Route::patch('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'update'])->whereNumber('preset')->name('account.rss.presets.update');
-    Route::delete('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'destroy'])->whereNumber('preset')->name('account.rss.presets.destroy');
+    Route::get('/account/rss', [AccountRssController::class, 'index'])->middleware('permission:rss.access')->name('account.rss.index');
+    Route::post('/account/rss/enable', [AccountRssController::class, 'enable'])->middleware('permission:rss.access')->name('account.rss.enable');
+    Route::post('/account/rss/rotate', [AccountRssController::class, 'rotate'])->middleware('permission:rss.access')->name('account.rss.rotate');
+    Route::get('/account/rss/presets/create', [AccountRssPresetController::class, 'create'])->middleware('permission:rss.access')->name('account.rss.presets.create');
+    Route::post('/account/rss/presets', [AccountRssPresetController::class, 'store'])->middleware('permission:rss.access')->name('account.rss.presets.store');
+    Route::get('/account/rss/presets/{preset}/edit', [AccountRssPresetController::class, 'edit'])->whereNumber('preset')->middleware('permission:rss.access')->name('account.rss.presets.edit');
+    Route::patch('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'update'])->whereNumber('preset')->middleware('permission:rss.access')->name('account.rss.presets.update');
+    Route::delete('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'destroy'])->whereNumber('preset')->middleware('permission:rss.access')->name('account.rss.presets.destroy');
 });
 
 Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
