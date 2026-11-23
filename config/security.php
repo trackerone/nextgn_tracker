@@ -56,6 +56,10 @@ return [
         'admin.access',
         'admin.manage.users',
         'torrent.upload',
+        'torrent.browse',
+        'torrent.download',
+        'rss.access',
+        'watch.access',
         'invites.create',
         'torrent.edit',
         'torrent.delete',
@@ -66,25 +70,32 @@ return [
 
     'role_permissions' => [
         'sysop' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
             'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
             'torrent.delete', 'forum.access', 'messages.access', 'invites.create', 'comment.post',
             'comment.delete', 'api.access',
         ],
         'admin' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
             'admin.access', 'admin.manage.users', 'torrent.upload', 'torrent.edit',
             'torrent.delete', 'forum.access', 'messages.access', 'invites.create', 'comment.post',
             'comment.delete', 'api.access',
         ],
         'moderator' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
             'torrent.upload', 'torrent.edit', 'torrent.delete', 'forum.access',
             'messages.access', 'invites.create', 'comment.delete', 'api.access',
         ],
         'uploader' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
             'torrent.upload', 'forum.access', 'messages.access', 'comment.post', 'api.access',
         ],
-        'power_user' => ['forum.access', 'messages.access', 'comment.post', 'api.access'],
-        'user' => ['forum.access', 'messages.access', 'comment.post', 'api.access'],
-        'newbie' => ['api.access'],
+        'power_user' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access'],
+        'user' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access'],
+        'newbie' => [
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','api.access'],
         'guest' => [],
     ],
 
