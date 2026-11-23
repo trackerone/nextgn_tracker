@@ -71,12 +71,14 @@ class UserRatioTest extends TestCase
         $this->assertSame('Elite', $user->userClass());
     }
 
-    public function test_staff_users_are_marked_as_staff(): void
+    public function test_staff_accounts_still_have_an_independent_earned_member_class(): void
     {
         $user = User::factory()->create([
             'role' => User::ROLE_ADMIN,
         ]);
 
-        $this->assertSame('Staff', $user->userClass());
+        $this->assertSame('User', $user->userClass());
+        $this->assertTrue($user->isStaff());
+        $this->assertSame('Admin', $user->headerClassLabel());
     }
 }

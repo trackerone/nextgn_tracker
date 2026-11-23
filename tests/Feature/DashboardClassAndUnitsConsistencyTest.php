@@ -51,7 +51,11 @@ final class DashboardClassAndUnitsConsistencyTest extends TestCase
             ->assertDontSee('Welcome back')
             ->assertDontSee('share clean uploads');
 
-        $this->get(route('account.index'))->assertOk()->assertSee('User / Newbie');
+        $this->get(route('account.index'))->assertOk()
+            ->assertSee('Assigned permission role')
+            ->assertSee('Earned member class')
+            ->assertSee('>User</dd>', false)
+            ->assertSee('>Newbie</dd>', false);
         $this->get(route('account.snatches'))->assertOk()
             ->assertSee('112.00 GB')
             ->assertSee('8.00 GB')

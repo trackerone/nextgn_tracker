@@ -14,7 +14,7 @@ When switched on, an account must satisfy **both** applicable age and existing r
 - At Elite tenure, accounts with sufficient ratio can become **Elite**.
 - Below the established minimum User ratio, the existing **Leech** classification still takes precedence.
 - No traffic history, after reaching User tenure, keeps the existing **User** baseline rather than granting higher classes.
-- Staff classification and the actual permission role are unaffected.
+- Assigned moderator/admin/Sysop roles and the underlying access matrix are unaffected. Staff accounts still have their own earned ratio/tenure class; their operational role remains visible separately in the header and account overview.
 
 Account age is calculated from \`users.created_at\`, checked dynamically when displaying the class. Calendar months use Laravel's month-no-overflow logic (not a fixed 30-day approximation). No scheduler or new table is required. Changes are persisted in the existing \`settings\` table under \`ratio.tenure_*\`, with the existing \`settings.ratio.updated\` audit event.
 

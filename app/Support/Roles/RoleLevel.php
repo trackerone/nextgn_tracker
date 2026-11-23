@@ -99,10 +99,10 @@ final class RoleLevel
 
         // 1) Primary: users.role if it is something other than the default 'user'
         if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '' && $roleAttributeSlug !== 'user') {
-            $mapped = self::forSlug($roleAttributeSlug);
-            if ($mapped !== null) {
-                return $mapped;
-            }
+            // Only known, explicitly assigned role identifiers carry authority.
+            // An unknown class/status slug cannot inherit numeric staff power
+            // from a stale role relation.
+            return self::forSlug($roleAttributeSlug) ?? self::LOWEST_LEVEL;
         }
 
         // 2) Fallback: role relation slug (if seeded / role_id exists)
@@ -110,19 +110,16 @@ final class RoleLevel
             ? $user->getRelation('role')
             : $user->role()->getResults();
 
+        // Never trust an arbitrary roles.level as administrative authority.
+        // Recognized, explicitly assigned legacy slugs remain compatible.
         if ($legacyRole !== null) {
             $mapped = self::forSlug(is_string($legacyRole->slug) ? $legacyRole->slug : null);
             if ($mapped !== null) {
                 return $mapped;
             }
-
-            // 3) Last fallback: role->level if it exists
-            if ($legacyRole->level !== null) {
-                return (int) $legacyRole->level;
-            }
         }
 
-        // 4) If there is no role relation, use users.role (including 'user')
+        // 3) Fall back to the normalized users.role (including 'user')
         if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '') {
             $mapped = self::forSlug($roleAttributeSlug);
             if ($mapped !== null) {

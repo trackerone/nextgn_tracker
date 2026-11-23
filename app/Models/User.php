@@ -264,9 +264,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $query->where(function (Builder $builder): void {
             $builder->where('is_staff', true)
-                ->orWhereHas('role', function (Builder $roleQuery): void {
-                    $roleQuery->where('level', '>=', Role::STAFF_LEVEL_THRESHOLD)
-                        ->orWhere('is_staff', true);
+                ->orWhere(function (Builder $related): void {
+                    // A stale relation must not re-grant staff access once
+                    // an explicit non-default role was assigned.
+                    $related->where(function (Builder $roleColumn): void {
+                        $roleColumn->whereNull('role')->orWhere('role', self::ROLE_USER);
+                    })->whereHas('role', function (Builder $roleQuery): void {
+                        $roleQuery->where('is_staff', true)
+                            ->orWhereIn('slug', self::staffRoles());
+                    });
                 })
                 ->orWhereIn('role', self::staffRoles());
         });
@@ -284,14 +290,19 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
-        // 2) Role relation flag/level if present
+        // An explicitly assigned non-default role is authoritative. A
+        // stale staff relation cannot restore permissions after demotion.
+        $roleAttribute = $this->getAttribute('role');
+        if (is_string($roleAttribute)
+            && $roleAttribute !== ''
+            && strtolower(trim($roleAttribute)) !== self::ROLE_USER) {
+            return false;
+        }
+
+        // 2) Deliberately assigned staff role, not a numeric class level
         $roleRelation = $this->getRelationValue('role');
         if ($roleRelation instanceof Role) {
             if ((bool) $roleRelation->is_staff) {
-                return true;
-            }
-
-            if ($roleRelation->level !== null && (int) $roleRelation->level >= Role::STAFF_LEVEL_THRESHOLD) {
                 return true;
             }
         }
@@ -394,10 +405,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function userClass(): string
     {
-        if ($this->isStaff()) {
-            return 'Staff';
-        }
-
+        // A member's earned class is calculated solely from account status,
+        // ratio and tenure; operational roles do not replace it.
         if ($this->isDisabled()) {
             return 'Disabled';
         }
@@ -537,7 +546,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'admin2', 'admin1' => self::ROLE_ADMIN,
             'mod2', 'mod1' => self::ROLE_MODERATOR,
             'uploader3', 'uploader2', 'uploader1' => self::ROLE_UPLOADER,
-            'user4', 'user3', 'user2' => self::ROLE_POWER_USER,
+            'user4', 'user3', 'user2' => self::ROLE_USER,
             'user1', 'newbie' => self::ROLE_USER,
             default => self::ROLE_USER,
         };

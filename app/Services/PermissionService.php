@@ -112,15 +112,27 @@ final class PermissionService
 
     public static function roleForUser(User $user): string
     {
-        $level = $user->roleLevel();
+        // Effective permission roles are assigned identities, never computed
+        // from ratio, account age or the numeric level of a legacy user class.
+        // In particular user2/user3/user4 are legacy member *classes*, not
+        // interchangeable with the explicitly assigned power_user role.
+        $identifier = strtolower(trim((string) ($user->resolveRoleIdentifier() ?? '')));
 
-        return match (true) {
-            $level >= RoleLevel::SYSOP_LEVEL => 'sysop',
-            $level >= RoleLevel::ADMIN_LEVEL => 'admin',
-            $level >= RoleLevel::MODERATOR_LEVEL => 'moderator',
-            $level >= RoleLevel::UPLOADER_LEVEL => 'uploader',
-            $level >= 2 => 'power_user',
-            $level >= RoleLevel::USER_LEVEL => 'user',
+        // Some legacy installations explicitly define a staff-only role
+        // with roles.is_staff=true and slug "staff". Retain its member
+        // feature matrix (moderator) without elevating it to Admin/Sysop.
+        // An arbitrary numeric role level is never sufficient.
+        if ($identifier === 'staff' && $user->isStaff()) {
+            return 'moderator';
+        }
+
+        return match ($identifier) {
+            'sysop' => 'sysop',
+            'admin', 'admin1', 'admin2' => 'admin',
+            'moderator', 'mod1', 'mod2' => 'moderator',
+            'uploader', 'uploader1', 'uploader2', 'uploader3' => 'uploader',
+            'power_user' => 'power_user',
+            'user', 'user1', 'user2', 'user3', 'user4' => 'user',
             default => 'newbie',
         };
     }
