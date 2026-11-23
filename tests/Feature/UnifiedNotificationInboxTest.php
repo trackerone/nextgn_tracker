@@ -54,7 +54,7 @@ final class UnifiedNotificationInboxTest extends TestCase
             ->assertSee('1 private message alerts')
             ->assertDontSee('A private body that must not appear in the inbox')
             ->assertDontSee('Other user secret match')
-            ->assertHeader('Cache-Control', 'private, no-store');
+            ->assertHeader('Cache-Control', 'no-store, private');
 
         $html = $response->getContent();
         self::assertIsString($html);
@@ -227,5 +227,4 @@ final class UnifiedNotificationInboxTest extends TestCase
         self::assertSame(0, $recipient->unreadNotifications()
             ->where('type', NewPrivateMessageNotification::class)->count());
     }
-
 }
