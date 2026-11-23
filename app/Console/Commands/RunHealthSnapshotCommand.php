@@ -21,8 +21,8 @@ class RunHealthSnapshotCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Health snapshot completed.');
+        $this->error('This health-snapshot placeholder does not capture data. Use the scheduled ops:monitor command.');
 
-        return self::SUCCESS;
+        return self::FAILURE;
     }
 }
