@@ -203,5 +203,4 @@ final class MemberClassAuthoritySeparationTest extends TestCase
         self::assertLessThan(RoleLevel::ADMIN_LEVEL, $user->roleLevel());
         $this->actingAs($user)->get('/admin')->assertForbidden();
     }
-
 }
