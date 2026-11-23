@@ -46,7 +46,7 @@ final class SettingsRegistryTest extends TestCase
             SettingsRegistry::definition('runtime.jobs.tracker.ratio.accounting.enabled')['owner']
         );
         $this->assertSame(
-            'sysop',
+            'server',
             SettingsRegistry::definition('runtime.jobs.metadata.refresh.enabled')['owner']
         );
         $this->assertSame(
