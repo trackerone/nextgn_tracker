@@ -10,7 +10,8 @@
         <h1 class="mt-2 text-3xl font-bold">{{ $accountUser->name }}</h1>
         <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 text-sm">
             <div><dt class="text-slate-400">Email</dt><dd>{{ $accountUser->email }}</dd></div>
-            <div><dt class="text-slate-400">Role / user class</dt><dd>{{ $accountUser->role_label }} / {{ $userClass }}</dd></div>
+            <div><dt class="text-slate-400">Assigned permission role</dt><dd>{{ ucwords(str_replace('_', ' ', \App\Services\PermissionService::roleForUser($accountUser))) }}</dd></div>
+            <div><dt class="text-slate-400">Earned member class</dt><dd>{{ $userClass }}</dd></div>
             <div><dt class="text-slate-400">Member since</dt><dd>{{ $accountUser->created_at?->toFormattedDateString() }}</dd></div>
             <div><dt class="text-slate-400">Public profile</dt><dd><a href="{{ route('users.show', $accountUser->publicProfileRouteKey()) }}" class="text-brand">View my public profile</a></dd></div>
         </dl>
