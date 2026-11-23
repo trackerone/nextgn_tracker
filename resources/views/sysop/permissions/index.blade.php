@@ -12,13 +12,14 @@
             </div>
             <a class="text-sm text-brand hover:underline" href="{{ route('sysop.settings.edit') }}">Back to site settings</a>
         </div>
-        <p class="mt-3 text-xs leading-5 text-amber-200">Protected: Sysop access, administration, moderation, security controls, and account restrictions cannot be granted or removed here. These remain enforced by the existing role and security policies.</p>
+        <p class="mt-3 text-xs leading-5 text-amber-200">Protected: Sysop access, general administration, staff-wide moderation and soft-delete, security controls, and account restrictions cannot be granted here. Narrow torrent review tasks may be delegated separately below.</p>
     </header>
     <nav aria-label="Sysop access settings" class="flex flex-wrap gap-2 text-sm">
         <a href="#roles" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Role permissions</a>
         <a href="#class-thresholds" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Class ratios</a>
         <a href="{{ route('sysop.permissions.index', ['section' => 'balances']) }}#balances" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Balances &amp; credits</a>
         <a href="#exceptions" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Individual permissions</a>
+        <a href="#staff-delegation" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Torrent review delegation</a>
         <a href="{{ route('sysop.permissions.index', ['section' => 'invitations']) }}#invitations" class="rounded-full border border-slate-700 px-3 py-2 text-slate-200 hover:border-brand/50">Invitations</a>
     </nav>
 
@@ -129,6 +130,45 @@
             </label>
             <div class="lg:col-span-2">
                 <button type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Save individual exception</button>
+            </div>
+        </form>
+    </section>
+
+
+    <section id="staff-delegation" class="space-y-4 scroll-mt-28 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
+        <div>
+            <h2 class="text-lg font-semibold">Torrent review delegation</h2>
+            <p class="mt-1 text-sm text-slate-400">Grant a specific member access to the pending review queue, approval, or rejection without making them Moderator. Approval and rejection also permit queue viewing. Soft-delete, alpha intake and administration remain staff-only. Revocation applies on the next request and every change is audited.</p>
+        </div>
+        <form method="POST" action="{{ route('sysop.permissions.moderation.update') }}" class="grid gap-4 lg:grid-cols-2">
+            @csrf
+            <label class="text-sm text-slate-200">
+                Account ID or email
+                <input name="user_identifier" value="{{ old('user_identifier') }}" maxlength="255" required placeholder="member@example.com or 42"
+                    class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+            </label>
+            <label class="text-sm text-slate-200">
+                Delegated task
+                <select name="task" class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+                    @foreach ($moderationTasks as $task => $permission)
+                        <option value="{{ $task }}">{{ ucfirst($task) }} pending torrents</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="text-sm text-slate-200">
+                Access
+                <select name="state" class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+                    <option value="allow">Grant task</option>
+                    <option value="inherit">Revoke task</option>
+                </select>
+            </label>
+            <label class="text-sm text-slate-200">
+                Audit reason
+                <input name="audit_reason" maxlength="1000" required placeholder="Reason for this delegation"
+                    class="mt-2 block w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white">
+            </label>
+            <div class="lg:col-span-2">
+                <button type="submit" class="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950">Save torrent review delegation</button>
             </div>
         </form>
     </section>

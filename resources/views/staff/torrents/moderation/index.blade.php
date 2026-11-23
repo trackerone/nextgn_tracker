@@ -29,7 +29,11 @@
             <div class="mt-3 grid gap-3 text-sm text-slate-300 md:grid-cols-3">
                 <p><span class="font-semibold text-emerald-200">Approve</span> only when the torrent file, title, category, and release metadata are clear enough for members to choose confidently.</p>
                 <p><span class="font-semibold text-rose-200">Reject with an actionable reason</span> when the uploader can fix missing metadata, confusing naming, or an unsafe/invalid submission.</p>
-                <p><span class="font-semibold text-amber-200">Soft-delete only when appropriate</span> for staff cleanup cases that should be hidden rather than returned for uploader correction.</p>
+                @if (auth()->user()?->isStaff())
+                    <p><span class="font-semibold text-amber-200">Soft-delete only when appropriate</span> for staff cleanup cases that should be hidden rather than returned for uploader correction.</p>
+                @else
+                    <p>Only the review actions assigned by Sysop are available. Staff cleanup and administration are not delegated.</p>
+                @endif
             </div>
         </section>
 
@@ -136,20 +140,26 @@
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex flex-col gap-2">
+                                    @can('publish', $torrent)
                                     <form method="POST" action="{{ route('staff.torrents.approve', $torrent) }}" data-submit-label="Publishing…">
                                         @csrf
                                         <button type="submit" class="w-full rounded-xl bg-emerald-500 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300">Approve and publish</button>
                                     </form>
+                                    @endcan
+                                    @can('reject', $torrent)
                                     <form method="POST" action="{{ route('staff.torrents.reject', $torrent) }}" class="flex flex-col gap-2" data-submit-label="Rejecting…" data-confirm="Reject this upload with the supplied reason?">
                                         @csrf
                                         <input type="text" name="reason" required placeholder="What should the uploader fix?" class="w-full rounded-xl border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500/40">
                                         <p class="text-xs leading-5 text-slate-500">Visible in moderation history; keep it specific and actionable.</p>
                                         <button type="submit" class="w-full rounded-xl bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-300">Reject with reason</button>
                                     </form>
+                                    @endcan
+                                    @can('moderate', $torrent)
                                     <form method="POST" action="{{ route('staff.torrents.soft_delete', $torrent) }}" data-submit-label="Soft-deleting…" data-confirm="Soft-delete this torrent? This hides it from normal listings.">
                                         @csrf
                                         <button type="submit" class="w-full rounded-xl border border-rose-500/60 bg-rose-950/30 px-3 py-2 text-xs font-bold text-rose-100 hover:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300">Soft-delete upload</button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

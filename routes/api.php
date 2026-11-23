@@ -185,17 +185,17 @@ Route::middleware(['api', 'auth'])->group(function (): void {
         ->name('api.me.stats');
 
     Route::get('/moderation/uploads', [ModerationUploadsController::class, 'index'])
-        ->middleware('staff')
+        ->middleware('moderation.task:view')
         ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.index');
 
     Route::post('/moderation/uploads/{torrent}/approve', [ModerationUploadsController::class, 'approve'])
-        ->middleware('staff')
+        ->middleware('moderation.task:approve')
         ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.approve');
 
     Route::post('/moderation/uploads/{torrent}/reject', [ModerationUploadsController::class, 'reject'])
-        ->middleware('staff')
+        ->middleware('moderation.task:reject')
         ->middleware('throttle:torrent-moderation')
         ->name('api.moderation.uploads.reject');
 });

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\Logging\AuditLogger;
+use App\Services\Moderation\TorrentModerationDelegation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,7 +71,10 @@ class UserRoleController extends Controller
             default => throw new \InvalidArgumentException('Unsupported role transition.'),
         };
 
-        DB::transaction(function () use ($user, $actor, $newRole, $oldRole, $roleSlug, $auditReason): void {
+        $wasStaff = $user->isStaff();
+        $willBeStaff = in_array($newRole, [User::ROLE_MODERATOR, User::ROLE_ADMIN, User::ROLE_SYSOP], true);
+
+        DB::transaction(function () use ($user, $actor, $newRole, $oldRole, $roleSlug, $auditReason, $wasStaff, $willBeStaff): void {
             $user->forceFill([
                 'role' => $newRole,
                 'role_id' => Role::query()->where('slug', $roleSlug)->value('id'),
@@ -83,11 +87,22 @@ class UserRoleController extends Controller
 
             $user->unsetRelation('role');
 
+            // A staff demotion must never reactivate older individual queue
+            // grants from before a promotion. Revoke in the same transaction.
+            $revokedDelegations = 0;
+            if ($wasStaff && ! $willBeStaff) {
+                $revokedDelegations = DB::table('user_permission_overrides')
+                    ->where('user_id', $user->getKey())
+                    ->whereIn('permission', array_values(TorrentModerationDelegation::TASKS))
+                    ->delete();
+            }
+
             $this->auditLogger->log('user.role_changed', $user, [
                 'actor_user_id' => $actor->id,
                 'target_user_id' => $user->id,
                 'old_role' => $oldRole,
                 'new_role' => $newRole,
+                'revoked_moderation_delegations' => $revokedDelegations,
                 'audit_reason' => $auditReason,
             ]);
         });

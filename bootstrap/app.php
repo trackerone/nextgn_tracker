@@ -7,6 +7,7 @@ use App\Http\Middleware\ApiKeyHmacMiddleware;
 use App\Http\Middleware\EnsureAdminTwoFactorAuthentication;
 use App\Http\Middleware\EnsureFeaturePermission;
 use App\Http\Middleware\EnsureMinimumRole;
+use App\Http\Middleware\EnsureTorrentModerationTask;
 use App\Http\Middleware\EnsureUserIsStaff;
 use App\Http\Middleware\LockdownModeMiddleware;
 use App\Http\Middleware\OperationsRequestMetrics;
@@ -60,6 +61,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role.min' => EnsureMinimumRole::class,
             'staff' => EnsureUserIsStaff::class,
+            'moderation.task' => EnsureTorrentModerationTask::class,
             'api.hmac' => ApiKeyHmacMiddleware::class,
             'role.level' => RequireRoleLevel::class,
             'permission' => EnsureFeaturePermission::class,

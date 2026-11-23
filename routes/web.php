@@ -216,6 +216,8 @@ Route::middleware(['auth', 'role.level:sysop', $adminThrottle])->prefix('sysop')
     Route::patch('/permissions/roles', [PermissionsController::class, 'updateRole'])->name('permissions.roles.update');
     Route::patch('/registration', [RegistrationSettingsController::class, 'update'])->name('registration.update');
     Route::post('/permissions/users', [PermissionsController::class, 'updateUser'])->name('permissions.users.update');
+    Route::post('/permissions/moderation', [PermissionsController::class, 'updateModerationDelegation'])
+        ->name('permissions.moderation.update');
     Route::get('/ratio-credits', [RatioCreditController::class, 'index'])->name('ratio-credits.index');
     Route::patch('/ratio-credits/defaults', [RatioCreditController::class, 'updateDefaults'])->name('ratio-credits.defaults.update');
     Route::post('/ratio-credits/users/{user}', [RatioCreditController::class, 'adjust'])
@@ -251,17 +253,25 @@ Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name
     Route::patch('/alpha-feedback/{alphaFeedback}', [StaffAlphaFeedbackController::class, 'update'])
         ->whereNumber('alphaFeedback')
         ->name('alpha-feedback.update');
+});
 
+// Queue tasks can be delegated individually; alpha intake and deletion
+// deliberately retain the original full-staff boundary.
+Route::middleware(['auth', $moderationThrottle])->prefix('staff')->name('staff.')->group(function (): void {
     Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
+        ->middleware('moderation.task:view')
         ->name('torrents.moderation.index');
 
     Route::post('/torrents/{torrent}/approve', [TorrentModerationController::class, 'approve'])
+        ->middleware('moderation.task:approve')
         ->name('torrents.approve');
 
     Route::post('/torrents/{torrent}/reject', [TorrentModerationController::class, 'reject'])
+        ->middleware('moderation.task:reject')
         ->name('torrents.reject');
 
     Route::post('/torrents/{torrent}/soft-delete', [TorrentModerationController::class, 'softDelete'])
+        ->middleware('staff')
         ->name('torrents.soft_delete');
 });
 
@@ -425,7 +435,8 @@ Route::middleware(['auth'])->group(function (): void {
     Route::delete('/account/rss/presets/{preset}', [AccountRssPresetController::class, 'destroy'])->whereNumber('preset')->middleware('permission:rss.access')->name('account.rss.presets.destroy');
 });
 
-Route::middleware(['auth', 'staff', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
+Route::middleware(['auth', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
+    ->middleware('moderation.task:view')
     ->name('moderation.uploads');
 
 /*
