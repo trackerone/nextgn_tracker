@@ -14,7 +14,7 @@ The optional runtime job registry separates **stored settings** from **implement
 | `tracker.announce.integrity` | Critical tracker announce validation | Runs in the tracker request path; not a scheduled command |
 | `tracker.ratio.accounting` | Critical tracker accounting | Runs in the tracker request path; not a scheduled command |
 
-The Sysop dashboard reads the actual Laravel `Schedule` event registry to check whether a configured **scheduled** command is declared, and reads recorded `ops_job_status` success/failure timestamps. It never labels a declared command as executed if no successful run is recorded. The scheduler heartbeat in the live operations panel is the separate evidence for `php artisan schedule:run` execution.
+The Sysop dashboard reads Laravel's `schedule:list` output, which initializes the registered scheduler definitions to check whether a configured **scheduled** command is declared, and reads recorded `ops_job_status` success/failure timestamps. It never labels a declared command as executed if no successful run is recorded. The scheduler heartbeat in the live operations panel is the separate evidence for `php artisan schedule:run` execution.
 
 Placeholders now return a nonzero CLI exit code and an explicit 'not implemented' error when invoked while enabled, instead of an unearned success message. A disabled placeholder still follows the existing safe skip behavior. Placeholder and critical job states cannot be edited through the Sysop runtime toggle endpoint. Saved historical values are kept for compatibility, but are not effective operations. Critical tracker tasks ignore any persisted disabled flag.
 
