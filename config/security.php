@@ -95,11 +95,13 @@ return [
             'forum.access', 'messages.access', 'comment.post', 'api.access',
         ],
         'user' => [
-            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access',
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
+            'forum.access', 'messages.access', 'comment.post', 'api.access',
         ],
         'newbie' => [
             'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
-            'api.access'],
+            'api.access',
+        ],
         'guest' => [],
     ],
 
