@@ -91,11 +91,15 @@ return [
             'torrent.upload', 'forum.access', 'messages.access', 'comment.post', 'api.access',
         ],
         'power_user' => [
-            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access'],
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
+            'forum.access', 'messages.access', 'comment.post', 'api.access',
+        ],
         'user' => [
-            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access'],
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','forum.access', 'messages.access', 'comment.post', 'api.access',
+        ],
         'newbie' => [
-            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access','api.access'],
+            'torrent.browse', 'torrent.download', 'rss.access', 'watch.access',
+            'api.access'],
         'guest' => [],
     ],
 
