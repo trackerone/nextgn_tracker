@@ -49,6 +49,8 @@ final class SysopOperationsDashboardTest extends TestCase
             ->assertSee('Ghost Peer Cleanup')
             ->assertSee('Protected core task')
             ->assertSee('Disable optional job')
+            ->assertSee('Not implemented')
+            ->assertSee('Manual only')
             ->assertSee('Visibility only: scheduler actions are not available from this dashboard.')
             ->assertSee('Visibility only: retry/flush actions are intentionally disabled here.');
     }
@@ -58,16 +60,16 @@ final class SysopOperationsDashboardTest extends TestCase
         $sysop = User::factory()->create(['role' => User::ROLE_SYSOP, 'is_staff' => true]);
 
         $this->actingAs($sysop)->post(route('sysop.operations.runtime-jobs.toggle'), [
-            'job_key' => 'metadata.refresh',
+            'job_key' => 'notification.digest',
             'enabled' => false,
         ])->assertRedirect(route('sysop.operations.index'));
 
-        $this->assertDatabaseHas('site_settings', ['key' => 'runtime.jobs.metadata.refresh.enabled', 'value' => 'false']);
+        $this->assertDatabaseHas('site_settings', ['key' => 'runtime.jobs.notification.digest.enabled', 'value' => 'false']);
         $this->assertDatabaseHas('audit_logs', ['action' => 'sysop.runtime_job_state_changed']);
 
         $audit = AuditLog::query()->where('action', 'sysop.runtime_job_state_changed')->latest('id')->firstOrFail();
 
-        $this->assertSame('metadata.refresh', $audit->metadata['job_key'] ?? null);
+        $this->assertSame('notification.digest', $audit->metadata['job_key'] ?? null);
         $this->assertSame(true, $audit->metadata['previous_state'] ?? null);
         $this->assertSame(false, $audit->metadata['new_state'] ?? null);
     }
