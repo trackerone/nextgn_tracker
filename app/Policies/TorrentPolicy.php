@@ -23,6 +23,10 @@ class TorrentPolicy
 
     public function view(User $user, Torrent $torrent): Response
     {
+        if (! PermissionService::allow($user, 'torrent.browse')) {
+            return Response::denyAsNotFound();
+        }
+
         if ($torrent->isVisible()) {
             return Response::allow();
         }
@@ -56,6 +60,10 @@ class TorrentPolicy
 
     public function download(User $user, Torrent $torrent): Response
     {
+        if (! PermissionService::allow($user, 'torrent.download')) {
+            return Response::denyAsNotFound();
+        }
+
         $decision = $this->downloadEligibility->decide($user, $torrent);
 
         if ($decision->allowed) {
