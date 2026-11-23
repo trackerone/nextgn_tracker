@@ -264,9 +264,15 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $query->where(function (Builder $builder): void {
             $builder->where('is_staff', true)
-                ->orWhereHas('role', function (Builder $roleQuery): void {
-                    $roleQuery->where('is_staff', true)
-                        ->orWhereIn('slug', self::staffRoles());
+                ->orWhere(function (Builder $related): void {
+                    // A stale relation must not re-grant staff access once
+                    // an explicit non-default role was assigned.
+                    $related->where(function (Builder $roleColumn): void {
+                        $roleColumn->whereNull('role')->orWhere('role', self::ROLE_USER);
+                    })->whereHas('role', function (Builder $roleQuery): void {
+                        $roleQuery->where('is_staff', true)
+                            ->orWhereIn('slug', self::staffRoles());
+                    });
                 })
                 ->orWhereIn('role', self::staffRoles());
         });
@@ -282,6 +288,15 @@ class User extends Authenticatable implements MustVerifyEmail
         // 1) Primary: numeric level mapping (covers legacy slugs + normalized roles)
         if ($this->roleLevel() >= Role::STAFF_LEVEL_THRESHOLD) {
             return true;
+        }
+
+        // An explicitly assigned non-default role is authoritative. A
+        // stale staff relation cannot restore permissions after demotion.
+        $roleAttribute = $this->getAttribute('role');
+        if (is_string($roleAttribute)
+            && $roleAttribute !== ''
+            && strtolower(trim($roleAttribute)) !== self::ROLE_USER) {
+            return false;
         }
 
         // 2) Deliberately assigned staff role, not a numeric class level
