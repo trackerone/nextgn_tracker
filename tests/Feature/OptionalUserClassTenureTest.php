@@ -82,7 +82,8 @@ final class OptionalUserClassTenureTest extends TestCase
         $this->assertSame('User', $member2->userClass());
 
         $staff = User::factory()->create(['role' => User::ROLE_ADMIN, 'created_at' => now()->subDays(1)]);
-        $this->assertSame('Staff', $staff->userClass());
+        $this->assertSame('Newbie', $staff->userClass());
+        $this->assertSame('Admin', $staff->headerClassLabel());
     }
 
     public function test_sysop_can_disable_tenure_requirement_without_erasing_configured_months(): void
