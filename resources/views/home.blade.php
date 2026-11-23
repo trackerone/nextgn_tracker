@@ -19,7 +19,9 @@
                         </p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        @if ($canBrowse)
                         <a href="{{ route('torrents.index') }}" class="inline-flex justify-center rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-brand/20">Browse torrents</a>
+                        @endif
                         @if ($canUpload)
                             <a href="{{ route('torrents.upload') }}" class="inline-flex justify-center rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand/60">Upload release</a>
                         @endif
@@ -43,10 +45,12 @@
                     <div class="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
                         <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">What needs attention</p>
                         <div class="mt-3 grid gap-2 text-sm text-slate-300">
+                            @if ($canBrowse)
                             <a href="{{ route('my.follows') }}" class="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 hover:text-white">
                                 <span>New follow matches</span>
                                 <strong class="text-emerald-300">{{ $followNewCount }}</strong>
                             </a>
+                            @endif
                             @if ($canUpload)
                             <a href="{{ route('my.uploads') }}" class="flex items-center justify-between rounded-xl bg-slate-900/80 px-3 py-2 hover:text-white">
                                 <span>Your pending uploads</span>
@@ -66,6 +70,7 @@
         </section>
 
 
+        @if ($canBrowse)
         <details class="rounded-2xl border border-brand/30 bg-brand/10 p-5">
             <summary class="cursor-pointer text-sm font-semibold text-slate-200">Tracker quick start</summary>
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -91,6 +96,8 @@
             </ol>
         </details>
 
+        @endif
+
         <section class="grid gap-4 md:grid-cols-2">
             @if ($canUpload)
             <article class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
@@ -115,6 +122,7 @@
         </section>
 
         <section id="activity" class="grid grid-cols-1 gap-6 {{ $canForum || $canMessages ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]' : '' }}">
+            @if ($canBrowse)
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70">
                 <div class="flex items-center justify-between border-b border-slate-800 px-5 py-4">
                     <div>
@@ -145,6 +153,8 @@
                     @endforelse
                 </div>
             </div>
+
+            @endif
 
             @if ($canForum || $canMessages)
             <div id="community" class="space-y-6">
