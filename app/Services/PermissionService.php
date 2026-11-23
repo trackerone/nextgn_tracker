@@ -22,6 +22,10 @@ final class PermissionService
         'forum' => 'forum.access',
         'messages' => 'messages.access',
         'invitations' => 'invites.create',
+        'browse' => 'torrent.browse',
+        'download' => 'torrent.download',
+        'rss' => 'rss.access',
+        'watch' => 'watch.access',
     ];
 
     /** @var array<string, string> */
@@ -30,6 +34,10 @@ final class PermissionService
         'forum' => 'Forum',
         'messages' => 'Private messages',
         'invitations' => 'Issue invitations',
+        'browse' => 'Browse releases and saved views',
+        'download' => 'Download torrents',
+        'rss' => 'RSS feeds and presets',
+        'watch' => 'Search alerts and watch presets',
     ];
 
     /** @var list<string> */
@@ -51,6 +59,18 @@ final class PermissionService
         // Staff-only operations must never be granted by a role matrix or personal override.
         if (in_array($permission, ['torrent.edit', 'torrent.delete'], true)) {
             return RoleLevel::atLeast($user, RoleLevel::MODERATOR_LEVEL);
+        }
+
+        // A dependent feature cannot re-grant access to catalog content
+        // or torrent payloads denied by its underlying permission.
+        foreach (match ($permission) {
+            'torrent.download' => ['torrent.browse'],
+            'rss.access', 'watch.access' => ['torrent.browse', 'torrent.download'],
+            default => [],
+        } as $requiredPermission) {
+            if (! self::allow($user, $requiredPermission)) {
+                return false;
+            }
         }
 
         $role = self::roleForUser($user);
