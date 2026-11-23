@@ -10,6 +10,7 @@ use App\Http\Requests\PrivateMessages\StartConversationRequest;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Services\MarkdownService;
+use App\Services\Notifications\NotificationInbox;
 use App\Services\Notifications\PrivateMessageNotificationDispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -48,7 +49,7 @@ class PrivateMessageController extends Controller
         return response()->view('pm.create', ['recipient' => $recipient])->header('Cache-Control', 'private, no-store');
     }
 
-    public function show(Request $request, Conversation $conversation): Response
+    public function show(Request $request, Conversation $conversation, NotificationInbox $inbox): Response
     {
         $this->authorize('view', $conversation);
 
@@ -56,8 +57,13 @@ class PrivateMessageController extends Controller
         if (! $request->expectsJson()) {
             $conversation->load(['userA:id,name,public_slug', 'userB:id,name,public_slug']);
             $messages = $conversation->messages()->with('sender:id,name,public_slug')->orderBy('created_at')->orderBy('id')->paginate(20);
-            $conversation->messages()->whereIn('id', $messages->getCollection()->pluck('id'))
-                ->whereNull('read_at')->where('sender_id', '!=', $userId)->update(['read_at' => now()]);
+            $displayedIncomingIds = $messages->getCollection()
+                ->filter(static fn ($message): bool => (int) $message->sender_id !== $userId)
+                ->pluck('id')->map(static fn ($id): int => (int) $id)->all();
+
+            $conversation->messages()->whereIn('id', $displayedIncomingIds)
+                ->whereNull('read_at')->update(['read_at' => now()]);
+            $inbox->markConversationAlertsRead($request->user(), (int) $conversation->id, $displayedIncomingIds);
 
             return response()->view('pm.show', [
                 'conversation' => $conversation,
@@ -70,6 +76,7 @@ class PrivateMessageController extends Controller
             ->whereNull('read_at')
             ->where('sender_id', '!=', $userId)
             ->update(['read_at' => now()]);
+        $inbox->markConversationAlertsRead($request->user(), (int) $conversation->id);
 
         $conversation->load([
             'userA:id,name',
