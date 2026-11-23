@@ -7,6 +7,7 @@ namespace App\Policies;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Moderation\TorrentModerationDelegation;
 use App\Services\PermissionService;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Torrents\UploadEligibilityService;
@@ -31,7 +32,10 @@ class TorrentPolicy
             return Response::allow();
         }
 
-        if ($this->canAccessModeration($user) || $torrent->user_id === $user->id) {
+        if ($this->canAccessModeration($user)
+            || $torrent->user_id === $user->id
+            || ($torrent->status->value === Torrent::STATUS_PENDING && TorrentModerationDelegation::canView($user))
+        ) {
             return Response::allow();
         }
 
@@ -40,22 +44,22 @@ class TorrentPolicy
 
     public function viewModerationListings(User $user): bool
     {
-        return $this->canAccessModeration($user);
+        return TorrentModerationDelegation::canView($user);
     }
 
     public function viewModerationItem(User $user, Torrent $torrent): bool
     {
-        return $this->canAccessModeration($user);
+        return TorrentModerationDelegation::canView($user);
     }
 
     public function publish(User $user, Torrent $torrent): bool
     {
-        return $this->canAccessModeration($user);
+        return TorrentModerationDelegation::canApprove($user);
     }
 
     public function reject(User $user, Torrent $torrent): bool
     {
-        return $this->canAccessModeration($user);
+        return TorrentModerationDelegation::canReject($user);
     }
 
     public function download(User $user, Torrent $torrent): Response

@@ -9,6 +9,7 @@ use App\Models\Invite;
 use App\Models\User;
 use App\Models\UserPermissionOverride;
 use App\Services\Logging\AuditLogger;
+use App\Services\Moderation\TorrentModerationDelegation;
 use App\Services\PermissionService;
 use App\Services\Settings\RatioSettings;
 use App\Services\Settings\RegistrationPolicy;
@@ -83,6 +84,7 @@ final class PermissionsController extends Controller
             'creditBalance' => $target instanceof User ? $balances->totals($target) : null,
             'invites' => Invite::query()->with('inviter')->latest('created_at')
                 ->paginate(12, ['*'], 'invite_page')->withQueryString(),
+            'moderationTasks' => TorrentModerationDelegation::TASKS,
             'features' => PermissionService::MANAGED_FEATURES,
             'labels' => PermissionService::FEATURE_LABELS,
             'matrix' => $matrix,
@@ -205,4 +207,65 @@ final class PermissionsController extends Controller
 
         return redirect()->route('sysop.permissions.index')->with('status', 'Individual permission updated.');
     }
+    public function updateModerationDelegation(Request $request, AuditLogger $audit): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_identifier' => ['required', 'string', 'max:255'],
+            'task' => ['required', Rule::in(array_keys(TorrentModerationDelegation::TASKS))],
+            'state' => ['required', Rule::in(['allow', 'inherit'])],
+            'audit_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $reason = trim((string) $validated['audit_reason']);
+        if ($reason === '') {
+            throw ValidationException::withMessages(['audit_reason' => 'An audit reason is required.']);
+        }
+
+        $identifier = trim((string) $validated['user_identifier']);
+        $target = ctype_digit($identifier)
+            ? User::query()->find((int) $identifier)
+            : User::query()->where('email', $identifier)->first();
+
+        if ($target === null) {
+            throw ValidationException::withMessages(['user_identifier' => 'User not found.']);
+        }
+
+        // Only non-staff members receive a narrowly scoped delegation. A
+        // staff member's existing role authority cannot be changed here.
+        abort_if($target->isStaff() || $target->isSysop(), 403);
+
+        $permission = TorrentModerationDelegation::TASKS[$validated['task']];
+        $state = (string) $validated['state'];
+
+        DB::transaction(function () use ($target, $permission, $state, $audit, $request, $reason): void {
+            $previous = UserPermissionOverride::query()
+                ->where('user_id', $target->getKey())
+                ->where('permission', $permission)
+                ->value('allowed');
+
+            if ($state === 'inherit') {
+                UserPermissionOverride::query()
+                    ->where('user_id', $target->getKey())
+                    ->where('permission', $permission)
+                    ->delete();
+            } else {
+                UserPermissionOverride::query()->updateOrCreate(
+                    ['user_id' => $target->getKey(), 'permission' => $permission],
+                    ['allowed' => true],
+                );
+            }
+
+            $audit->log('sysop.permissions.moderation_delegation_updated', $target, [
+                'actor_user_id' => $request->user()?->id,
+                'target_user_id' => $target->getKey(),
+                'permission' => $permission,
+                'previous' => $previous === null ? null : (bool) $previous,
+                'new_state' => $state,
+                'audit_reason' => $reason,
+            ]);
+        });
+
+        return redirect()->route('sysop.permissions.index', [], false)->with('status', 'Moderation delegation updated.');
+    }
+
 }
