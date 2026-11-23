@@ -15,7 +15,11 @@
                     <div>
                         <h1 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">Dashboard</h1>
                         <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                            Browse verified releases, follow titles you care about, and stay close to community discussions from one focused dashboard.
+                            @if ($canBrowse)
+                                Browse verified releases, follow titles you care about, and stay close to community discussions from one focused dashboard.
+                            @else
+                                Manage your account and access the community features available to your member class.
+                            @endif
                         </p>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
