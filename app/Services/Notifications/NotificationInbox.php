@@ -5,16 +5,17 @@ declare(strict_types=1);
 namespace App\Services\Notifications;
 
 use App\Models\Conversation;
+use App\Models\Torrent;
 use App\Models\TorrentWatchNotification;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
 use App\Services\PermissionService;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 final class NotificationInbox
 {
-
     /**
      * Viewing a conversation clears only the private-message alerts for
      * messages that were actually displayed/read. A null ID list means the
@@ -96,22 +97,22 @@ final class NotificationInbox
             if ($row->channel === 'watch') {
                 /** @var TorrentWatchNotification|null $watch */
                 $watch = $watchItems->get((int) $row->id);
-                $torrent = $watch?->torrent;
+                $torrent = $watch instanceof TorrentWatchNotification ? $watch->torrent : null;
 
                 return [
                     'channel' => 'watch',
                     'id' => (string) $row->id,
-                    'title' => $watch?->title ?? 'Watch notification unavailable',
+                    'title' => $watch instanceof TorrentWatchNotification ? $watch->title : 'Watch notification unavailable',
                     'summary' => 'Saved search match',
-                    'created_at' => $watch?->created_at,
-                    'read_at' => $watch?->read_at,
-                    'url' => $torrent !== null && $torrent->isVisible() ? route('torrents.show', ['torrent' => $torrent]) : null,
+                    'created_at' => $watch instanceof TorrentWatchNotification ? $watch->created_at : null,
+                    'read_at' => $watch instanceof TorrentWatchNotification ? $watch->read_at : null,
+                    'url' => $torrent instanceof Torrent && $torrent->isVisible() ? route('torrents.show', ['torrent' => $torrent]) : null,
                     'link_label' => 'View torrent',
                 ];
             }
 
             $message = $messageItems->get((string) $row->id);
-            $data = $message?->data ?? [];
+            $data = $message instanceof DatabaseNotification ? $message->data : [];
             $sender = is_array($data) && is_string($data['sender_name'] ?? null)
                 ? trim($data['sender_name'])
                 : '';
@@ -123,8 +124,8 @@ final class NotificationInbox
                 'id' => (string) $row->id,
                 'title' => 'New private message',
                 'summary' => $sender !== '' ? 'From '.$sender : 'Private conversation',
-                'created_at' => $message?->created_at,
-                'read_at' => $message?->read_at,
+                'created_at' => $message instanceof DatabaseNotification ? $message->created_at : null,
+                'read_at' => $message instanceof DatabaseNotification ? $message->read_at : null,
                 // Never construct a conversation link unless the current user
                 // both has message access and is actually a participant.
                 'url' => ($ownedConversations[$conversationId] ?? false)
