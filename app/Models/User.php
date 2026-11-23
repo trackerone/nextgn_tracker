@@ -548,7 +548,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'admin2', 'admin1' => self::ROLE_ADMIN,
             'mod2', 'mod1' => self::ROLE_MODERATOR,
             'uploader3', 'uploader2', 'uploader1' => self::ROLE_UPLOADER,
-            'user4', 'user3', 'user2' => self::ROLE_POWER_USER,
+            'user4', 'user3', 'user2' => self::ROLE_USER,
             'user1', 'newbie' => self::ROLE_USER,
             default => self::ROLE_USER,
         };
