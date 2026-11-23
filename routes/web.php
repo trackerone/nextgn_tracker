@@ -259,15 +259,15 @@ Route::middleware(['auth', 'staff', $moderationThrottle])->prefix('staff')->name
 // deliberately retain the original full-staff boundary.
 Route::middleware(['auth', $moderationThrottle])->prefix('staff')->name('staff.')->group(function (): void {
     Route::get('/torrents/moderation', [TorrentModerationController::class, 'index'])
-        ->middleware('can:viewModerationListings,App\\Models\\Torrent')
+        ->middleware('moderation.task:view')
         ->name('torrents.moderation.index');
 
     Route::post('/torrents/{torrent}/approve', [TorrentModerationController::class, 'approve'])
-        ->middleware('can:publish,torrent')
+        ->middleware('moderation.task:approve')
         ->name('torrents.approve');
 
     Route::post('/torrents/{torrent}/reject', [TorrentModerationController::class, 'reject'])
-        ->middleware('can:reject,torrent')
+        ->middleware('moderation.task:reject')
         ->name('torrents.reject');
 
     Route::post('/torrents/{torrent}/soft-delete', [TorrentModerationController::class, 'softDelete'])
@@ -436,7 +436,7 @@ Route::middleware(['auth'])->group(function (): void {
 });
 
 Route::middleware(['auth', $moderationThrottle])->get('/moderation/uploads', [TorrentModerationController::class, 'index'])
-    ->middleware('can:viewModerationListings,App\\Models\\Torrent')
+    ->middleware('moderation.task:view')
     ->name('moderation.uploads');
 
 /*
