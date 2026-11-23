@@ -59,7 +59,7 @@ class PrivateMessageController extends Controller
             $conversation->load(['userA:id,name,public_slug', 'userB:id,name,public_slug']);
             $messages = $conversation->messages()->with('sender:id,name,public_slug')->orderBy('created_at')->orderBy('id')->paginate(20);
             $displayedIncomingIds = $messages->getCollection()
-                ->filter(static fn (Message $message): bool => (int) $message->sender_id !== $userId)
+                ->filter(static fn ($message): bool => $message instanceof Message && (int) $message->sender_id !== $userId)
                 ->pluck('id')->map(static fn ($id): int => (int) $id)->all();
 
             $conversation->messages()->whereIn('id', $displayedIncomingIds)
