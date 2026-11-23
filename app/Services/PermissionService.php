@@ -118,6 +118,14 @@ final class PermissionService
         // interchangeable with the explicitly assigned power_user role.
         $identifier = strtolower(trim((string) ($user->resolveRoleIdentifier() ?? '')));
 
+        // Some legacy installations explicitly define a staff-only role
+        // with roles.is_staff=true and slug "staff". Retain its member
+        // feature matrix (moderator) without elevating it to Admin/Sysop.
+        // An arbitrary numeric role level is never sufficient.
+        if ($identifier === 'staff' && $user->isStaff()) {
+            return 'moderator';
+        }
+
         return match ($identifier) {
             'sysop' => 'sysop',
             'admin', 'admin1', 'admin2' => 'admin',
