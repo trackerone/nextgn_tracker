@@ -3,7 +3,7 @@
 **Primary Sysop page:** \`/sysop/permissions\` (under **Site Settings → Roles, permissions, ratio & balances**).
 
 This is now the single daily control plane for:
-- **Role permissions** (Newbie, User, Power User, Uploader, Moderator, Admin) for upload, forum, messages and issuing invitations; expandable role cards and protected Sysop boundaries. Per-user invitation allow/deny/inherit uses the same audited exception model.
+- **Assigned role permissions** (Newbie, User, Power User, Uploader, Moderator, Admin) for upload, forum, messages and issuing invitations; expandable role cards and protected Sysop boundaries. Per-user invitation allow/deny/inherit uses the same audited exception model.
 - **Calculated user class thresholds:** User, Power User, Elite, with the established minimum-ratio and downloaded-MB rules. These classes are **not** the same thing as permission roles; changing thresholds does not change a user's stored role.
 - **Starting uploaded/downloaded credits** for future registrations and audited individual adjustments. Real announces and HnR history are not edited.
 - **Individual permission exceptions**, with audit reasons.
