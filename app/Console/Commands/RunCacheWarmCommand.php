@@ -21,8 +21,8 @@ class RunCacheWarmCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Cache warm completed.');
+        $this->error('Cache warmup is not implemented. No caches were warmed.');
 
-        return self::SUCCESS;
+        return self::FAILURE;
     }
 }
