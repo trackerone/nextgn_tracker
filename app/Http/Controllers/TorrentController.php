@@ -9,6 +9,7 @@ use App\Http\Requests\BrowseTorrentsRequest;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Category;
 use App\Models\Torrent;
+use App\Models\User;
 use App\Services\PermissionService;
 use App\Services\BencodeService;
 use App\Services\Metadata\ExternalMetadataConfig;
@@ -153,8 +154,9 @@ final class TorrentController extends Controller
         $metadataSource = $metadataConfig->sourceFor($mediaType, (int) $model->id);
         $externalDetailsEnabled = $metadataSource !== 'none';
 
-        $eligibility = PermissionService::allow($request->user(), 'torrent.download')
-            ? app(DownloadEligibilityPolicy::class)->check($request->user(), $model)
+        $user = $request->user();
+        $eligibility = $user instanceof User && PermissionService::allow($user, 'torrent.download')
+            ? app(DownloadEligibilityPolicy::class)->check($user, $model)
             : ['allowed' => false, 'reason' => 'permission_denied'];
 
         $eligibilityMessage = match ($eligibility['reason']) {
