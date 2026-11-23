@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Models\Role;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
 use Closure;
@@ -25,52 +24,9 @@ final class EnsureUserIsStaff
             abort(403, 'Staff only area.');
         }
 
-        if ((bool) ($user->is_staff ?? false)) {
-            return $next($request);
-        }
-
-        $roleAttr = $user->getAttribute('role');
-        if (is_string($roleAttr) && $roleAttr !== '') {
-            $roleAttr = strtolower(trim($roleAttr));
-
-            $staffRoleSlugs = [
-                User::ROLE_MODERATOR,
-                User::ROLE_ADMIN,
-                User::ROLE_SYSOP,
-                'mod1',
-                'mod2',
-                'admin1',
-                'admin2',
-                'sysop',
-            ];
-
-            if (in_array($roleAttr, $staffRoleSlugs, true)) {
-                return $next($request);
-            }
-        }
-
-        $roleRelation = $user->getRelationValue('role');
-        if ($roleRelation instanceof Role) {
-            if ((bool) ($roleRelation->is_staff ?? false)) {
-                return $next($request);
-            }
-
-            $level = $roleRelation->level;
-            if ($level !== null && (int) $level >= Role::STAFF_LEVEL_THRESHOLD) {
-                return $next($request);
-            }
-
-            $slug = $roleRelation->slug;
-            if (is_string($slug) && $slug !== '') {
-                $slug = strtolower($slug);
-
-                if (in_array($slug, ['mod1', 'mod2', 'admin1', 'admin2', 'sysop'], true)) {
-                    return $next($request);
-                }
-            }
-        }
-
-        if ((bool) $user->isStaff()) {
+        // Reuse the same explicit staff-role decision as policies and queries.
+        // Arbitrary high numeric legacy levels are never a staff credential.
+        if ($user->isStaff()) {
             return $next($request);
         }
 
