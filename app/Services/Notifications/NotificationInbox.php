@@ -14,6 +14,31 @@ use Illuminate\Support\Facades\DB;
 
 final class NotificationInbox
 {
+
+    /**
+     * Viewing a conversation clears only the private-message alerts for
+     * messages that were actually displayed/read. A null ID list means the
+     * entire conversation was rendered (JSON route).
+     *
+     * @param  list<int>|null  $messageIds
+     */
+    public function markConversationAlertsRead(User $user, int $conversationId, ?array $messageIds = null): void
+    {
+        if ($messageIds === []) {
+            return;
+        }
+
+        $query = $user->unreadNotifications()
+            ->where('type', NewPrivateMessageNotification::class)
+            ->where('data->conversation_id', $conversationId);
+
+        if ($messageIds !== null) {
+            $query->whereIn('data->message_id', $messageIds);
+        }
+
+        $query->update(['read_at' => now()]);
+    }
+
     /**
      * Display the two existing notification stores as one chronological,
      * user-scoped inbox. Pagination happens in SQL before records are hydrated.
