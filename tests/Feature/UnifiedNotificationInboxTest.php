@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\Conversation;
-use App\Models\Message;
 use App\Models\TorrentWatchNotification;
 use App\Models\User;
 use App\Notifications\NewPrivateMessageNotification;
