@@ -110,17 +110,16 @@ final class RoleLevel
             ? $user->getRelation('role')
             : $user->role()->getResults();
 
+        // Never trust an arbitrary roles.level as administrative authority.
+        // Recognized, explicitly assigned legacy slugs remain compatible.
         if ($legacyRole !== null) {
             $mapped = self::forSlug(is_string($legacyRole->slug) ? $legacyRole->slug : null);
             if ($mapped !== null) {
                 return $mapped;
             }
-
-            // Do not treat arbitrary roles.level values as operational power:
-            // earned classes and unrecognized legacy roles are not staff grants.
         }
 
-        // 4) If there is no role relation, use users.role (including 'user')
+        // 3) Fall back to the normalized users.role (including 'user')
         if (is_string($roleAttributeSlug) && $roleAttributeSlug !== '') {
             $mapped = self::forSlug($roleAttributeSlug);
             if ($mapped !== null) {
