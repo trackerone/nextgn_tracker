@@ -254,7 +254,7 @@
                     <h3 class="font-semibold text-white">{{ $job['label'] }}</h3>
                     <p class="mt-2 text-sm text-slate-400">{{ $job['description'] }}</p>
                     <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                        <span class="rounded border border-slate-600 px-2 py-1">{{ $job['enabled'] ? 'Configured enabled' : 'Configured disabled' }}</span>
+                        <span class="rounded border border-slate-600 px-2 py-1">{{ $job['implementation'] === 'placeholder' ? ($job['enabled'] ? 'Stored enabled flag (no effect)' : 'Stored disabled flag (no effect)') : ($job['enabled'] ? 'Configured enabled' : 'Configured disabled') }}</span>
                         @if ($job['implementation'] === 'placeholder')
                             <span class="rounded border border-amber-500/50 px-2 py-1 text-amber-200">Not implemented</span>
                         @elseif ($job['implementation'] === 'manual')
