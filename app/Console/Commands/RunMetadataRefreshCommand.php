@@ -21,8 +21,8 @@ class RunMetadataRefreshCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info('Metadata refresh completed.');
+        $this->error('Metadata refresh is not implemented. No torrents were refreshed.');
 
-        return self::SUCCESS;
+        return self::FAILURE;
     }
 }

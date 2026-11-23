@@ -144,7 +144,8 @@ final class SettingsRegistry
                     return self::siteDefinition($key, [
                         'type' => 'bool',
                         'default' => (bool) ($job['default_enabled'] ?? false),
-                        'owner' => ($job['sysop_controllable'] ?? false) && ! ($job['critical'] ?? false) ? 'sysop' : 'server',
+                        'owner' => ($job['sysop_controllable'] ?? false) && ! ($job['critical'] ?? false)
+                            && ($job['implementation'] ?? 'manual') !== 'placeholder' ? 'sysop' : 'server',
                         'default_source' => 'runtime_jobs',
                     ]);
                 }

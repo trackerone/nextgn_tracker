@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 
-it('allows each sysop controllable runtime job to run when enabled', function (string $jobKey, string $command): void {
+it('reports unfinished placeholder commands as failures and allows the real manual digest', function (string $jobKey, string $command): void {
     config()->set('runtime_jobs', [[
         'key' => $jobKey,
         'critical' => false,
@@ -17,7 +17,7 @@ it('allows each sysop controllable runtime job to run when enabled', function (s
 
     $exitCode = Artisan::call($command);
 
-    expect($exitCode)->toBe(0);
+    expect($exitCode)->toBe($jobKey === 'notification.digest' ? 0 : 1);
 })->with([
     ['metadata.refresh', 'runtime:metadata-refresh'],
     ['cache.warm', 'runtime:cache-warm'],
@@ -39,7 +39,7 @@ it('does not gate immutable runtime jobs through sysop toggles', function (strin
 
     $exitCode = Artisan::call($command);
 
-    expect($exitCode)->toBe(0);
+    expect($exitCode)->toBe(1);
     Log::shouldNotHaveReceived('info');
 })->with([
     ['tracker.announce.integrity', 'runtime:metadata-refresh'],

@@ -28,6 +28,11 @@ final class RuntimeJobToggleController extends Controller
             return Redirect::route('sysop.operations.index')->withErrors(['runtime_jobs' => 'Unknown runtime job key.']);
         }
 
+        if (($job['implementation'] ?? null) === 'placeholder') {
+            return Redirect::route('sysop.operations.index')
+                ->withErrors(['runtime_jobs' => 'This runtime job is not implemented and cannot be enabled yet.']);
+        }
+
         $previousEnabled = $registry->isEnabled($jobKey);
 
         if (! $registry->update($jobKey, $nextEnabled)) {
