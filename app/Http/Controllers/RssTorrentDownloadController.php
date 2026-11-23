@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\TorrentDownloadService;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
@@ -27,6 +28,9 @@ final class RssTorrentDownloadController extends Controller
         $user = User::query()
             ->where('rss_token', $token)
             ->firstOrFail();
+
+        // A valid bearer token never overrides a revoked RSS/download grant.
+        abort_unless(PermissionService::allow($user, 'rss.access'), 404);
 
         $model = Torrent::query()
             ->visible()
