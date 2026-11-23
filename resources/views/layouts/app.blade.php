@@ -55,7 +55,7 @@
                                 @if (\App\Services\PermissionService::allow(auth()->user(), 'messages.access'))
                                     <a href="{{ route('pm.index') }}" class="{{ $navLink }} {{ request()->routeIs('pm.*') ? $activeNavLink : $inactiveNavLink }}">Messages</a>
                                 @endif
-                                @if (\\App\\Services\\Moderation\\TorrentModerationDelegation::canView(auth()->user()))
+                                @if (\App\Services\Moderation\TorrentModerationDelegation::canView(auth()->user()))
                                     <a href="{{ route('moderation.uploads') }}" class="{{ $navLink }} {{ request()->routeIs('moderation.uploads', 'staff.torrents.moderation.index') ? $activeNavLink : $inactiveNavLink }}">Staff moderation</a>
                                 @endif
                                 @if (auth()->user()?->isStaff())

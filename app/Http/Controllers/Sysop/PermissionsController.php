@@ -207,6 +207,7 @@ final class PermissionsController extends Controller
 
         return redirect()->route('sysop.permissions.index')->with('status', 'Individual permission updated.');
     }
+
     public function updateModerationDelegation(Request $request, AuditLogger $audit): RedirectResponse
     {
         $validated = $request->validate([
@@ -265,7 +266,6 @@ final class PermissionsController extends Controller
             ]);
         });
 
-        return redirect()->route('sysop.permissions.index', [], false)->with('status', 'Moderation delegation updated.');
+        return redirect()->route('sysop.permissions.index')->with('status', 'Moderation delegation updated.');
     }
-
 }

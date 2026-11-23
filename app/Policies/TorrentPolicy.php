@@ -49,7 +49,8 @@ class TorrentPolicy
 
     public function viewModerationItem(User $user, Torrent $torrent): bool
     {
-        return TorrentModerationDelegation::canView($user);
+        return $this->canAccessModeration($user)
+            || ($torrent->status->value === Torrent::STATUS_PENDING && TorrentModerationDelegation::canView($user));
     }
 
     public function publish(User $user, Torrent $torrent): bool

@@ -50,6 +50,8 @@ final class TorrentModerationDelegationTest extends TestCase
             ->assertDontSee('Soft-delete upload');
         $this->get(route('moderation.uploads'))->assertOk();
         $this->getJson(route('api.moderation.uploads.index'))->assertOk();
+        $this->getJson(route('api.moderation.uploads.index', ['status' => Torrent::STATUS_REJECTED]))
+            ->assertForbidden();
 
         $this->post(route('staff.torrents.approve', $torrent))->assertForbidden();
         $this->post(route('staff.torrents.reject', $torrent), ['reason' => 'No'])->assertForbidden();
@@ -79,6 +81,7 @@ final class TorrentModerationDelegationTest extends TestCase
         $this->postJson(route('api.moderation.uploads.reject', $reject), ['reason' => 'No'])->assertForbidden();
         $this->postJson(route('api.moderation.uploads.approve', $approve))->assertOk();
         $this->assertTrue($approve->fresh()->isApproved());
+        $this->assertDatabaseHas('audit_logs', ['action' => 'torrent.approved', 'target_id' => $approve->id]);
 
         $this->updateTask($sysop, $member, 'approve', 'inherit');
         $this->updateTask($sysop, $member, 'reject');

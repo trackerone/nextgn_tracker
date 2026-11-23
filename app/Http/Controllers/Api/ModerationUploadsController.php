@@ -16,6 +16,7 @@ use App\Http\Resources\TorrentStatusResource;
 use App\Models\SecurityAuditLog;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\Logging\AuditLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +27,7 @@ final class ModerationUploadsController extends Controller
     public function __construct(
         private readonly PublishTorrentAction $publishTorrentAction,
         private readonly RejectTorrentAction $rejectTorrentAction,
+        private readonly AuditLogger $auditLogger,
     ) {}
 
     public function index(ModerationUploadsIndexRequest $request): JsonResponse
@@ -33,6 +35,10 @@ final class ModerationUploadsController extends Controller
         $this->authorize('viewModerationListings', Torrent::class);
 
         $status = (string) ($request->validated('status') ?? TorrentStatus::Pending->value);
+
+        // Delegated members may inspect pending uploads only, not the wider
+        // staff moderation history that this endpoint can otherwise query.
+        abort_if(! $request->user()?->isStaff() && $status !== TorrentStatus::Pending->value, 403);
 
         $query = Torrent::query()
             ->select([
@@ -98,6 +104,10 @@ final class ModerationUploadsController extends Controller
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
 
+        $this->auditLogger->log('torrent.approved', $torrent, [
+            'moderated_by' => $user->id,
+        ]);
+
         return response()->json([
             'data' => (new TorrentStatusResource($torrent))->resolve(),
         ]);
@@ -135,6 +145,11 @@ final class ModerationUploadsController extends Controller
 
             return response()->json(['message' => 'Invalid status transition.'], 422);
         }
+
+        $this->auditLogger->log('torrent.rejected', $torrent, [
+            'moderated_by' => $user->id,
+            'reason' => $data['reason'] ?? null,
+        ]);
 
         return response()->json([
             'data' => (new TorrentStatusResource($torrent))->resolve(),

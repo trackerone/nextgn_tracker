@@ -27,7 +27,7 @@ class TorrentModerationController extends Controller
         private readonly RejectTorrentAction $rejectTorrentAction,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('viewModerationListings', Torrent::class);
 
@@ -64,13 +64,17 @@ class TorrentModerationController extends Controller
         $pendingRows = $pending->getCollection();
         $metadata = TorrentMetadataView::mapByTorrentId($pendingRows);
 
-        $recent = Torrent::query()
-            ->select(['id', 'moderated_by', 'name', 'slug', 'status', 'moderated_at', 'moderated_reason'])
-            ->with(['moderator:id,name'])
-            ->moderated()
-            ->latest('moderated_at')
-            ->limit(10)
-            ->get();
+        // Only actual staff may inspect moderation history; delegated users
+        // receive the pending queue and their explicitly assigned actions.
+        $recent = $request->user()?->isStaff()
+            ? Torrent::query()
+                ->select(['id', 'moderated_by', 'name', 'slug', 'status', 'moderated_at', 'moderated_reason'])
+                ->with(['moderator:id,name'])
+                ->moderated()
+                ->latest('moderated_at')
+                ->limit(10)
+                ->get()
+            : collect();
 
         return view('staff.torrents.moderation.index', [
             'pendingTorrents' => $pending,
