@@ -49,9 +49,9 @@
                 <p class="mt-1 text-xs text-slate-500">Latest watch notifications</p>
             </div>
             <div class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
-                <p class="text-sm text-slate-400">Unread</p>
+                <p class="text-sm text-slate-400">Unread search alerts</p>
                 <p class="mt-2 text-2xl font-bold text-white">{{ $unreadNotificationCount }}</p>
-                <p class="mt-1 text-xs text-slate-500">In notification inbox</p>
+                <p class="mt-1 text-xs text-slate-500">Watch matches only; private messages count in Notifications</p>
             </div>
         </div>
 
@@ -198,7 +198,7 @@
                 <div class="flex items-center justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-semibold text-white">Notification Inbox</h2>
-                        <p class="mt-1 text-sm text-slate-400">Internal watch notifications and read state.</p>
+                        <p class="mt-1 text-sm text-slate-400">Recent watch matches shown here. Open the full inbox for search alerts and private messages.</p>
                     </div>
                     <a href="{{ route('account.notifications.index') }}" class="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 hover:border-brand">Open inbox</a>
                 </div>

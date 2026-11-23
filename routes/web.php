@@ -389,6 +389,9 @@ Route::middleware(['auth'])->group(function (): void {
     Route::get('/account/notifications', [AccountNotificationController::class, 'index'])->name('account.notifications.index');
     Route::post('/account/notifications/read-all', [AccountNotificationController::class, 'markAllRead'])
         ->name('account.notifications.read_all');
+    Route::post('/account/notifications/private-messages/{notification}/read', [AccountNotificationController::class, 'markMessageRead'])
+        ->whereUuid('notification')
+        ->name('account.notifications.messages.read');
     Route::post('/account/notifications/{notification}/read', [AccountNotificationController::class, 'markRead'])
         ->whereNumber('notification')
         ->name('account.notifications.read');

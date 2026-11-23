@@ -6,21 +6,27 @@ namespace App\Http\Controllers;
 
 use App\Models\TorrentWatchNotification;
 use App\Models\User;
+use App\Notifications\NewPrivateMessageNotification;
+use App\Services\Notifications\NotificationInbox;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 final class AccountNotificationController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, NotificationInbox $inbox): Response
     {
         $user = $this->authenticatedUser($request);
 
         return response()->view('account.notifications', [
-            'notifications' => $user->torrentWatchNotifications()
-                ->with(['torrent', 'preset'])
-                ->latest()
-                ->paginate(25),
+            'notifications' => $inbox->paginate($user),
+            'unreadWatchCount' => $user->torrentWatchNotifications()->whereNull('read_at')->count(),
+            'unreadMessageCount' => $user->unreadNotifications()
+                ->where('type', NewPrivateMessageNotification::class)->count(),
+        ])->withHeaders([
+            'Cache-Control' => 'private, no-store',
+            'Referrer-Policy' => 'no-referrer',
         ]);
     }
 
@@ -33,20 +39,43 @@ final class AccountNotificationController extends Controller
 
         return redirect()
             ->route('account.notifications.index')
-            ->with('status', 'Notification marked as read.');
+            ->with('status', 'Watch notification marked as read.');
+    }
+
+    public function markMessageRead(Request $request, string $notification): RedirectResponse
+    {
+        $user = $this->authenticatedUser($request);
+
+        $messageNotice = $user->notifications()
+            ->where('type', NewPrivateMessageNotification::class)
+            ->whereKey($notification)
+            ->firstOrFail();
+
+        $messageNotice->markAsRead();
+
+        return redirect()
+            ->route('account.notifications.index')
+            ->with('status', 'Private message notification marked as read.');
     }
 
     public function markAllRead(Request $request): RedirectResponse
     {
         $user = $this->authenticatedUser($request);
 
-        $user->torrentWatchNotifications()
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+        DB::transaction(static function () use ($user): void {
+            $readAt = now();
+            $user->torrentWatchNotifications()
+                ->whereNull('read_at')
+                ->update(['read_at' => $readAt]);
+
+            $user->unreadNotifications()
+                ->where('type', NewPrivateMessageNotification::class)
+                ->update(['read_at' => $readAt]);
+        });
 
         return redirect()
             ->route('account.notifications.index')
-            ->with('status', 'All notifications marked as read.');
+            ->with('status', 'All watch and private message notifications marked as read. Private messages themselves were not opened.');
     }
 
     private function authenticatedUser(Request $request): User
