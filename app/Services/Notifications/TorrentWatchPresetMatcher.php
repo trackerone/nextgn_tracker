@@ -7,6 +7,7 @@ namespace App\Services\Notifications;
 use App\Models\NotificationWatchPreset;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\Rss\RssFeedFilterNormalizer;
 use App\Services\Rss\TorrentRssFilterMatcher;
 use App\Services\Torrents\DownloadEligibilityService;
@@ -102,7 +103,8 @@ final class TorrentWatchPresetMatcher
 
     private function torrentEligibleForUser(User $user, Torrent $torrent): bool
     {
-        return $torrent->isVisible()
+        return PermissionService::allow($user, 'watch.access')
+            && $torrent->isVisible()
             && $this->visibilityEligibility->canDownload($user, $torrent)
             && $this->ratioEligibility->check($user, $torrent)['allowed'];
     }
