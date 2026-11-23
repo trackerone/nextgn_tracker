@@ -7,6 +7,7 @@ namespace App\Services\Rss;
 use App\Http\Resources\Support\TorrentMetadataView;
 use App\Models\Torrent;
 use App\Models\User;
+use App\Services\PermissionService;
 use App\Services\Torrents\DownloadEligibilityService;
 use App\Services\Tracker\DownloadEligibilityPolicy;
 use DOMDocument;
@@ -32,6 +33,9 @@ final class TorrentRssFeedBuilder
      */
     public function build(User $user, array $filters): string
     {
+        // Do not leak a feed through internal callers if token access is revoked.
+        abort_unless(PermissionService::allow($user, 'rss.access'), 404);
+
         $torrents = $this->eligibleTorrents($user, $filters);
 
         $document = new DOMDocument('1.0', 'UTF-8');
